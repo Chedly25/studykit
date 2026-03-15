@@ -83,7 +83,7 @@ export function useExamProfile() {
           nextReviewDate: today,
         })
 
-        for (const stName of seedTopic.subtopics) {
+        for (const stName of seedTopic.subtopics ?? []) {
           subtopics.push({
             id: crypto.randomUUID(),
             topicId,

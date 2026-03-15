@@ -8,12 +8,10 @@ import { computeReadiness, getWeakTopics, getStrongTopics, computeStreak, comput
 
 function getFormatGuidance(examType: ExamType): string {
   switch (examType) {
-    case 'bar': return 'MBE multiple choice questions'
-    case 'usmle-step1': return 'clinical vignette questions'
-    case 'cfa-level1': return 'item set and standalone multiple choice'
-    case 'language-learning': return 'reading comprehension, fill-in-the-blank, and translation exercises'
     case 'university-course': return 'mix of multiple choice, short answer, and essay questions'
-    case 'certification': return 'multiple choice and scenario-based questions'
+    case 'professional-exam': return 'multiple choice and scenario-based questions'
+    case 'graduate-research': return 'essay, oral defense, and conceptual analysis questions'
+    case 'language-learning': return 'reading comprehension, fill-in-the-blank, and translation exercises'
     default: return ''
   }
 }

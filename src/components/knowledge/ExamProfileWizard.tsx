@@ -1,10 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { GraduationCap, Calendar, Target, ChevronRight, ChevronLeft, BookOpen } from 'lucide-react'
+import { GraduationCap, Briefcase, FlaskConical, Languages, Wrench, Calendar, Target, ChevronRight, ChevronLeft, BookOpen, Check } from 'lucide-react'
 import { useExamProfile } from '../../hooks/useExamProfile'
 import type { ExamType } from '../../db/schema'
 import { examBlueprints, getAllExamTypes } from '../../lib/examTopicMaps'
+
+const goalTypeIcons: Record<ExamType, typeof GraduationCap> = {
+  'university-course': GraduationCap,
+  'professional-exam': Briefcase,
+  'graduate-research': FlaskConical,
+  'language-learning': Languages,
+  'custom': Wrench,
+}
 
 type Step = 'exam-type' | 'details' | 'review'
 
@@ -62,6 +70,8 @@ export function ExamProfileWizard() {
           <div className="grid gap-3">
             {getAllExamTypes().map(type => {
               const bp = examBlueprints[type]
+              const isSelected = examType === type
+              const Icon = goalTypeIcons[type]
               return (
                 <button
                   key={type}
@@ -70,23 +80,22 @@ export function ExamProfileWizard() {
                     if (type !== 'custom') setName(bp.label)
                   }}
                   className={`glass-card p-4 text-left transition-all ${
-                    examType === type
-                      ? 'border-[var(--accent-text)] ring-1 ring-[var(--accent-text)]/30'
+                    isSelected
+                      ? 'bg-[var(--accent-bg)] ring-1 ring-[var(--accent-text)]/30'
                       : 'hover:border-[var(--text-muted)]/30'
                   }`}
+                  style={isSelected ? { borderColor: 'var(--accent-text)' } : undefined}
                 >
                   <div className="flex items-center gap-3">
-                    <GraduationCap className="w-5 h-5 text-[var(--accent-text)]" />
-                    <div>
+                    <Icon className="w-5 h-5 text-[var(--accent-text)]" />
+                    <div className="flex-1">
                       <div className="font-semibold text-[var(--text-heading)]">{t(`goalTypes.${type}`)}</div>
                       <div className="text-sm text-[var(--text-muted)]">{t(`goalTypes.${type}-desc`)}</div>
                     </div>
+                    {isSelected && (
+                      <Check className="w-5 h-5 text-[var(--accent-text)]" />
+                    )}
                   </div>
-                  {type !== 'custom' && bp.subjects.length > 0 && bp.subjects[0].topics.length > 0 && (
-                    <div className="mt-2 text-xs text-[var(--text-faint)]">
-                      {bp.subjects.length} subjects &middot; {bp.subjects.reduce((s, sub) => s + sub.topics.length, 0)} topics
-                    </div>
-                  )}
                 </button>
               )
             })}

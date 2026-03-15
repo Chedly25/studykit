@@ -2,10 +2,7 @@
  * Registry of all exam/study goal seed data.
  */
 import type { ExamType } from '../db/schema'
-import type { SeedSubject } from '../db/seed/barExam'
-import { barExamSeed } from '../db/seed/barExam'
-import { usmleStep1Seed } from '../db/seed/usmleStep1'
-import { cfaLevel1Seed } from '../db/seed/cfaLevel1'
+import type { SeedSubject } from '../db/seed/custom'
 import { customExamSeed } from '../db/seed/custom'
 
 export interface ExamBlueprint {
@@ -24,10 +21,17 @@ export const examBlueprints: Record<ExamType, ExamBlueprint> = {
     defaultPassingThreshold: 70,
     subjects: customExamSeed.subjects,
   },
-  'certification': {
-    examType: 'certification',
-    label: 'Professional Certification',
-    description: 'Professional certification or licensing exam',
+  'professional-exam': {
+    examType: 'professional-exam',
+    label: 'Professional Exam',
+    description: 'Bar exam, medical boards, engineering PE, CFA, etc.',
+    defaultPassingThreshold: 70,
+    subjects: customExamSeed.subjects,
+  },
+  'graduate-research': {
+    examType: 'graduate-research',
+    label: 'Graduate & PhD',
+    description: 'Thesis, qualifying exams, dissertation research',
     defaultPassingThreshold: 70,
     subjects: customExamSeed.subjects,
   },
@@ -37,27 +41,6 @@ export const examBlueprints: Record<ExamType, ExamBlueprint> = {
     description: 'Language proficiency exams and learning goals',
     defaultPassingThreshold: 80,
     subjects: customExamSeed.subjects,
-  },
-  bar: {
-    examType: 'bar',
-    label: 'Bar Exam (MBE)',
-    description: 'Multistate Bar Examination — 7 subjects based on NCBE blueprint',
-    defaultPassingThreshold: 70,
-    subjects: barExamSeed.subjects,
-  },
-  'usmle-step1': {
-    examType: 'usmle-step1',
-    label: 'USMLE Step 1',
-    description: 'United States Medical Licensing Examination — organ systems & disciplines',
-    defaultPassingThreshold: 60,
-    subjects: usmleStep1Seed.subjects,
-  },
-  'cfa-level1': {
-    examType: 'cfa-level1',
-    label: 'CFA Level I',
-    description: 'Chartered Financial Analyst Level I — 10 topic areas',
-    defaultPassingThreshold: 70,
-    subjects: cfaLevel1Seed.subjects,
   },
   custom: {
     examType: 'custom',

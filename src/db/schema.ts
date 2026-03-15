@@ -3,8 +3,8 @@
  */
 
 // ─── Exam Profile ───────────────────────────────────────────────
-export type ExamType = 'bar' | 'usmle-step1' | 'cfa-level1' | 'custom'
-  | 'university-course' | 'certification' | 'language-learning'
+export type ExamType = 'university-course' | 'professional-exam' | 'graduate-research'
+  | 'language-learning' | 'custom'
 
 export interface ExamProfile {
   id: string
