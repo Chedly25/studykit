@@ -1,25 +1,25 @@
 /**
  * Cloudflare Pages Function: POST /api/chat
- * Proxies requests to Alibaba Cloud DashScope (Qwen) with our API key.
- * Stores ZERO student data — only adds the key and forwards.
- *
- * To switch providers later, change BASE_URL, model default, and auth header.
+ * Uses Cloudflare Workers AI (Llama 3.3 70B) — no API key needed.
+ * Stores ZERO student data.
  */
 
 interface Env {
-  DASHSCOPE_API_KEY?: string
+  AI: Ai
   ALLOWED_ORIGIN?: string
   CLERK_ISSUER_URL?: string
 }
 
+const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+
 // ─── Rate limiter (in-memory, resets per isolate) ────────────────
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 
-function checkRateLimit(ip: string, limit = 60, windowMs = 60 * 60 * 1000) {
+function checkRateLimit(key: string, limit = 60, windowMs = 60 * 60 * 1000) {
   const now = Date.now()
-  const entry = rateLimitStore.get(ip)
+  const entry = rateLimitStore.get(key)
   if (!entry || now > entry.resetTime) {
-    rateLimitStore.set(ip, { count: 1, resetTime: now + windowMs })
+    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs })
     return { allowed: true, remaining: limit - 1 }
   }
   if (entry.count >= limit) {
@@ -27,23 +27,6 @@ function checkRateLimit(ip: string, limit = 60, windowMs = 60 * 60 * 1000) {
   }
   entry.count++
   return { allowed: true, remaining: limit - entry.count }
-}
-
-// ─── Provider config ─────────────────────────────────────────────
-// Switch these three values to change LLM provider:
-const PROVIDER = {
-  // Alibaba Cloud DashScope (OpenAI-compatible)
-  baseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
-  defaultModel: 'qwen-plus',
-  authHeader: (key: string) => ({ Authorization: `Bearer ${key}` }),
-
-  // To switch to Anthropic later, uncomment below and comment above:
-  // baseUrl: 'https://api.anthropic.com/v1/messages',
-  // defaultModel: 'claude-sonnet-4-6',
-  // authHeader: (key: string) => ({
-  //   'x-api-key': key,
-  //   'anthropic-version': '2023-06-01',
-  // }),
 }
 
 // ─── CORS ────────────────────────────────────────────────────────
@@ -129,15 +112,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context
   const cors = corsHeaders(env)
 
-  // API key check
-  const apiKey = env.DASHSCOPE_API_KEY
-  if (!apiKey) {
-    return new Response(
-      JSON.stringify({ error: 'LLM API key not configured. Set DASHSCOPE_API_KEY secret.' }),
-      { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
-    )
-  }
-
   // JWT authentication
   const issuerUrl = env.CLERK_ISSUER_URL
   let rateLimitKey: string
@@ -159,7 +133,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       )
     }
   } else {
-    // Fallback to IP-based rate limiting when auth is not configured
     rateLimitKey = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
   }
 
@@ -192,48 +165,33 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       )
     }
 
-    // Build upstream request (OpenAI-compatible format)
-    const upstreamBody: Record<string, unknown> = {
-      model: (body.model as string) || PROVIDER.defaultModel,
-      messages: body.messages,
-      max_tokens: Math.min((body.max_tokens as number) || 4096, 8192),
-      stream: body.stream !== false,
-    }
+    const messages = body.messages as Array<{ role: string; content: string }>
 
-    // Add system message as first message if provided separately
+    // Add system message if provided separately
     if (body.system && typeof body.system === 'string') {
-      const messages = upstreamBody.messages as Array<{ role: string; content: unknown }>
       if (messages[0]?.role !== 'system') {
         messages.unshift({ role: 'system', content: body.system })
       }
-      upstreamBody.messages = messages
     }
 
     // Add tools if provided
-    if (body.tools && Array.isArray(body.tools) && body.tools.length > 0) {
-      upstreamBody.tools = body.tools
-    }
+    const tools = (body.tools && Array.isArray(body.tools) && body.tools.length > 0)
+      ? body.tools as Array<Record<string, unknown>>
+      : undefined
 
-    const response = await fetch(PROVIDER.baseUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...PROVIDER.authHeader(apiKey),
-      },
-      body: JSON.stringify(upstreamBody),
-    })
+    const model = (body.model as string) || DEFAULT_MODEL
+    const shouldStream = body.stream !== false
 
-    if (!response.ok) {
-      const errText = await response.text()
-      return new Response(errText, {
-        status: response.status,
-        headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
+    if (shouldStream) {
+      // Streaming response
+      const stream = await env.AI.run(model as BaseAiTextGenerationModels, {
+        messages,
+        max_tokens: Math.min((body.max_tokens as number) || 4096, 8192),
+        stream: true,
+        ...(tools ? { tools } : {}),
+      }) as ReadableStream
 
-    // Stream passthrough
-    if (upstreamBody.stream && response.body) {
-      return new Response(response.body, {
+      return new Response(stream, {
         status: 200,
         headers: {
           ...cors,
@@ -244,9 +202,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
 
-    // Non-streaming passthrough
-    const data = await response.text()
-    return new Response(data, {
+    // Non-streaming response
+    const result = await env.AI.run(model as BaseAiTextGenerationModels, {
+      messages,
+      max_tokens: Math.min((body.max_tokens as number) || 4096, 8192),
+      stream: false,
+      ...(tools ? { tools } : {}),
+    })
+
+    return new Response(JSON.stringify(result), {
       status: 200,
       headers: {
         ...cors,
@@ -254,9 +218,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         'X-RateLimit-Remaining': String(rl.remaining),
       },
     })
-  } catch {
+  } catch (err) {
     return new Response(
-      JSON.stringify({ error: 'Internal proxy error' }),
+      JSON.stringify({ error: `AI inference error: ${err instanceof Error ? err.message : 'unknown'}` }),
       { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
   }
