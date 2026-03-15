@@ -131,7 +131,25 @@
     "insights": "Analyses",
     "misconceptions": "Malentendus",
     "openQuestions": "Questions ouvertes",
-    "breakthroughs": "Progres"
+    "breakthroughs": "Progres",
+    "quickActions": {
+      "aiTutor": "Tuteur IA",
+      "aiTutorDesc": "Posez des questions, obtenez des explications",
+      "practiceExam": "Examen pratique",
+      "practiceExamDesc": "Testez vos connaissances",
+      "uploadSources": "Importer des sources",
+      "uploadSourcesDesc": "Importez des PDF et des notes",
+      "studyPlan": "Plan d'etude",
+      "studyPlanDesc": "Plan quotidien genere par l'IA"
+    },
+    "onboarding": {
+      "title": "Pour commencer",
+      "subtitle": "{{completed}} sur {{total}} etapes completees",
+      "uploadSource": "Importez votre premiere source",
+      "startSession": "Demarrez une session de pratique",
+      "chatTutor": "Discutez avec votre tuteur IA",
+      "generatePlan": "Generez un plan d'etude"
+    }
   },
   "ai": {
     "chat": "Chat IA",
@@ -227,7 +245,15 @@
     "coveredTopics": "{{count}} sujet couvert",
     "coveredTopics_plural": "{{count}} sujets couverts",
     "notesEditor": "Notes",
-    "saveNotes": "Enregistrer les notes"
+    "saveNotes": "Enregistrer les notes",
+    "discovery": {
+      "practiceExam": "Passer un examen pratique",
+      "practiceExamDesc": "Generez des questions a partir de vos sources",
+      "flashcards": "Generer des cartes",
+      "flashcardsDesc": "Creez des jeux de cartes a partir de vos supports",
+      "chat": "Discuter de vos sources",
+      "chatDesc": "Interrogez votre tuteur IA sur le contenu importe"
+    }
   },
   "subscription": {
     "pricing": "Tarifs",

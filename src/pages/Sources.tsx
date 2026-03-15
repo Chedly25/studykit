@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FileText, Loader2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { FileText, Loader2, ClipboardCheck, BookOpen, MessageCircle } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useSources } from '../hooks/useSources'
 import { useAgent } from '../hooks/useAgent'
@@ -126,6 +126,26 @@ export default function Sources() {
           disabled={isProcessing}
         />
       </div>
+
+      {documents.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          {([
+            { icon: ClipboardCheck, label: t('sources.discovery.practiceExam'), desc: t('sources.discovery.practiceExamDesc'), to: '/practice-exam' },
+            { icon: BookOpen, label: t('sources.discovery.flashcards'), desc: t('sources.discovery.flashcardsDesc'), to: '/flashcard-maker' },
+            { icon: MessageCircle, label: t('sources.discovery.chat'), desc: t('sources.discovery.chatDesc'), to: '/chat' },
+          ] as const).map(({ icon: Icon, label, desc, to }) => (
+            <Link key={to} to={to} className="glass-card glass-card-hover p-3 flex items-start gap-3 group">
+              <div className="w-9 h-9 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center flex-shrink-0">
+                <Icon className="w-4 h-4 text-[var(--accent-text)]" />
+              </div>
+              <div>
+                <span className="text-sm font-semibold text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors">{label}</span>
+                <p className="text-xs text-[var(--text-muted)]">{desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {coverage && (
         <div className="mb-6">

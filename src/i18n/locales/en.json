@@ -131,7 +131,25 @@
     "insights": "Insights",
     "misconceptions": "Misconceptions",
     "openQuestions": "Open Questions",
-    "breakthroughs": "Breakthroughs"
+    "breakthroughs": "Breakthroughs",
+    "quickActions": {
+      "aiTutor": "AI Tutor",
+      "aiTutorDesc": "Ask questions, get explanations",
+      "practiceExam": "Practice Exam",
+      "practiceExamDesc": "Test your knowledge",
+      "uploadSources": "Upload Sources",
+      "uploadSourcesDesc": "Import PDFs and notes",
+      "studyPlan": "Study Plan",
+      "studyPlanDesc": "AI-generated daily plan"
+    },
+    "onboarding": {
+      "title": "Get Started",
+      "subtitle": "{{completed}} of {{total}} steps completed",
+      "uploadSource": "Upload your first source",
+      "startSession": "Start a practice session",
+      "chatTutor": "Chat with your AI tutor",
+      "generatePlan": "Generate a study plan"
+    }
   },
   "ai": {
     "chat": "AI Chat",
@@ -227,7 +245,15 @@
     "coveredTopics": "{{count}} topic covered",
     "coveredTopics_plural": "{{count}} topics covered",
     "notesEditor": "Notes",
-    "saveNotes": "Save Notes"
+    "saveNotes": "Save Notes",
+    "discovery": {
+      "practiceExam": "Take a Practice Exam",
+      "practiceExamDesc": "Generate questions from your sources",
+      "flashcards": "Generate Flashcards",
+      "flashcardsDesc": "Create decks from your materials",
+      "chat": "Chat About Your Sources",
+      "chatDesc": "Ask your AI tutor about uploaded content"
+    }
   },
   "subscription": {
     "pricing": "Pricing",
