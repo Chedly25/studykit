@@ -214,10 +214,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     if (!llmResponse || !llmResponse.ok) {
-      // Return 200 with error in body — returning 502 causes Cloudflare to replace
-      // our JSON response with its own HTML error page
       return new Response(
-        JSON.stringify({ error: 'AI service temporarily unavailable. Please try again.' }),
+        JSON.stringify({ error: `AI service error: ${lastError.slice(0, 300)}` }),
         { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }
