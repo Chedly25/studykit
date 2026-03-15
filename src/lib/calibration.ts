@@ -34,8 +34,9 @@ export function getMiscalibratedTopics(
   subjects: Subject[],
   threshold = 0.2,
 ): CalibrationData[] {
-  return computeCalibrationData(topics, subjects)
-    .filter(d => d.questionsAttempted >= 3 && Math.abs(d.gap) > threshold)
+  const qualified = topics.filter(t => t.questionsAttempted >= 3)
+  return computeCalibrationData(qualified, subjects)
+    .filter(d => Math.abs(d.gap) > threshold)
 }
 
 // Fix: questionsAttempted isn't on CalibrationData, filter before mapping

@@ -1,5 +1,5 @@
 import { db } from '../db'
-import type { Topic, Subject, DocumentChunk } from '../db/schema'
+import type { DocumentChunk } from '../db/schema'
 
 export interface SubjectCoverage {
   subjectName: string

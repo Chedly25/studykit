@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { StudyPlan, StudyPlanDay } from '../db/schema'
+import type { StudyPlanDay } from '../db/schema'
 import { generateStudyPlan } from '../ai/studyPlanGenerator'
 
 interface StudyActivity {

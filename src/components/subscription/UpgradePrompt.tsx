@@ -7,7 +7,7 @@ interface Props {
   dailyLimit?: number
 }
 
-export function UpgradePrompt({ messagesUsed = 5, dailyLimit = 5 }: Props) {
+export function UpgradePrompt({ messagesUsed: _messagesUsed = 5, dailyLimit = 5 }: Props) {
   const { t } = useTranslation()
   return (
     <div className="glass-card p-5 text-center space-y-3">
