@@ -9,7 +9,8 @@ import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 
 const DEFAULT_MODEL = 'kimi-k2.5'
-const DEFAULT_API_URL = 'https://api.moonshot.ai/v1/chat/completions'
+const DEFAULT_API_URL = 'https://kimi-k2.ai/api/v1/chat/completions'
+const MAX_RETRIES = 2
 
 const FREE_TIER_DAILY_LIMIT = 5
 
@@ -188,21 +189,36 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       llmBody.tools = body.tools
     }
 
-    const llmResponse = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(llmBody),
-    })
+    // Fetch with retry for transient failures
+    let llmResponse: Response | null = null
+    let lastError = ''
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        llmResponse = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(llmBody),
+        })
+        if (llmResponse.ok) break
+        lastError = `${llmResponse.status}: ${await llmResponse.text()}`
+        console.error(`LLM API error (attempt ${attempt + 1}):`, lastError)
+        llmResponse = null
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : String(err)
+        console.error(`LLM fetch error (attempt ${attempt + 1}):`, lastError)
+        llmResponse = null
+      }
+    }
 
-    if (!llmResponse.ok) {
-      const errText = await llmResponse.text()
-      console.error('LLM API error:', llmResponse.status, errText)
+    if (!llmResponse || !llmResponse.ok) {
+      // Return 200 with error in body — returning 502 causes Cloudflare to replace
+      // our JSON response with its own HTML error page
       return new Response(
-        JSON.stringify({ error: 'AI service error. Please try again.' }),
-        { status: 502, headers: { ...cors, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'AI service temporarily unavailable. Please try again.' }),
+        { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -233,7 +249,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     console.error('AI inference error:', err)
     return new Response(
       JSON.stringify({ error: 'An error occurred processing your request.' }),
-      { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
   }
 }

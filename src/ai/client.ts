@@ -148,10 +148,21 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
           errJson.used ?? 5
         )
       }
+      if (errJson.error) throw new Error(errJson.error)
     } catch (e) {
       if (e instanceof QuotaExceededError) throw e
+      if (e instanceof Error && !e.message.startsWith('API error')) throw e
     }
-    throw new Error(`API error ${response.status}: ${errText}`)
+    throw new Error(`API error ${response.status}: ${errText.slice(0, 200)}`)
+  }
+
+  // Check for JSON error responses returned as 200 (to avoid Cloudflare 502 interception)
+  const contentType = response.headers.get('Content-Type') || ''
+  if (contentType.includes('application/json')) {
+    const json = await response.json() as { error?: string; code?: string }
+    if (json.error) {
+      throw new Error(json.error)
+    }
   }
 
   if (!response.body) throw new Error('No response body')
