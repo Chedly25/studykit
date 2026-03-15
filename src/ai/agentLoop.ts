@@ -151,7 +151,9 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
           })
         }
       }
-      messages.push({ role: 'assistant', content: assistantContent })
+      const assistantMsg: Message = { role: 'assistant', content: assistantContent }
+      if (response.reasoningContent) assistantMsg.reasoning_content = response.reasoningContent
+      messages.push(assistantMsg)
 
       // Execute tools and add results
       const resultBlocks: ContentBlock[] = []

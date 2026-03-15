@@ -38,6 +38,7 @@ export interface ChatResponse {
     | { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }
   >
   stopReason: string | null
+  reasoningContent?: string
 }
 
 /**
@@ -68,7 +69,9 @@ function toOpenAIMessages(messages: Message[], system: string) {
 
   for (const msg of messages) {
     if (typeof msg.content === 'string') {
-      result.push({ role: msg.role, content: msg.content })
+      const converted: Record<string, unknown> = { role: msg.role, content: msg.content }
+      if (msg.reasoning_content) converted.reasoning_content = msg.reasoning_content
+      result.push(converted)
       continue
     }
 
@@ -79,9 +82,9 @@ function toOpenAIMessages(messages: Message[], system: string) {
       const toolResultParts = msg.content.filter(b => b.type === 'tool_result')
 
       if (toolUseParts.length > 0) {
-        // Assistant message with tool calls
+        // Assistant message with tool calls — preserve reasoning_content for thinking models
         const textContent = textParts.map(b => ('text' in b ? b.text : '')).join('')
-        result.push({
+        const assistantMsg: Record<string, unknown> = {
           role: 'assistant',
           content: textContent || null,
           tool_calls: toolUseParts.map(b => ({
@@ -92,7 +95,9 @@ function toOpenAIMessages(messages: Message[], system: string) {
               arguments: JSON.stringify('input' in b ? b.input : {}),
             },
           })),
-        })
+        }
+        if (msg.reasoning_content) assistantMsg.reasoning_content = msg.reasoning_content
+        result.push(assistantMsg)
       } else if (toolResultParts.length > 0) {
         // Tool result messages (one per tool call)
         for (const b of toolResultParts) {
@@ -172,6 +177,7 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
 
   const content: ChatResponse['content'] = []
   let currentText = ''
+  let currentReasoning = ''
   // Track tool calls by index
   const toolCalls = new Map<number, { id: string; name: string; args: string }>()
   let stopReason: string | null = null
@@ -206,6 +212,11 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
 
         const delta = choice.delta
         if (!delta) continue
+
+        // Reasoning/thinking content (Kimi K2.5)
+        if (delta.reasoning_content) {
+          currentReasoning += delta.reasoning_content
+        }
 
         // Text content
         if (delta.content) {
@@ -263,5 +274,5 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
     })
   }
 
-  return { content, stopReason }
+  return { content, stopReason, reasoningContent: currentReasoning || undefined }
 }
