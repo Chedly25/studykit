@@ -8,8 +8,8 @@ import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 
-const DEFAULT_MODEL = 'kimi-k2-0711'
-const DEFAULT_API_URL = 'https://api.moonshot.cn/v1/chat/completions'
+const DEFAULT_MODEL = 'kimi-k2.5'
+const DEFAULT_API_URL = 'https://api.moonshot.ai/v1/chat/completions'
 
 const FREE_TIER_DAILY_LIMIT = 5
 
