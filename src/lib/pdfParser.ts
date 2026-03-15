@@ -19,7 +19,7 @@ export async function parsePdf(file: File): Promise<PdfParseResult> {
   // Dynamic import — only loaded when user uploads a PDF
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfjsLib: any = await import('pdfjs-dist/build/pdf.mjs')
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
 
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
