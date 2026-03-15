@@ -11,6 +11,9 @@ interface Props {
   onSummarize: (doc: Document) => void
   onGenerateFlashcards: (doc: Document) => void
   onGeneratePracticeExam: (doc: Document) => void
+  summarizingId: string | null
+  generatingFlashcardsId: string | null
+  deleteConfirmId: string | null
 }
 
 export function SourceList({
@@ -20,6 +23,9 @@ export function SourceList({
   onSummarize,
   onGenerateFlashcards,
   onGeneratePracticeExam,
+  summarizingId,
+  generatingFlashcardsId,
+  deleteConfirmId,
 }: Props) {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
@@ -65,6 +71,9 @@ export function SourceList({
             onSummarize={() => onSummarize(doc)}
             onGenerateFlashcards={() => onGenerateFlashcards(doc)}
             onGeneratePracticeExam={() => onGeneratePracticeExam(doc)}
+            isSummarizing={summarizingId === doc.id}
+            isGeneratingFlashcards={generatingFlashcardsId === doc.id}
+            deleteConfirm={deleteConfirmId === doc.id}
           />
         ))}
       </div>

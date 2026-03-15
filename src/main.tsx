@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { ClerkProvider } from '@clerk/clerk-react'
+import { Toaster } from 'sonner'
 import './i18n'
 import './styles/globals.css'
 import App from './App'
@@ -29,6 +30,17 @@ createRoot(document.getElementById('root')!).render(
       >
         <BrowserRouter>
           <App />
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: 'var(--bg-card)',
+                color: 'var(--text-body)',
+                border: '1px solid var(--border-card)',
+                borderRadius: '0.75rem',
+              },
+            }}
+          />
         </BrowserRouter>
       </ClerkProvider>
     </HelmetProvider>

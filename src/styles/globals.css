@@ -108,6 +108,20 @@ body {
 :root:not(.dark) .glass-card-hover:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
+.glass-card-hover:active {
+  transform: translateY(0px) scale(0.98);
+  transition: all 0.08s ease;
+}
+
+/* ─── Action button (small) ─── */
+.btn-action {
+  transition: all 0.15s ease;
+}
+.btn-action:active {
+  transform: scale(0.93);
+  opacity: 0.7;
+  transition: all 0.06s ease;
+}
 
 /* ─── Gradient button ─── */
 .btn-primary {
@@ -123,6 +137,11 @@ body {
 .btn-primary:hover {
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
   transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0px) scale(0.97);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+  transition: all 0.08s ease;
 }
 .btn-primary::after {
   content: '';
@@ -154,6 +173,11 @@ body {
 }
 .btn-secondary:hover {
   opacity: 0.85;
+}
+.btn-secondary:active {
+  transform: scale(0.97);
+  opacity: 0.75;
+  transition: all 0.08s ease;
 }
 
 /* ─── Form inputs ─── */
@@ -207,6 +231,12 @@ body {
 
 .animate-fade-in {
   animation: fade-in 0.4s ease-out;
+}
+
+/* ─── Toast overrides (sonner) ─── */
+[data-sonner-toaster] [data-sonner-toast] {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
 }
 
 /* ─── Scrollbar ─── */

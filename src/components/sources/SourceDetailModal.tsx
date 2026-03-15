@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X, ChevronDown, ChevronRight } from 'lucide-react'
+import { X, ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
 import { getChunksByDocumentId } from '../../lib/sources'
@@ -9,9 +9,10 @@ import type { Document, DocumentChunk, Topic } from '../../db/schema'
 interface Props {
   document: Document | null
   onClose: () => void
+  isSummarizing?: boolean
 }
 
-export function SourceDetailModal({ document: doc, onClose }: Props) {
+export function SourceDetailModal({ document: doc, onClose, isSummarizing }: Props) {
   const { t } = useTranslation()
   const [chunks, setChunks] = useState<DocumentChunk[]>([])
   const [expandedChunk, setExpandedChunk] = useState<string | null>(null)
@@ -47,13 +48,27 @@ export function SourceDetailModal({ document: doc, onClose }: Props) {
               {doc.sourceType.toUpperCase()} &middot; {t('sources.words', { count: doc.wordCount })} &middot; {t('sources.chunks', { count: chunks.length })}
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-input)] text-[var(--text-muted)]">
+          <button onClick={onClose} className="btn-action p-1.5 rounded-lg hover:bg-[var(--bg-input)] text-[var(--text-muted)]">
             <X size={18} />
           </button>
         </div>
 
+        {isSummarizing && !doc.summary && (
+          <div className="px-5 py-4 border-b border-[var(--border-card)] bg-[var(--accent-bg)]/30">
+            <div className="flex items-center gap-2 mb-2">
+              <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin" />
+              <span className="text-sm text-[var(--accent-text)] font-medium">{t('sources.summarizing')}</span>
+            </div>
+            <div className="space-y-2">
+              <div className="h-3 bg-[var(--border-card)] rounded animate-pulse w-full" />
+              <div className="h-3 bg-[var(--border-card)] rounded animate-pulse w-5/6" />
+              <div className="h-3 bg-[var(--border-card)] rounded animate-pulse w-4/6" />
+            </div>
+          </div>
+        )}
+
         {doc.summary && (
-          <div className="px-5 py-3 border-b border-[var(--border-card)] bg-[var(--accent-bg)]/30">
+          <div className="px-5 py-3 border-b border-[var(--border-card)] bg-[var(--accent-bg)]/30 animate-fade-in">
             <h3 className="text-xs font-semibold text-[var(--accent-text)] mb-1">{t('sources.summary')}</h3>
             <p className="text-sm text-[var(--text-body)]">{doc.summary}</p>
           </div>
@@ -66,7 +81,7 @@ export function SourceDetailModal({ document: doc, onClose }: Props) {
               <div key={chunk.id} className="border border-[var(--border-card)] rounded-lg overflow-hidden">
                 <button
                   onClick={() => setExpandedChunk(isExpanded ? null : chunk.id)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--bg-input)] transition-colors"
+                  className="btn-action w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--bg-input)]"
                 >
                   {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   <span className="text-xs font-medium text-[var(--text-muted)]">

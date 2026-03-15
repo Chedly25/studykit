@@ -246,6 +246,13 @@
     "coveredTopics_plural": "{{count}} sujets couverts",
     "notesEditor": "Notes",
     "saveNotes": "Enregistrer les notes",
+    "summarizing": "Generation du resume...",
+    "summaryGenerated": "Resume genere",
+    "summaryFailed": "Echec de la generation du resume",
+    "flashcardsGenerated": "Cartes generees",
+    "flashcardsFailed": "Echec de la generation des cartes",
+    "sourceDeleted": "Source supprimee",
+    "confirmDelete": "Confirmer ?",
     "discovery": {
       "practiceExam": "Passer un examen pratique",
       "practiceExamDesc": "Generez des questions a partir de vos sources",

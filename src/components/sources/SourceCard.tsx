@@ -1,4 +1,5 @@
-import { FileText, FileType, ClipboardPaste, Trash2, Eye, Sparkles, BookOpen, ClipboardCheck } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { FileText, FileType, ClipboardPaste, Trash2, Eye, Sparkles, BookOpen, ClipboardCheck, Loader2 } from 'lucide-react'
 import type { Document } from '../../db/schema'
 
 const typeIcons: Record<string, typeof FileText> = {
@@ -16,6 +17,9 @@ interface Props {
   onSummarize: () => void
   onGenerateFlashcards: () => void
   onGeneratePracticeExam: () => void
+  isSummarizing?: boolean
+  isGeneratingFlashcards?: boolean
+  deleteConfirm?: boolean
 }
 
 export function SourceCard({
@@ -25,7 +29,11 @@ export function SourceCard({
   onSummarize,
   onGenerateFlashcards,
   onGeneratePracticeExam,
+  isSummarizing,
+  isGeneratingFlashcards,
+  deleteConfirm,
 }: Props) {
+  const { t } = useTranslation()
   const Icon = typeIcons[doc.sourceType] ?? FileText
   const date = new Date(doc.createdAt).toLocaleDateString()
 
@@ -60,33 +68,39 @@ export function SourceCard({
       <div className="flex flex-wrap gap-1.5 mt-auto pt-1">
         <button
           onClick={onView}
-          className="text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors flex items-center gap-1"
+          className="btn-action text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--accent-text)] flex items-center gap-1"
         >
           <Eye size={12} /> View
         </button>
         <button
           onClick={onSummarize}
-          className="text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors flex items-center gap-1"
+          disabled={isSummarizing}
+          className="btn-action text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--accent-text)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
         >
-          <Sparkles size={12} /> Summarize
+          {isSummarizing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+          {isSummarizing ? t('sources.summarizing') : 'Summarize'}
         </button>
         <button
           onClick={onGenerateFlashcards}
-          className="text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors flex items-center gap-1"
+          disabled={isGeneratingFlashcards}
+          className="btn-action text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--accent-text)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
         >
-          <BookOpen size={12} /> Flashcards
+          {isGeneratingFlashcards ? <Loader2 size={12} className="animate-spin" /> : <BookOpen size={12} />}
+          Flashcards
         </button>
         <button
           onClick={onGeneratePracticeExam}
-          className="text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors flex items-center gap-1"
+          className="btn-action text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--accent-text)] flex items-center gap-1"
         >
           <ClipboardCheck size={12} /> Exam
         </button>
         <button
           onClick={onDelete}
-          className="text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] text-red-400 hover:text-red-500 transition-colors flex items-center gap-1 ml-auto"
+          className={`btn-action text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] flex items-center gap-1 ml-auto ${
+            deleteConfirm ? 'text-red-500 font-medium' : 'text-red-400 hover:text-red-500'
+          }`}
         >
-          <Trash2 size={12} /> Delete
+          <Trash2 size={12} /> {deleteConfirm ? t('sources.confirmDelete') : 'Delete'}
         </button>
       </div>
     </div>

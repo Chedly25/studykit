@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { FileText, Loader2, ClipboardCheck, BookOpen, MessageCircle } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useExamProfile } from '../hooks/useExamProfile'
@@ -38,6 +39,7 @@ export default function Sources() {
   const [viewDoc, setViewDoc] = useState<Document | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [summarizing, setSummarizing] = useState<string | null>(null)
+  const [generatingFlashcards, setGeneratingFlashcards] = useState<string | null>(null)
 
   if (!activeProfile) {
     return (
@@ -54,6 +56,7 @@ export default function Sources() {
     if (deleteConfirm === docId) {
       await deleteSource(docId)
       setDeleteConfirm(null)
+      toast.success(t('sources.sourceDeleted'))
     } else {
       setDeleteConfirm(docId)
       setTimeout(() => setDeleteConfirm(null), 3000)
@@ -65,25 +68,37 @@ export default function Sources() {
       setViewDoc(doc)
       return
     }
+    setViewDoc(doc)
     setSummarizing(doc.id)
     try {
       const chunks = await getChunksByDocumentId(doc.id)
       const prompt = buildSummaryPrompt(doc.title, chunks.map(c => c.content))
       const resultMessages = await agent.sendMessage(prompt)
-      // Extract summary from the agent's final response
       const lastMsg = resultMessages[resultMessages.length - 1]
       if (lastMsg && typeof lastMsg.content === 'string') {
         await db.documents.update(doc.id, { summary: lastMsg.content })
+        setViewDoc({ ...doc, summary: lastMsg.content })
+        toast.success(t('sources.summaryGenerated'))
       }
+    } catch {
+      toast.error(t('sources.summaryFailed'))
     } finally {
       setSummarizing(null)
     }
   }
 
   const handleGenerateFlashcards = async (doc: Document) => {
-    const chunks = await getChunksByDocumentId(doc.id)
-    const prompt = buildFlashcardPrompt(doc.title, chunks.map(c => c.content))
-    await agent.sendMessage(prompt)
+    setGeneratingFlashcards(doc.id)
+    try {
+      const chunks = await getChunksByDocumentId(doc.id)
+      const prompt = buildFlashcardPrompt(doc.title, chunks.map(c => c.content))
+      await agent.sendMessage(prompt)
+      toast.success(t('sources.flashcardsGenerated'))
+    } catch {
+      toast.error(t('sources.flashcardsFailed'))
+    } finally {
+      setGeneratingFlashcards(null)
+    }
   }
 
   const handleGeneratePracticeExam = (doc: Document) => {
@@ -108,13 +123,6 @@ export default function Sources() {
         <div className="glass-card p-4 mb-4 flex items-center gap-3">
           <Loader2 className="w-5 h-5 text-[var(--accent-text)] animate-spin" />
           <span className="text-sm text-[var(--text-body)]">{processingStatus || t('common.loading')}</span>
-        </div>
-      )}
-
-      {summarizing && (
-        <div className="glass-card p-4 mb-4 flex items-center gap-3">
-          <Loader2 className="w-5 h-5 text-[var(--accent-text)] animate-spin" />
-          <span className="text-sm text-[var(--text-body)]">{t('sources.generateSummary')}...</span>
         </div>
       )}
 
@@ -160,6 +168,9 @@ export default function Sources() {
         onSummarize={handleSummarize}
         onGenerateFlashcards={handleGenerateFlashcards}
         onGeneratePracticeExam={handleGeneratePracticeExam}
+        summarizingId={summarizing}
+        generatingFlashcardsId={generatingFlashcards}
+        deleteConfirmId={deleteConfirm}
       />
 
       <PasteTextModal
@@ -177,6 +188,7 @@ export default function Sources() {
       <SourceDetailModal
         document={viewDoc}
         onClose={() => setViewDoc(null)}
+        isSummarizing={!!summarizing && summarizing === viewDoc?.id}
       />
     </div>
   )

@@ -3,6 +3,7 @@
  * Provides live-query documents, upload/paste/delete, and search.
  */
 import { useState, useCallback, useMemo } from 'react'
+import { toast } from 'sonner'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import {
@@ -48,6 +49,10 @@ export function useSources(examProfileId: string | undefined) {
       const chunks = chunkText(text)
       await saveChunks(doc.id, examProfileId, chunks)
       setProcessingStatus('')
+      toast.success(`"${title}" uploaded`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Upload failed')
+      throw err
     } finally {
       setIsProcessing(false)
       setProcessingStatus('')
@@ -62,6 +67,10 @@ export function useSources(examProfileId: string | undefined) {
       const doc = await createDocument(examProfileId, title, 'paste', text)
       const chunks = chunkText(text)
       await saveChunks(doc.id, examProfileId, chunks)
+      toast.success('Text saved')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Save failed')
+      throw err
     } finally {
       setIsProcessing(false)
       setProcessingStatus('')
@@ -75,6 +84,10 @@ export function useSources(examProfileId: string | undefined) {
       const doc = await createDocument(examProfileId, title, 'text', text)
       const chunks = chunkText(text)
       await saveChunks(doc.id, examProfileId, chunks)
+      toast.success('Note saved')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Save failed')
+      throw err
     } finally {
       setIsProcessing(false)
     }

@@ -246,6 +246,13 @@
     "coveredTopics_plural": "{{count}} topics covered",
     "notesEditor": "Notes",
     "saveNotes": "Save Notes",
+    "summarizing": "Generating summary...",
+    "summaryGenerated": "Summary generated",
+    "summaryFailed": "Failed to generate summary",
+    "flashcardsGenerated": "Flashcards generated",
+    "flashcardsFailed": "Failed to generate flashcards",
+    "sourceDeleted": "Source deleted",
+    "confirmDelete": "Confirm?",
     "discovery": {
       "practiceExam": "Take a Practice Exam",
       "practiceExamDesc": "Generate questions from your sources",
