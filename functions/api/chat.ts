@@ -187,6 +187,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     // Add tools if provided
     if (body.tools && Array.isArray(body.tools) && body.tools.length > 0) {
       llmBody.tools = body.tools
+      // Disable thinking/reasoning mode when tools are present — Kimi K2.5
+      // requires reasoning_content in follow-up messages which our agent loop
+      // doesn't preserve, causing 400 errors on tool result round-trips
+      llmBody.thinking = { enabled: false }
     }
 
     // Fetch with retry for transient failures
