@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 const toolLabels: Record<string, string> = {
   getKnowledgeGraph: 'Reading knowledge graph...',
@@ -14,6 +15,13 @@ const toolLabels: Record<string, string> = {
   createFlashcardDeck: 'Creating flashcard deck...',
   addAssignment: 'Adding assignment...',
   getStudyRecommendation: 'Building study plan...',
+  searchSources: 'Searching your sources...',
+  getDocumentContent: 'Reading document...',
+  listSources: 'Listing your sources...',
+  getCalibrationData: 'Analyzing confidence calibration...',
+  getErrorPatterns: 'Analyzing error patterns...',
+  generateStudyPlan: 'Generating your study plan...',
+  getStudyPlan: 'Loading your study plan...',
 }
 
 interface Props {
@@ -21,9 +29,13 @@ interface Props {
 }
 
 export function ToolCallIndicator({ toolName }: Props) {
+  const { t } = useTranslation()
+
   if (!toolName) return null
 
-  const label = toolLabels[toolName] ?? `Running ${toolName}...`
+  const key = `ai.toolCalls.${toolName}`
+  const translated = t(key)
+  const label = translated !== key ? translated : (toolLabels[toolName] ?? t('ai.toolCalls.default'))
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 text-xs text-[var(--accent-text)]">

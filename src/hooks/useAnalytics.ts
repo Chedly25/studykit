@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { DailyStudyLog, StudySession, Subject, QuestionResult } from '../db/schema'
+import type { DailyStudyLog, StudySession, Subject, QuestionResult, Topic } from '../db/schema'
 import {
   computeWeeklyHoursChart,
   computeSessionDistribution,
@@ -37,6 +37,13 @@ export function useAnalytics(examProfileId: string | undefined) {
     [examProfileId]
   ) ?? []
 
+  const topics = useLiveQuery(
+    () => examProfileId
+      ? db.topics.where('examProfileId').equals(examProfileId).toArray()
+      : Promise.resolve([] as Topic[]),
+    [examProfileId]
+  ) ?? []
+
   const weeklyHours = computeWeeklyHoursChart(dailyLogs)
   const sessionDistribution = computeSessionDistribution(sessions)
   const subjectBalance = computeSubjectBalance(subjects, dailyLogs)
@@ -50,6 +57,7 @@ export function useAnalytics(examProfileId: string | undefined) {
     dailyLogs,
     sessions,
     subjects,
+    topics,
     questionResults,
   }
 }

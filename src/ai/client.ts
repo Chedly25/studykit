@@ -8,6 +8,19 @@ import type { Message, ToolDefinition } from './types'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api/chat'
 
+export class QuotaExceededError extends Error {
+  code = 'QUOTA_EXCEEDED' as const
+  limit: number
+  used: number
+
+  constructor(message: string, limit: number, used: number) {
+    super(message)
+    this.name = 'QuotaExceededError'
+    this.limit = limit
+    this.used = used
+  }
+}
+
 export interface ChatRequestOptions {
   messages: Message[]
   system: string
@@ -126,6 +139,18 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
 
   if (!response.ok) {
     const errText = await response.text()
+    try {
+      const errJson = JSON.parse(errText) as { code?: string; error?: string; limit?: number; used?: number }
+      if (errJson.code === 'QUOTA_EXCEEDED') {
+        throw new QuotaExceededError(
+          errJson.error || 'Daily quota exceeded',
+          errJson.limit ?? 5,
+          errJson.used ?? 5
+        )
+      }
+    } catch (e) {
+      if (e instanceof QuotaExceededError) throw e
+    }
     throw new Error(`API error ${response.status}: ${errText}`)
   }
 

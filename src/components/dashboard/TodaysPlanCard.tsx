@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { ListChecks } from 'lucide-react'
 import type { Topic } from '../../db/schema'
 
@@ -8,27 +9,29 @@ interface Props {
 }
 
 export function TodaysPlanCard({ dueTopics, dueFlashcardCount, upcomingAssignments }: Props) {
+  const { t } = useTranslation()
+
   const items: Array<{ label: string; count: number; action: string }> = []
 
   if (dueFlashcardCount > 0) {
-    items.push({ label: 'Flashcards due', count: dueFlashcardCount, action: '/flashcard-maker' })
+    items.push({ label: t('dashboard.dueFlashcards', { count: dueFlashcardCount }), count: dueFlashcardCount, action: '/flashcard-maker' })
   }
   if (dueTopics.length > 0) {
-    items.push({ label: 'Topics to review', count: dueTopics.length, action: '/focus' })
+    items.push({ label: t('dashboard.dueForReview'), count: dueTopics.length, action: '/focus' })
   }
   if (upcomingAssignments > 0) {
-    items.push({ label: 'Assignments due soon', count: upcomingAssignments, action: '/assignment-tracker' })
+    items.push({ label: t('dashboard.upcomingAssignments', { count: upcomingAssignments }), count: upcomingAssignments, action: '/assignment-tracker' })
   }
 
   return (
     <div className="glass-card p-4">
       <div className="flex items-center gap-2 mb-3">
         <ListChecks className="w-4 h-4 text-[var(--accent-text)]" />
-        <h3 className="font-semibold text-[var(--text-heading)]">Today's Plan</h3>
+        <h3 className="font-semibold text-[var(--text-heading)]">{t('dashboard.todaysPlan')}</h3>
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)]">You're all caught up! Start a study session to build your streak.</p>
+        <p className="text-sm text-[var(--text-muted)]">{t('dashboard.noWeakTopics')}</p>
       ) : (
         <div className="space-y-2">
           {items.map((item, i) => (

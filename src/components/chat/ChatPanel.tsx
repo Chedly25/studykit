@@ -1,12 +1,19 @@
-import { useRef, useEffect } from 'react'
-import { X, Brain } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { X, Brain, Settings } from 'lucide-react'
 import { useExamProfile } from '../../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../../hooks/useKnowledgeGraph'
 import { useAgent } from '../../hooks/useAgent'
+import { useTutorPreferences } from '../../hooks/useTutorPreferences'
 import { ChatMessageBubble } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { ToolCallIndicator } from './ToolCallIndicator'
 import { ChatHistory } from './ChatHistory'
+import { TutorSettingsModal } from './TutorSettingsModal'
+import { QuotaIndicator } from '../subscription/QuotaIndicator'
+import { UpgradePrompt } from '../subscription/UpgradePrompt'
+import { SourcesToggle } from '../sources/SourcesToggle'
+import { useSources } from '../../hooks/useSources'
 
 interface Props {
   open: boolean
@@ -14,15 +21,21 @@ interface Props {
 }
 
 export function ChatPanel({ open, onClose }: Props) {
+  const { t } = useTranslation()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { subjects, topics, dailyLogs } = useKnowledgeGraph(profileId)
 
+  const [sourcesEnabled, setSourcesEnabled] = useState(false)
+  const { documentCount } = useSources(profileId)
+  const { preferences, updatePreferences, resetToDefaults } = useTutorPreferences(profileId)
+  const [showSettings, setShowSettings] = useState(false)
+
   const {
     messages, isLoading, currentToolCall, streamingText, error,
-    conversationId, isSocratic,
+    conversationId, isSocratic, quotaExceeded, messagesUsedToday,
     sendMessage, loadConversation, newConversation,
-  } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs })
+  } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences })
 
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -41,8 +54,17 @@ export function ChatPanel({ open, onClose }: Props) {
         <div className="flex items-center gap-2">
           <Brain className="w-5 h-5 text-[var(--accent-text)]" />
           <span className="font-semibold text-[var(--text-heading)] text-sm">
-            {isSocratic ? 'Socratic Mode' : 'StudiesKit AI'}
+            {isSocratic ? t('ai.socratic') : t('ai.chat')}
           </span>
+          <SourcesToggle enabled={sourcesEnabled} onToggle={setSourcesEnabled} documentCount={documentCount} />
+          <button
+            onClick={() => setShowSettings(true)}
+            className="p-1 rounded-lg hover:bg-[var(--bg-input)] text-[var(--text-muted)] transition-colors"
+            title={t('ai.tutorSettings')}
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </button>
+          <QuotaIndicator messagesUsedToday={messagesUsedToday} />
         </div>
         <button
           onClick={onClose}
@@ -66,7 +88,7 @@ export function ChatPanel({ open, onClose }: Props) {
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {!activeProfile && (
           <div className="text-center text-sm text-[var(--text-muted)] py-8">
-            Create an exam profile to start chatting with StudiesKit AI.
+            {t('ai.createProfileFirst')}
           </div>
         )}
 
@@ -80,13 +102,25 @@ export function ChatPanel({ open, onClose }: Props) {
 
         <ToolCallIndicator toolName={currentToolCall} />
 
-        {error && (
+        {quotaExceeded ? (
+          <UpgradePrompt messagesUsed={messagesUsedToday} />
+        ) : error ? (
           <div className="text-sm text-red-500 bg-red-500/10 rounded-lg p-3">{error}</div>
-        )}
+        ) : null}
       </div>
 
       {/* Input */}
-      <ChatInput onSend={sendMessage} disabled={isLoading || !activeProfile} />
+      <ChatInput onSend={sendMessage} disabled={isLoading || !activeProfile || quotaExceeded} />
+
+      {preferences && (
+        <TutorSettingsModal
+          open={showSettings}
+          onClose={() => setShowSettings(false)}
+          preferences={preferences}
+          onUpdate={updatePreferences}
+          onReset={resetToDefaults}
+        />
+      )}
     </div>
   )
 }

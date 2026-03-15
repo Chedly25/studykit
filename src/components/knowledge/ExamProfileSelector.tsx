@@ -1,6 +1,7 @@
 import { ChevronDown, GraduationCap, Plus } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useExamProfile } from '../../hooks/useExamProfile'
 
 export function ExamProfileSelector() {
@@ -8,6 +9,7 @@ export function ExamProfileSelector() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -26,7 +28,7 @@ export function ExamProfileSelector() {
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-input)] border border-[var(--border-card)] text-sm text-[var(--text-body)] hover:border-[var(--accent-text)]/30 transition-colors"
       >
         <GraduationCap className="w-4 h-4 text-[var(--accent-text)]" />
-        <span className="max-w-[120px] truncate">{activeProfile?.name ?? 'No profile'}</span>
+        <span className="max-w-[120px] truncate">{activeProfile?.name ?? t('profile.noProfile')}</span>
         <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />
       </button>
 
@@ -51,7 +53,7 @@ export function ExamProfileSelector() {
               onClick={() => { navigate('/exam-profile'); setOpen(false) }}
               className="w-full text-left px-3 py-2 rounded-md text-sm text-[var(--text-muted)] hover:bg-[var(--bg-input)] flex items-center gap-2"
             >
-              <Plus className="w-3.5 h-3.5" /> New Profile
+              <Plus className="w-3.5 h-3.5" /> {t('profile.create')}
             </button>
           </div>
         </div>

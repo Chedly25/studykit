@@ -1,8 +1,11 @@
 import { Helmet } from 'react-helmet-async'
+import { useTranslation } from 'react-i18next'
 import { categories, getToolsByCategory } from '../lib/tools'
 import { ToolCard } from '../components/ToolCard'
 
 export default function AllTools() {
+  const { t } = useTranslation()
+
   return (
     <>
       <Helmet>
@@ -13,9 +16,9 @@ export default function AllTools() {
       <div className="animate-fade-in">
         <div className="text-center mb-10">
           <h1 className="font-[family-name:var(--font-display)] text-3xl md:text-4xl font-bold text-[var(--text-heading)] mb-2">
-            All Tools
+            {t('tools.allTools')}
           </h1>
-          <p className="text-[var(--text-muted)] text-lg">Free tools for students</p>
+          <p className="text-[var(--text-muted)] text-lg">{t('tools.allToolsSubtitle')}</p>
         </div>
 
         {categories.map(cat => {

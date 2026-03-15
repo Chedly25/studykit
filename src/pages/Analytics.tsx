@@ -1,36 +1,44 @@
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { BarChart3 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { CalibrationChart } from '../components/analytics/CalibrationChart'
+import { ErrorPatternChart } from '../components/analytics/ErrorPatternChart'
+import { computeCalibrationData } from '../lib/calibration'
+import { computeErrorPatterns } from '../lib/errorPatterns'
 
 export default function Analytics() {
+  const { t, i18n } = useTranslation()
   const { activeProfile } = useExamProfile()
-  const { weeklyHours, sessionDistribution, subjectBalance, scoreTrend } = useAnalytics(activeProfile?.id)
+  const { weeklyHours, sessionDistribution, subjectBalance, scoreTrend, topics, subjects, questionResults } = useAnalytics(activeProfile?.id)
 
   if (!activeProfile) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">Analytics</h1>
-        <p className="text-[var(--text-muted)]">Create an exam profile to start tracking your progress.</p>
+        <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('analytics.title')}</h1>
+        <p className="text-[var(--text-muted)]">{t('analytics.noData')}</p>
         <a href="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</a>
       </div>
     )
   }
 
+  const calibrationData = computeCalibrationData(topics, subjects)
+  const errorPatterns = computeErrorPatterns(questionResults, topics)
   const maxHours = Math.max(...weeklyHours.map(d => d.hours), 1)
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-6">Study Analytics</h1>
+      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-6">{t('analytics.title')}</h1>
 
       {/* Study Hours Chart */}
       <div className="glass-card p-4 mb-4">
         <h2 className="font-semibold text-[var(--text-heading)] mb-4 flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-[var(--accent-text)]" /> Study Hours (Last 7 Days)
+          <BarChart3 className="w-4 h-4 text-[var(--accent-text)]" /> {t('analytics.studyTime')}
         </h2>
         <div className="flex items-end gap-2 h-40">
           {weeklyHours.map(d => {
             const pct = maxHours > 0 ? (d.hours / maxHours) * 100 : 0
-            const dayLabel = new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' })
+            const dayLabel = new Date(d.date + 'T12:00:00').toLocaleDateString(i18n.language, { weekday: 'short' })
             return (
               <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
                 <span className="text-xs text-[var(--text-muted)]">{d.hours.toFixed(1)}h</span>
@@ -47,7 +55,7 @@ export default function Analytics() {
         <div className="glass-card p-4">
           <h2 className="font-semibold text-[var(--text-heading)] mb-3">Subject Balance</h2>
           {subjectBalance.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">No data yet.</p>
+            <p className="text-sm text-[var(--text-muted)]">{t('analytics.noData')}</p>
           ) : (
             <div className="space-y-3">
               {subjectBalance.map(s => (
@@ -79,7 +87,7 @@ export default function Analytics() {
         <div className="glass-card p-4">
           <h2 className="font-semibold text-[var(--text-heading)] mb-3">Session Types</h2>
           {sessionDistribution.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">No sessions recorded yet.</p>
+            <p className="text-sm text-[var(--text-muted)]">{t('analytics.noData')}</p>
           ) : (
             <div className="space-y-2">
               {sessionDistribution.map(s => (
@@ -96,7 +104,7 @@ export default function Analytics() {
         <div className="glass-card p-4 md:col-span-2">
           <h2 className="font-semibold text-[var(--text-heading)] mb-3">Score Trend</h2>
           {scoreTrend.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">Answer practice questions to see your score trend.</p>
+            <p className="text-sm text-[var(--text-muted)]">{t('analytics.noData')}</p>
           ) : (
             <div className="h-32 flex items-end gap-px">
               {scoreTrend.map((point, i) => (
@@ -109,6 +117,18 @@ export default function Analytics() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Confidence Calibration */}
+        <div className="glass-card p-4 md:col-span-2">
+          <h2 className="font-semibold text-[var(--text-heading)] mb-3">Confidence Calibration</h2>
+          <CalibrationChart data={calibrationData} />
+        </div>
+
+        {/* Error Patterns */}
+        <div className="glass-card p-4 md:col-span-2">
+          <h2 className="font-semibold text-[var(--text-heading)] mb-3">Error Patterns</h2>
+          <ErrorPatternChart data={errorPatterns} />
         </div>
       </div>
     </div>

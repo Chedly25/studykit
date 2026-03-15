@@ -1,5 +1,5 @@
 /**
- * Registry of all exam seed data.
+ * Registry of all exam/study goal seed data.
  */
 import type { ExamType } from '../db/schema'
 import type { SeedSubject } from '../db/seed/barExam'
@@ -17,6 +17,27 @@ export interface ExamBlueprint {
 }
 
 export const examBlueprints: Record<ExamType, ExamBlueprint> = {
+  'university-course': {
+    examType: 'university-course',
+    label: 'University Course',
+    description: 'Any university or college course — add your own subjects and topics',
+    defaultPassingThreshold: 70,
+    subjects: customExamSeed.subjects,
+  },
+  'certification': {
+    examType: 'certification',
+    label: 'Professional Certification',
+    description: 'Professional certification or licensing exam',
+    defaultPassingThreshold: 70,
+    subjects: customExamSeed.subjects,
+  },
+  'language-learning': {
+    examType: 'language-learning',
+    label: 'Language Learning',
+    description: 'Language proficiency exams and learning goals',
+    defaultPassingThreshold: 80,
+    subjects: customExamSeed.subjects,
+  },
   bar: {
     examType: 'bar',
     label: 'Bar Exam (MBE)',
@@ -40,8 +61,8 @@ export const examBlueprints: Record<ExamType, ExamBlueprint> = {
   },
   custom: {
     examType: 'custom',
-    label: 'Custom Exam',
-    description: 'Create your own exam structure with custom subjects and topics',
+    label: 'Custom',
+    description: 'Create your own structure with custom subjects and topics',
     defaultPassingThreshold: 70,
     subjects: customExamSeed.subjects,
   },

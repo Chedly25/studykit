@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import { Link, Outlet } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
-import { GraduationCap, LayoutDashboard, BarChart3, Focus, MessageCircle } from 'lucide-react'
+import { GraduationCap, LayoutDashboard, BarChart3, Focus, MessageCircle, FileText } from 'lucide-react'
 import { MegaMenu } from './MegaMenu'
 import { ThemeToggle } from './ThemeToggle'
+import { LanguageToggle } from './LanguageToggle'
 import { ExamProfileSelector } from './knowledge/ExamProfileSelector'
 import { ChatPanel } from './chat/ChatPanel'
+import { ProBadge } from './subscription/ProBadge'
+import { useSubscription } from '../hooks/useSubscription'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
+  const { isPro } = useSubscription()
+  const { t } = useTranslation()
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -29,28 +35,28 @@ export function Layout() {
                 to="/dashboard"
                 className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden sm:flex items-center gap-1"
               >
-                <LayoutDashboard size={15} /> Dashboard
+                <LayoutDashboard size={15} /> {t('nav.dashboard')}
               </Link>
               <Link
                 to="/focus"
                 className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden sm:flex items-center gap-1"
               >
-                <Focus size={15} /> Focus
+                <Focus size={15} /> {t('nav.focus')}
               </Link>
               <Link
                 to="/analytics"
                 className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden md:flex items-center gap-1"
               >
-                <BarChart3 size={15} /> Analytics
+                <BarChart3 size={15} /> {t('nav.analytics')}
+              </Link>
+              <Link
+                to="/sources"
+                className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden lg:flex items-center gap-1"
+              >
+                <FileText size={15} /> {t('nav.sources')}
               </Link>
             </SignedIn>
             <MegaMenu />
-            <Link
-              to="/all-tools"
-              className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden sm:block"
-            >
-              All Tools
-            </Link>
             <SignedIn>
               <ExamProfileSelector />
               <button
@@ -60,13 +66,24 @@ export function Layout() {
                     ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
                     : 'text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)]'
                 }`}
-                title="AI Chat"
+                title={t('nav.aiChat')}
               >
                 <MessageCircle size={18} />
               </button>
             </SignedIn>
+            <LanguageToggle />
             <ThemeToggle />
             <SignedIn>
+              {isPro ? (
+                <ProBadge />
+              ) : (
+                <Link
+                  to="/pricing"
+                  className="btn-secondary text-xs px-3 py-1 hidden sm:block"
+                >
+                  {t('common.upgrade')}
+                </Link>
+              )}
               <UserButton afterSignOutUrl="/" />
             </SignedIn>
             <SignedOut>
@@ -74,7 +91,7 @@ export function Layout() {
                 to="/sign-in"
                 className="btn-primary text-sm px-4 py-1.5"
               >
-                Sign In
+                {t('common.signIn')}
               </Link>
             </SignedOut>
           </nav>
@@ -90,11 +107,17 @@ export function Layout() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
               <GraduationCap size={16} />
-              <span>StudiesKit — AI-Powered Exam Preparation</span>
+              <span>{t('footer.tagline')}</span>
             </div>
-            <p className="text-[var(--text-faint)] text-sm">
-              Your data stays in your browser.
-            </p>
+            <div className="flex items-center gap-4 text-sm">
+              <Link to="/all-tools" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
+                {t('footer.freeTools')}
+              </Link>
+              <Link to="/pricing" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
+                {t('footer.pricing')}
+              </Link>
+              <span className="text-[var(--text-faint)]">{t('footer.dataLocal')}</span>
+            </div>
           </div>
         </div>
       </footer>

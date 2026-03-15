@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useTranslation } from 'react-i18next'
 import { Play, Pause, RotateCcw, SkipForward } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useFocusMode } from '../hooks/useFocusMode'
@@ -7,6 +8,7 @@ import type { Subject } from '../db/schema'
 import { formatTime } from '../lib/timerUtils'
 
 export default function FocusMode() {
+  const { t } = useTranslation()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const {
@@ -21,7 +23,11 @@ export default function FocusMode() {
     [profileId]
   ) ?? []
 
-  const phaseLabel = { work: 'Focus', 'short-break': 'Short Break', 'long-break': 'Long Break' }[phase]
+  const phaseLabel = {
+    work: t('focus.work'),
+    'short-break': t('focus.shortBreak'),
+    'long-break': t('focus.longBreak'),
+  }[phase]
   const phaseColor = phase === 'work' ? 'var(--accent-text)' : '#f59e0b'
 
   // Circular progress
@@ -35,18 +41,18 @@ export default function FocusMode() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 animate-fade-in">
-      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-6 text-center">Focus Mode</h1>
+      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-6 text-center">{t('focus.title')}</h1>
 
       {/* Subject selector */}
       {subjects.length > 0 && (
         <div className="glass-card p-4 mb-6">
-          <label className="block text-sm font-medium text-[var(--text-body)] mb-2">Studying</label>
+          <label className="block text-sm font-medium text-[var(--text-body)] mb-2">{t('focus.selectSubject')}</label>
           <select
             value={settings.selectedSubjectId ?? ''}
             onChange={e => updateSettings({ selectedSubjectId: e.target.value || undefined })}
             className="select-field w-full"
           >
-            <option value="">General study</option>
+            <option value="">{t('focus.selectSubject')}</option>
             {subjects.map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
@@ -87,7 +93,7 @@ export default function FocusMode() {
         <button
           onClick={reset}
           className="p-3 rounded-full bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-muted)] hover:text-[var(--text-heading)] transition-colors"
-          title="Reset"
+          title={t('common.reset')}
         >
           <RotateCcw className="w-5 h-5" />
         </button>
@@ -100,7 +106,7 @@ export default function FocusMode() {
         <button
           onClick={skip}
           className="p-3 rounded-full bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-muted)] hover:text-[var(--text-heading)] transition-colors"
-          title="Skip"
+          title={t('common.next')}
         >
           <SkipForward className="w-5 h-5" />
         </button>
@@ -110,20 +116,20 @@ export default function FocusMode() {
       <div className="flex justify-center gap-6 text-center text-sm">
         <div>
           <div className="text-2xl font-bold text-[var(--accent-text)]">{sessionsCompleted}</div>
-          <div className="text-[var(--text-muted)]">Sessions</div>
+          <div className="text-[var(--text-muted)]">{t('analytics.studySessions')}</div>
         </div>
         <div>
           <div className="text-2xl font-bold text-[var(--text-heading)]">{Math.round(sessionsCompleted * settings.workDuration / 60)}</div>
-          <div className="text-[var(--text-muted)]">Focus mins</div>
+          <div className="text-[var(--text-muted)]">min</div>
         </div>
       </div>
 
       {/* Duration Settings */}
       <div className="glass-card p-4 mt-8">
-        <h3 className="font-semibold text-[var(--text-heading)] mb-3">Timer Settings</h3>
+        <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('focus.settings')}</h3>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs text-[var(--text-muted)] mb-1">Focus (min)</label>
+            <label className="block text-xs text-[var(--text-muted)] mb-1">{t('focus.workDuration')}</label>
             <input
               type="number"
               value={settings.workDuration / 60}
@@ -135,7 +141,7 @@ export default function FocusMode() {
             />
           </div>
           <div>
-            <label className="block text-xs text-[var(--text-muted)] mb-1">Short Break</label>
+            <label className="block text-xs text-[var(--text-muted)] mb-1">{t('focus.shortBreakDuration')}</label>
             <input
               type="number"
               value={settings.shortBreakDuration / 60}
@@ -147,7 +153,7 @@ export default function FocusMode() {
             />
           </div>
           <div>
-            <label className="block text-xs text-[var(--text-muted)] mb-1">Long Break</label>
+            <label className="block text-xs text-[var(--text-muted)] mb-1">{t('focus.longBreakDuration')}</label>
             <input
               type="number"
               value={settings.longBreakDuration / 60}

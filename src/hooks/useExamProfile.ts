@@ -111,7 +111,8 @@ export function useExamProfile() {
       db.examProfiles, db.subjects, db.topics, db.subtopics,
       db.studySessions, db.questionResults, db.documents, db.documentChunks,
       db.flashcardDecks, db.flashcards, db.assignments, db.conversations,
-      db.chatMessages, db.dailyStudyLogs
+      db.chatMessages, db.dailyStudyLogs,
+      db.tutorPreferences, db.sessionInsights, db.studyPlans, db.studyPlanDays,
     ], async () => {
       await db.subtopics.where('examProfileId').equals(profileId).delete()
       await db.topics.where('examProfileId').equals(profileId).delete()
@@ -121,6 +122,13 @@ export function useExamProfile() {
       await db.documentChunks.where('examProfileId').equals(profileId).delete()
       await db.documents.where('examProfileId').equals(profileId).delete()
       await db.dailyStudyLogs.where('examProfileId').equals(profileId).delete()
+      await db.tutorPreferences.where('examProfileId').equals(profileId).delete()
+      await db.sessionInsights.where('examProfileId').equals(profileId).delete()
+      const plans = await db.studyPlans.where('examProfileId').equals(profileId).toArray()
+      for (const plan of plans) {
+        await db.studyPlanDays.where('planId').equals(plan.id).delete()
+      }
+      await db.studyPlans.where('examProfileId').equals(profileId).delete()
       // conversations & messages
       const convos = await db.conversations.where('examProfileId').equals(profileId).toArray()
       for (const c of convos) {

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Clock, BookOpen, CheckCircle } from 'lucide-react'
 import type { StudySession } from '../../db/schema'
 
@@ -6,6 +7,8 @@ interface Props {
 }
 
 export function ActivityFeed({ sessions }: Props) {
+  const { t, i18n } = useTranslation()
+
   const recent = [...sessions]
     .sort((a, b) => b.startTime.localeCompare(a.startTime))
     .slice(0, 5)
@@ -22,10 +25,10 @@ export function ActivityFeed({ sessions }: Props) {
     const diffMs = now.getTime() - d.getTime()
     const diffMins = Math.floor(diffMs / 60000)
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    if (diffMins < 1) return i18n.language === 'fr' ? "A l'instant" : 'Just now'
+    if (diffMins < 60) return `${diffMins}m`
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h`
+    return d.toLocaleDateString(i18n.language, { month: 'short', day: 'numeric' })
   }
 
   const typeIcon = (type: string) => {
@@ -39,15 +42,15 @@ export function ActivityFeed({ sessions }: Props) {
   if (recent.length === 0) {
     return (
       <div className="glass-card p-4">
-        <h3 className="font-semibold text-[var(--text-heading)] mb-2">Recent Activity</h3>
-        <p className="text-sm text-[var(--text-muted)]">No study sessions yet. Start one to see your activity here.</p>
+        <h3 className="font-semibold text-[var(--text-heading)] mb-2">{t('dashboard.activityFeed')}</h3>
+        <p className="text-sm text-[var(--text-muted)]">{t('dashboard.noActivity')}</p>
       </div>
     )
   }
 
   return (
     <div className="glass-card p-4">
-      <h3 className="font-semibold text-[var(--text-heading)] mb-3">Recent Activity</h3>
+      <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('dashboard.activityFeed')}</h3>
       <div className="space-y-2">
         {recent.map(s => (
           <div key={s.id} className="flex items-center gap-3 text-sm">

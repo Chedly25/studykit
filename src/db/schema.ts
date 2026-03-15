@@ -4,6 +4,7 @@
 
 // ─── Exam Profile ───────────────────────────────────────────────
 export type ExamType = 'bar' | 'usmle-step1' | 'cfa-level1' | 'custom'
+  | 'university-course' | 'certification' | 'language-learning'
 
 export interface ExamProfile {
   id: string
@@ -81,10 +82,11 @@ export interface QuestionResult {
   format: QuestionFormat
   explanation: string
   timestamp: string
+  errorType?: ErrorType | null
 }
 
 // ─── Documents ──────────────────────────────────────────────────
-export type DocumentSourceType = 'pdf' | 'text' | 'image' | 'paste'
+export type DocumentSourceType = 'pdf' | 'text' | 'image' | 'paste' | 'url'
 
 export interface Document {
   id: string
@@ -92,6 +94,10 @@ export interface Document {
   title: string
   sourceType: DocumentSourceType
   originalContent: string
+  summary?: string
+  chunkCount: number
+  wordCount: number
+  sourceUrl?: string
   createdAt: string
 }
 
@@ -102,6 +108,7 @@ export interface DocumentChunk {
   content: string
   topicId?: string
   chunkIndex: number
+  keywords: string // comma-separated lowercase terms for search
 }
 
 // ─── Flashcards ─────────────────────────────────────────────────
@@ -165,10 +172,62 @@ export interface ChatMessage {
   timestamp: string
 }
 
+// ─── Tutor Preferences (per-profile) ────────────────────────────
+export type TeachingStyle = 'concise' | 'detailed'
+export type ExplanationApproach = 'analogies-first' | 'definitions-first' | 'examples-first' | 'step-by-step'
+export type FeedbackTone = 'encouraging' | 'direct'
+export type LanguageLevel = 'beginner-friendly' | 'expert'
+
+export interface TutorPreferences {
+  id: string            // same as examProfileId (1:1)
+  examProfileId: string
+  teachingStyle: TeachingStyle
+  explanationApproach: ExplanationApproach
+  feedbackTone: FeedbackTone
+  languageLevel: LanguageLevel
+}
+
+// ─── Session Insights ───────────────────────────────────────────
+export interface SessionInsight {
+  id: string
+  examProfileId: string
+  conversationId: string
+  conceptsDiscussed: string   // JSON string[]
+  misconceptions: string      // JSON string[]
+  breakthroughs: string       // JSON string[]
+  openQuestions: string       // JSON string[]
+  summary: string
+  timestamp: string
+}
+
+// ─── Study Plans ────────────────────────────────────────────────
+export type StudyActivityType = 'read' | 'flashcards' | 'practice' | 'socratic' | 'explain-back' | 'review'
+
+export interface StudyPlan {
+  id: string
+  examProfileId: string
+  generatedAt: string
+  isActive: boolean
+  totalDays: number
+}
+
+export interface StudyPlanDay {
+  id: string              // planId:YYYY-MM-DD
+  planId: string
+  examProfileId: string
+  date: string
+  activities: string      // JSON array of { topicName, activityType, durationMinutes, completed }
+  isCompleted: boolean
+}
+
+// ─── Error Types ────────────────────────────────────────────────
+export type ErrorType = 'recall' | 'conceptual' | 'application' | 'distractor'
+
 // ─── Preferences ────────────────────────────────────────────────
 export interface UserPreferences {
   id: string // always 'default'
   theme: 'light' | 'dark'
+  language?: 'en' | 'fr'
   pomodoroWorkDuration: number
   pomodoroShortBreak: number
   pomodoroLongBreak: number

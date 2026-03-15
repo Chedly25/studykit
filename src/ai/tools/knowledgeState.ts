@@ -4,6 +4,7 @@
 import { db } from '../../db'
 import type { Flashcard, Assignment } from '../../db/schema'
 import { computeReadiness, getWeakTopics, computeStreak, computeWeeklyHours } from '../../lib/knowledgeGraph'
+import { computeErrorPatterns } from '../../lib/errorPatterns'
 
 export async function getKnowledgeGraph(examProfileId: string): Promise<string> {
   const subjects = await db.subjects.where('examProfileId').equals(examProfileId).sortBy('order')
@@ -123,4 +124,17 @@ export async function getUpcomingDeadlines(examProfileId: string, days = 7): Pro
       status: a.status,
     }))
   )
+}
+
+export async function getErrorPatterns(examProfileId: string, topicName?: string): Promise<string> {
+  const questionResults = await db.questionResults.where('examProfileId').equals(examProfileId).toArray()
+  const topics = await db.topics.where('examProfileId').equals(examProfileId).toArray()
+
+  let patterns = computeErrorPatterns(questionResults, topics)
+
+  if (topicName) {
+    patterns = patterns.filter(p => p.topicName.toLowerCase() === topicName.toLowerCase())
+  }
+
+  return JSON.stringify(patterns, null, 2)
 }

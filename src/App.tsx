@@ -24,6 +24,15 @@ const FocusMode = lazy(() => import('./pages/FocusMode'))
 const Chat = lazy(() => import('./pages/Chat'))
 const SocraticMode = lazy(() => import('./pages/SocraticMode'))
 const PracticeExam = lazy(() => import('./pages/PracticeExam'))
+const ExplainBack = lazy(() => import('./pages/ExplainBack'))
+const StudyPlan = lazy(() => import('./pages/StudyPlan'))
+
+// Subscription
+const Pricing = lazy(() => import('./pages/Pricing'))
+const SubscriptionSuccess = lazy(() => import('./pages/SubscriptionSuccess'))
+
+// Sources
+const Sources = lazy(() => import('./pages/Sources'))
 
 // Grades
 const GpaCalculator = lazy(() => import('./pages/tools/GpaCalculator'))
@@ -75,6 +84,10 @@ export default function App() {
           {/* Public */}
           <Route index element={<Home />} />
           <Route path="all-tools" element={<AllTools />} />
+          <Route path="pricing" element={<Pricing />} />
+
+          {/* Protected — Subscription */}
+          <Route path="subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
 
           {/* Protected — Command Center */}
           <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -86,6 +99,9 @@ export default function App() {
           <Route path="chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
           <Route path="socratic" element={<ProtectedRoute><SocraticMode /></ProtectedRoute>} />
           <Route path="practice-exam" element={<ProtectedRoute><PracticeExam /></ProtectedRoute>} />
+          <Route path="explain-back" element={<ProtectedRoute><ExplainBack /></ProtectedRoute>} />
+          <Route path="study-plan" element={<ProtectedRoute><StudyPlan /></ProtectedRoute>} />
+          <Route path="sources" element={<ProtectedRoute><Sources /></ProtectedRoute>} />
 
           {/* Public — Grades */}
           <Route path="gpa-calculator" element={<GpaCalculator />} />

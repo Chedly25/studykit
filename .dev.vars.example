@@ -1,6 +1,13 @@
-# Copy this file to .dev.vars and fill in your key.
-# Get yours at: https://modelstudio.console.alibabacloud.com → API Keys
-DASHSCOPE_API_KEY=sk-your-key-here
+# Copy this file to .dev.vars and fill in your keys.
 
 # Clerk JWT issuer URL (derived from your Clerk publishable key)
 CLERK_ISSUER_URL=https://your-instance.clerk.accounts.dev
+
+# Clerk Backend API secret key (for updating user metadata via webhook)
+CLERK_SECRET_KEY=sk_...
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRO_MONTHLY_PRICE_ID=price_...
+STRIPE_PRO_YEARLY_PRICE_ID=price_...

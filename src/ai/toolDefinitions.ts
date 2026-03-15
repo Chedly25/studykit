@@ -95,9 +95,45 @@ export const agentTools: ToolDefinition[] = [
         isCorrect: { type: 'boolean', description: 'Whether the student got it right' },
         difficulty: { type: 'number', description: 'Question difficulty 1-5' },
         explanation: { type: 'string', description: 'Explanation of the correct answer' },
+        errorType: { type: 'string', enum: ['recall', 'conceptual', 'application', 'distractor'], description: 'Type of error if incorrect' },
       },
       required: ['topicName', 'question', 'userAnswer', 'correctAnswer', 'isCorrect'],
     },
+  },
+  {
+    name: 'getCalibrationData',
+    description: 'Get topics where student\'s confidence doesn\'t match actual mastery. Identifies overconfident and underconfident topics.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        threshold: { type: 'number', description: 'Minimum gap to flag (default 0.2)' },
+      },
+    },
+  },
+  {
+    name: 'getErrorPatterns',
+    description: 'Get error pattern analysis showing what types of mistakes the student makes per topic.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        topicName: { type: 'string', description: 'Optional topic name to filter by' },
+      },
+    },
+  },
+  {
+    name: 'generateStudyPlan',
+    description: 'Generate a personalized multi-day study plan based on the student\'s knowledge graph, exam date, and weak areas.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        daysAhead: { type: 'number', description: 'Number of days to plan ahead (default 7)' },
+      },
+    },
+  },
+  {
+    name: 'getStudyPlan',
+    description: 'Get the active study plan with today\'s activities and upcoming days.',
+    input_schema: { type: 'object', properties: {} },
   },
   {
     name: 'updateTopicConfidence',
@@ -152,6 +188,36 @@ export const agentTools: ToolDefinition[] = [
   {
     name: 'getStudyRecommendation',
     description: 'Get a personalized study recommendation based on weak topics, exam proximity, and study patterns.',
+    input_schema: { type: 'object', properties: {} },
+  },
+
+  // ─── Source Retrieval ──────────────────────────────────────
+  {
+    name: 'searchSources',
+    description: 'Search uploaded documents for relevant content. Returns the most relevant chunks from the student\'s uploaded sources.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query to find relevant content' },
+        topN: { type: 'number', description: 'Number of results to return (default 5)' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'getDocumentContent',
+    description: 'Get the full content of a specific uploaded document.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        documentId: { type: 'string', description: 'The document ID to retrieve' },
+      },
+      required: ['documentId'],
+    },
+  },
+  {
+    name: 'listSources',
+    description: 'List all uploaded documents with metadata (title, type, word count).',
     input_schema: { type: 'object', properties: {} },
   },
 ]

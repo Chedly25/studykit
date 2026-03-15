@@ -15,6 +15,10 @@ import type {
   ChatMessage,
   UserPreferences,
   DailyStudyLog,
+  TutorPreferences,
+  SessionInsight,
+  StudyPlan,
+  StudyPlanDay,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -33,6 +37,10 @@ export class StudiesKitDB extends Dexie {
   chatMessages!: Table<ChatMessage>
   userPreferences!: Table<UserPreferences>
   dailyStudyLogs!: Table<DailyStudyLog>
+  tutorPreferences!: Table<TutorPreferences>
+  sessionInsights!: Table<SessionInsight>
+  studyPlans!: Table<StudyPlan>
+  studyPlanDays!: Table<StudyPlanDay>
 
   constructor() {
     super('studieskit')
@@ -62,6 +70,36 @@ export class StudiesKitDB extends Dexie {
         if (!profile.userId) profile.userId = 'local'
       })
     )
+
+    this.version(3).stores({
+      documents: 'id, examProfileId, sourceType',
+      documentChunks: 'id, documentId, examProfileId, topicId',
+    }).upgrade(tx => {
+      tx.table('documents').toCollection().modify(doc => {
+        if (doc.chunkCount === undefined) doc.chunkCount = 0
+        if (doc.wordCount === undefined) doc.wordCount = 0
+      })
+      tx.table('documentChunks').toCollection().modify(chunk => {
+        if (chunk.keywords === undefined) chunk.keywords = ''
+      })
+    })
+
+    this.version(4).stores({
+      tutorPreferences: 'id, examProfileId',
+      sessionInsights: 'id, examProfileId, conversationId, timestamp',
+      studyPlans: 'id, examProfileId, isActive',
+      studyPlanDays: 'id, planId, examProfileId, date',
+    }).upgrade(tx => {
+      tx.table('questionResults').toCollection().modify(qr => {
+        if (qr.errorType === undefined) qr.errorType = null
+      })
+    })
+
+    this.version(5).stores({}).upgrade(tx => {
+      tx.table('userPreferences').toCollection().modify(pref => {
+        if (pref.language === undefined) pref.language = 'en'
+      })
+    })
   }
 }
 

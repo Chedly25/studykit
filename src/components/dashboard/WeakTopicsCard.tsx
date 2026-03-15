@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { Topic, Subject } from '../../db/schema'
 
 interface Props {
@@ -6,20 +7,21 @@ interface Props {
 }
 
 export function WeakTopicsCard({ topics, subjects }: Props) {
+  const { t } = useTranslation()
   const subjectMap = new Map(subjects.map(s => [s.id, s]))
 
   if (topics.length === 0) {
     return (
       <div className="glass-card p-4">
-        <h3 className="font-semibold text-[var(--text-heading)] mb-2">Weak Areas</h3>
-        <p className="text-sm text-[var(--text-muted)]">Start studying to see your weak areas here.</p>
+        <h3 className="font-semibold text-[var(--text-heading)] mb-2">{t('dashboard.weakTopics')}</h3>
+        <p className="text-sm text-[var(--text-muted)]">{t('dashboard.noWeakTopics')}</p>
       </div>
     )
   }
 
   return (
     <div className="glass-card p-4">
-      <h3 className="font-semibold text-[var(--text-heading)] mb-3">Weak Areas</h3>
+      <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('dashboard.weakTopics')}</h3>
       <div className="space-y-2.5">
         {topics.map(topic => {
           const pct = Math.round(topic.mastery * 100)

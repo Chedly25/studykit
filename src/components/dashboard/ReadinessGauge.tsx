@@ -1,9 +1,13 @@
+import { useTranslation } from 'react-i18next'
+
 interface Props {
   value: number // 0-100
   label?: string
 }
 
-export function ReadinessGauge({ value, label = 'Readiness' }: Props) {
+export function ReadinessGauge({ value, label }: Props) {
+  const { t } = useTranslation()
+  const displayLabel = label ?? t('dashboard.readiness')
   const clamped = Math.max(0, Math.min(100, Math.round(value)))
   const radius = 60
   const circumference = 2 * Math.PI * radius
@@ -32,7 +36,7 @@ export function ReadinessGauge({ value, label = 'Readiness' }: Props) {
       </svg>
       <div className="absolute flex flex-col items-center justify-center" style={{ marginTop: '40px' }}>
         <span className="text-3xl font-bold text-[var(--text-heading)]">{clamped}%</span>
-        <span className="text-xs text-[var(--text-muted)]">{label}</span>
+        <span className="text-xs text-[var(--text-muted)]">{displayLabel}</span>
       </div>
     </div>
   )

@@ -306,12 +306,11 @@ export default function CitationGenerator() {
           {citation && (
             <div className="glass-card p-5">
               <div className="flex items-start justify-between gap-4">
-                <p
-                  className="text-[var(--text-body)] leading-relaxed flex-1"
-                  dangerouslySetInnerHTML={{
-                    __html: citation.replace(/\*([^*]+)\*/g, '<em>$1</em>'),
-                  }}
-                />
+                <p className="text-[var(--text-body)] leading-relaxed flex-1">
+                  {citation.split(/\*([^*]+)\*/).map((part, i) =>
+                    i % 2 === 1 ? <em key={i}>{part}</em> : part
+                  )}
+                </p>
                 <button
                   onClick={handleCopy}
                   className="btn-secondary flex items-center gap-1.5 shrink-0"

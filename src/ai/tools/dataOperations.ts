@@ -14,6 +14,7 @@ export async function logQuestionResult(
     isCorrect: boolean
     difficulty?: number
     explanation?: string
+    errorType?: string
   }
 ): Promise<string> {
   // Find topic by name
@@ -35,6 +36,7 @@ export async function logQuestionResult(
     format: 'multiple-choice',
     explanation: input.explanation ?? '',
     timestamp: new Date().toISOString(),
+    errorType: input.isCorrect ? null : (input.errorType as 'recall' | 'conceptual' | 'application' | 'distractor' | null ?? null),
   }
   await db.questionResults.put(result)
 

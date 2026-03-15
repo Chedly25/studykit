@@ -20,6 +20,14 @@ import {
   addAssignment,
   getStudyRecommendation,
 } from './tools/dataOperations'
+import {
+  searchSourcesTool,
+  getDocumentContentTool,
+  listSourcesTool,
+} from './tools/sourceTools'
+import { getCalibrationData } from './tools/calibrationTools'
+import { getErrorPatterns } from './tools/knowledgeState'
+import { generateStudyPlanTool, getStudyPlanTool } from './tools/planTools'
 
 const MAX_ITERATIONS = 10
 const TIMEOUT_MS = 60000
@@ -41,7 +49,8 @@ interface AgentLoopResult {
 async function executeToolLocally(
   toolName: string,
   input: Record<string, unknown>,
-  examProfileId: string
+  examProfileId: string,
+  authToken?: string,
 ): Promise<string> {
   switch (toolName) {
     case 'getKnowledgeGraph':
@@ -75,6 +84,21 @@ async function executeToolLocally(
       return JSON.stringify({
         instruction: `Generate ${(input.count as number) ?? 5} flashcards about "${input.topicName}". Return them as a JSON array of {front, back} objects that I will save using createFlashcardDeck.`,
       })
+    case 'searchSources':
+      return searchSourcesTool(examProfileId, input.query as string, (input.topN as number) ?? 5)
+    case 'getDocumentContent':
+      return getDocumentContentTool(examProfileId, input.documentId as string)
+    case 'listSources':
+      return listSourcesTool(examProfileId)
+    case 'getCalibrationData':
+      return getCalibrationData(examProfileId, (input.threshold as number) ?? 0.2)
+    case 'getErrorPatterns':
+      return getErrorPatterns(examProfileId, input.topicName as string | undefined)
+    case 'generateStudyPlan':
+      if (!authToken) return JSON.stringify({ error: 'Authentication required to generate study plan' })
+      return generateStudyPlanTool(examProfileId, authToken, (input.daysAhead as number) ?? 7)
+    case 'getStudyPlan':
+      return getStudyPlanTool(examProfileId)
     default:
       return JSON.stringify({ error: `Unknown tool: ${toolName}` })
   }
@@ -133,7 +157,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
       const resultBlocks: ContentBlock[] = []
       for (const toolUse of toolUses) {
         onToolCall?.(toolUse.name)
-        const result = await executeToolLocally(toolUse.name, toolUse.input, examProfileId)
+        const result = await executeToolLocally(toolUse.name, toolUse.input, examProfileId, authToken)
         resultBlocks.push({
           type: 'tool_result',
           tool_use_id: toolUse.id,

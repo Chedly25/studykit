@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { GraduationCap, Calendar, Target, ChevronRight, ChevronLeft, BookOpen } from 'lucide-react'
 import { useExamProfile } from '../../hooks/useExamProfile'
 import type { ExamType } from '../../db/schema'
@@ -10,6 +11,7 @@ type Step = 'exam-type' | 'details' | 'review'
 export function ExamProfileWizard() {
   const navigate = useNavigate()
   const { createProfile } = useExamProfile()
+  const { t } = useTranslation()
 
   const [step, setStep] = useState<Step>('exam-type')
   const [examType, setExamType] = useState<ExamType | null>(null)
@@ -51,11 +53,11 @@ export function ExamProfileWizard() {
         ))}
       </div>
 
-      {/* Step 1: Exam Type */}
+      {/* Step 1: Goal Type */}
       {step === 'exam-type' && (
         <div>
-          <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">Choose Your Exam</h2>
-          <p className="text-[var(--text-muted)] mb-6">Select the exam you're preparing for. We'll set up your knowledge graph with the official blueprint.</p>
+          <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">{t('profile.chooseGoal')}</h2>
+          <p className="text-[var(--text-muted)] mb-6">{t('profile.selectCategory')}</p>
 
           <div className="grid gap-3">
             {getAllExamTypes().map(type => {
@@ -76,11 +78,11 @@ export function ExamProfileWizard() {
                   <div className="flex items-center gap-3">
                     <GraduationCap className="w-5 h-5 text-[var(--accent-text)]" />
                     <div>
-                      <div className="font-semibold text-[var(--text-heading)]">{bp.label}</div>
-                      <div className="text-sm text-[var(--text-muted)]">{bp.description}</div>
+                      <div className="font-semibold text-[var(--text-heading)]">{t(`goalTypes.${type}`)}</div>
+                      <div className="text-sm text-[var(--text-muted)]">{t(`goalTypes.${type}-desc`)}</div>
                     </div>
                   </div>
-                  {type !== 'custom' && (
+                  {type !== 'custom' && bp.subjects.length > 0 && bp.subjects[0].topics.length > 0 && (
                     <div className="mt-2 text-xs text-[var(--text-faint)]">
                       {bp.subjects.length} subjects &middot; {bp.subjects.reduce((s, sub) => s + sub.topics.length, 0)} topics
                     </div>
@@ -96,7 +98,7 @@ export function ExamProfileWizard() {
               disabled={!examType}
               className="btn-primary px-6 py-2 flex items-center gap-2 disabled:opacity-40"
             >
-              Next <ChevronRight className="w-4 h-4" />
+              {t('common.next')} <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -105,17 +107,17 @@ export function ExamProfileWizard() {
       {/* Step 2: Details */}
       {step === 'details' && (
         <div>
-          <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">Exam Details</h2>
-          <p className="text-[var(--text-muted)] mb-6">Set your exam date and weekly study target.</p>
+          <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">{t('profile.goalDetails')}</h2>
+          <p className="text-[var(--text-muted)] mb-6">{t('profile.weeklyHoursDesc')}</p>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[var(--text-body)] mb-1">Profile Name</label>
+              <label className="block text-sm font-medium text-[var(--text-body)] mb-1">{t('profile.profileName')}</label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="e.g., July 2026 Bar Exam"
+                placeholder={t('profile.namePlaceholder')}
                 className="input-field w-full"
               />
             </div>
@@ -123,7 +125,7 @@ export function ExamProfileWizard() {
             <div>
               <label className="block text-sm font-medium text-[var(--text-body)] mb-1">
                 <Calendar className="w-4 h-4 inline mr-1" />
-                Exam Date
+                {t('profile.targetDate')}
               </label>
               <input
                 type="date"
@@ -137,7 +139,7 @@ export function ExamProfileWizard() {
             <div>
               <label className="block text-sm font-medium text-[var(--text-body)] mb-1">
                 <Target className="w-4 h-4 inline mr-1" />
-                Weekly Study Target (hours)
+                {t('profile.weeklyHours')}
               </label>
               <input
                 type="range"
@@ -153,14 +155,14 @@ export function ExamProfileWizard() {
 
           <div className="flex justify-between mt-6">
             <button onClick={() => setStep('exam-type')} className="btn-secondary px-4 py-2 flex items-center gap-2">
-              <ChevronLeft className="w-4 h-4" /> Back
+              <ChevronLeft className="w-4 h-4" /> {t('common.back')}
             </button>
             <button
               onClick={() => setStep('review')}
               disabled={!name || !examDate}
               className="btn-primary px-6 py-2 flex items-center gap-2 disabled:opacity-40"
             >
-              Next <ChevronRight className="w-4 h-4" />
+              {t('common.next')} <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -169,29 +171,29 @@ export function ExamProfileWizard() {
       {/* Step 3: Review */}
       {step === 'review' && blueprint && (
         <div>
-          <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">Review & Create</h2>
-          <p className="text-[var(--text-muted)] mb-6">Here's what we'll set up for you.</p>
+          <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">{t('profile.review')}</h2>
+          <p className="text-[var(--text-muted)] mb-6">{t('profile.looksGood')}</p>
 
           <div className="glass-card p-4 space-y-3 mb-4">
             <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Exam</span>
+              <span className="text-[var(--text-muted)]">{t('profile.profileName')}</span>
               <span className="font-medium text-[var(--text-heading)]">{name}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Date</span>
+              <span className="text-[var(--text-muted)]">{t('profile.targetDate')}</span>
               <span className="font-medium text-[var(--text-heading)]">{examDate}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Weekly Target</span>
+              <span className="text-[var(--text-muted)]">{t('profile.weeklyHours')}</span>
               <span className="font-medium text-[var(--text-heading)]">{weeklyTarget}h</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Passing Threshold</span>
+              <span className="text-[var(--text-muted)]">{t('profile.targetScore')}</span>
               <span className="font-medium text-[var(--text-heading)]">{blueprint.defaultPassingThreshold}%</span>
             </div>
           </div>
 
-          {examType !== 'custom' && (
+          {examType !== 'custom' && blueprint.subjects.length > 0 && blueprint.subjects[0].topics.length > 0 && (
             <div className="glass-card p-4 mb-4">
               <h3 className="font-semibold text-[var(--text-heading)] mb-3 flex items-center gap-2">
                 <BookOpen className="w-4 h-4" /> Subjects ({blueprint.subjects.length})
@@ -214,14 +216,14 @@ export function ExamProfileWizard() {
 
           <div className="flex justify-between mt-6">
             <button onClick={() => setStep('details')} className="btn-secondary px-4 py-2 flex items-center gap-2">
-              <ChevronLeft className="w-4 h-4" /> Back
+              <ChevronLeft className="w-4 h-4" /> {t('common.back')}
             </button>
             <button
               onClick={handleCreate}
               disabled={isCreating}
               className="btn-primary px-6 py-2 disabled:opacity-60"
             >
-              {isCreating ? 'Creating...' : 'Create Profile'}
+              {isCreating ? t('common.loading') : t('profile.createButton')}
             </button>
           </div>
         </div>

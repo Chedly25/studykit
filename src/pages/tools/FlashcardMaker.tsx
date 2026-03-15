@@ -237,7 +237,16 @@ export default function FlashcardMaker() {
             cards: parsed.cards.map((c: Record<string, unknown>) => {
               if (c.easeFactor !== undefined) {
                 // SM2Card format
-                return { ...c, id: generateId() }
+                return {
+                  id: generateId(),
+                  front: String(c.front ?? ''),
+                  back: String(c.back ?? ''),
+                  easeFactor: Number(c.easeFactor) || 2.5,
+                  interval: Number(c.interval) || 0,
+                  repetitions: Number(c.repetitions) || 0,
+                  nextReviewDate: typeof c.nextReviewDate === 'string' ? c.nextReviewDate : new Date().toISOString().slice(0, 10),
+                  lastRating: Number(c.lastRating) || 0,
+                }
               }
               // Simple front/back format
               return createNewCard(generateId(), String(c.front), String(c.back))

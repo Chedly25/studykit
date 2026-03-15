@@ -5,6 +5,13 @@ pages_build_output_dir = "dist"
 [ai]
 binding = "AI"
 
+# KV namespace for free-tier AI usage tracking
+# Create with: wrangler kv:namespace create USAGE_KV
+[[kv_namespaces]]
+binding = "USAGE_KV"
+id = "<to-be-created>"
+preview_id = "<to-be-created>"
+
 # For Clerk auth, set the issuer URL as a secret:
 # wrangler pages secret put CLERK_ISSUER_URL
 #

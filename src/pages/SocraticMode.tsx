@@ -1,21 +1,35 @@
 import { useState, useRef, useEffect } from 'react'
-import { Brain, BookOpen } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Brain, BookOpen, Settings } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useAgent } from '../hooks/useAgent'
+import { useTutorPreferences } from '../hooks/useTutorPreferences'
 import { ChatMessageBubble } from '../components/chat/ChatMessage'
 import { ChatInput } from '../components/chat/ChatInput'
 import { ToolCallIndicator } from '../components/chat/ToolCallIndicator'
+import { TutorSettingsModal } from '../components/chat/TutorSettingsModal'
+import { QuotaIndicator } from '../components/subscription/QuotaIndicator'
+import { UpgradePrompt } from '../components/subscription/UpgradePrompt'
+import { SourcesToggle } from '../components/sources/SourcesToggle'
+import { useSources } from '../hooks/useSources'
 
 export default function SocraticMode() {
+  const { t } = useTranslation()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { subjects, topics, dailyLogs, weakTopics, getTopicsForSubject } = useKnowledgeGraph(profileId)
 
+  const [sourcesEnabled, setSourcesEnabled] = useState(false)
+  const { documentCount } = useSources(profileId)
+  const { preferences, updatePreferences, resetToDefaults } = useTutorPreferences(profileId)
+  const [showSettings, setShowSettings] = useState(false)
+
   const {
     messages, isLoading, currentToolCall, streamingText, error,
-    isSocratic, sendMessage, startSocraticMode,
-  } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs })
+    isSocratic, quotaExceeded, messagesUsedToday,
+    sendMessage, startSocraticMode,
+  } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences })
 
   const [selectedTopic, setSelectedTopic] = useState<string>('')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -29,9 +43,9 @@ export default function SocraticMode() {
   if (!activeProfile) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">Socratic Mode</h1>
-        <p className="text-[var(--text-muted)]">Create an exam profile first.</p>
-        <a href="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</a>
+        <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('ai.socratic')}</h1>
+        <p className="text-[var(--text-muted)]">{t('ai.createProfileFirst')}</p>
+        <a href="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">{t('profile.create')}</a>
       </div>
     )
   }
@@ -42,9 +56,9 @@ export default function SocraticMode() {
       <div className="max-w-3xl mx-auto px-4 py-8 animate-fade-in">
         <div className="text-center mb-8">
           <Brain className="w-12 h-12 text-[var(--accent-text)] mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-2">Socratic Mode</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-2">{t('ai.socratic')}</h1>
           <p className="text-[var(--text-muted)]">
-            The AI will teach you through questions, not answers. Choose a topic to begin.
+            {t('ai.socraticSubtitle')}
           </p>
         </div>
 
@@ -52,7 +66,7 @@ export default function SocraticMode() {
         {weakTopics.length > 0 && (
           <div className="glass-card p-4 mb-6">
             <h2 className="font-semibold text-[var(--text-heading)] mb-3 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-[var(--accent-text)]" /> Recommended (Your Weakest)
+              <BookOpen className="w-4 h-4 text-[var(--accent-text)]" /> {t('ai.weakAreas')}
             </h2>
             <div className="flex flex-wrap gap-2">
               {weakTopics.slice(0, 5).map(t => (
@@ -70,18 +84,18 @@ export default function SocraticMode() {
 
         {/* Full topic list */}
         <div className="glass-card p-4">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">All Topics</h2>
+          <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('ai.selectTopic')}</h2>
           <select
             value={selectedTopic}
             onChange={e => setSelectedTopic(e.target.value)}
             className="select-field w-full mb-3"
           >
-            <option value="">Choose a topic...</option>
+            <option value="">{t('ai.chooseTopic')}</option>
             {subjects.map(s => (
               <optgroup key={s.id} label={s.name}>
                 {getTopicsForSubject(s.id).map(t => (
                   <option key={t.id} value={t.name}>
-                    {t.name} — {Math.round(t.mastery * 100)}% mastery
+                    {t.name} — {Math.round(t.mastery * 100)}%
                   </option>
                 ))}
               </optgroup>
@@ -92,7 +106,7 @@ export default function SocraticMode() {
             disabled={!selectedTopic}
             className="btn-primary px-6 py-2 w-full disabled:opacity-40"
           >
-            Start Socratic Session
+            {t('ai.startSession')}
           </button>
         </div>
       </div>
@@ -103,16 +117,28 @@ export default function SocraticMode() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-4 animate-fade-in flex flex-col" style={{ height: 'calc(100vh - 8rem)' }}>
       <div className="glass-card flex-1 flex flex-col overflow-hidden">
-        <div className="px-4 py-3 border-b border-[var(--border-card)] flex items-center gap-2">
-          <Brain className="w-4 h-4 text-[var(--accent-text)]" />
-          <span className="text-sm font-medium text-[var(--text-heading)]">Socratic Mode</span>
-          <span className="text-xs text-[var(--text-muted)]">&middot; Learning through questions</span>
+        <div className="px-4 py-3 border-b border-[var(--border-card)] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Brain className="w-4 h-4 text-[var(--accent-text)]" />
+            <span className="text-sm font-medium text-[var(--text-heading)]">{t('ai.socratic')}</span>
+          </div>
+          <div className="flex items-center gap-2">
+              <SourcesToggle enabled={sourcesEnabled} onToggle={setSourcesEnabled} documentCount={documentCount} />
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-1.5 rounded-lg hover:bg-[var(--bg-input)] text-[var(--text-muted)] transition-colors"
+                title={t('ai.tutorSettings')}
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+              <QuotaIndicator messagesUsedToday={messagesUsedToday} />
+            </div>
         </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 && !isLoading && (
             <div className="text-center py-6 text-sm text-[var(--text-muted)]">
-              Starting Socratic session... The AI will begin asking you questions.
+              {t('ai.socraticInstructions')}
             </div>
           )}
 
@@ -126,17 +152,29 @@ export default function SocraticMode() {
 
           <ToolCallIndicator toolName={currentToolCall} />
 
-          {error && (
+          {quotaExceeded ? (
+            <UpgradePrompt messagesUsed={messagesUsedToday} />
+          ) : error ? (
             <div className="text-sm text-red-500 bg-red-500/10 rounded-lg p-3">{error}</div>
-          )}
+          ) : null}
         </div>
 
         <ChatInput
           onSend={sendMessage}
-          disabled={isLoading}
-          placeholder="Type your answer..."
+          disabled={isLoading || quotaExceeded}
+          placeholder={t('ai.typeAnswer')}
         />
       </div>
+
+      {preferences && (
+        <TutorSettingsModal
+          open={showSettings}
+          onClose={() => setShowSettings(false)}
+          preferences={preferences}
+          onUpdate={updatePreferences}
+          onReset={resetToDefaults}
+        />
+      )}
     </div>
   )
 }

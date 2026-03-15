@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MessageSquare, Trash2, Plus } from 'lucide-react'
 import { getConversations, deleteConversation } from '../../ai/messageStore'
 import type { Conversation } from '../../db/schema'
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ChatHistory({ examProfileId, activeConversationId, onSelect, onNew }: Props) {
+  const { t } = useTranslation()
   const [conversations, setConversations] = useState<Conversation[]>([])
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function ChatHistory({ examProfileId, activeConversationId, onSelect, onN
         onClick={onNew}
         className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors mb-1"
       >
-        <Plus className="w-3.5 h-3.5" /> New Chat
+        <Plus className="w-3.5 h-3.5" /> {t('ai.newConversation')}
       </button>
       <div className="max-h-48 overflow-y-auto space-y-0.5">
         {conversations.map(c => (
