@@ -222,7 +222,6 @@ export default function CitationGenerator() {
 
   async function handleCopy() {
     if (!citation) return
-    // Replace markdown-style italics with plain text for clipboard
     const plain = citation.replace(/\*/g, '')
     await navigator.clipboard.writeText(plain)
     setCopied(true)
@@ -247,7 +246,7 @@ export default function CitationGenerator() {
           {/* Source Type & Format */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1.5">Source Type</label>
+              <label className="block text-sm font-medium text-[var(--text-body)] mb-1.5">Source Type</label>
               <select
                 value={sourceType}
                 onChange={e => handleSourceTypeChange(e.target.value as SourceType)}
@@ -260,7 +259,7 @@ export default function CitationGenerator() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-surface-300 mb-1.5">Citation Format</label>
+              <label className="block text-sm font-medium text-[var(--text-body)] mb-1.5">Citation Format</label>
               <select
                 value={format}
                 onChange={e => setFormat(e.target.value as CitationFormat)}
@@ -276,15 +275,15 @@ export default function CitationGenerator() {
 
           {/* Dynamic Fields */}
           <div className="glass-card p-5 space-y-4">
-            <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-surface-100">
+            <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--text-heading)]">
               Source Details
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {fieldConfigs[sourceType].map(config => (
                 <div key={config.key}>
-                  <label className="block text-sm font-medium text-surface-300 mb-1.5">
+                  <label className="block text-sm font-medium text-[var(--text-body)] mb-1.5">
                     {config.label}
-                    {config.optional && <span className="text-surface-500 ml-1">(optional)</span>}
+                    {config.optional && <span className="text-[var(--text-faint)] ml-1">(optional)</span>}
                   </label>
                   <input
                     type="text"
@@ -308,7 +307,7 @@ export default function CitationGenerator() {
             <div className="glass-card p-5">
               <div className="flex items-start justify-between gap-4">
                 <p
-                  className="text-surface-200 leading-relaxed flex-1"
+                  className="text-[var(--text-body)] leading-relaxed flex-1"
                   dangerouslySetInnerHTML={{
                     __html: citation.replace(/\*([^*]+)\*/g, '<em>$1</em>'),
                   }}

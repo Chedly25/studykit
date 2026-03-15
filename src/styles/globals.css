@@ -29,37 +29,87 @@
   --color-surface-950: #020617;
 }
 
-/* Base */
+@variant dark (&:where(.dark, .dark *));
+
+/* ─── Semantic tokens: light mode (default) ─── */
+:root {
+  --bg-body: var(--color-surface-50);
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --bg-header: rgba(255, 255, 255, 0.85);
+  --border-card: var(--color-surface-200);
+  --border-input: var(--color-surface-300);
+  --border-header: var(--color-surface-200);
+  --text-heading: var(--color-surface-900);
+  --text-body: var(--color-surface-700);
+  --text-muted: var(--color-surface-500);
+  --text-faint: var(--color-surface-400);
+  --accent-text: var(--color-primary-700);
+  --accent-bg: var(--color-primary-50);
+}
+
+/* ─── Semantic tokens: dark mode ─── */
+.dark {
+  --bg-body: var(--color-surface-950);
+  --bg-card: rgba(16, 185, 129, 0.05);
+  --bg-input: rgba(15, 23, 42, 0.6);
+  --bg-header: rgba(2, 6, 23, 0.8);
+  --border-card: rgba(16, 185, 129, 0.12);
+  --border-input: rgba(16, 185, 129, 0.15);
+  --border-header: rgba(30, 41, 59, 0.5);
+  --text-heading: var(--color-surface-50);
+  --text-body: var(--color-surface-200);
+  --text-muted: var(--color-surface-400);
+  --text-faint: var(--color-surface-500);
+  --accent-text: var(--color-primary-400);
+  --accent-bg: rgba(16, 185, 129, 0.1);
+}
+
+/* ─── Base ─── */
 body {
   font-family: var(--font-body);
-  background-color: var(--color-surface-950);
-  color: var(--color-surface-100);
+  background-color: var(--bg-body);
+  color: var(--text-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glass card */
+/* ─── Glass card ─── */
 .glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 1rem;
+}
+
+.dark .glass-card {
   background: linear-gradient(
     135deg,
     rgba(16, 185, 129, 0.05) 0%,
     rgba(6, 78, 59, 0.08) 100%
   );
-  border: 1px solid rgba(16, 185, 129, 0.12);
   backdrop-filter: blur(12px);
-  border-radius: 1rem;
+}
+
+:root:not(.dark) .glass-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .glass-card-hover {
   transition: all 0.25s ease;
 }
 .glass-card-hover:hover {
-  border-color: rgba(16, 185, 129, 0.3);
-  box-shadow: 0 0 24px rgba(16, 185, 129, 0.08);
+  border-color: var(--color-primary-400);
   transform: translateY(-2px);
 }
+.dark .glass-card-hover:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.08);
+}
+:root:not(.dark) .glass-card-hover:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
 
-/* Gradient button */
+/* ─── Gradient button ─── */
 .btn-primary {
   background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-500));
   color: white;
@@ -86,28 +136,33 @@ body {
   transform: translateX(100%);
 }
 
-/* Secondary button */
+/* ─── Secondary button ─── */
 .btn-secondary {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--color-primary-400);
+  background: var(--accent-bg);
+  color: var(--accent-text);
   font-weight: 500;
   padding: 0.5rem 1.25rem;
   border-radius: 0.75rem;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 1px solid transparent;
   transition: all 0.2s ease;
 }
+.dark .btn-secondary {
+  border-color: rgba(16, 185, 129, 0.2);
+}
+:root:not(.dark) .btn-secondary {
+  border-color: var(--color-primary-200);
+}
 .btn-secondary:hover {
-  background: rgba(16, 185, 129, 0.18);
-  border-color: rgba(16, 185, 129, 0.35);
+  opacity: 0.85;
 }
 
-/* Form inputs */
+/* ─── Form inputs ─── */
 .input-field {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(16, 185, 129, 0.15);
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
   border-radius: 0.75rem;
   padding: 0.625rem 1rem;
-  color: var(--color-surface-100);
+  color: var(--text-heading);
   transition: border-color 0.2s ease;
   width: 100%;
 }
@@ -117,16 +172,16 @@ body {
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 .input-field::placeholder {
-  color: var(--color-surface-500);
+  color: var(--text-faint);
 }
 
-/* Select */
+/* ─── Select ─── */
 .select-field {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(16, 185, 129, 0.15);
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
   border-radius: 0.75rem;
   padding: 0.625rem 1rem;
-  color: var(--color-surface-100);
+  color: var(--text-heading);
   transition: border-color 0.2s ease;
   width: 100%;
   cursor: pointer;
@@ -136,7 +191,7 @@ body {
   border-color: var(--color-primary-500);
 }
 
-/* Animations */
+/* ─── Animations ─── */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -154,17 +209,17 @@ body {
   animation: fade-in 0.4s ease-out;
 }
 
-/* Scrollbar */
+/* ─── Scrollbar ─── */
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-surface-900);
+  background: var(--bg-body);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-surface-600);
+  background: var(--text-faint);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-surface-500);
+  background: var(--text-muted);
 }

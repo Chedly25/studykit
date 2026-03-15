@@ -8,7 +8,7 @@ interface ToolSEOProps {
 }
 
 export function ToolSEO({ title, description, slug, keywords }: ToolSEOProps) {
-  const url = `https://studykit.app/${slug}`
+  const url = `https://studieskit.com/${slug}`
 
   return (
     <Helmet>

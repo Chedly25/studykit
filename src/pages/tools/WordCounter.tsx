@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Eraser } from 'lucide-react'
+import { Eraser, ChevronDown, ChevronUp } from 'lucide-react'
 import { ToolSEO } from '../../components/SEO'
 import { FormToolPage } from '../../components/FormToolPage'
 import { getToolBySlug } from '../../lib/tools'
@@ -43,21 +43,24 @@ interface StatBoxProps {
 function StatBox({ label, value }: StatBoxProps) {
   return (
     <div className="glass-card p-4 text-center">
-      <div className="font-[family-name:var(--font-display)] text-2xl font-bold text-primary-400">
+      <div className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--accent-text)]">
         {value}
       </div>
-      <div className="text-surface-400 text-sm mt-1">{label}</div>
+      <div className="text-[var(--text-muted)] text-sm mt-1">{label}</div>
     </div>
   )
 }
 
 export default function WordCounter() {
   const [text, setText] = useState('')
+  const [wpm, setWpm] = useState(238)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const stats = useMemo(() => {
     const words = countWords(text)
-    const readingSeconds = (words / 238) * 60
+    const readingSeconds = (words / wpm) * 60
     const speakingSeconds = (words / 150) * 60
+    const pages = Math.ceil(words / 250) || 0
 
     return {
       words,
@@ -67,8 +70,9 @@ export default function WordCounter() {
       paragraphs: countParagraphs(text),
       readingTime: formatTime(readingSeconds),
       speakingTime: formatTime(speakingSeconds),
+      pages,
     }
-  }, [text])
+  }, [text, wpm])
 
   return (
     <>
@@ -92,7 +96,7 @@ export default function WordCounter() {
             {text.length > 0 && (
               <button
                 onClick={() => setText('')}
-                className="absolute top-3 right-3 p-1.5 rounded-lg text-surface-400 hover:text-surface-200 hover:bg-surface-800 transition-colors"
+                className="absolute top-3 right-3 p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-body)] hover:bg-[var(--accent-bg)] transition-colors"
                 aria-label="Clear text"
               >
                 <Eraser size={18} />
@@ -109,6 +113,40 @@ export default function WordCounter() {
             <StatBox label="Paragraphs" value={String(stats.paragraphs)} />
             <StatBox label="Reading Time" value={stats.readingTime} />
             <StatBox label="Speaking Time" value={stats.speakingTime} />
+            <StatBox label="Pages (est.)" value={String(stats.pages)} />
+          </div>
+
+          {/* Advanced section */}
+          <div className="glass-card overflow-hidden">
+            <button
+              onClick={() => setShowAdvanced(prev => !prev)}
+              className="w-full flex items-center justify-between px-4 py-3 text-[var(--text-body)] hover:text-[var(--text-heading)] transition-colors"
+            >
+              <span className="text-sm font-medium">Advanced Settings</span>
+              {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+            {showAdvanced && (
+              <div className="px-4 pb-4 border-t border-[var(--border-card)]">
+                <div className="pt-4">
+                  <label className="text-[var(--text-muted)] text-xs uppercase tracking-wider block mb-2">
+                    Reading Speed: {wpm} WPM
+                  </label>
+                  <input
+                    type="range"
+                    min={200}
+                    max={400}
+                    step={1}
+                    value={wpm}
+                    onChange={e => setWpm(Number(e.target.value))}
+                    className="w-full h-2 rounded-full appearance-none bg-[var(--border-card)] cursor-pointer accent-primary-500"
+                  />
+                  <div className="flex justify-between text-[var(--text-faint)] text-xs mt-1">
+                    <span>200 WPM</span>
+                    <span>400 WPM</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </FormToolPage>

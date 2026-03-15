@@ -33,7 +33,7 @@ const GRADES_5: { label: string; value: number }[] = [
   ...GRADES_4,
 ]
 
-const STORAGE_KEY = 'studykit-gpa-courses'
+const STORAGE_KEY = 'studieskit-gpa-courses'
 
 function getLetterGrade(gpa: number, scale: Scale): string {
   const grades = scale === '5.0' ? GRADES_5 : GRADES_4
@@ -107,7 +107,7 @@ export default function GpaCalculator() {
       <FormToolPage toolId={tool.id} title={tool.name} description={tool.description}>
         {/* Scale selector */}
         <div className="flex items-center justify-between mb-6">
-          <label className="text-surface-300 text-sm font-medium">Grading Scale</label>
+          <label className="text-[var(--text-body)] text-sm font-medium">Grading Scale</label>
           <div className="flex gap-2">
             {(['4.0', '5.0'] as Scale[]).map(s => (
               <button
@@ -127,11 +127,11 @@ export default function GpaCalculator() {
 
         {/* Result display */}
         <div className="glass-card p-6 mb-6 text-center">
-          <p className="text-surface-400 text-sm mb-1">Your GPA</p>
-          <p className="font-[family-name:var(--font-display)] text-5xl font-bold text-primary-400">
+          <p className="text-[var(--text-muted)] text-sm mb-1">Your GPA</p>
+          <p className="font-[family-name:var(--font-display)] text-5xl font-bold text-[var(--accent-text)]">
             {gpa.toFixed(2)}
           </p>
-          <p className="text-surface-300 text-lg mt-1">
+          <p className="text-[var(--text-body)] text-lg mt-1">
             {letterGrade} &middot; {totalCredits} credit{totalCredits !== 1 ? 's' : ''}
           </p>
         </div>
@@ -140,14 +140,14 @@ export default function GpaCalculator() {
         <div className="hidden md:block glass-card overflow-hidden mb-4">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-primary-500/10">
-                <th className="text-left text-surface-400 text-xs font-medium uppercase tracking-wider px-4 py-3">
+              <tr className="border-b border-[var(--border-card)]">
+                <th className="text-left text-[var(--text-muted)] text-xs font-medium uppercase tracking-wider px-4 py-3">
                   Course Name
                 </th>
-                <th className="text-left text-surface-400 text-xs font-medium uppercase tracking-wider px-4 py-3">
+                <th className="text-left text-[var(--text-muted)] text-xs font-medium uppercase tracking-wider px-4 py-3">
                   Credits
                 </th>
-                <th className="text-left text-surface-400 text-xs font-medium uppercase tracking-wider px-4 py-3">
+                <th className="text-left text-[var(--text-muted)] text-xs font-medium uppercase tracking-wider px-4 py-3">
                   Grade
                 </th>
                 <th className="w-12 px-4 py-3" />
@@ -155,7 +155,7 @@ export default function GpaCalculator() {
             </thead>
             <tbody>
               {courses.map((course, i) => (
-                <tr key={i} className="border-b border-primary-500/5 last:border-b-0">
+                <tr key={i} className="border-b border-[var(--border-card)] last:border-b-0" style={{ borderColor: 'color-mix(in srgb, var(--border-card) 50%, transparent)' }}>
                   <td className="px-4 py-2">
                     <input
                       type="text"
@@ -193,7 +193,7 @@ export default function GpaCalculator() {
                     <button
                       onClick={() => removeCourse(i)}
                       disabled={courses.length <= 1}
-                      className="p-2 text-surface-500 hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="p-2 text-[var(--text-muted)] hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       aria-label="Remove course"
                     >
                       <Trash2 size={16} />
@@ -210,13 +210,13 @@ export default function GpaCalculator() {
           {courses.map((course, i) => (
             <div key={i} className="glass-card p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-surface-400 text-xs font-medium uppercase tracking-wider">
+                <span className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-wider">
                   Course {i + 1}
                 </span>
                 <button
                   onClick={() => removeCourse(i)}
                   disabled={courses.length <= 1}
-                  className="p-1.5 text-surface-500 hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-1.5 text-[var(--text-muted)] hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label="Remove course"
                 >
                   <Trash2 size={14} />
@@ -231,7 +231,7 @@ export default function GpaCalculator() {
               />
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="text-surface-500 text-xs mb-1 block">Credits</label>
+                  <label className="text-[var(--text-faint)] text-xs mb-1 block">Credits</label>
                   <input
                     type="number"
                     min={0.5}
@@ -243,7 +243,7 @@ export default function GpaCalculator() {
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-surface-500 text-xs mb-1 block">Grade</label>
+                  <label className="text-[var(--text-faint)] text-xs mb-1 block">Grade</label>
                   <select
                     value={course.grade}
                     onChange={e => updateCourse(i, 'grade', e.target.value)}

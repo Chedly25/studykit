@@ -10,10 +10,10 @@ const tool = getToolBySlug('pomodoro-timer')!
 type Mode = 'work' | 'shortBreak' | 'longBreak'
 
 interface PomodoroSettings {
-  workDuration: number      // minutes
+  workDuration: number
   shortBreakDuration: number
   longBreakDuration: number
-  longBreakInterval: number // sessions before long break
+  longBreakInterval: number
 }
 
 interface DailyStats {
@@ -22,7 +22,7 @@ interface DailyStats {
   totalMinutes: number
 }
 
-const STATS_KEY = 'studykit-pomodoro-stats'
+const STATS_KEY = 'studieskit-pomodoro-stats'
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
   workDuration: 25,
@@ -75,7 +75,6 @@ export default function PomodoroTimer() {
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Ensure stats are for today
   useEffect(() => {
     const today = getTodayKey()
     if (stats.date !== today) {
@@ -85,7 +84,6 @@ export default function PomodoroTimer() {
     }
   }, [stats.date])
 
-  // Persist stats
   useEffect(() => {
     saveToStorage(STATS_KEY, stats)
   }, [stats])
@@ -93,19 +91,15 @@ export default function PomodoroTimer() {
   const totalDuration = getDurationForMode(mode, settings)
   const colors = getModeColor(mode)
 
-  // Advance to the next phase
   const advancePhase = useCallback(() => {
     if (mode === 'work') {
       const newSessions = sessionsCompleted + 1
       setSessionsCompleted(newSessions)
-
-      // Update daily stats
       setStats(prev => ({
         ...prev,
         sessions: prev.sessions + 1,
         totalMinutes: prev.totalMinutes + settings.workDuration,
       }))
-
       if (newSessions % settings.longBreakInterval === 0) {
         setMode('longBreak')
         setTimeLeft(settings.longBreakDuration * 60)
@@ -120,7 +114,6 @@ export default function PomodoroTimer() {
     setIsRunning(false)
   }, [mode, sessionsCompleted, settings])
 
-  // Countdown interval
   useEffect(() => {
     if (!isRunning) {
       if (intervalRef.current) {
@@ -129,7 +122,6 @@ export default function PomodoroTimer() {
       }
       return
     }
-
     intervalRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -139,7 +131,6 @@ export default function PomodoroTimer() {
         return prev - 1
       })
     }, 1000)
-
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
@@ -163,13 +154,11 @@ export default function PomodoroTimer() {
   const handleSettingChange = (key: keyof PomodoroSettings, value: number) => {
     const next = { ...settings, [key]: value }
     setSettings(next)
-    // If not running, update time left for current mode
     if (!isRunning) {
       setTimeLeft(getDurationForMode(mode, next))
     }
   }
 
-  // SVG ring calculations
   const RADIUS = 90
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS
   const progress = timeLeft / totalDuration
@@ -192,7 +181,7 @@ export default function PomodoroTimer() {
                   setTimeLeft(getDurationForMode(m, settings))
                 }}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                  mode === m ? `${c.bg} ${c.text}` : 'text-surface-400 hover:text-surface-200'
+                  mode === m ? `${c.bg} ${c.text}` : 'text-[var(--text-muted)] hover:text-[var(--text-body)]'
                 }`}
               >
                 {getModeLabel(m)}
@@ -205,17 +194,15 @@ export default function PomodoroTimer() {
         <div className="flex justify-center mb-8">
           <div className="relative w-64 h-64">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 200 200">
-              {/* Background circle */}
               <circle
                 cx="100"
                 cy="100"
                 r={RADIUS}
                 fill="none"
                 stroke="currentColor"
-                className="text-surface-800"
+                className="text-[var(--border-card)]"
                 strokeWidth="6"
               />
-              {/* Progress circle */}
               <circle
                 cx="100"
                 cy="100"
@@ -233,18 +220,14 @@ export default function PomodoroTimer() {
               <span className={`font-[family-name:var(--font-display)] text-5xl font-bold ${colors.text}`}>
                 {formatTime(timeLeft)}
               </span>
-              <span className="text-surface-400 text-sm mt-1">{getModeLabel(mode)}</span>
+              <span className="text-[var(--text-muted)] text-sm mt-1">{getModeLabel(mode)}</span>
             </div>
           </div>
         </div>
 
         {/* Controls */}
         <div className="flex justify-center gap-3 mb-6">
-          <button
-            onClick={handleReset}
-            className="btn-secondary p-3 rounded-lg"
-            aria-label="Reset"
-          >
+          <button onClick={handleReset} className="btn-secondary p-3 rounded-lg" aria-label="Reset">
             <RotateCcw size={20} />
           </button>
           <button
@@ -254,11 +237,7 @@ export default function PomodoroTimer() {
             {isRunning ? <Pause size={20} /> : <Play size={20} />}
             {isRunning ? 'Pause' : 'Start'}
           </button>
-          <button
-            onClick={handleSkip}
-            className="btn-secondary p-3 rounded-lg"
-            aria-label="Skip to next phase"
-          >
+          <button onClick={handleSkip} className="btn-secondary p-3 rounded-lg" aria-label="Skip to next phase">
             <SkipForward size={20} />
           </button>
         </div>
@@ -267,23 +246,23 @@ export default function PomodoroTimer() {
         <div className="glass-card p-4 mb-6">
           <div className="flex justify-around text-center">
             <div>
-              <p className="text-surface-400 text-xs uppercase tracking-wider mb-1">Sessions</p>
-              <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-surface-100">
+              <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">Sessions</p>
+              <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-heading)]">
                 {sessionsCompleted}
               </p>
             </div>
-            <div className="w-px bg-surface-700" />
+            <div className="w-px bg-[var(--border-card)]" />
             <div>
-              <p className="text-surface-400 text-xs uppercase tracking-wider mb-1">Today</p>
-              <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-surface-100">
-                {stats.sessions} <span className="text-sm font-normal text-surface-400">sessions</span>
+              <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">Today</p>
+              <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-heading)]">
+                {stats.sessions} <span className="text-sm font-normal text-[var(--text-muted)]">sessions</span>
               </p>
             </div>
-            <div className="w-px bg-surface-700" />
+            <div className="w-px bg-[var(--border-card)]" />
             <div>
-              <p className="text-surface-400 text-xs uppercase tracking-wider mb-1">Focus Time</p>
-              <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-surface-100">
-                {stats.totalMinutes} <span className="text-sm font-normal text-surface-400">min</span>
+              <p className="text-[var(--text-muted)] text-xs uppercase tracking-wider mb-1">Focus Time</p>
+              <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-heading)]">
+                {stats.totalMinutes} <span className="text-sm font-normal text-[var(--text-muted)]">min</span>
               </p>
             </div>
           </div>
@@ -293,7 +272,7 @@ export default function PomodoroTimer() {
         <div className="glass-card overflow-hidden">
           <button
             onClick={() => setShowSettings(prev => !prev)}
-            className="w-full flex items-center justify-between px-4 py-3 text-surface-300 hover:text-surface-100 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3 text-[var(--text-body)] hover:text-[var(--text-heading)] transition-colors"
           >
             <span className="flex items-center gap-2 text-sm font-medium">
               <Settings size={16} />
@@ -303,10 +282,10 @@ export default function PomodoroTimer() {
           </button>
 
           {showSettings && (
-            <div className="px-4 pb-4 space-y-4 border-t border-surface-700">
+            <div className="px-4 pb-4 space-y-4 border-t border-[var(--border-card)]">
               <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-surface-400 text-xs uppercase tracking-wider block mb-1">
+                  <label className="text-[var(--text-muted)] text-xs uppercase tracking-wider block mb-1">
                     Work Duration (min)
                   </label>
                   <input
@@ -319,7 +298,7 @@ export default function PomodoroTimer() {
                   />
                 </div>
                 <div>
-                  <label className="text-surface-400 text-xs uppercase tracking-wider block mb-1">
+                  <label className="text-[var(--text-muted)] text-xs uppercase tracking-wider block mb-1">
                     Short Break (min)
                   </label>
                   <input
@@ -332,7 +311,7 @@ export default function PomodoroTimer() {
                   />
                 </div>
                 <div>
-                  <label className="text-surface-400 text-xs uppercase tracking-wider block mb-1">
+                  <label className="text-[var(--text-muted)] text-xs uppercase tracking-wider block mb-1">
                     Long Break (min)
                   </label>
                   <input
@@ -345,7 +324,7 @@ export default function PomodoroTimer() {
                   />
                 </div>
                 <div>
-                  <label className="text-surface-400 text-xs uppercase tracking-wider block mb-1">
+                  <label className="text-[var(--text-muted)] text-xs uppercase tracking-wider block mb-1">
                     Sessions Before Long Break
                   </label>
                   <input

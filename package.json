@@ -1,21 +1,28 @@
 {
-  "name": "studykit",
+  "name": "studieskit",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:worker": "wrangler pages dev dist --compatibility-date=2024-12-01",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name=studieskit"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.61.3",
     "@tailwindcss/vite": "^4.2.1",
+    "dexie": "^4.3.0",
+    "dexie-react-hooks": "^4.2.0",
     "lucide-react": "^0.577.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-helmet-async": "^3.0.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.1",
+    "remark-gfm": "^4.0.1",
     "tailwindcss": "^4.2.1"
   },
   "devDependencies": {

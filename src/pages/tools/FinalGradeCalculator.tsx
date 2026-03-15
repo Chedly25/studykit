@@ -18,14 +18,14 @@ export default function FinalGradeCalculator() {
   }, [currentGrade, desiredGrade, finalWeight])
 
   const resultColor = useMemo(() => {
-    if (result === null) return 'text-surface-400'
+    if (result === null) return 'text-[var(--text-muted)]'
     if (result <= 100) return 'text-green-400'
     if (result <= 110) return 'text-yellow-400'
     return 'text-red-400'
   }, [result])
 
   const resultBg = useMemo(() => {
-    if (result === null) return 'border-surface-700'
+    if (result === null) return 'border-[var(--border-card)]'
     if (result <= 100) return 'border-green-500/20 bg-green-500/5'
     if (result <= 110) return 'border-yellow-500/20 bg-yellow-500/5'
     return 'border-red-500/20 bg-red-500/5'
@@ -47,7 +47,7 @@ export default function FinalGradeCalculator() {
         <div className="glass-card p-6 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="text-surface-400 text-sm mb-1.5 block">Current Grade (%)</label>
+              <label className="text-[var(--text-muted)] text-sm mb-1.5 block">Current Grade (%)</label>
               <input
                 type="number"
                 min={0}
@@ -59,7 +59,7 @@ export default function FinalGradeCalculator() {
               />
             </div>
             <div>
-              <label className="text-surface-400 text-sm mb-1.5 block">Desired Grade (%)</label>
+              <label className="text-[var(--text-muted)] text-sm mb-1.5 block">Desired Grade (%)</label>
               <input
                 type="number"
                 min={0}
@@ -71,7 +71,7 @@ export default function FinalGradeCalculator() {
               />
             </div>
             <div>
-              <label className="text-surface-400 text-sm mb-1.5 block">Final Exam Weight (%)</label>
+              <label className="text-[var(--text-muted)] text-sm mb-1.5 block">Final Exam Weight (%)</label>
               <input
                 type="number"
                 min={1}
@@ -87,22 +87,22 @@ export default function FinalGradeCalculator() {
 
         {/* Result */}
         <div className={`glass-card p-6 text-center border ${resultBg}`}>
-          <p className="text-surface-400 text-sm mb-2">You need on your final</p>
+          <p className="text-[var(--text-muted)] text-sm mb-2">You need on your final</p>
           <p className={`font-[family-name:var(--font-display)] text-5xl font-bold ${resultColor}`}>
             {result !== null ? `${result.toFixed(1)}%` : '--'}
           </p>
-          <p className="text-surface-400 text-sm mt-3 max-w-md mx-auto">{message}</p>
+          <p className="text-[var(--text-muted)] text-sm mt-3 max-w-md mx-auto">{message}</p>
         </div>
 
         {/* Explanation */}
         <div className="glass-card p-5 mt-6">
-          <p className="text-surface-400 text-xs font-medium uppercase tracking-wider mb-2">
+          <p className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-wider mb-2">
             How it works
           </p>
-          <p className="text-surface-300 text-sm leading-relaxed">
+          <p className="text-[var(--text-body)] text-sm leading-relaxed">
             The formula calculates the minimum score you need on your final exam to achieve
             your desired overall grade. It uses:{' '}
-            <span className="text-primary-400 font-mono text-xs">
+            <span className="text-[var(--accent-text)] font-mono text-xs">
               needed = (desired - current &times; (1 - weight)) / weight
             </span>
           </p>

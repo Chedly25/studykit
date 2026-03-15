@@ -13,14 +13,14 @@ export function ToolCard({ tool }: ToolCardProps) {
       to={`/${tool.slug}`}
       className="glass-card glass-card-hover p-5 flex flex-col items-start gap-3 group"
     >
-      <div className="w-10 h-10 rounded-lg bg-primary-500/10 flex items-center justify-center text-primary-400 group-hover:bg-primary-500/20 transition-colors">
+      <div className="w-10 h-10 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center text-[var(--accent-text)] group-hover:opacity-80 transition-colors">
         <Icon size={20} />
       </div>
       <div>
-        <h3 className="font-[family-name:var(--font-display)] font-semibold text-surface-100 group-hover:text-primary-400 transition-colors">
+        <h3 className="font-[family-name:var(--font-display)] font-semibold text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors">
           {tool.name}
         </h3>
-        <p className="text-sm text-surface-400 mt-1">{tool.description}</p>
+        <p className="text-sm text-[var(--text-muted)] mt-1">{tool.description}</p>
       </div>
     </Link>
   )

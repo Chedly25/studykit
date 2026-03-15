@@ -10,7 +10,6 @@ type UnitCategoryId = 'length' | 'weight' | 'temperature' | 'volume' | 'area' | 
 
 interface UnitDef {
   label: string
-  /** Factor to convert to the base unit. For temperature this is ignored. */
   factor: number
 }
 
@@ -25,7 +24,7 @@ const unitCategories: UnitCategory[] = [
   {
     id: 'length',
     label: 'Length',
-    baseIndex: 2, // meter
+    baseIndex: 2,
     units: [
       { label: 'Millimeter', factor: 0.001 },
       { label: 'Centimeter', factor: 0.01 },
@@ -40,7 +39,7 @@ const unitCategories: UnitCategory[] = [
   {
     id: 'weight',
     label: 'Weight',
-    baseIndex: 2, // kilogram
+    baseIndex: 2,
     units: [
       { label: 'Milligram', factor: 0.000001 },
       { label: 'Gram', factor: 0.001 },
@@ -63,7 +62,7 @@ const unitCategories: UnitCategory[] = [
   {
     id: 'volume',
     label: 'Volume',
-    baseIndex: 1, // liter
+    baseIndex: 1,
     units: [
       { label: 'Milliliter', factor: 0.001 },
       { label: 'Liter', factor: 1 },
@@ -77,7 +76,7 @@ const unitCategories: UnitCategory[] = [
   {
     id: 'area',
     label: 'Area',
-    baseIndex: 2, // m²
+    baseIndex: 2,
     units: [
       { label: 'mm\u00b2', factor: 0.000001 },
       { label: 'cm\u00b2', factor: 0.0001 },
@@ -93,7 +92,7 @@ const unitCategories: UnitCategory[] = [
   {
     id: 'speed',
     label: 'Speed',
-    baseIndex: 0, // m/s
+    baseIndex: 0,
     units: [
       { label: 'm/s', factor: 1 },
       { label: 'km/h', factor: 1 / 3.6 },
@@ -104,7 +103,7 @@ const unitCategories: UnitCategory[] = [
   {
     id: 'time',
     label: 'Time',
-    baseIndex: 3, // second
+    baseIndex: 3,
     units: [
       { label: 'Millisecond', factor: 0.001 },
       { label: 'Second', factor: 1 },
@@ -119,7 +118,6 @@ const unitCategories: UnitCategory[] = [
 ]
 
 function convertTemperature(value: number, fromLabel: string, toLabel: string): number {
-  // Convert to Celsius first
   let celsius: number
   switch (fromLabel) {
     case 'Fahrenheit':
@@ -131,8 +129,6 @@ function convertTemperature(value: number, fromLabel: string, toLabel: string): 
     default:
       celsius = value
   }
-
-  // Convert from Celsius to target
   switch (toLabel) {
     case 'Fahrenheit':
       return celsius * (9 / 5) + 32
@@ -145,11 +141,9 @@ function convertTemperature(value: number, fromLabel: string, toLabel: string): 
 
 function formatResult(n: number): string {
   if (Number.isNaN(n) || !Number.isFinite(n)) return '0'
-  // Remove unnecessary trailing zeros but keep useful precision
   const abs = Math.abs(n)
   if (abs === 0) return '0'
   if (abs >= 1_000_000 || abs < 0.000001) return n.toExponential(6)
-  // Use up to 10 decimal places, then strip trailing zeros
   return parseFloat(n.toPrecision(10)).toString()
 }
 
@@ -243,9 +237,8 @@ export default function UnitConverter() {
           {/* Converter */}
           <div className="glass-card p-6">
             <div className="flex flex-col md:flex-row items-stretch gap-4">
-              {/* From */}
               <div className="flex-1 space-y-2">
-                <label className="text-surface-400 text-xs font-medium uppercase tracking-wider block">
+                <label className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-wider block">
                   From
                 </label>
                 <select
@@ -268,7 +261,6 @@ export default function UnitConverter() {
                 />
               </div>
 
-              {/* Swap button */}
               <div className="flex items-center justify-center md:pt-6">
                 <button
                   onClick={handleSwap}
@@ -279,9 +271,8 @@ export default function UnitConverter() {
                 </button>
               </div>
 
-              {/* To */}
               <div className="flex-1 space-y-2">
-                <label className="text-surface-400 text-xs font-medium uppercase tracking-wider block">
+                <label className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-wider block">
                   To
                 </label>
                 <select
@@ -306,13 +297,13 @@ export default function UnitConverter() {
             </div>
 
             {/* Result sentence */}
-            <div className="text-center mt-6 pt-4 border-t border-primary-500/10">
-              <p className="text-surface-300">
-                <span className="font-[family-name:var(--font-display)] text-xl font-bold text-primary-400">
+            <div className="text-center mt-6 pt-4 border-t border-[var(--border-card)]">
+              <p className="text-[var(--text-body)]">
+                <span className="font-[family-name:var(--font-display)] text-xl font-bold text-[var(--accent-text)]">
                   {fromValue || '0'} {activeCategory.units[fromIndex].label}
                 </span>
                 <span className="mx-2">=</span>
-                <span className="font-[family-name:var(--font-display)] text-xl font-bold text-primary-400">
+                <span className="font-[family-name:var(--font-display)] text-xl font-bold text-[var(--accent-text)]">
                   {toValue} {activeCategory.units[toIndex].label}
                 </span>
               </p>
@@ -321,12 +312,12 @@ export default function UnitConverter() {
 
           {/* Quick reference table */}
           <div className="glass-card overflow-hidden">
-            <div className="px-4 py-3 border-b border-primary-500/10">
-              <p className="text-surface-400 text-xs font-medium uppercase tracking-wider">
+            <div className="px-4 py-3 border-b border-[var(--border-card)]">
+              <p className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-wider">
                 Quick Reference: 1 {activeCategory.units[fromIndex].label} =
               </p>
             </div>
-            <div className="divide-y divide-primary-500/5">
+            <div className="divide-y divide-[var(--border-card)]" style={{ '--tw-divide-opacity': '0.5' } as React.CSSProperties}>
               {activeCategory.units.map((u, i) => {
                 if (i === fromIndex) return null
                 const converted = formatResult(convert(1, fromIndex, i))
@@ -334,12 +325,12 @@ export default function UnitConverter() {
                   <button
                     key={u.label}
                     onClick={() => setToIndex(i)}
-                    className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-primary-500/5 ${
-                      i === toIndex ? 'bg-primary-500/10' : ''
+                    className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors hover:bg-[var(--accent-bg)] ${
+                      i === toIndex ? 'bg-[var(--accent-bg)]' : ''
                     }`}
                   >
-                    <span className="text-surface-300">{u.label}</span>
-                    <span className="text-surface-100 font-mono">{converted}</span>
+                    <span className="text-[var(--text-body)]">{u.label}</span>
+                    <span className="text-[var(--text-heading)] font-mono">{converted}</span>
                   </button>
                 )
               })}

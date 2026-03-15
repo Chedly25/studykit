@@ -1,41 +1,58 @@
-import { lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { Routes, Route, useLocation } from 'react-router-dom'
+import { SignIn, SignUp } from '@clerk/clerk-react'
 import { Layout } from './components/Layout'
+import { AuthLayout } from './components/AuthLayout'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { runMigration } from './db/migrations'
+
+// Run IndexedDB migration on app load
+runMigration().catch(console.warn)
 
 // Pages
 const Home = lazy(() => import('./pages/Home'))
 const AllTools = lazy(() => import('./pages/AllTools'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
-// Calculator tools
+// Command Center
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const ExamProfile = lazy(() => import('./pages/ExamProfile'))
+const Analytics = lazy(() => import('./pages/Analytics'))
+const FocusMode = lazy(() => import('./pages/FocusMode'))
+
+// AI
+const Chat = lazy(() => import('./pages/Chat'))
+const SocraticMode = lazy(() => import('./pages/SocraticMode'))
+const PracticeExam = lazy(() => import('./pages/PracticeExam'))
+
+// Grades
 const GpaCalculator = lazy(() => import('./pages/tools/GpaCalculator'))
 const GradeCalculator = lazy(() => import('./pages/tools/GradeCalculator'))
 const FinalGradeCalculator = lazy(() => import('./pages/tools/FinalGradeCalculator'))
-const PercentageCalculator = lazy(() => import('./pages/tools/PercentageCalculator'))
-const GpaToLetterGrade = lazy(() => import('./pages/tools/GpaToLetterGrade'))
 
-// Writing tools
+// Writing
 const WordCounter = lazy(() => import('./pages/tools/WordCounter'))
 const CitationGenerator = lazy(() => import('./pages/tools/CitationGenerator'))
-const ParaphrasingHelper = lazy(() => import('./pages/tools/ParaphrasingHelper'))
-const EssayOutlineGenerator = lazy(() => import('./pages/tools/EssayOutlineGenerator'))
-const ReadingTimeCalculator = lazy(() => import('./pages/tools/ReadingTimeCalculator'))
 
-// Timer tools
+// Study
 const PomodoroTimer = lazy(() => import('./pages/tools/PomodoroTimer'))
 const ExamCountdown = lazy(() => import('./pages/tools/ExamCountdown'))
 const StudyTimeTracker = lazy(() => import('./pages/tools/StudyTimeTracker'))
-
-// Flashcards & Study tools
 const FlashcardMaker = lazy(() => import('./pages/tools/FlashcardMaker'))
-const RandomGroupGenerator = lazy(() => import('./pages/tools/RandomGroupGenerator'))
-const QuizMaker = lazy(() => import('./pages/tools/QuizMaker'))
-const CornellNotes = lazy(() => import('./pages/tools/CornellNotes'))
+const AssignmentTracker = lazy(() => import('./pages/tools/AssignmentTracker'))
+const AmbientSoundGenerator = lazy(() => import('./pages/tools/AmbientSoundGenerator'))
 
-// Reference tools
-const PeriodicTable = lazy(() => import('./pages/tools/PeriodicTable'))
+// Reference
 const UnitConverter = lazy(() => import('./pages/tools/UnitConverter'))
-const MathFormulaReference = lazy(() => import('./pages/tools/MathFormulaReference'))
+const PeriodicTable = lazy(() => import('./pages/tools/PeriodicTable'))
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
 
 function Loading() {
   return (
@@ -48,40 +65,48 @@ function Loading() {
 export default function App() {
   return (
     <Suspense fallback={<Loading />}>
+      <ScrollToTop />
       <Routes>
+        {/* Auth routes — outside Layout */}
+        <Route path="/sign-in/*" element={<AuthLayout><SignIn routing="path" path="/sign-in" /></AuthLayout>} />
+        <Route path="/sign-up/*" element={<AuthLayout><SignUp routing="path" path="/sign-up" /></AuthLayout>} />
+
         <Route element={<Layout />}>
+          {/* Public */}
           <Route index element={<Home />} />
           <Route path="all-tools" element={<AllTools />} />
 
-          {/* Calculators */}
+          {/* Protected — Command Center */}
+          <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="exam-profile" element={<ProtectedRoute><ExamProfile /></ProtectedRoute>} />
+          <Route path="analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="focus" element={<ProtectedRoute><FocusMode /></ProtectedRoute>} />
+
+          {/* Protected — AI */}
+          <Route path="chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+          <Route path="socratic" element={<ProtectedRoute><SocraticMode /></ProtectedRoute>} />
+          <Route path="practice-exam" element={<ProtectedRoute><PracticeExam /></ProtectedRoute>} />
+
+          {/* Public — Grades */}
           <Route path="gpa-calculator" element={<GpaCalculator />} />
           <Route path="grade-calculator" element={<GradeCalculator />} />
           <Route path="final-grade-calculator" element={<FinalGradeCalculator />} />
-          <Route path="percentage-calculator" element={<PercentageCalculator />} />
-          <Route path="gpa-to-letter-grade" element={<GpaToLetterGrade />} />
 
-          {/* Writing */}
+          {/* Public — Writing */}
           <Route path="word-counter" element={<WordCounter />} />
           <Route path="citation-generator" element={<CitationGenerator />} />
-          <Route path="paraphrasing-helper" element={<ParaphrasingHelper />} />
-          <Route path="essay-outline-generator" element={<EssayOutlineGenerator />} />
-          <Route path="reading-time-calculator" element={<ReadingTimeCalculator />} />
 
-          {/* Timers */}
-          <Route path="pomodoro-timer" element={<PomodoroTimer />} />
-          <Route path="exam-countdown" element={<ExamCountdown />} />
-          <Route path="study-time-tracker" element={<StudyTimeTracker />} />
+          {/* Protected — Study */}
+          <Route path="pomodoro-timer" element={<ProtectedRoute><PomodoroTimer /></ProtectedRoute>} />
+          <Route path="exam-countdown" element={<ProtectedRoute><ExamCountdown /></ProtectedRoute>} />
+          <Route path="study-time-tracker" element={<ProtectedRoute><StudyTimeTracker /></ProtectedRoute>} />
+          <Route path="flashcard-maker" element={<ProtectedRoute><FlashcardMaker /></ProtectedRoute>} />
+          <Route path="assignment-tracker" element={<ProtectedRoute><AssignmentTracker /></ProtectedRoute>} />
+          <Route path="ambient-sound-generator" element={<ProtectedRoute><AmbientSoundGenerator /></ProtectedRoute>} />
 
-          {/* Flashcards & Study */}
-          <Route path="flashcard-maker" element={<FlashcardMaker />} />
-          <Route path="random-group-generator" element={<RandomGroupGenerator />} />
-          <Route path="quiz-maker" element={<QuizMaker />} />
-          <Route path="cornell-notes" element={<CornellNotes />} />
-
-          {/* Reference */}
-          <Route path="periodic-table" element={<PeriodicTable />} />
+          {/* Public — Reference */}
           <Route path="unit-converter" element={<UnitConverter />} />
-          <Route path="math-formula-reference" element={<MathFormulaReference />} />
+          <Route path="periodic-table" element={<PeriodicTable />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

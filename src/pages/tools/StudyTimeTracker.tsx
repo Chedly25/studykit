@@ -7,10 +7,10 @@ import { formatTimeHMS, loadFromStorage, saveToStorage } from '../../lib/timerUt
 
 const tool = getToolBySlug('study-time-tracker')!
 
-const STORAGE_KEY = 'studykit-study-tracker'
+const STORAGE_KEY = 'studieskit-study-tracker'
 
 interface StudySession {
-  date: string  // ISO YYYY-MM-DD
+  date: string
   seconds: number
 }
 
@@ -31,7 +31,7 @@ function getTodayKey(): string {
 function getWeekStart(): Date {
   const now = new Date()
   const day = now.getDay()
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1) // Monday
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1)
   const start = new Date(now)
   start.setDate(diff)
   start.setHours(0, 0, 0, 0)
@@ -60,12 +60,10 @@ export default function StudyTimeTracker() {
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Persist data
   useEffect(() => {
     saveToStorage(STORAGE_KEY, data)
   }, [data])
 
-  // Tick active timer
   useEffect(() => {
     if (!activeSubject) {
       if (intervalRef.current) {
@@ -74,11 +72,9 @@ export default function StudyTimeTracker() {
       }
       return
     }
-
     intervalRef.current = setInterval(() => {
       setTimerSeconds(prev => prev + 1)
     }, 1000)
-
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
@@ -100,7 +96,6 @@ export default function StudyTimeTracker() {
   }, [newSubjectName])
 
   const removeSubject = useCallback((id: string) => {
-    // If removing the active subject, stop timer and save
     if (activeSubject === id && timerSeconds > 0) {
       setData(prev => ({
         subjects: prev.subjects.map(s =>
@@ -120,7 +115,6 @@ export default function StudyTimeTracker() {
 
   const toggleTimer = useCallback((id: string) => {
     if (activeSubject === id) {
-      // Stop: save elapsed time as a session
       if (timerSeconds > 0) {
         setData(prev => ({
           subjects: prev.subjects.map(s =>
@@ -133,7 +127,6 @@ export default function StudyTimeTracker() {
       setActiveSubject(null)
       setTimerSeconds(0)
     } else {
-      // Save any running timer first
       if (activeSubject && timerSeconds > 0) {
         setData(prev => ({
           subjects: prev.subjects.map(s =>
@@ -148,7 +141,6 @@ export default function StudyTimeTracker() {
     }
   }, [activeSubject, timerSeconds])
 
-  // Weekly chart data
   const weeklyData = useMemo(() => {
     return data.subjects.map(s => ({
       name: s.name,
@@ -189,8 +181,8 @@ export default function StudyTimeTracker() {
         {/* Active timer display */}
         {activeSubject && (
           <div className="glass-card p-4 mb-6 text-center">
-            <p className="text-surface-400 text-sm mb-1">
-              Studying: <span className="text-surface-200 font-medium">
+            <p className="text-[var(--text-muted)] text-sm mb-1">
+              Studying: <span className="text-[var(--text-body)] font-medium">
                 {data.subjects.find(s => s.id === activeSubject)?.name}
               </span>
             </p>
@@ -203,8 +195,8 @@ export default function StudyTimeTracker() {
         {/* Subject cards */}
         {data.subjects.length === 0 ? (
           <div className="glass-card p-12 text-center mb-6">
-            <BarChart3 size={40} className="text-surface-600 mx-auto mb-3" />
-            <p className="text-surface-400">No subjects yet. Add one above to start tracking.</p>
+            <BarChart3 size={40} className="text-[var(--text-faint)] mx-auto mb-3" />
+            <p className="text-[var(--text-muted)]">No subjects yet. Add one above to start tracking.</p>
           </div>
         ) : (
           <div className="space-y-3 mb-6">
@@ -221,7 +213,7 @@ export default function StudyTimeTracker() {
                   }`}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-surface-100">
+                    <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--text-heading)]">
                       {subject.name}
                     </h3>
                     <div className="flex items-center gap-2">
@@ -238,7 +230,7 @@ export default function StudyTimeTracker() {
                       </button>
                       <button
                         onClick={() => removeSubject(subject.id)}
-                        className="p-2 text-surface-500 hover:text-red-400 transition-colors"
+                        className="p-2 text-[var(--text-muted)] hover:text-red-400 transition-colors"
                         aria-label={`Remove ${subject.name}`}
                       >
                         <Trash2 size={16} />
@@ -248,12 +240,12 @@ export default function StudyTimeTracker() {
 
                   <div className="flex gap-6">
                     <div>
-                      <p className="text-surface-500 text-xs uppercase tracking-wider">All Time</p>
-                      <p className="text-surface-200 font-medium">{formatTimeHMS(allTime)}</p>
+                      <p className="text-[var(--text-faint)] text-xs uppercase tracking-wider">All Time</p>
+                      <p className="text-[var(--text-body)] font-medium">{formatTimeHMS(allTime)}</p>
                     </div>
                     <div>
-                      <p className="text-surface-500 text-xs uppercase tracking-wider">This Week</p>
-                      <p className="text-surface-200 font-medium">{formatTimeHMS(thisWeek)}</p>
+                      <p className="text-[var(--text-faint)] text-xs uppercase tracking-wider">This Week</p>
+                      <p className="text-[var(--text-body)] font-medium">{formatTimeHMS(thisWeek)}</p>
                     </div>
                   </div>
                 </div>
@@ -265,20 +257,20 @@ export default function StudyTimeTracker() {
         {/* Weekly bar chart */}
         {weeklyData.length > 0 && weeklyData.some(d => d.hours > 0) && (
           <div className="glass-card p-4">
-            <h3 className="font-[family-name:var(--font-display)] text-sm font-semibold text-surface-300 uppercase tracking-wider mb-4">
+            <h3 className="font-[family-name:var(--font-display)] text-sm font-semibold text-[var(--text-body)] uppercase tracking-wider mb-4">
               This Week
             </h3>
             <div className="space-y-3">
               {weeklyData.map(item => (
                 <div key={item.name} className="flex items-center gap-3">
-                  <span className="text-surface-300 text-sm w-28 truncate shrink-0">{item.name}</span>
-                  <div className="flex-1 h-6 bg-surface-800 rounded-full overflow-hidden">
+                  <span className="text-[var(--text-body)] text-sm w-28 truncate shrink-0">{item.name}</span>
+                  <div className="flex-1 h-6 bg-[var(--bg-input)] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-primary-500/60 rounded-full transition-all duration-500"
                       style={{ width: `${Math.max(item.hours > 0 ? 4 : 0, (item.hours / maxWeeklyHours) * 100)}%` }}
                     />
                   </div>
-                  <span className="text-surface-400 text-xs w-14 text-right shrink-0">
+                  <span className="text-[var(--text-muted)] text-xs w-14 text-right shrink-0">
                     {item.hours.toFixed(1)}h
                   </span>
                 </div>

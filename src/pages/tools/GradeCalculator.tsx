@@ -80,18 +80,18 @@ export default function GradeCalculator() {
       <FormToolPage toolId={tool.id} title={tool.name} description={tool.description}>
         {/* Result display */}
         <div className="glass-card p-6 mb-6 text-center">
-          <p className="text-surface-400 text-sm mb-1">Current Grade</p>
-          <p className="font-[family-name:var(--font-display)] text-5xl font-bold text-primary-400">
+          <p className="text-[var(--text-muted)] text-sm mb-1">Current Grade</p>
+          <p className="font-[family-name:var(--font-display)] text-5xl font-bold text-[var(--accent-text)]">
             {weightedGrade.toFixed(1)}%
           </p>
-          <p className="text-surface-300 text-lg mt-1">{letterGrade}</p>
+          <p className="text-[var(--text-body)] text-lg mt-1">{letterGrade}</p>
           <div className="flex items-center justify-center gap-4 mt-3 text-sm">
-            <span className="text-surface-400">
-              Weight used: <span className={totalWeight > 100 ? 'text-red-400' : 'text-surface-200'}>{totalWeight}%</span>
+            <span className="text-[var(--text-muted)]">
+              Weight used: <span className={totalWeight > 100 ? 'text-red-400' : 'text-[var(--text-body)]'}>{totalWeight}%</span>
             </span>
-            <span className="text-surface-500">&middot;</span>
-            <span className="text-surface-400">
-              Remaining: <span className={remainingWeight < 0 ? 'text-red-400' : 'text-surface-200'}>{remainingWeight}%</span>
+            <span className="text-[var(--text-faint)]">&middot;</span>
+            <span className="text-[var(--text-muted)]">
+              Remaining: <span className={remainingWeight < 0 ? 'text-red-400' : 'text-[var(--text-body)]'}>{remainingWeight}%</span>
             </span>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default function GradeCalculator() {
                   />
                   <div className="flex gap-3">
                     <div className="flex-1">
-                      <label className="text-surface-500 text-xs mb-1 block">Score (%)</label>
+                      <label className="text-[var(--text-faint)] text-xs mb-1 block">Score (%)</label>
                       <input
                         type="number"
                         min={0}
@@ -123,7 +123,7 @@ export default function GradeCalculator() {
                       />
                     </div>
                     <div className="flex-1">
-                      <label className="text-surface-500 text-xs mb-1 block">Weight (%)</label>
+                      <label className="text-[var(--text-faint)] text-xs mb-1 block">Weight (%)</label>
                       <input
                         type="number"
                         min={0}
@@ -139,7 +139,7 @@ export default function GradeCalculator() {
                 <button
                   onClick={() => removeAssignment(i)}
                   disabled={assignments.length <= 1}
-                  className="mt-1 p-2 text-surface-500 hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="mt-1 p-2 text-[var(--text-muted)] hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label="Remove assignment"
                 >
                   <Trash2 size={16} />
@@ -157,7 +157,7 @@ export default function GradeCalculator() {
 
         {/* Letter grade reference */}
         <div className="glass-card p-4 mt-6">
-          <p className="text-surface-400 text-xs font-medium uppercase tracking-wider mb-3">
+          <p className="text-[var(--text-muted)] text-xs font-medium uppercase tracking-wider mb-3">
             Letter Grade Scale
           </p>
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-13 gap-2">
@@ -166,8 +166,8 @@ export default function GradeCalculator() {
                 key={g.label}
                 className={`text-center rounded-lg py-1.5 px-2 text-xs ${
                   letterGrade === g.label
-                    ? 'bg-primary-500/20 text-primary-300 border border-primary-500/30'
-                    : 'bg-surface-800/50 text-surface-400'
+                    ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] border border-current/30'
+                    : 'bg-[var(--bg-input)] text-[var(--text-muted)]'
                 }`}
               >
                 <p className="font-semibold">{g.label}</p>

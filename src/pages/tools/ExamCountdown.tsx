@@ -7,12 +7,12 @@ import { loadFromStorage, saveToStorage } from '../../lib/timerUtils'
 
 const tool = getToolBySlug('exam-countdown')!
 
-const STORAGE_KEY = 'studykit-exams'
+const STORAGE_KEY = 'studieskit-exams'
 
 interface Exam {
   id: string
   name: string
-  date: string // ISO date string YYYY-MM-DD
+  date: string
 }
 
 interface TimeRemaining {
@@ -50,12 +50,10 @@ export default function ExamCountdown() {
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Persist exams
   useEffect(() => {
     saveToStorage(STORAGE_KEY, exams)
   }, [exams])
 
-  // Tick every second so countdowns update
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setTick(prev => prev + 1)
@@ -82,7 +80,6 @@ export default function ExamCountdown() {
     setExams(prev => prev.filter(e => e.id !== id))
   }, [])
 
-  // Sort: upcoming first (by date ascending), past exams at bottom
   const sortedExams = [...exams].sort((a, b) => {
     const aTime = getTimeRemaining(a.date)
     const bTime = getTimeRemaining(b.date)
@@ -90,7 +87,6 @@ export default function ExamCountdown() {
     return new Date(a.date).getTime() - new Date(b.date).getTime()
   })
 
-  // Minimum date for new exams: today
   const todayStr = new Date().toISOString().slice(0, 10)
 
   return (
@@ -129,14 +125,13 @@ export default function ExamCountdown() {
         {/* Exam countdown cards */}
         {sortedExams.length === 0 ? (
           <div className="glass-card p-12 text-center">
-            <CalendarClock size={40} className="text-surface-600 mx-auto mb-3" />
-            <p className="text-surface-400">No exams added yet. Add your first exam above.</p>
+            <CalendarClock size={40} className="text-[var(--text-faint)] mx-auto mb-3" />
+            <p className="text-[var(--text-muted)]">No exams added yet. Add your first exam above.</p>
           </div>
         ) : (
           <div className="space-y-3">
             {sortedExams.map(exam => {
               const time = getTimeRemaining(exam.date)
-
               return (
                 <div
                   key={exam.id}
@@ -145,10 +140,10 @@ export default function ExamCountdown() {
                   }`}
                 >
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-surface-100 truncate">
+                    <h3 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--text-heading)] truncate">
                       {exam.name}
                     </h3>
-                    <p className="text-surface-500 text-xs mt-0.5">
+                    <p className="text-[var(--text-faint)] text-xs mt-0.5">
                       {new Date(exam.date + 'T00:00:00').toLocaleDateString(undefined, {
                         weekday: 'long',
                         year: 'numeric',
@@ -174,7 +169,7 @@ export default function ExamCountdown() {
 
                   <button
                     onClick={() => removeExam(exam.id)}
-                    className="p-2 text-surface-500 hover:text-red-400 transition-colors ml-3 shrink-0"
+                    className="p-2 text-[var(--text-muted)] hover:text-red-400 transition-colors ml-3 shrink-0"
                     aria-label={`Remove ${exam.name}`}
                   >
                     <X size={18} />
@@ -192,10 +187,10 @@ export default function ExamCountdown() {
 function CountdownUnit({ value, label }: { value: number; label: string }) {
   return (
     <div className="text-center">
-      <p className="font-[family-name:var(--font-display)] text-xl font-bold text-primary-400">
+      <p className="font-[family-name:var(--font-display)] text-xl font-bold text-[var(--accent-text)]">
         {value}
       </p>
-      <p className="text-surface-500 text-xs">{label}</p>
+      <p className="text-[var(--text-faint)] text-xs">{label}</p>
     </div>
   )
 }

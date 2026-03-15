@@ -12,10 +12,10 @@ export function FormToolPage({ toolId, title, description, children }: FormToolP
   return (
     <div className="animate-fade-in">
       <div className="text-center mb-8">
-        <h1 className="font-[family-name:var(--font-display)] text-3xl md:text-4xl font-bold text-surface-50 mb-2">
+        <h1 className="font-[family-name:var(--font-display)] text-3xl md:text-4xl font-bold text-[var(--text-heading)] mb-2">
           {title}
         </h1>
-        <p className="text-surface-400 text-lg">{description}</p>
+        <p className="text-[var(--text-muted)] text-lg">{description}</p>
       </div>
 
       <div className="max-w-4xl mx-auto">

@@ -31,26 +31,12 @@ export const toolContent: Record<string, ToolContent> = {
     ],
     content: 'Wondering what you need to score on your final exam? Enter your current grade, desired final grade, and the weight of your final exam to find out the minimum score needed.',
   },
-  'percentage-calculator': {
-    faqs: [
-      { question: 'How do I calculate a percentage?', answer: 'To find X% of Y, multiply Y by X/100. For example, 25% of 200 = 200 × 0.25 = 50.' },
-      { question: 'How do I calculate percentage increase?', answer: 'Percentage increase = ((New Value - Old Value) / Old Value) × 100. For example, going from 50 to 75 is a 50% increase.' },
-    ],
-    content: 'A versatile percentage calculator with three modes: calculate X% of a number, find what percentage one number is of another, or compute the percentage increase or decrease between two values.',
-  },
-  'gpa-to-letter-grade': {
-    faqs: [
-      { question: 'What letter grade is a 3.5 GPA?', answer: 'A 3.5 GPA falls between an A- (3.7) and a B+ (3.3), so it is roughly a B+/A- on the standard 4.0 scale.' },
-      { question: 'What GPA is a B+?', answer: 'A B+ is typically equivalent to a 3.3 GPA on the standard 4.0 scale.' },
-    ],
-    content: 'Quickly convert between GPA values and letter grades. Enter a GPA to see the corresponding letter grade, or select a letter grade to see its GPA equivalent. Includes a visual reference chart.',
-  },
   'word-counter': {
     faqs: [
       { question: 'How are words counted?', answer: 'Words are counted by splitting text on whitespace boundaries. Hyphenated words count as one word. Numbers and abbreviations each count as one word.' },
-      { question: 'How is reading time calculated?', answer: 'Reading time is based on an average reading speed of 238 words per minute. Speaking time uses 150 words per minute.' },
+      { question: 'How is reading time calculated?', answer: 'Reading time is based on your selected reading speed (default 238 WPM). Speaking time uses 150 words per minute. You can adjust the WPM with the speed slider.' },
     ],
-    content: 'Paste or type your text to instantly see word count, character count (with and without spaces), sentence count, paragraph count, estimated reading time, and speaking time. Perfect for essays, blog posts, and assignments.',
+    content: 'Paste or type your text to instantly see word count, character count (with and without spaces), sentence count, paragraph count, estimated reading time, speaking time, and page count. Adjust reading speed for more accurate estimates.',
   },
   'citation-generator': {
     faqs: [
@@ -58,27 +44,6 @@ export const toolContent: Record<string, ToolContent> = {
       { question: 'What source types can I cite?', answer: 'You can generate citations for books, websites, journal articles, and videos. Each source type has relevant fields for accurate citation.' },
     ],
     content: 'Generate properly formatted citations for your research papers and essays. Select your source type, fill in the details, and choose your citation format. Copy the formatted citation with one click.',
-  },
-  'paraphrasing-helper': {
-    faqs: [
-      { question: 'What is paraphrasing?', answer: 'Paraphrasing is restating someone else\'s ideas in your own words while keeping the original meaning. It\'s an essential academic writing skill.' },
-      { question: 'How do I paraphrase effectively?', answer: 'Read the original text carefully, put it aside, write the idea in your own words, then compare with the original. Change both vocabulary and sentence structure.' },
-    ],
-    content: 'Improve your paraphrasing skills with this reference tool. Enter text and get tips for rewriting, including synonym suggestions and sentence restructuring techniques. Great for avoiding plagiarism in academic work.',
-  },
-  'essay-outline-generator': {
-    faqs: [
-      { question: 'What essay types are available?', answer: 'The generator supports argumentative, expository, persuasive, and compare-contrast essay types. Each produces a different structured outline.' },
-      { question: 'How should I use the outline?', answer: 'Use the generated outline as a starting framework. Fill in each section with your research, arguments, and evidence. Customize the structure as needed for your specific assignment.' },
-    ],
-    content: 'Get a head start on your essays with structured outlines. Select your essay type, enter your topic, and receive a detailed outline with sections for introduction, body paragraphs, and conclusion.',
-  },
-  'reading-time-calculator': {
-    faqs: [
-      { question: 'What is the average reading speed?', answer: 'The average adult reads at about 200-250 words per minute for non-technical content. Technical or academic content is typically read at 150-200 WPM.' },
-      { question: 'How accurate is the estimate?', answer: 'Reading time estimates are approximations based on word count and reading speed. Actual time varies with content complexity, reader familiarity, and reading conditions.' },
-    ],
-    content: 'Estimate how long it will take to read any text. Paste your text directly or enter a word count. Adjust the reading speed (WPM) to match your reading pace for a more accurate estimate.',
   },
   'pomodoro-timer': {
     faqs: [
@@ -103,31 +68,26 @@ export const toolContent: Record<string, ToolContent> = {
   },
   'flashcard-maker': {
     faqs: [
-      { question: 'Can I import/export flashcards?', answer: 'Yes! You can export your flashcard decks as JSON files and import them later or share with classmates.' },
-      { question: 'How does the study mode work?', answer: 'In study mode, cards are shown one at a time. Click to flip and reveal the answer. Mark cards as known or unknown to track your progress.' },
+      { question: 'What is spaced repetition?', answer: 'Spaced repetition is a study technique where you review material at increasing intervals. Cards you know well are shown less frequently, while difficult cards appear more often.' },
+      { question: 'How does the SM-2 algorithm work?', answer: 'SM-2 calculates optimal review intervals based on how easily you recalled each card. Rate your recall from Again (0) to Easy (5), and the algorithm schedules the next review accordingly.' },
+      { question: 'Can I import/export flashcards?', answer: 'Yes! You can export your flashcard decks as JSON or CSV files and import them later or share with classmates.' },
     ],
-    content: 'Create digital flashcard decks for any subject. Add front and back content, then study with flip animations. Shuffle cards, track which ones you know, and import/export decks for sharing.',
+    content: 'Create digital flashcard decks and study with the SM-2 spaced repetition algorithm. Manage decks with add/edit/delete, study due cards with quality ratings, and track your progress with mastery stats and review scheduling.',
   },
-  'random-group-generator': {
+  'assignment-tracker': {
     faqs: [
-      { question: 'How are groups randomized?', answer: 'Names are shuffled using a random algorithm, then distributed evenly across the specified number of groups. If names don\'t divide evenly, some groups will have one extra member.' },
-      { question: 'Can I re-randomize?', answer: 'Yes, click the generate button again to create new random groups from the same list of names.' },
+      { question: 'Are my assignments saved?', answer: 'Yes, all assignments are saved in your browser\'s localStorage. They\'ll persist between visits as long as you use the same browser.' },
+      { question: 'How can I organize my assignments?', answer: 'You can sort assignments by due date, priority, or status. Filter by status (all, to-do, in progress, done) to focus on what needs attention.' },
     ],
-    content: 'Quickly split a list of names into random groups. Perfect for class projects, study groups, or team assignments. Enter names, choose the number of groups, and generate instantly.',
+    content: 'Keep track of all your homework, projects, and assignments in one place. Add due dates, set priority levels, and update status as you work. Sort and filter to stay organized throughout the semester.',
   },
-  'quiz-maker': {
+  'ambient-sound-generator': {
     faqs: [
-      { question: 'How do I create a quiz?', answer: 'Add questions with 2-4 multiple choice options and mark the correct answer. Save your quiz and take it anytime.' },
-      { question: 'Are quizzes saved?', answer: 'Yes, all quizzes are saved in your browser\'s localStorage. They persist between visits on the same browser and device.' },
+      { question: 'What sounds are available?', answer: 'Four sound types: white noise, rain, coffee shop ambiance, and lo-fi. Each can be toggled on/off and has its own volume control.' },
+      { question: 'Can I mix multiple sounds?', answer: 'Yes! Toggle any combination of sounds and adjust individual volumes to create your perfect study atmosphere.' },
+      { question: 'Does this use external audio files?', answer: 'No, all sounds are generated in real-time using the Web Audio API directly in your browser. No downloads or streaming required.' },
     ],
-    content: 'Create custom multiple-choice quizzes to test your knowledge. Add questions, set correct answers, and take your quizzes with instant scoring. Great for exam preparation and self-testing.',
-  },
-  'cornell-notes': {
-    faqs: [
-      { question: 'What is the Cornell Note-Taking System?', answer: 'The Cornell system divides your page into three sections: a narrow left column for cues/questions, a wide right column for notes, and a bottom section for summary. It promotes active review and better retention.' },
-      { question: 'Can I save multiple notes?', answer: 'Yes, you can save multiple note sets in your browser\'s localStorage. Each set has a title and can be loaded or deleted independently.' },
-    ],
-    content: 'Take organized notes using the proven Cornell method. Use the cue column for key questions, the notes column for detailed notes, and the summary section to synthesize your learning. Save, load, and export your notes.',
+    content: 'Create your ideal study environment with synthesized ambient sounds. Mix white noise, rain, coffee shop ambiance, and lo-fi sounds with individual volume controls. All generated in your browser.',
   },
   'periodic-table': {
     faqs: [
@@ -142,12 +102,5 @@ export const toolContent: Record<string, ToolContent> = {
       { question: 'How accurate are the conversions?', answer: 'Conversions use standard conversion factors and are accurate to multiple decimal places. Temperature conversions use the exact formulas.' },
     ],
     content: 'Convert between common units of measurement across 7 categories. Enter a value, select your units, and see the conversion instantly. Supports metric, imperial, and other common measurement systems.',
-  },
-  'math-formula-reference': {
-    faqs: [
-      { question: 'What topics are covered?', answer: 'The reference covers algebra, geometry, trigonometry, calculus, and statistics formulas. Over 50 commonly used formulas are included.' },
-      { question: 'Can I search for specific formulas?', answer: 'Yes, use the search bar to find formulas by name or topic. You can also browse by category.' },
-    ],
-    content: 'Browse and search over 50 essential math formulas organized by topic. From the quadratic formula to integration rules, find the formula you need quickly. Perfect for homework, exams, and quick reference.',
   },
 }

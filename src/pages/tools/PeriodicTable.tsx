@@ -15,28 +15,17 @@ const tool = getToolBySlug('periodic-table')!
 
 const ALL_CATEGORIES = Object.keys(categoryColors) as ElementCategory[]
 
-/**
- * Returns the grid column for a given element based on its group or
- * its position within the lanthanide / actinide series.
- */
 function getGridColumn(el: Element): number {
   if (el.group !== null) return el.group
-
-  // Lanthanides 57-71 → columns 4-18
   if (el.atomicNumber >= 57 && el.atomicNumber <= 71) {
     return el.atomicNumber - 57 + 4
   }
-  // Actinides 89-103 → columns 4-18
   if (el.atomicNumber >= 89 && el.atomicNumber <= 103) {
     return el.atomicNumber - 89 + 4
   }
   return 1
 }
 
-/**
- * Returns the grid row for a given element.
- * Lanthanides go to row 9, actinides to row 10 (with a gap at row 8).
- */
 function getGridRow(el: Element): number {
   if (el.category === 'lanthanide') return 9
   if (el.category === 'actinide') return 10
@@ -87,7 +76,7 @@ function DetailPanel({ element, onClose }: DetailPanelProps) {
     <div className="glass-card p-6 relative">
       <button
         onClick={onClose}
-        className="absolute top-3 right-3 p-1.5 text-surface-400 hover:text-surface-200 transition-colors"
+        className="absolute top-3 right-3 p-1.5 text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors"
         aria-label="Close detail panel"
       >
         <X size={18} />
@@ -102,7 +91,7 @@ function DetailPanel({ element, onClose }: DetailPanelProps) {
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold text-surface-50">
+          <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-heading)]">
             {element.name}
           </h3>
           <span
@@ -114,29 +103,29 @@ function DetailPanel({ element, onClose }: DetailPanelProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 mt-5">
-        <div className="bg-surface-800/50 rounded-lg p-3">
-          <p className="text-surface-500 text-xs mb-0.5">Atomic Number</p>
-          <p className="text-surface-100 font-semibold">{element.atomicNumber}</p>
+        <div className="bg-[var(--bg-input)] rounded-lg p-3">
+          <p className="text-[var(--text-faint)] text-xs mb-0.5">Atomic Number</p>
+          <p className="text-[var(--text-heading)] font-semibold">{element.atomicNumber}</p>
         </div>
-        <div className="bg-surface-800/50 rounded-lg p-3">
-          <p className="text-surface-500 text-xs mb-0.5">Atomic Mass</p>
-          <p className="text-surface-100 font-semibold">{element.atomicMass}</p>
+        <div className="bg-[var(--bg-input)] rounded-lg p-3">
+          <p className="text-[var(--text-faint)] text-xs mb-0.5">Atomic Mass</p>
+          <p className="text-[var(--text-heading)] font-semibold">{element.atomicMass}</p>
         </div>
-        <div className="bg-surface-800/50 rounded-lg p-3 col-span-2">
-          <p className="text-surface-500 text-xs mb-0.5">Electron Configuration</p>
-          <p className="text-surface-100 font-semibold font-mono text-sm">
+        <div className="bg-[var(--bg-input)] rounded-lg p-3 col-span-2">
+          <p className="text-[var(--text-faint)] text-xs mb-0.5">Electron Configuration</p>
+          <p className="text-[var(--text-heading)] font-semibold font-mono text-sm">
             {element.electronConfig}
           </p>
         </div>
         {element.group !== null && (
           <>
-            <div className="bg-surface-800/50 rounded-lg p-3">
-              <p className="text-surface-500 text-xs mb-0.5">Group</p>
-              <p className="text-surface-100 font-semibold">{element.group}</p>
+            <div className="bg-[var(--bg-input)] rounded-lg p-3">
+              <p className="text-[var(--text-faint)] text-xs mb-0.5">Group</p>
+              <p className="text-[var(--text-heading)] font-semibold">{element.group}</p>
             </div>
-            <div className="bg-surface-800/50 rounded-lg p-3">
-              <p className="text-surface-500 text-xs mb-0.5">Period</p>
-              <p className="text-surface-100 font-semibold">{element.period}</p>
+            <div className="bg-[var(--bg-input)] rounded-lg p-3">
+              <p className="text-[var(--text-faint)] text-xs mb-0.5">Period</p>
+              <p className="text-[var(--text-heading)] font-semibold">{element.period}</p>
             </div>
           </>
         )}
@@ -195,7 +184,7 @@ export default function PeriodicTable() {
           <div className="relative max-w-md mx-auto">
             <Search
               size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-500"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]"
             />
             <input
               type="text"
@@ -207,7 +196,7 @@ export default function PeriodicTable() {
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-surface-500 hover:text-surface-200"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)] hover:text-[var(--text-body)]"
                 aria-label="Clear search"
               >
                 <X size={16} />
@@ -241,7 +230,6 @@ export default function PeriodicTable() {
                 gridTemplateRows: 'repeat(10, auto)',
               }}
             >
-              {/* Spacer for row 8 (gap between main table and lanthanides/actinides) */}
               <div style={{ gridColumn: '1 / -1', gridRow: 8, height: '0.75rem' }} />
 
               {elements.map(el => (
@@ -253,7 +241,6 @@ export default function PeriodicTable() {
                 />
               ))}
 
-              {/* Lanthanide / Actinide labels */}
               <div
                 className="text-[9px] text-pink-400 flex items-center justify-end pr-1"
                 style={{ gridColumn: 3, gridRow: 9 }}
@@ -287,7 +274,7 @@ export default function PeriodicTable() {
                 ))}
             </div>
             {query && filteredElements.length === 0 && (
-              <p className="text-surface-500 text-sm text-center mt-4">
+              <p className="text-[var(--text-faint)] text-sm text-center mt-4">
                 No elements match &ldquo;{search}&rdquo;
               </p>
             )}

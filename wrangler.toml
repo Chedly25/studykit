@@ -1,0 +1,13 @@
+name = "studieskit"
+compatibility_date = "2024-12-01"
+pages_build_output_dir = "dist"
+
+# When you're ready to provide the API key yourself (monetization),
+# run: wrangler pages secret put ANTHROPIC_API_KEY
+# The Worker will auto-use it instead of BYOK.
+#
+# For Clerk auth, set the issuer URL as a secret:
+# wrangler pages secret put CLERK_ISSUER_URL
+#
+# [vars]
+# ALLOWED_ORIGIN = "https://studieskit.com"
