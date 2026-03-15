@@ -69,9 +69,9 @@ export default function Sources() {
     try {
       const chunks = await getChunksByDocumentId(doc.id)
       const prompt = buildSummaryPrompt(doc.title, chunks.map(c => c.content))
-      await agent.sendMessage(prompt)
+      const resultMessages = await agent.sendMessage(prompt)
       // Extract summary from the agent's final response
-      const lastMsg = agent.messages[agent.messages.length - 1]
+      const lastMsg = resultMessages[resultMessages.length - 1]
       if (lastMsg && typeof lastMsg.content === 'string') {
         await db.documents.update(doc.id, { summary: lastMsg.content })
       }

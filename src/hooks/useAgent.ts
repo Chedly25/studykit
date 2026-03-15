@@ -66,14 +66,14 @@ export function useAgent(options: UseAgentOptions) {
   const [messagesUsedToday, setMessagesUsedToday] = useState(getMessagesUsedToday)
   const abortRef = useRef(false)
 
-  const sendMessage = useCallback(async (userMessage: string) => {
-    if (!profile || isLoading) return
+  const sendMessage = useCallback(async (userMessage: string): Promise<Message[]> => {
+    if (!profile || isLoading) return []
 
     // Client-side quota pre-check for free users
     if (!isPro && messagesUsedToday >= FREE_DAILY_LIMIT) {
       setQuotaExceeded(true)
       setError(`You've used all ${FREE_DAILY_LIMIT} free AI messages for today. Upgrade to Pro for unlimited access.`)
-      return
+      return []
     }
 
     setError(null)
@@ -149,7 +149,7 @@ export function useAgent(options: UseAgentOptions) {
       if (!authToken) {
         setError('You must be signed in to use the AI assistant.')
         setIsLoading(false)
-        return
+        return []
       }
 
       // Run agent loop
@@ -178,6 +178,8 @@ export function useAgent(options: UseAgentOptions) {
         incrementMessagesUsedToday()
         setMessagesUsedToday(getMessagesUsedToday())
       }
+
+      return result.messages
     } catch (err) {
       if (err instanceof QuotaExceededError) {
         setQuotaExceeded(true)
@@ -186,6 +188,7 @@ export function useAgent(options: UseAgentOptions) {
         const msg = err instanceof Error ? err.message : 'An error occurred'
         setError(msg)
       }
+      return []
     } finally {
       setIsLoading(false)
     }
