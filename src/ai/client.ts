@@ -181,6 +181,15 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
 
       try {
         const event = JSON.parse(data)
+
+        // Cloudflare Workers AI format: { response: "token" }
+        if ('response' in event && typeof event.response === 'string') {
+          currentText += event.response
+          onToken?.(event.response)
+          continue
+        }
+
+        // OpenAI-compatible format: { choices: [{ delta: { content: "token" } }] }
         const choice = event.choices?.[0]
         if (!choice) continue
 

@@ -74,10 +74,22 @@ export default function Sources() {
       const chunks = await getChunksByDocumentId(doc.id)
       const prompt = buildSummaryPrompt(doc.title, chunks.map(c => c.content))
       const resultMessages = await agent.sendMessage(prompt)
-      const lastMsg = resultMessages[resultMessages.length - 1]
-      if (lastMsg && typeof lastMsg.content === 'string') {
-        await db.documents.update(doc.id, { summary: lastMsg.content })
-        setViewDoc({ ...doc, summary: lastMsg.content })
+      // Extract text from last assistant message (content can be string or ContentBlock[])
+      const lastMsg = resultMessages.filter(m => m.role === 'assistant').pop()
+      let summaryText = ''
+      if (lastMsg) {
+        if (typeof lastMsg.content === 'string') {
+          summaryText = lastMsg.content
+        } else if (Array.isArray(lastMsg.content)) {
+          summaryText = lastMsg.content
+            .filter(b => b.type === 'text' && 'text' in b)
+            .map(b => ('text' in b ? b.text : ''))
+            .join('')
+        }
+      }
+      if (summaryText) {
+        await db.documents.update(doc.id, { summary: summaryText })
+        setViewDoc({ ...doc, summary: summaryText })
         toast.success(t('sources.summaryGenerated'))
       }
     } catch {
