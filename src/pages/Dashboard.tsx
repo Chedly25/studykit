@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 import { db } from '../db'
 import type { StudySession } from '../db/schema'
 import { useExamProfile } from '../hooks/useExamProfile'
@@ -97,9 +97,13 @@ export default function Dashboard() {
       {/* Source coverage indicator */}
       {sourceCoverage && sourceCoverage.totalTopics > 0 && (
         <div className="glass-card p-3 mt-4 flex items-center justify-between">
-          <span className="text-sm text-[var(--text-body)]" dangerouslySetInnerHTML={{
-            __html: t('dashboard.sourceCoverage', { percent: sourceCoverage.coveragePercent })
-          }} />
+          <span className="text-sm text-[var(--text-body)]">
+            <Trans
+              i18nKey="dashboard.sourceCoverage"
+              values={{ percent: sourceCoverage.coveragePercent }}
+              components={{ 1: <strong /> }}
+            />
+          </span>
           <a href="/sources" className="text-xs text-[var(--accent-text)] hover:underline">{t('dashboard.viewSources')}</a>
         </div>
       )}

@@ -7,6 +7,24 @@
 import type { Env } from '../../env'
 import { updateUserMetadata } from '../../lib/clerk'
 
+// ─── Constant-time comparison helpers ────────────────────────────
+function hexToBytes(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2)
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
+  }
+  return bytes
+}
+
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false
+  let result = 0
+  for (let i = 0; i < a.length; i++) {
+    result |= a[i] ^ b[i]
+  }
+  return result === 0
+}
+
 // ─── Web Crypto webhook signature verification ───────────────────
 async function verifyStripeSignature(
   payload: string,
@@ -39,11 +57,14 @@ async function verifyStripeSignature(
   )
 
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signedPayload))
-  const expected = Array.from(new Uint8Array(sig))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('')
+  const expectedBytes = new Uint8Array(sig)
 
-  return signatures.some(s => s === expected)
+  for (const candidate of signatures) {
+    const candidateBytes = hexToBytes(candidate)
+    if (candidateBytes.length !== expectedBytes.length) continue
+    if (timingSafeEqual(candidateBytes, expectedBytes)) return true
+  }
+  return false
 }
 
 // ─── Handler ─────────────────────────────────────────────────────

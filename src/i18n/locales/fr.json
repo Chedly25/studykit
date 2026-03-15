@@ -100,7 +100,7 @@
     "setupPrompt": "Creez un profil d'etude pour acceder a votre tableau de bord personnalise.",
     "createProfile": "Creer un profil d'etude",
     "knowledgeGraph": "Graphe de connaissances",
-    "sourceCoverage": "Les sources couvrent <strong>{{percent}}%</strong> de vos sujets",
+    "sourceCoverage": "Les sources couvrent <1>{{percent}}%</1> de vos sujets",
     "viewSources": "Voir les sources",
     "readiness": "Preparation",
     "readinessLabel": "Niveau de preparation",

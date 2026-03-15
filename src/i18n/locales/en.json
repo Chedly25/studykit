@@ -100,7 +100,7 @@
     "setupPrompt": "Set up a study profile to unlock your personalized dashboard.",
     "createProfile": "Create Study Profile",
     "knowledgeGraph": "Knowledge Graph",
-    "sourceCoverage": "Sources cover <strong>{{percent}}%</strong> of your topics",
+    "sourceCoverage": "Sources cover <1>{{percent}}%</1> of your topics",
     "viewSources": "View Sources",
     "readiness": "Readiness",
     "readinessLabel": "Exam Readiness",

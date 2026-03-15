@@ -1,6 +1,17 @@
 import { useState } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 
+const ALLOWED_STRIPE_HOSTS = ['checkout.stripe.com', 'billing.stripe.com']
+
+function isValidStripeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' && ALLOWED_STRIPE_HOSTS.includes(parsed.hostname)
+  } catch {
+    return false
+  }
+}
+
 export function useCheckout() {
   const { getToken } = useAuth()
   const [loading, setLoading] = useState(false)
@@ -24,6 +35,9 @@ export function useCheckout() {
       }
 
       const { url } = (await res.json()) as { url: string }
+      if (!isValidStripeUrl(url)) {
+        throw new Error('Invalid checkout URL received')
+      }
       window.location.href = url
     } catch (err) {
       setLoading(false)
@@ -49,6 +63,9 @@ export function useCheckout() {
       }
 
       const { url } = (await res.json()) as { url: string }
+      if (!isValidStripeUrl(url)) {
+        throw new Error('Invalid portal URL received')
+      }
       window.location.href = url
     } catch (err) {
       setLoading(false)

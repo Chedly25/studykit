@@ -57,8 +57,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
   } catch (err) {
+    console.error('Portal session creation error:', err)
     return new Response(
-      JSON.stringify({ error: `Portal error: ${err instanceof Error ? err.message : 'unknown'}` }),
+      JSON.stringify({ error: 'An error occurred. Please try again.' }),
       { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
   }

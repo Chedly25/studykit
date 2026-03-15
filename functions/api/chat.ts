@@ -13,21 +13,25 @@ const ALLOWED_MODELS = new Set([DEFAULT_MODEL])
 
 const FREE_TIER_DAILY_LIMIT = 5
 
-// ─── Rate limiter (in-memory, resets per isolate) ────────────────
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
+// ─── KV-based rate limiter (persistent across isolates) ─────────
+const RATE_LIMIT = 60
+const RATE_WINDOW_SECONDS = 3600
 
-function checkRateLimit(key: string, limit = 60, windowMs = 60 * 60 * 1000) {
-  const now = Date.now()
-  const entry = rateLimitStore.get(key)
-  if (!entry || now > entry.resetTime) {
-    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs })
-    return { allowed: true, remaining: limit - 1 }
-  }
-  if (entry.count >= limit) {
+async function checkRateLimitKV(
+  kv: KVNamespace,
+  userId: string
+): Promise<{ allowed: boolean; remaining: number }> {
+  const windowKey = `ratelimit:${userId}:${Math.floor(Date.now() / 1000 / RATE_WINDOW_SECONDS)}`
+  const currentStr = await kv.get(windowKey)
+  const current = currentStr ? parseInt(currentStr, 10) : 0
+
+  if (current >= RATE_LIMIT) {
     return { allowed: false, remaining: 0 }
   }
-  entry.count++
-  return { allowed: true, remaining: limit - entry.count }
+
+  const newCount = current + 1
+  await kv.put(windowKey, String(newCount), { expirationTtl: RATE_WINDOW_SECONDS })
+  return { allowed: true, remaining: RATE_LIMIT - newCount }
 }
 
 // ─── Handler ─────────────────────────────────────────────────────
@@ -64,14 +68,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     userId = sub
     userPlan = metadata?.plan
   } catch (err) {
+    console.error('JWT verification failed:', err)
     return new Response(
-      JSON.stringify({ error: `Authentication failed: ${err instanceof Error ? err.message : 'unknown'}` }),
+      JSON.stringify({ error: 'Authentication failed' }),
       { status: 401, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
   }
 
-  // Rate limiting (general)
-  const rl = checkRateLimit(userId)
+  // Rate limiting (KV-based, persistent across isolates)
+  const rl = env.USAGE_KV
+    ? await checkRateLimitKV(env.USAGE_KV, userId)
+    : { allowed: true, remaining: RATE_LIMIT }
   if (!rl.allowed) {
     return new Response(
       JSON.stringify({ error: 'Rate limit exceeded. Try again later.' }),
@@ -79,40 +86,69 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     )
   }
 
-  // Free-tier daily quota check (KV-based)
+  // Free-tier daily quota check (KV-based, optimistic increment to minimize TOCTOU window)
   if (userPlan !== 'pro' && env.USAGE_KV) {
     const today = new Date().toISOString().slice(0, 10)
     const kvKey = `quota:${userId}:${today}`
     const currentStr = await env.USAGE_KV.get(kvKey)
     const current = currentStr ? parseInt(currentStr, 10) : 0
+    const newCount = current + 1
 
-    if (current >= FREE_TIER_DAILY_LIMIT) {
+    // Write the incremented value immediately to minimize race window
+    await env.USAGE_KV.put(kvKey, String(newCount), { expirationTtl: 86400 })
+
+    if (newCount > FREE_TIER_DAILY_LIMIT) {
       return new Response(
         JSON.stringify({
           error: `You've used all ${FREE_TIER_DAILY_LIMIT} free AI messages for today. Upgrade to Pro for unlimited access.`,
           code: 'QUOTA_EXCEEDED',
           limit: FREE_TIER_DAILY_LIMIT,
-          used: current,
+          used: Math.min(newCount, FREE_TIER_DAILY_LIMIT),
         }),
         { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Increment counter with 24h TTL
-    await env.USAGE_KV.put(kvKey, String(current + 1), { expirationTtl: 86400 })
   }
 
-  // Body size check (1MB)
-  const contentLength = request.headers.get('content-length')
-  if (contentLength && parseInt(contentLength) > 1024 * 1024) {
+  // Body size check — read actual body, don't trust Content-Length
+  const MAX_BODY_SIZE = 1024 * 1024 // 1MB
+  let rawBody: string
+  try {
+    const reader = request.body?.getReader()
+    if (!reader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing request body' }),
+        { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } }
+      )
+    }
+    const chunks: Uint8Array[] = []
+    let totalSize = 0
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (value) {
+        totalSize += value.length
+        if (totalSize > MAX_BODY_SIZE) {
+          reader.cancel()
+          return new Response(
+            JSON.stringify({ error: 'Request too large' }),
+            { status: 413, headers: { ...cors, 'Content-Type': 'application/json' } }
+          )
+        }
+        chunks.push(value)
+      }
+    }
+    const decoder = new TextDecoder()
+    rawBody = chunks.map(c => decoder.decode(c, { stream: true })).join('') + decoder.decode()
+  } catch {
     return new Response(
-      JSON.stringify({ error: 'Request too large' }),
-      { status: 413, headers: { ...cors, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Failed to read request body' }),
+      { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
   }
 
   try {
-    const body = await request.json() as Record<string, unknown>
+    const body = JSON.parse(rawBody) as Record<string, unknown>
 
     // Validate
     if (!body.messages || !Array.isArray(body.messages)) {
@@ -179,8 +215,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       },
     })
   } catch (err) {
+    console.error('AI inference error:', err)
     return new Response(
-      JSON.stringify({ error: `AI inference error: ${err instanceof Error ? err.message : 'unknown'}` }),
+      JSON.stringify({ error: 'An error occurred processing your request.' }),
       { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
   }

@@ -18,6 +18,7 @@ export async function updateUserMetadata(
 
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`Clerk API error ${res.status}: ${body}`)
+    console.error(`Clerk API error ${res.status}: ${body}`)
+    throw new Error('Failed to update user metadata')
   }
 }

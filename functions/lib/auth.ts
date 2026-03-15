@@ -38,12 +38,14 @@ export interface JWTPayload {
 
 export async function verifyClerkJWT(
   token: string,
-  issuerUrl: string
+  issuerUrl: string,
+  expectedAudience?: string
 ): Promise<JWTPayload> {
   const parts = token.split('.')
   if (parts.length !== 3) throw new Error('Invalid JWT')
 
   const headerJson = JSON.parse(new TextDecoder().decode(base64urlDecode(parts[0])))
+  if (headerJson.alg !== 'RS256') throw new Error('Unsupported JWT algorithm')
   const kid = headerJson.kid as string
   if (!kid) throw new Error('JWT missing kid')
 
@@ -72,6 +74,7 @@ export async function verifyClerkJWT(
   if (payload.exp && payload.exp + GRACE_SECONDS < now) throw new Error('JWT expired')
   if (payload.nbf && payload.nbf > now + GRACE_SECONDS) throw new Error('JWT not yet valid')
   if (payload.iss && payload.iss !== issuerUrl) throw new Error('JWT issuer mismatch')
+  if (expectedAudience && payload.aud !== expectedAudience) throw new Error('JWT audience mismatch')
 
   return {
     sub: payload.sub,
