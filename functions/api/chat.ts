@@ -9,7 +9,7 @@ import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 
 const DEFAULT_MODEL = 'kimi-k2.5'
-const DEFAULT_API_URL = 'https://kimi-k2.ai/api/v1/chat/completions'
+const DEFAULT_API_URL = 'https://api.moonshot.ai/v1/chat/completions'
 const MAX_RETRIES = 2
 
 const FREE_TIER_DAILY_LIMIT = 5
