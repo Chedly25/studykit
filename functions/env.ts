@@ -2,6 +2,9 @@ export interface Env {
   AI: Ai
   USAGE_KV: KVNamespace
   ALLOWED_ORIGIN?: string
+  LLM_API_KEY: string
+  LLM_API_URL?: string
+  LLM_MODEL?: string
   CLERK_ISSUER_URL: string
   CLERK_SECRET_KEY: string
   STRIPE_SECRET_KEY: string

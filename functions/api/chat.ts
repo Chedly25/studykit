@@ -1,6 +1,6 @@
 /**
  * Cloudflare Pages Function: POST /api/chat
- * Uses Cloudflare Workers AI (Llama 3.3 70B) — no API key needed.
+ * Proxies to an OpenAI-compatible LLM API (Kimi, OpenAI, etc.)
  * Stores ZERO student data.
  */
 
@@ -8,8 +8,8 @@ import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 
-const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
-const ALLOWED_MODELS = new Set([DEFAULT_MODEL])
+const DEFAULT_MODEL = 'kimi-k2-0711'
+const DEFAULT_API_URL = 'https://api.moonshot.cn/v1/chat/completions'
 
 const FREE_TIER_DAILY_LIMIT = 5
 
@@ -158,36 +158,57 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       )
     }
 
-    const messages = body.messages as Array<{ role: string; content: string }>
+    const apiUrl = env.LLM_API_URL || DEFAULT_API_URL
+    const model = (env.LLM_MODEL || DEFAULT_MODEL) as string
+    const apiKey = env.LLM_API_KEY
 
-    // Add system message if provided separately
-    if (body.system && typeof body.system === 'string') {
-      if (messages[0]?.role !== 'system') {
-        messages.unshift({ role: 'system', content: body.system })
-      }
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: 'Server misconfigured: LLM API key not set' }),
+        { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // Add tools if provided
-    const tools = (body.tools && Array.isArray(body.tools) && body.tools.length > 0)
-      ? body.tools as Array<Record<string, unknown>>
-      : undefined
-
-    const model = ALLOWED_MODELS.has(body.model as string) ? (body.model as string) : DEFAULT_MODEL
     const rawMaxTokens = Number(body.max_tokens)
     const maxTokens = (Number.isFinite(rawMaxTokens) && rawMaxTokens > 0)
       ? Math.min(Math.floor(rawMaxTokens), 8192)
       : 4096
     const shouldStream = body.stream !== false
 
-    if (shouldStream) {
-      const stream = await env.AI.run(model as BaseAiTextGenerationModels, {
-        messages,
-        max_tokens: maxTokens,
-        stream: true,
-        ...(tools ? { tools } : {}),
-      }) as ReadableStream
+    // Build the request body for the OpenAI-compatible API
+    const llmBody: Record<string, unknown> = {
+      model,
+      messages: body.messages,
+      max_tokens: maxTokens,
+      stream: shouldStream,
+    }
 
-      return new Response(stream, {
+    // Add tools if provided
+    if (body.tools && Array.isArray(body.tools) && body.tools.length > 0) {
+      llmBody.tools = body.tools
+    }
+
+    const llmResponse = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(llmBody),
+    })
+
+    if (!llmResponse.ok) {
+      const errText = await llmResponse.text()
+      console.error('LLM API error:', llmResponse.status, errText)
+      return new Response(
+        JSON.stringify({ error: 'AI service error. Please try again.' }),
+        { status: 502, headers: { ...cors, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (shouldStream) {
+      // Pass through the SSE stream directly
+      return new Response(llmResponse.body, {
         status: 200,
         headers: {
           ...cors,
@@ -198,15 +219,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
 
-    // Non-streaming response
-    const result = await env.AI.run(model as BaseAiTextGenerationModels, {
-      messages,
-      max_tokens: maxTokens,
-      stream: false,
-      ...(tools ? { tools } : {}),
-    })
-
-    return new Response(JSON.stringify(result), {
+    // Non-streaming: pass through the JSON response
+    const result = await llmResponse.text()
+    return new Response(result, {
       status: 200,
       headers: {
         ...cors,
