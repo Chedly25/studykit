@@ -1,14 +1,22 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Trash2, Check } from 'lucide-react'
+import { Trash2, Check, Link2, FileBarChart } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
+import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { ExamProfileWizard } from '../components/knowledge/ExamProfileWizard'
+import { DependencyEditor } from '../components/knowledge/DependencyEditor'
+import { ExamFormatEditor } from '../components/knowledge/ExamFormatEditor'
 import { examBlueprints } from '../lib/examTopicMaps'
+import type { Topic } from '../db/schema'
 
 export default function ExamProfile() {
   const { t } = useTranslation()
   const { profiles, activeProfile, setActiveProfile, deleteProfile } = useExamProfile()
+  const { topics } = useKnowledgeGraph(activeProfile?.id)
   const [showWizard, setShowWizard] = useState(profiles.length === 0)
+  const [showDependencyEditor, setShowDependencyEditor] = useState(false)
+  const [dependencyTopic, setDependencyTopic] = useState<Topic | null>(null)
+  const [showExamFormatEditor, setShowExamFormatEditor] = useState(false)
 
   if (showWizard || profiles.length === 0) {
     return (
@@ -75,6 +83,53 @@ export default function ExamProfile() {
           )
         })}
       </div>
+
+      {/* Profile tools for active profile */}
+      {activeProfile && (
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => setShowExamFormatEditor(true)}
+            className="btn-secondary px-4 py-2 text-sm flex items-center gap-2"
+          >
+            <FileBarChart className="w-4 h-4" /> {t('examFormat.editFormat')}
+          </button>
+          {topics.length > 0 && (
+            <div className="flex-1">
+              <label className="block text-xs text-[var(--text-muted)] mb-1">{t('dependencies.editPrerequisites')}</label>
+              <div className="flex flex-wrap gap-1">
+                {topics.slice(0, 12).map(topic => (
+                  <button
+                    key={topic.id}
+                    onClick={() => { setDependencyTopic(topic); setShowDependencyEditor(true) }}
+                    className="text-xs px-2 py-1 rounded-lg bg-[var(--bg-input)] text-[var(--text-body)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-colors flex items-center gap-1"
+                  >
+                    <Link2 className="w-3 h-3" /> {topic.name}
+                  </button>
+                ))}
+                {topics.length > 12 && (
+                  <span className="text-xs text-[var(--text-muted)] px-2 py-1">+{topics.length - 12} more</span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeProfile && (
+        <>
+          <DependencyEditor
+            open={showDependencyEditor}
+            onClose={() => { setShowDependencyEditor(false); setDependencyTopic(null) }}
+            topic={dependencyTopic}
+            examProfileId={activeProfile.id}
+          />
+          <ExamFormatEditor
+            open={showExamFormatEditor}
+            onClose={() => setShowExamFormatEditor(false)}
+            examProfileId={activeProfile.id}
+          />
+        </>
+      )}
     </div>
   )
 }

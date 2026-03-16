@@ -259,7 +259,9 @@
       "flashcards": "Generate Flashcards",
       "flashcardsDesc": "Create decks from your materials",
       "chat": "Chat About Your Sources",
-      "chatDesc": "Ask your AI tutor about uploaded content"
+      "chatDesc": "Ask your AI tutor about uploaded content",
+      "extractConcepts": "Extract Concepts",
+      "extractConceptsDesc": "Auto-map source content to your topics"
     }
   },
   "subscription": {

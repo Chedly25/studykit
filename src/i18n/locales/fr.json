@@ -259,7 +259,9 @@
       "flashcards": "Generer des cartes",
       "flashcardsDesc": "Creez des jeux de cartes a partir de vos supports",
       "chat": "Discuter de vos sources",
-      "chatDesc": "Interrogez votre tuteur IA sur le contenu importe"
+      "chatDesc": "Interrogez votre tuteur IA sur le contenu importe",
+      "extractConcepts": "Extraire les concepts",
+      "extractConceptsDesc": "Mapper automatiquement le contenu a vos sujets"
     }
   },
   "subscription": {

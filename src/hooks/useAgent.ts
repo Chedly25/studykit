@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { runAgentLoop } from '../ai/agentLoop'
@@ -228,11 +228,45 @@ export function useAgent(options: UseAgentOptions) {
     }
   }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, isSocratic, socraticTopic, isExplainBack, explainBackTopic, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries])
 
+  // Track conversation state in refs for beforeunload handler
+  const messagesRef = useRef(messages)
+  const conversationIdRef = useRef(conversationId)
+  const profileRef = useRef(profile)
+  messagesRef.current = messages
+  conversationIdRef.current = conversationId
+  profileRef.current = profile
+
+  // Generate insight on page unload to prevent lost sessions
+  useEffect(() => {
+    const handleUnload = () => {
+      const msgs = messagesRef.current
+      const convId = conversationIdRef.current
+      const prof = profileRef.current
+      const userMsgCount = msgs.filter(m => m.role === 'user' && typeof m.content === 'string').length
+      if (userMsgCount >= 4 && convId && prof) {
+        // Use sendBeacon-style: fire and forget via getToken stored in closure
+        getToken().then(token => {
+          if (token) generateSessionInsight(msgs, prof.id, convId, token).catch(() => {})
+        }).catch(() => {})
+      }
+    }
+    window.addEventListener('beforeunload', handleUnload)
+    return () => window.removeEventListener('beforeunload', handleUnload)
+  }, [getToken])
+
   const loadConversation = useCallback(async (convId: string) => {
+    // Generate insight for the outgoing conversation before loading new one
+    const userMsgCount = messages.filter(m => m.role === 'user' && typeof m.content === 'string').length
+    if (userMsgCount >= 4 && conversationId && profile) {
+      const token = await getToken()
+      if (token) {
+        generateSessionInsight(messages, profile.id, conversationId, token).catch(console.warn)
+      }
+    }
     const msgs = await loadMessages(convId)
     setMessages(msgs)
     setConversationId(convId)
-  }, [])
+  }, [messages, conversationId, profile, getToken])
 
   const newConversation = useCallback(async () => {
     // Generate insight from outgoing conversation if it had enough messages

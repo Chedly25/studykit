@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '@clerk/clerk-react'
 import { toast } from 'sonner'
-import { FileText, Loader2, ClipboardCheck, BookOpen, MessageCircle } from 'lucide-react'
+import { FileText, Loader2, ClipboardCheck, BookOpen, MessageCircle, Sparkles } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useSources } from '../hooks/useSources'
@@ -33,6 +34,7 @@ export default function Sources() {
   const { coverage } = useSourceCoverage(profileId)
   const agent = useAgent({ profile: activeProfile, subjects, topics, dailyLogs })
   const navigate = useNavigate()
+  const { getToken } = useAuth()
 
   const [showPaste, setShowPaste] = useState(false)
   const [showNotes, setShowNotes] = useState(false)
@@ -40,6 +42,7 @@ export default function Sources() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [summarizing, setSummarizing] = useState<string | null>(null)
   const [generatingFlashcards, setGeneratingFlashcards] = useState<string | null>(null)
+  const [extractingConcepts, setExtractingConcepts] = useState<string | null>(null)
 
   if (!activeProfile) {
     return (
@@ -117,6 +120,27 @@ export default function Sources() {
     navigate(`/practice-exam?sourceId=${doc.id}`)
   }
 
+  const handleExtractConcepts = async (doc: Document) => {
+    if (!profileId) return
+    setExtractingConcepts(doc.id)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Auth required')
+      const { autoMapSourceToTopics } = await import('../ai/tools/conceptTools')
+      const result = await autoMapSourceToTopics(profileId, { documentId: doc.id }, token)
+      const parsed = JSON.parse(result)
+      if (parsed.error) {
+        toast.error(parsed.error)
+      } else {
+        toast.success(`Mapped ${parsed.mappingsApplied} chunks to topics. Found: ${(parsed.conceptsFound as string[]).slice(0, 5).join(', ')}`)
+      }
+    } catch {
+      toast.error('Failed to extract concepts')
+    } finally {
+      setExtractingConcepts(null)
+    }
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 animate-fade-in">
       <div className="flex items-center justify-between mb-6">
@@ -148,7 +172,7 @@ export default function Sources() {
       </div>
 
       {documents.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {([
             { icon: ClipboardCheck, label: t('sources.discovery.practiceExam'), desc: t('sources.discovery.practiceExamDesc'), to: '/practice-exam' },
             { icon: BookOpen, label: t('sources.discovery.flashcards'), desc: t('sources.discovery.flashcardsDesc'), to: '/flashcard-maker' },
@@ -164,6 +188,24 @@ export default function Sources() {
               </div>
             </Link>
           ))}
+          {topics.length > 0 && (
+            <button
+              onClick={() => {
+                const firstDoc = documents[0]
+                if (firstDoc) handleExtractConcepts(firstDoc)
+              }}
+              disabled={!!extractingConcepts}
+              className="glass-card glass-card-hover p-3 flex items-start gap-3 group text-left disabled:opacity-50"
+            >
+              <div className="w-9 h-9 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center flex-shrink-0">
+                {extractingConcepts ? <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin" /> : <Sparkles className="w-4 h-4 text-[var(--accent-text)]" />}
+              </div>
+              <div>
+                <span className="text-sm font-semibold text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors">{t('sources.discovery.extractConcepts')}</span>
+                <p className="text-xs text-[var(--text-muted)]">{t('sources.discovery.extractConceptsDesc')}</p>
+              </div>
+            </button>
+          )}
         </div>
       )}
 

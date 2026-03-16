@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
-import { Bell } from 'lucide-react'
+import { Bell, Settings } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useNotifications } from '../hooks/useNotifications'
+import { NotificationPreferencesModal } from './NotificationPreferencesModal'
 
 interface Props {
   examProfileId: string | undefined
@@ -10,6 +11,7 @@ interface Props {
 export function NotificationBell({ examProfileId }: Props) {
   const { notifications, unreadCount, markAsRead, markAllRead } = useNotifications(examProfileId)
   const [open, setOpen] = useState(false)
+  const [showPrefs, setShowPrefs] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -40,14 +42,23 @@ export function NotificationBell({ examProfileId }: Props) {
         <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto glass-card shadow-xl z-50 rounded-xl border border-[var(--border-card)]">
           <div className="px-4 py-3 border-b border-[var(--border-card)] flex items-center justify-between">
             <span className="text-sm font-semibold text-[var(--text-heading)]">Notifications</span>
-            {unreadCount > 0 && (
+            <div className="flex items-center gap-2">
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllRead}
+                  className="text-xs text-[var(--accent-text)] hover:underline"
+                >
+                  Mark all read
+                </button>
+              )}
               <button
-                onClick={markAllRead}
-                className="text-xs text-[var(--accent-text)] hover:underline"
+                onClick={() => { setOpen(false); setShowPrefs(true) }}
+                className="text-[var(--text-muted)] hover:text-[var(--accent-text)]"
+                title="Notification preferences"
               >
-                Mark all read
+                <Settings className="w-3.5 h-3.5" />
               </button>
-            )}
+            </div>
           </div>
 
           {notifications.length === 0 ? (
@@ -78,6 +89,14 @@ export function NotificationBell({ examProfileId }: Props) {
             </div>
           )}
         </div>
+      )}
+
+      {examProfileId && (
+        <NotificationPreferencesModal
+          open={showPrefs}
+          onClose={() => setShowPrefs(false)}
+          examProfileId={examProfileId}
+        />
       )}
     </div>
   )

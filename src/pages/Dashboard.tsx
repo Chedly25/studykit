@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation, Trans } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { MessageCircle, ClipboardCheck, Upload, Target, CheckCircle, Circle, ArrowRight } from 'lucide-react'
+import { useAuth } from '@clerk/clerk-react'
 import { db } from '../db'
 import type { StudySession } from '../db/schema'
 import { useExamProfile } from '../hooks/useExamProfile'
@@ -23,13 +24,14 @@ import { TopicTree } from '../components/knowledge/TopicTree'
 
 export default function Dashboard() {
   const { t } = useTranslation()
+  const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { subjects, readiness, weakTopics, dueTopics, streak, weeklyHours, getTopicsForSubject } = useKnowledgeGraph(profileId)
   const insights = useProactiveInsights(profileId)
   const { recentInsights: sessionInsights } = useSessionInsights(profileId)
   const { coverage: sourceCoverage } = useSourceCoverage(profileId)
-  const { activePlan, todaysPlan, markActivityCompleted } = useStudyPlan(profileId)
+  const { activePlan, todaysPlan, markActivityCompleted, replanPlan, replanSuggestion } = useStudyPlan(profileId)
 
   const sessions = useLiveQuery(
     () => profileId
@@ -161,7 +163,15 @@ export default function Dashboard() {
       {/* Middle row: Today's Plan + Weak Topics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         {todaysPlan ? (
-          <StudyPlanCard todaysPlan={todaysPlan} onToggleActivity={markActivityCompleted} />
+          <StudyPlanCard
+            todaysPlan={todaysPlan}
+            onToggleActivity={markActivityCompleted}
+            replanSuggestion={replanSuggestion}
+            onReplan={async () => {
+              const token = await getToken()
+              if (token && replanSuggestion) replanPlan(token, replanSuggestion)
+            }}
+          />
         ) : (
           <TodaysPlanCard dueTopics={dueTopics} dueFlashcardCount={dueFlashcards} upcomingAssignments={upcomingAssignments} />
         )}

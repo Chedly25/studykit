@@ -17,6 +17,8 @@ import { useSources } from '../hooks/useSources'
 import { getChunksByDocumentId } from '../lib/sources'
 import { buildPracticeExamPrompt } from '../lib/sourceActions'
 import { db } from '../db'
+import type { ExamFormat } from '../db/schema'
+import { useLiveQuery } from 'dexie-react-hooks'
 
 export default function PracticeExam() {
   const { t } = useTranslation()
@@ -37,9 +39,15 @@ export default function PracticeExam() {
     sendMessage,
   } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences })
 
+  const examFormats = useLiveQuery(
+    () => profileId ? db.examFormats.where('examProfileId').equals(profileId).toArray() : Promise.resolve([] as ExamFormat[]),
+    [profileId]
+  ) ?? []
+
   const [started, setStarted] = useState(false)
   const [questionCount, setQuestionCount] = useState(10)
   const [focusSubject, setFocusSubject] = useState<string>('')
+  const [examSection, setExamSection] = useState<string>('')
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -77,8 +85,9 @@ export default function PracticeExam() {
     }
 
     const subjectNote = focusSubject ? ` focusing on ${focusSubject}` : ' covering my weakest topics'
+    const sectionNote = examSection ? ` Use the "${examSection}" exam format for all questions.` : ''
     sendMessage(
-      `Generate a practice session with ${questionCount} questions${subjectNote} for my ${activeProfile.name} study goal. Present one question at a time. After I answer each one, tell me if I'm right, explain why, and log the result. Then show the next question. At the end, give me a summary of my performance.`
+      `Generate a practice session with ${questionCount} questions${subjectNote} for my ${activeProfile.name} study goal.${sectionNote} Present one question at a time. After I answer each one, tell me if I'm right, explain why, and log the result. Then show the next question. At the end, give me a summary of my performance.`
     )
   }
 
@@ -122,6 +131,22 @@ export default function PracticeExam() {
               ))}
             </select>
           </div>
+
+          {examFormats.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-body)] mb-1">{t('examFormat.title')}</label>
+              <select
+                value={examSection}
+                onChange={e => setExamSection(e.target.value)}
+                className="select-field w-full"
+              >
+                <option value="">All sections</option>
+                {examFormats.map(f => (
+                  <option key={f.id} value={f.formatName}>{f.formatName} — {f.pointWeight}%</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-[var(--text-body)]">{t('ai.useSources')}</label>
