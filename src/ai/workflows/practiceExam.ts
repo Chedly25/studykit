@@ -1,6 +1,6 @@
 /**
  * Practice exam generation workflow — 5 steps:
- * 1. Gather context (DB)
+ * 1. Gather context (DB) — profile, subjects, topics, documents, student model
  * 2. Search documents (optional)
  * 3. Search web (optional)
  * 4. Generate questions (LLM)
@@ -34,32 +34,92 @@ interface GeneratedQuestionData {
   subQuestions?: Array<{ text: string; correctAnswer: string }>
 }
 
+interface GatherContextResult {
+  profileName: string
+  examType: string
+  examDate: string
+  passingThreshold: number
+  subjectsList: string
+  topicsList: string
+  knowledgeGraph: string
+  weakTopics: string
+  errorPatterns: string
+  sourceExcerpts: string
+  studentModel?: { learningStyle: string; commonMistakes: string }
+  examFormats: Array<{ formatName: string; description: string; samplePrompt?: string }>
+}
+
 export function createPracticeExamWorkflow(config: PracticeExamConfig): WorkflowDefinition<GeneratedQuestion[]> {
   return {
     id: 'practice-exam-generation',
     name: 'Generate Practice Exam',
     steps: [
-      // Step 1: Gather context from DB
-      dbQueryStep('gatherContext', 'Gathering your study data', async (ctx) => {
-        const [knowledgeGraph, weakTopics, errorPatterns, studentModel, examFormats] = await Promise.all([
+      // Step 1: Gather ALL context from DB — this is critical for quality
+      dbQueryStep<GatherContextResult>('gatherContext', 'Gathering your study data', async (ctx) => {
+        const [profile, subjects, topics, knowledgeGraph, weakTopics, errorPatterns, studentModel, examFormats, documents] = await Promise.all([
+          db.examProfiles.get(ctx.examProfileId),
+          db.subjects.where('examProfileId').equals(ctx.examProfileId).sortBy('order'),
+          db.topics.where('examProfileId').equals(ctx.examProfileId).toArray(),
           getKnowledgeGraph(ctx.examProfileId),
           getWeakTopicsTool(ctx.examProfileId),
           getErrorPatterns(ctx.examProfileId),
           db.studentModels.get(ctx.examProfileId),
           db.examFormats.where('examProfileId').equals(ctx.examProfileId).toArray(),
+          db.documents.where('examProfileId').equals(ctx.examProfileId).toArray(),
         ])
-        return { knowledgeGraph, weakTopics, errorPatterns, studentModel, examFormats }
+
+        // Build a rich subjects → topics listing
+        const subjectsList = subjects.map(s => {
+          const subTopics = topics.filter(t => t.subjectId === s.id)
+          const topicNames = subTopics.map(t => `    - ${t.name} (mastery: ${Math.round(t.mastery * 100)}%, ${t.questionsAttempted} attempted)`).join('\n')
+          return `  ${s.name} (weight: ${s.weight}%, mastery: ${Math.round(s.mastery * 100)}%)\n${topicNames}`
+        }).join('\n')
+
+        const topicsList = topics.map(t => t.name).join(', ')
+
+        // Load source excerpts — grab summaries and first chunks from each document
+        let sourceExcerpts = ''
+        if (documents.length > 0) {
+          const excerptParts: string[] = []
+          for (const doc of documents.slice(0, 5)) {
+            const chunks = await db.documentChunks
+              .where('documentId').equals(doc.id)
+              .limit(3)
+              .toArray()
+            const content = chunks.map(c => c.content).join('\n')
+            const summary = doc.summary ? `Summary: ${doc.summary}\n` : ''
+            excerptParts.push(`[${doc.title}]\n${summary}${content.slice(0, 1500)}`)
+          }
+          sourceExcerpts = excerptParts.join('\n\n---\n\n')
+        }
+
+        return {
+          profileName: profile?.name ?? 'Study Profile',
+          examType: profile?.examType ?? 'custom',
+          examDate: profile?.examDate ?? '',
+          passingThreshold: profile?.passingThreshold ?? 60,
+          subjectsList,
+          topicsList,
+          knowledgeGraph,
+          weakTopics,
+          errorPatterns,
+          sourceExcerpts,
+          studentModel: studentModel ? {
+            learningStyle: studentModel.learningStyle,
+            commonMistakes: studentModel.commonMistakes,
+          } : undefined,
+          examFormats,
+        }
       }),
 
-      // Step 2: Search uploaded documents (optional, skipped if sources disabled)
+      // Step 2: Search uploaded documents for focus-area-specific content (optional)
       {
         ...sourceSearchStep('searchDocuments', 'Searching your study materials', (ctx) => {
-          const context = ctx.results['gatherContext']?.data as { weakTopics: string } | undefined
-          const weakTopics = context?.weakTopics ?? ''
+          const context = ctx.results['gatherContext']?.data as GatherContextResult | undefined
           return config.focusSubject
-            ? `${config.focusSubject} exam questions key concepts`
-            : `weak topics practice questions ${weakTopics.slice(0, 200)}`
-        }, 8),
+            ? `${config.focusSubject} key concepts definitions examples`
+            : `${context?.topicsList?.slice(0, 300) ?? ''} exam questions key concepts`
+        }, 10),
         optional: true,
         shouldRun: () => config.sourcesEnabled,
       },
@@ -67,8 +127,10 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
       // Step 3: Search web for reference material (optional)
       {
         ...webSearchStep('searchWeb', 'Researching online resources', (ctx) => {
-          const focus = config.focusSubject ?? 'weak topics'
-          return `${focus} exam practice questions study guide`
+          const context = ctx.results['gatherContext']?.data as GatherContextResult | undefined
+          const profileName = context?.profileName ?? ''
+          const focus = config.focusSubject ?? context?.topicsList?.slice(0, 100) ?? ''
+          return `${profileName} ${focus} exam practice questions`
         }),
         optional: true,
       },
@@ -78,49 +140,62 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
         'generateQuestions',
         'Generating exam questions',
         (ctx) => {
-          const context = ctx.results['gatherContext']?.data as {
-            knowledgeGraph: string
-            weakTopics: string
-            errorPatterns: string
-            studentModel?: { learningStyle: string; commonMistakes: string }
-            examFormats: Array<{ formatName: string; description: string; samplePrompt?: string }>
-          }
+          const context = ctx.results['gatherContext']?.data as GatherContextResult
 
-          const sourceContent = ctx.results['searchDocuments']?.data as string | undefined
+          const sourceSearchContent = ctx.results['searchDocuments']?.data as string | undefined
           const webContent = ctx.results['searchWeb']?.data as string | undefined
 
           const focusNote = config.focusSubject
-            ? `Focus primarily on the subject: ${config.focusSubject}.`
-            : 'Focus on the student\'s weakest topics.'
+            ? `Focus primarily on the subject: "${config.focusSubject}".`
+            : 'Cover a mix of subjects, weighted toward the student\'s weakest topics.'
 
           const sectionNote = config.examSection
-            ? `Use the "${config.examSection}" exam format style.`
-            : 'Use a mix of question formats (multiple-choice, true-false, short-answer, essay).'
+            ? `Use the "${config.examSection}" exam format style for all questions.`
+            : 'Use a mix of question formats (multiple-choice, true-false, short-answer).'
 
           const examFormatInfo = context?.examFormats?.length
             ? `\nExam format sections:\n${context.examFormats.map(f => `- ${f.formatName}: ${f.description}${f.samplePrompt ? ` (Example: ${f.samplePrompt})` : ''}`).join('\n')}`
             : ''
 
-          return `You are generating a practice exam. Produce exactly ${config.questionCount} questions.
+          // Build the source context block — combine direct excerpts with search results
+          let sourceBlock = ''
+          if (context?.sourceExcerpts) {
+            sourceBlock += `\n\nUPLOADED STUDY MATERIALS (use these as the primary basis for questions):\n${context.sourceExcerpts.slice(0, 4000)}`
+          }
+          if (sourceSearchContent) {
+            sourceBlock += `\n\nADDITIONAL SOURCE SEARCH RESULTS:\n${sourceSearchContent.slice(0, 2000)}`
+          }
+          if (webContent) {
+            sourceBlock += `\n\nWEB RESEARCH:\n${webContent.slice(0, 1500)}`
+          }
+
+          return `You are generating a practice exam for a student studying for: "${context.profileName}" (${context.examType}).
+${context.examDate ? `Exam date: ${context.examDate}.` : ''}
+Passing threshold: ${context.passingThreshold}%.
+
+SUBJECTS AND TOPICS THE STUDENT IS STUDYING:
+${context.subjectsList || 'No subjects defined yet.'}
 
 ${focusNote}
 ${sectionNote}
 ${examFormatInfo}
 
-Student's knowledge graph:
-${context?.knowledgeGraph ?? 'No data available'}
+STUDENT PERFORMANCE DATA:
+Knowledge graph: ${context.knowledgeGraph}
+Weak topics: ${context.weakTopics}
+Error patterns: ${context.errorPatterns}
+${context.studentModel ? `Learning style: ${context.studentModel.learningStyle}\nCommon mistakes: ${context.studentModel.commonMistakes}` : ''}
+${sourceBlock}
 
-Weak topics:
-${context?.weakTopics ?? 'None identified'}
-
-Error patterns:
-${context?.errorPatterns ?? 'None'}
-
-${context?.studentModel ? `Student learning style: ${context.studentModel.learningStyle}\nCommon mistakes: ${context.studentModel.commonMistakes}` : ''}
-
-${sourceContent ? `Relevant source material:\n${sourceContent.slice(0, 3000)}` : ''}
-
-${webContent ? `Web research:\n${webContent.slice(0, 2000)}` : ''}
+CRITICAL INSTRUCTIONS:
+- Generate EXACTLY ${config.questionCount} questions
+- Every question MUST be directly relevant to the subjects and topics listed above
+- Questions must be at the appropriate academic level for "${context.profileName}"
+- If study materials are provided above, base questions on that actual content
+- topicName for each question MUST be one of these topics: ${context.topicsList || 'use the subject names'}
+- Do NOT generate generic or unrelated questions
+- Vary difficulty (1-5) across questions, with more questions at difficulty 2-4
+- Prefer multiple-choice format (at least 60% of questions)
 
 Respond with ONLY a JSON object in this exact format:
 {
@@ -139,18 +214,14 @@ Respond with ONLY a JSON object in this exact format:
   ]
 }
 
-Rules:
-- For multiple-choice: always include 4 options, set correctOptionIndex (0-based), correctAnswer must match the option text
-- For true-false: format is "true-false", correctAnswer is "true" or "false", no options needed
-- For short-answer: no options needed, correctAnswer is the expected answer
-- For essay: no options needed, correctAnswer describes the ideal answer
-- difficulty: 1-5 scale
-- points: 1 for true-false, 2 for MCQ/short-answer, 3 for essay
-- topicName must match a topic from the knowledge graph
-- Vary difficulty across questions
-- Ensure questions test different topics`
+Format rules:
+- multiple-choice: 4 options, correctOptionIndex (0-based), correctAnswer matches option text
+- true-false: correctAnswer is "true" or "false", no options
+- short-answer: correctAnswer is the expected answer, no options
+- essay: correctAnswer describes the ideal answer, no options
+- Points: 1 for true-false, 2 for MCQ/short-answer, 3 for essay`
         },
-        'You are an expert exam question generator. Generate high-quality, academically rigorous questions. Return ONLY valid JSON.',
+        `You are an expert exam question generator specializing in creating academically rigorous, contextually relevant practice exams. You MUST base all questions on the student's actual subjects and study materials. NEVER generate generic or off-topic questions. Return ONLY valid JSON.`,
       ),
 
       // Step 5: Validate generated questions (optional)
@@ -159,8 +230,18 @@ Rules:
           'validateQuestions',
           'Validating question quality',
           (ctx) => {
+            const context = ctx.results['gatherContext']?.data as GatherContextResult
             const generated = ctx.results['generateQuestions']?.data as { questions: GeneratedQuestionData[] }
-            return `Review these exam questions for accuracy and quality. Fix any issues with incorrect answers, ambiguous wording, or missing options. Return the corrected questions in the same JSON format.
+            return `Review these practice exam questions for "${context.profileName}".
+
+Verify:
+1. Every question is relevant to the student's subjects: ${context.topicsList}
+2. Correct answers are actually correct
+3. MCQ options are plausible distractors
+4. No ambiguous wording
+5. topicName matches an actual topic
+
+Fix any issues. Remove and replace any question that is off-topic or too generic.
 
 Questions to validate:
 ${JSON.stringify(generated?.questions ?? [], null, 2)}
@@ -168,7 +249,7 @@ ${JSON.stringify(generated?.questions ?? [], null, 2)}
 Return ONLY a JSON object: { "questions": [...] }
 If all questions are correct, return them unchanged.`
           },
-          'You are an expert exam reviewer. Check each question for factual accuracy, clear wording, and correct answers. Return ONLY valid JSON.',
+          'You are an expert exam reviewer. Ensure every question is relevant to the student\'s actual study profile. Return ONLY valid JSON.',
         ),
         optional: true,
       },
@@ -179,6 +260,10 @@ If all questions are correct, return them unchanged.`
       const validated = ctx.results['validateQuestions']?.data as { questions: GeneratedQuestionData[] } | undefined
       const generated = ctx.results['generateQuestions']?.data as { questions: GeneratedQuestionData[] }
       const questions = validated?.questions ?? generated?.questions ?? []
+
+      if (questions.length === 0) {
+        throw new Error('No questions were generated. Please try again.')
+      }
 
       // Write to IndexedDB
       const generatedQuestions: GeneratedQuestion[] = questions.map((q, i) => ({

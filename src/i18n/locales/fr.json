@@ -391,6 +391,9 @@
     "questionReview": "Revision des questions",
     "retake": "Repasser l'examen",
     "writing": "Redaction...",
+    "confirmSubmit": "Soumettre l'examen ?",
+    "unansweredWarning": "Vous avez {{count}} question(s) sans reponse. Elles seront comptees comme incorrectes.",
+    "submitAnyway": "Soumettre quand meme",
     "steps": {
       "gatherContext": "Collecte de vos donnees d'etude",
       "searchDocuments": "Recherche dans vos supports de cours",

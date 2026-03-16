@@ -391,6 +391,9 @@
     "questionReview": "Question Review",
     "retake": "Retake Exam",
     "writing": "Writing...",
+    "confirmSubmit": "Submit exam?",
+    "unansweredWarning": "You have {{count}} unanswered question(s). They will be marked as incorrect.",
+    "submitAnyway": "Submit Anyway",
     "steps": {
       "gatherContext": "Gathering your study data",
       "searchDocuments": "Searching your study materials",

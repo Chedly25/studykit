@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Send } from 'lucide-react'
+import { Send, Loader2 } from 'lucide-react'
 import type { GeneratedQuestion } from '../../db/schema'
 import { QuestionRenderer } from './QuestionRenderer'
 import { QuestionNav } from './QuestionNav'
@@ -25,6 +26,20 @@ export function PracticeExamTaker({
   onSubmit,
 }: PracticeExamTakerProps) {
   const { t } = useTranslation()
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  // Loading state while live query resolves
+  if (questions.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-12 text-center animate-fade-in">
+        <div className="glass-card p-8">
+          <Loader2 className="w-8 h-8 text-[var(--accent-text)] animate-spin mx-auto mb-4" />
+          <p className="text-sm text-[var(--text-muted)]">{t('common.loading')}</p>
+        </div>
+      </div>
+    )
+  }
+
   const currentQuestion = questions[currentIndex]
   if (!currentQuestion) return null
 
@@ -32,6 +47,15 @@ export function PracticeExamTaker({
     questions.filter(q => answers.has(q.id) || q.isAnswered).map(q => q.id),
   )
   const answeredCount = answeredIds.size
+  const unansweredCount = questions.length - answeredCount
+
+  const handleSubmit = () => {
+    if (unansweredCount > 0) {
+      setShowConfirm(true)
+    } else {
+      onSubmit()
+    }
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-4 animate-fade-in flex flex-col" style={{ height: 'calc(100vh - 8rem)' }}>
@@ -48,7 +72,7 @@ export function PracticeExamTaker({
           <div className="flex items-center gap-3">
             {timeRemaining !== null && <ExamTimer timeRemaining={timeRemaining} />}
             <button
-              onClick={onSubmit}
+              onClick={handleSubmit}
               className="btn-primary px-4 py-1.5 text-sm flex items-center gap-1.5"
             >
               <Send className="w-3.5 h-3.5" />
@@ -77,6 +101,34 @@ export function PracticeExamTaker({
           />
         </div>
       </div>
+
+      {/* Submit confirmation dialog */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="glass-card p-6 max-w-sm mx-4 space-y-4">
+            <h3 className="text-lg font-semibold text-[var(--text-heading)]">
+              {t('practiceExam.confirmSubmit')}
+            </h3>
+            <p className="text-sm text-[var(--text-muted)]">
+              {t('practiceExam.unansweredWarning', { count: unansweredCount })}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="btn-secondary flex-1 py-2 text-sm"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={() => { setShowConfirm(false); onSubmit() }}
+                className="btn-primary flex-1 py-2 text-sm"
+              >
+                {t('practiceExam.submitAnyway')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
