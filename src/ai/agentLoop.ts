@@ -39,6 +39,16 @@ import { getTopicDependencies, setTopicPrerequisites } from './tools/dependencyT
 import { autoMapSourceToTopics } from './tools/conceptTools'
 import { startQuickReview, rateFlashcard } from './tools/dataOperations'
 import { createMockExam, gradeMockExam } from './tools/examTools'
+import {
+  getResearchThreads,
+  updateThreadStatus,
+  getMilestones,
+  updateMilestoneStatus,
+  synthesizeLiterature,
+  generateMeetingPrep,
+  searchNotes,
+  findNoteConnections,
+} from './tools/researchTools'
 
 const MAX_ITERATIONS = 10
 const TIMEOUT_MS = 60000
@@ -140,6 +150,22 @@ async function executeToolLocally(
     case 'gradeMockExam':
       if (!authToken) return JSON.stringify({ error: 'Authentication required' })
       return gradeMockExam(examProfileId, input as { examId: string }, authToken)
+    case 'getResearchThreads':
+      return getResearchThreads(examProfileId)
+    case 'updateThreadStatus':
+      return updateThreadStatus(examProfileId, input as { topicName: string; status: string })
+    case 'getMilestones':
+      return getMilestones(examProfileId)
+    case 'updateMilestone':
+      return updateMilestoneStatus(examProfileId, input as { milestoneId: string; status: string })
+    case 'synthesizeLiterature':
+      return synthesizeLiterature(examProfileId, input as { documentIds?: string[] })
+    case 'generateMeetingPrep':
+      return generateMeetingPrep(examProfileId)
+    case 'searchNotes':
+      return searchNotes(examProfileId, input as { query: string })
+    case 'findNoteConnections':
+      return findNoteConnections(examProfileId, input as { noteId: string })
     default:
       return JSON.stringify({ error: `Unknown tool: ${toolName}` })
   }

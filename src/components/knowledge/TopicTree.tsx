@@ -2,15 +2,23 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ChevronRight, ChevronDown, Lock } from 'lucide-react'
-import type { Subject, Topic } from '../../db/schema'
+import type { Subject, Topic, TopicStatus } from '../../db/schema'
 
 interface Props {
   subjects: Subject[]
   getTopicsForSubject: (subjectId: string) => Topic[]
   allTopics?: Topic[]
+  showStatus?: boolean
 }
 
-export function TopicTree({ subjects, getTopicsForSubject, allTopics }: Props) {
+const statusBadgeColors: Record<TopicStatus, string> = {
+  'active': 'bg-green-500',
+  'exploring': 'bg-amber-400',
+  'blocked': 'bg-red-500',
+  'resolved': 'bg-gray-400',
+}
+
+export function TopicTree({ subjects, getTopicsForSubject, allTopics, showStatus }: Props) {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const topicMap = new Map((allTopics ?? []).map(tp => [tp.id, tp]))
@@ -71,6 +79,9 @@ export function TopicTree({ subjects, getTopicsForSubject, allTopics }: Props) {
                   <div key={topic.id} className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[var(--bg-input)]/50">
                     {hasUnmetPrereqs(topic) && (
                       <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                    )}
+                    {showStatus && topic.status && (
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${statusBadgeColors[topic.status]}`} title={topic.status} />
                     )}
                     <span className="text-sm text-[var(--text-body)] flex-1">{topic.name}</span>
                     <MasteryBar value={topic.mastery} />

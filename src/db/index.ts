@@ -28,6 +28,13 @@ import type {
   PracticeExamSession,
   GeneratedQuestion,
   ChunkEmbedding,
+  Milestone,
+  ResearchNote,
+  Annotation,
+  HabitGoal,
+  HabitLog,
+  WritingSession,
+  AdvisorMeeting,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -59,6 +66,13 @@ export class StudiesKitDB extends Dexie {
   practiceExamSessions!: Table<PracticeExamSession>
   generatedQuestions!: Table<GeneratedQuestion>
   chunkEmbeddings!: Table<ChunkEmbedding>
+  milestones!: Table<Milestone>
+  researchNotes!: Table<ResearchNote>
+  annotations!: Table<Annotation>
+  habitGoals!: Table<HabitGoal>
+  habitLogs!: Table<HabitLog>
+  writingSessions!: Table<WritingSession>
+  advisorMeetings!: Table<AdvisorMeeting>
 
   constructor() {
     super('studieskit')
@@ -147,6 +161,20 @@ export class StudiesKitDB extends Dexie {
 
     this.version(11).stores({
       chunkEmbeddings: 'id, chunkId, documentId, examProfileId',
+    })
+
+    this.version(12).stores({
+      milestones: 'id, examProfileId, status, order',
+      researchNotes: 'id, examProfileId, updatedAt',
+      annotations: 'id, documentId, chunkId, examProfileId, [documentId+examProfileId]',
+      habitGoals: 'id, examProfileId',
+      habitLogs: 'id, goalId, examProfileId, date',
+      writingSessions: 'id, examProfileId, createdAt',
+      advisorMeetings: 'id, examProfileId, date, status',
+    }).upgrade(tx => {
+      tx.table('examProfiles').toCollection().modify(profile => {
+        if (profile.profileMode === undefined) profile.profileMode = 'study'
+      })
     })
   }
 }

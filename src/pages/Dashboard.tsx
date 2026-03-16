@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation, Trans } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { MessageCircle, ClipboardCheck, Upload, Target, Loader2 } from 'lucide-react'
+import { MessageCircle, ClipboardCheck, Upload, Target, Loader2, PenTool, BookOpen, Users } from 'lucide-react'
 import { useAuth } from '@clerk/clerk-react'
 import { db } from '../db'
 import type { StudySession } from '../db/schema'
@@ -12,6 +12,9 @@ import { useProactiveInsights } from '../hooks/useProactiveInsights'
 import { useSessionInsights } from '../hooks/useSessionInsights'
 import { useSourceCoverage } from '../hooks/useSourceCoverage'
 import { useStudyPlan } from '../hooks/useStudyPlan'
+import { useProfileMode } from '../hooks/useProfileMode'
+import { useMilestones } from '../hooks/useMilestones'
+import { useHabitGoals } from '../hooks/useHabitGoals'
 import { ReadinessGauge } from '../components/dashboard/ReadinessGauge'
 import { WeakTopicsCard } from '../components/dashboard/WeakTopicsCard'
 import { ExamCountdownCard } from '../components/dashboard/ExamCountdownCard'
@@ -23,6 +26,9 @@ import { SessionInsightsCard } from '../components/dashboard/SessionInsightsCard
 import { StudyPlanCard } from '../components/dashboard/StudyPlanCard'
 import { TopicTree } from '../components/knowledge/TopicTree'
 import { TodaysPriorityCard } from '../components/dashboard/TodaysPriorityCard'
+import { MilestoneTrackerCard } from '../components/dashboard/MilestoneTrackerCard'
+import { ResearchThreadsCard } from '../components/dashboard/ResearchThreadsCard'
+import { HabitGoalsCard } from '../components/dashboard/HabitGoalsCard'
 import { computeDailyRecommendations } from '../lib/studyRecommender'
 import { OnboardingUpload } from '../components/dashboard/onboarding/OnboardingUpload'
 import { OnboardingAssess } from '../components/dashboard/onboarding/OnboardingAssess'
@@ -33,7 +39,10 @@ export default function Dashboard() {
   const { t } = useTranslation()
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
+  const { isResearch } = useProfileMode()
   const profileId = activeProfile?.id
+  const { milestones, doneCount, daysUntilNext, addMilestone, updateMilestone } = useMilestones(profileId)
+  const { goals: habitGoals, getTodayProgress, addGoal: addHabitGoal, logProgress: logHabitProgress, deleteGoal: deleteHabitGoal } = useHabitGoals(profileId)
   const { subjects, topics, readiness, weakTopics, dueTopics, streak, weeklyHours, getTopicsForSubject } = useKnowledgeGraph(profileId)
   const insights = useProactiveInsights(profileId)
   const { recentInsights: sessionInsights } = useSessionInsights(profileId)
@@ -68,7 +77,9 @@ export default function Dashboard() {
 
   const recommendations = useMemo(() => {
     if (!activeProfile || topics.length === 0) return []
-    const daysUntilExam = Math.max(0, Math.ceil((new Date(activeProfile.examDate).getTime() - Date.now()) / 86400000))
+    const daysUntilExam = activeProfile.examDate
+      ? Math.max(0, Math.ceil((new Date(activeProfile.examDate).getTime() - Date.now()) / 86400000))
+      : 30 // Default urgency for no-deadline profiles
     return computeDailyRecommendations({
       topics,
       subjects,
@@ -96,11 +107,12 @@ export default function Dashboard() {
 
   // Onboarding phase derivation
   const onboardingPhase = useMemo(() => {
+    if (isResearch) return 'done' as const
     if (documentsCount === 0) return 'upload' as const
     if (topics.length === 0) return 'assess' as const
     if (!activePlan) return 'plan' as const
     return 'done' as const
-  }, [documentsCount, topics.length, activePlan])
+  }, [isResearch, documentsCount, topics.length, activePlan])
 
   const [extractedTopics, setExtractedTopics] = useState<ExtractionResult | null>(null)
 
@@ -158,12 +170,17 @@ export default function Dashboard() {
       {/* Quick Actions — hidden during onboarding */}
       {!showOnboarding && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-          {([
+          {(isResearch ? [
+            { icon: MessageCircle, label: t('research.quickActions.researchPartner'), desc: t('research.quickActions.researchPartnerDesc'), to: '/chat' },
+            { icon: PenTool, label: t('research.quickActions.writingSession'), desc: t('research.quickActions.writingSessionDesc'), to: '/writing' },
+            { icon: BookOpen, label: t('research.quickActions.uploadPapers'), desc: t('research.quickActions.uploadPapersDesc'), to: '/sources' },
+            { icon: Users, label: t('research.quickActions.meetings'), desc: t('research.quickActions.meetingsDesc'), to: '/meetings' },
+          ] : [
             { icon: MessageCircle, label: t('dashboard.quickActions.aiTutor'), desc: t('dashboard.quickActions.aiTutorDesc'), to: '/chat' },
             { icon: ClipboardCheck, label: t('dashboard.quickActions.practiceExam'), desc: t('dashboard.quickActions.practiceExamDesc'), to: '/practice-exam' },
             { icon: Upload, label: t('dashboard.quickActions.uploadSources'), desc: t('dashboard.quickActions.uploadSourcesDesc'), to: '/sources' },
             { icon: Target, label: t('dashboard.quickActions.studyPlan'), desc: t('dashboard.quickActions.studyPlanDesc'), to: '/study-plan' },
-          ] as const).map(({ icon: Icon, label, desc, to }) => (
+          ]).map(({ icon: Icon, label, desc, to }) => (
             <Link key={to} to={to} className="glass-card glass-card-hover p-4 flex flex-col items-start gap-2 group">
               <div className="w-10 h-10 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center">
                 <Icon className="w-5 h-5 text-[var(--accent-text)]" />
@@ -175,8 +192,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Onboarding: ExamCountdown always visible */}
-      {showOnboarding && (
+      {/* Onboarding: ExamCountdown always visible (if exam date exists) */}
+      {showOnboarding && activeProfile.examDate && (
         <div className="mb-4">
           <ExamCountdownCard examName={activeProfile.name} examDate={activeProfile.examDate} />
         </div>
@@ -220,12 +237,33 @@ export default function Dashboard() {
       {/* Full dashboard — visible after onboarding */}
       {!showOnboarding && (
         <>
-          {/* Top row: Readiness + Countdown + Streak */}
+          {/* Top row: Readiness + Countdown/Milestones + Streak */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div className="glass-card p-4 flex items-center justify-center relative">
-              <ReadinessGauge value={readiness} />
+              <ReadinessGauge
+                value={readiness}
+                label={isResearch ? t('research.researchDepth') : undefined}
+              />
             </div>
-            <ExamCountdownCard examName={activeProfile.name} examDate={activeProfile.examDate} />
+            {isResearch ? (
+              <MilestoneTrackerCard
+                milestones={milestones}
+                doneCount={doneCount}
+                daysUntilNext={daysUntilNext}
+                onAdd={addMilestone}
+                onUpdate={updateMilestone}
+              />
+            ) : activeProfile.examDate ? (
+              <ExamCountdownCard examName={activeProfile.name} examDate={activeProfile.examDate} />
+            ) : (
+              <MilestoneTrackerCard
+                milestones={milestones}
+                doneCount={doneCount}
+                daysUntilNext={daysUntilNext}
+                onAdd={addMilestone}
+                onUpdate={updateMilestone}
+              />
+            )}
             <StudyStreakCard streak={streak} weeklyHours={weeklyHours} weeklyTarget={activeProfile.weeklyTargetHours} />
           </div>
 
@@ -236,7 +274,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Middle row: Today's Plan + Weak Topics */}
+          {/* Middle row: Today's Plan + Weak Topics / Research Threads */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             {todaysPlan ? (
               <StudyPlanCard
@@ -251,7 +289,11 @@ export default function Dashboard() {
             ) : (
               <TodaysPlanCard dueTopics={dueTopics} dueFlashcardCount={dueFlashcards} upcomingAssignments={upcomingAssignments} />
             )}
-            <WeakTopicsCard topics={weakTopics} subjects={subjects} />
+            {isResearch ? (
+              <ResearchThreadsCard topics={weakTopics.length > 0 ? weakTopics : topics} subjects={subjects} />
+            ) : (
+              <WeakTopicsCard topics={weakTopics} subjects={subjects} />
+            )}
           </div>
 
           {/* Source coverage indicator */}
@@ -273,9 +315,22 @@ export default function Dashboard() {
             <ActivityFeed sessions={sessions} />
             <div className="glass-card p-4">
               <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('dashboard.knowledgeGraph')}</h3>
-              <TopicTree subjects={subjects} getTopicsForSubject={getTopicsForSubject} />
+              <TopicTree subjects={subjects} getTopicsForSubject={getTopicsForSubject} showStatus={isResearch} />
             </div>
           </div>
+
+          {/* Habit Goals */}
+          {(habitGoals.length > 0 || isResearch) && (
+            <div className="mt-4">
+              <HabitGoalsCard
+                goals={habitGoals}
+                getTodayProgress={getTodayProgress}
+                onAdd={addHabitGoal}
+                onLog={logHabitProgress}
+                onDelete={deleteHabitGoal}
+              />
+            </div>
+          )}
 
           {/* Session Insights */}
           {sessionInsights.length > 0 && (

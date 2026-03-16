@@ -344,6 +344,79 @@ export const agentTools: ToolDefinition[] = [
     },
   },
 
+  // ─── Research Tools ─────────────────────────────────────────
+  {
+    name: 'getResearchThreads',
+    description: 'Get all research threads (topics) with their status (exploring/active/blocked/resolved) and depth for research profiles.',
+    input_schema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'updateThreadStatus',
+    description: 'Update the status of a research thread. Valid statuses: exploring, active, blocked, resolved.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        topicName: { type: 'string', description: 'Name of the research thread' },
+        status: { type: 'string', enum: ['exploring', 'active', 'blocked', 'resolved'], description: 'New status' },
+      },
+      required: ['topicName', 'status'],
+    },
+  },
+  {
+    name: 'getMilestones',
+    description: 'Get all milestones for the research project with their status and target dates.',
+    input_schema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'updateMilestone',
+    description: 'Update the status of a milestone. Valid statuses: pending, in-progress, done.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        milestoneId: { type: 'string', description: 'Milestone ID' },
+        status: { type: 'string', enum: ['pending', 'in-progress', 'done'], description: 'New status' },
+      },
+      required: ['milestoneId', 'status'],
+    },
+  },
+  {
+    name: 'synthesizeLiterature',
+    description: 'Gather content from specified documents for literature synthesis. Returns document content and an instruction to synthesize themes, contradictions, and gaps.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        documentIds: { type: 'array', items: { type: 'string' }, description: 'Optional document IDs. If empty, uses all documents.' },
+      },
+    },
+  },
+  {
+    name: 'generateMeetingPrep',
+    description: 'Gather recent research activity, blocked threads, and milestone progress to generate a structured advisor meeting preparation document.',
+    input_schema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'searchNotes',
+    description: 'Search research notes by keyword in title, content, and tags.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'findNoteConnections',
+    description: 'Find related research notes based on content similarity. Helps discover connections in Zettelkasten-style note systems.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        noteId: { type: 'string', description: 'ID of the note to find connections for' },
+      },
+      required: ['noteId'],
+    },
+  },
+
   // ─── Source Retrieval ──────────────────────────────────────
   {
     name: 'searchSources',

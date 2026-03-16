@@ -6,17 +6,20 @@
 export type ExamType = 'university-course' | 'professional-exam' | 'graduate-research'
   | 'language-learning' | 'custom'
 
+export type ProfileMode = 'study' | 'research'
+
 export interface ExamProfile {
   id: string
   name: string
   examType: ExamType
-  examDate: string // YYYY-MM-DD
+  examDate: string // YYYY-MM-DD (empty string '' for no deadline)
   isActive: boolean
   passingThreshold: number // 0-100
   weeklyTargetHours: number
   createdAt: string
   userId?: string
   examIntelligence?: string // JSON exam research data
+  profileMode?: ProfileMode
 }
 
 // ─── Knowledge Graph ────────────────────────────────────────────
@@ -29,6 +32,8 @@ export interface Subject {
   color: string
   order: number
 }
+
+export type TopicStatus = 'exploring' | 'active' | 'blocked' | 'resolved'
 
 export interface Topic {
   id: string
@@ -46,6 +51,8 @@ export interface Topic {
   nextReviewDate: string
   // Dependencies (Phase 3)
   prerequisiteTopicIds?: string[] // IDs of prerequisite topics
+  // Research mode status
+  status?: TopicStatus
 }
 
 export interface Subtopic {
@@ -56,7 +63,7 @@ export interface Subtopic {
 }
 
 // ─── Study Sessions ─────────────────────────────────────────────
-export type SessionType = 'pomodoro' | 'free' | 'socratic' | 'practice-exam' | 'review'
+export type SessionType = 'pomodoro' | 'free' | 'socratic' | 'practice-exam' | 'review' | 'writing'
 
 export interface StudySession {
   id: string
@@ -379,4 +386,87 @@ export interface DailyStudyLog {
   subjectBreakdown: SubjectBreakdown[]
   questionsAnswered: number
   questionsCorrect: number
+}
+
+// ─── Research Mode ─────────────────────────────────────────────
+
+export type MilestoneStatus = 'pending' | 'in-progress' | 'done'
+
+export interface Milestone {
+  id: string
+  examProfileId: string
+  title: string
+  targetDate?: string
+  description: string
+  status: MilestoneStatus
+  order: number
+  createdAt: string
+}
+
+export interface ResearchNote {
+  id: string
+  examProfileId: string
+  title: string
+  content: string
+  linkedNoteIds: string   // JSON string[]
+  linkedTopicIds: string  // JSON string[]
+  linkedDocumentIds: string // JSON string[]
+  tags: string            // JSON string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export type AnnotationType = 'key-finding' | 'methodology' | 'relates-to-my-work' | 'question' | 'note'
+
+export interface Annotation {
+  id: string
+  documentId: string
+  chunkId: string
+  examProfileId: string
+  type: AnnotationType
+  content: string
+  createdAt: string
+}
+
+export type HabitFrequency = 'daily' | 'weekly'
+
+export interface HabitGoal {
+  id: string
+  examProfileId: string
+  title: string
+  targetValue: number
+  unit: string
+  frequency: HabitFrequency
+  currentStreak: number
+  createdAt: string
+}
+
+export interface HabitLog {
+  id: string
+  goalId: string
+  examProfileId: string
+  date: string
+  value: number
+}
+
+export interface WritingSession {
+  id: string
+  examProfileId: string
+  noteId?: string
+  wordCountStart: number
+  wordCountEnd: number
+  durationSeconds: number
+  createdAt: string
+}
+
+export type AdvisorMeetingStatus = 'upcoming' | 'completed'
+
+export interface AdvisorMeeting {
+  id: string
+  examProfileId: string
+  date: string
+  summary: string
+  actionItems: string  // JSON string[]
+  notes: string
+  status: AdvisorMeetingStatus
 }

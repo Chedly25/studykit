@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
-import { LayoutDashboard, BarChart3, Focus, MessageCircle, FileText } from 'lucide-react'
+import { LayoutDashboard, BarChart3, Focus, MessageCircle, FileText, PenTool, BookOpen, Users } from 'lucide-react'
 import { MegaMenu } from './MegaMenu'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
@@ -12,11 +12,13 @@ import { ProBadge } from './subscription/ProBadge'
 import { NotificationBell } from './NotificationBell'
 import { useSubscription } from '../hooks/useSubscription'
 import { useExamProfile } from '../hooks/useExamProfile'
+import { useProfileMode } from '../hooks/useProfileMode'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
   const { isPro } = useSubscription()
   const { activeProfile } = useExamProfile()
+  const { isResearch } = useProfileMode()
   const { t } = useTranslation()
   const location = useLocation()
   const isChatPage = location.pathname === '/chat'
@@ -40,24 +42,49 @@ export function Layout() {
               >
                 <LayoutDashboard size={15} /> {t('nav.dashboard')}
               </Link>
-              <Link
-                to="/focus"
-                className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden sm:flex items-center gap-1"
-              >
-                <Focus size={15} /> {t('nav.focus')}
-              </Link>
-              <Link
-                to="/analytics"
-                className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden md:flex items-center gap-1"
-              >
-                <BarChart3 size={15} /> {t('nav.analytics')}
-              </Link>
-              <Link
-                to="/sources"
-                className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden lg:flex items-center gap-1"
-              >
-                <FileText size={15} /> {t('nav.sources')}
-              </Link>
+              {isResearch ? (
+                <>
+                  <Link
+                    to="/writing"
+                    className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden sm:flex items-center gap-1"
+                  >
+                    <PenTool size={15} /> {t('research.writingSession')}
+                  </Link>
+                  <Link
+                    to="/sources"
+                    className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden md:flex items-center gap-1"
+                  >
+                    <BookOpen size={15} /> {t('research.literature')}
+                  </Link>
+                  <Link
+                    to="/meetings"
+                    className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden lg:flex items-center gap-1"
+                  >
+                    <Users size={15} /> {t('research.meetings')}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/focus"
+                    className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden sm:flex items-center gap-1"
+                  >
+                    <Focus size={15} /> {t('nav.focus')}
+                  </Link>
+                  <Link
+                    to="/analytics"
+                    className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden md:flex items-center gap-1"
+                  >
+                    <BarChart3 size={15} /> {t('nav.analytics')}
+                  </Link>
+                  <Link
+                    to="/sources"
+                    className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden lg:flex items-center gap-1"
+                  >
+                    <FileText size={15} /> {t('nav.sources')}
+                  </Link>
+                </>
+              )}
             </SignedIn>
             <MegaMenu />
             <SignedIn>

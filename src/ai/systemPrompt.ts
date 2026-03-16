@@ -54,9 +54,15 @@ interface PromptContext {
 }
 
 export function buildSystemPrompt(ctx: PromptContext): string {
+  if (ctx.profile.profileMode === 'research') {
+    return buildResearchSystemPrompt(ctx)
+  }
+
   const { profile, subjects, topics, dailyLogs, dueFlashcardCount, upcomingAssignments } = ctx
 
-  const daysLeft = Math.max(0, Math.ceil((new Date(profile.examDate).getTime() - Date.now()) / 86400000))
+  const daysLeft = profile.examDate
+    ? Math.max(0, Math.ceil((new Date(profile.examDate).getTime() - Date.now()) / 86400000))
+    : null
   const readiness = computeReadiness({ subjects, passingThreshold: profile.passingThreshold })
   // Use decayed mastery for topic lists
   const topicsDecayed = topics.map(t => ({ ...t, decayed: decayedMastery(t) }))
@@ -78,8 +84,7 @@ export function buildSystemPrompt(ctx: PromptContext): string {
 
 ## Study Profile
 - Study goal: ${profile.name}
-- Category: ${profile.examType}
-- Date: ${profile.examDate} (${daysLeft} days left)
+- Category: ${profile.examType}${daysLeft !== null ? `\n- Date: ${profile.examDate} (${daysLeft} days left)` : ''}
 - Target score: ${profile.passingThreshold}%
 - Weekly target: ${profile.weeklyTargetHours}h
 
@@ -388,6 +393,92 @@ function buildExamIntelligenceSection(intelligenceJson: string): string {
   } catch {
     return ''
   }
+}
+
+// ─── Research Mode Prompts ────────────────────────────────────
+
+export function buildResearchSystemPrompt(ctx: PromptContext): string {
+  const { profile, subjects, topics, dailyLogs, dueFlashcardCount } = ctx
+
+  const readiness = computeReadiness({ subjects, passingThreshold: profile.passingThreshold })
+  const topicsDecayed = topics.map(t => ({ ...t, decayed: decayedMastery(t) }))
+  const streak = computeStreak(dailyLogs)
+  const weeklyHours = computeWeeklyHours(dailyLogs)
+
+  const threadsByStatus = {
+    active: topicsDecayed.filter(t => t.status === 'active'),
+    exploring: topicsDecayed.filter(t => t.status === 'exploring'),
+    blocked: topicsDecayed.filter(t => t.status === 'blocked'),
+    resolved: topicsDecayed.filter(t => t.status === 'resolved'),
+    unset: topicsDecayed.filter(t => !t.status),
+  }
+
+  const threadList = (label: string, items: typeof topicsDecayed) =>
+    items.length > 0 ? `  ${label}:\n${items.map(t => `    - ${t.name} (${Math.round(t.decayed * 100)}% depth)`).join('\n')}` : ''
+
+  const threadsSection = [
+    threadList('Active', threadsByStatus.active),
+    threadList('Exploring', threadsByStatus.exploring),
+    threadList('Blocked', threadsByStatus.blocked),
+    threadList('Resolved', threadsByStatus.resolved),
+    threadsByStatus.unset.length > 0 ? threadList('Unclassified', threadsByStatus.unset) : '',
+  ].filter(Boolean).join('\n')
+
+  return `You are StudiesKit AI, an expert research partner and academic advisor. You help researchers synthesize literature, develop arguments, identify connections across sources, and prepare for advisor meetings.
+
+## Research Project
+- Project: ${profile.name}
+- Category: ${profile.examType}
+- Weekly target: ${profile.weeklyTargetHours}h
+
+## Research Threads (Depth: ${readiness}%)
+${threadsSection || '  (no research threads yet — encourage the researcher to set up their areas)'}
+
+## This Week
+- ${weeklyHours}h worked (target: ${profile.weeklyTargetHours}h)
+- ${streak} day work streak
+- ${dueFlashcardCount} flashcards due for review
+
+## Available Tools
+You have tools to read and write the researcher's data. Always use tools to access data — never guess or fabricate content from their knowledge graph.
+
+## Rules
+1. Reference specific research threads by name
+2. Help synthesize literature — identify themes, contradictions, and gaps across sources
+3. Critique arguments constructively: check logic, evidence, and alternative explanations
+4. Suggest connections between threads, notes, and sources
+5. Assist with writing: clarity, structure, transitions, academic tone
+6. Help prepare for advisor meetings: summarize progress, identify blockers, draft agendas
+7. Never fabricate citations or source content
+8. Use research tools (getResearchThreads, synthesizeLiterature, getMilestones) proactively
+9. When a thread is blocked, suggest approaches to unblock it
+10. Track milestones and remind the researcher of upcoming deadlines
+11. After substantive discussions, use updateStudentModel to record research preferences and patterns
+12. Reference past sessions for continuity using getRecentSessions
+13. When teaching concepts, prefer Socratic guidance over direct answers
+14. Suggest relevant literature searches when gaps are identified${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.conversationSummaries && ctx.conversationSummaries.length > 0 ? buildConversationHistorySection(ctx.conversationSummaries) : ''}${ctx.flashcardPerformance && ctx.flashcardPerformance.length > 0 ? buildFlashcardPerformanceSection(ctx.flashcardPerformance) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${ctx.sessionInsights && ctx.sessionInsights.length > 0 ? buildSessionMemorySection(ctx.sessionInsights) : ''}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
+}
+
+export function buildWritingPartnerPrompt(ctx: PromptContext): string {
+  const base = ctx.profile.profileMode === 'research'
+    ? buildResearchSystemPrompt(ctx)
+    : buildSystemPrompt(ctx)
+
+  return `${base}
+
+## WRITING PARTNER MODE ACTIVE
+You are now acting as a writing partner for academic work.
+
+CRITICAL RULES FOR WRITING PARTNER MODE:
+- Help with clarity, argument structure, transitions, introductions, and conclusions
+- Review drafts and suggest specific improvements
+- Don't rewrite the researcher's work — guide them to improve it themselves
+- Point out logical gaps, weak evidence, or unclear reasoning
+- Suggest better word choices or phrasing when asked
+- Help with academic tone and conventions
+- When reviewing a paragraph, be specific: quote the part you're addressing
+- Offer structural suggestions (reorder paragraphs, split/merge sections)
+- Ask clarifying questions about intent before suggesting major changes`
 }
 
 function buildEmotionalIntelligenceSection(): string {

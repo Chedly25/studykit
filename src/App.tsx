@@ -35,6 +35,11 @@ const SubscriptionSuccess = lazy(() => import('./pages/SubscriptionSuccess'))
 // Sources
 const Sources = lazy(() => import('./pages/Sources'))
 
+// Research
+const Writing = lazy(() => import('./pages/Writing'))
+const Meetings = lazy(() => import('./pages/Meetings'))
+const Notes = lazy(() => import('./pages/Notes'))
+
 // Grades
 const GpaCalculator = lazy(() => import('./pages/tools/GpaCalculator'))
 const GradeCalculator = lazy(() => import('./pages/tools/GradeCalculator'))
@@ -104,6 +109,9 @@ export default function App() {
           <Route path="study-plan" element={<ProtectedRoute><StudyPlan /></ProtectedRoute>} />
           <Route path="mock-exam" element={<ProtectedRoute><MockExam /></ProtectedRoute>} />
           <Route path="sources" element={<ProtectedRoute><Sources /></ProtectedRoute>} />
+          <Route path="writing" element={<ProtectedRoute><Writing /></ProtectedRoute>} />
+          <Route path="meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
+          <Route path="notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
 
           {/* Public — Grades */}
           <Route path="gpa-calculator" element={<GpaCalculator />} />

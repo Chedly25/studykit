@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, LayoutDashboard, GraduationCap, BarChart3, Focus, MessageCircle, Brain, ClipboardCheck, FileText, Lightbulb, Calendar } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, GraduationCap, BarChart3, Focus, MessageCircle, Brain, ClipboardCheck, FileText, Lightbulb, Calendar, PenTool, Users, StickyNote } from 'lucide-react'
 import { ProBadge } from './subscription/ProBadge'
+import { useProfileMode } from '../hooks/useProfileMode'
 
 export function MegaMenu() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const { t } = useTranslation()
+  const { isResearch } = useProfileMode()
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -39,13 +41,21 @@ export function MegaMenu() {
               { to: '/dashboard', icon: LayoutDashboard, label: t('nav.dashboard'), pro: false },
               { to: '/exam-profile', icon: GraduationCap, label: t('profile.studyProfile'), pro: false },
               { to: '/analytics', icon: BarChart3, label: t('nav.analytics'), pro: false },
-              { to: '/focus', icon: Focus, label: t('focus.title'), pro: false },
-              { to: '/chat', icon: MessageCircle, label: t('ai.chat'), pro: true },
-              { to: '/socratic', icon: Brain, label: t('ai.socratic'), pro: true },
-              { to: '/practice-exam', icon: ClipboardCheck, label: t('ai.practiceSession'), pro: true },
-              { to: '/explain-back', icon: Lightbulb, label: t('ai.explainBack'), pro: true },
+              ...(isResearch ? [
+                { to: '/writing', icon: PenTool, label: t('research.writingSession'), pro: true },
+                { to: '/notes', icon: StickyNote, label: t('research.notes'), pro: true },
+                { to: '/meetings', icon: Users, label: t('research.meetings'), pro: true },
+              ] : [
+                { to: '/focus', icon: Focus, label: t('focus.title'), pro: false },
+              ]),
+              { to: '/chat', icon: MessageCircle, label: isResearch ? t('research.partner') : t('ai.chat'), pro: true },
+              ...(!isResearch ? [
+                { to: '/socratic', icon: Brain, label: t('ai.socratic'), pro: true },
+                { to: '/practice-exam', icon: ClipboardCheck, label: t('ai.practiceSession'), pro: true },
+                { to: '/explain-back', icon: Lightbulb, label: t('ai.explainBack'), pro: true },
+              ] : []),
               { to: '/study-plan', icon: Calendar, label: t('ai.studyPlan'), pro: true },
-              { to: '/sources', icon: FileText, label: t('sources.title'), pro: true },
+              { to: '/sources', icon: FileText, label: isResearch ? t('research.literature') : t('sources.title'), pro: true },
             ].map(item => (
               <Link
                 key={item.to}

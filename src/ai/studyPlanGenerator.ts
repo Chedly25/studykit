@@ -17,8 +17,10 @@ export async function generateStudyPlan(
   const subjects = await db.subjects.where('examProfileId').equals(examProfileId).sortBy('order')
   const topics = await db.topics.where('examProfileId').equals(examProfileId).toArray()
 
-  const daysLeft = Math.max(0, Math.ceil((new Date(profile.examDate).getTime() - Date.now()) / 86400000))
-  const actualDays = Math.min(daysAhead, daysLeft || daysAhead)
+  const daysLeft = profile.examDate
+    ? Math.max(0, Math.ceil((new Date(profile.examDate).getTime() - Date.now()) / 86400000))
+    : null
+  const actualDays = daysLeft !== null ? Math.min(daysAhead, daysLeft || daysAhead) : daysAhead
 
   const weakTopics = [...topics]
     .sort((a, b) => a.mastery - b.mastery)
@@ -53,8 +55,7 @@ export async function generateStudyPlan(
 
   const prompt = `Create a ${actualDays}-day study plan for a student preparing for ${profile.name} (${profile.examType}).
 
-Context:
-- Exam date: ${profile.examDate} (${daysLeft} days left)
+Context:${daysLeft !== null ? `\n- Exam date: ${profile.examDate} (${daysLeft} days left)` : '\n- No fixed deadline'}
 - Weekly target: ${profile.weeklyTargetHours} hours
 - Daily target: ~${Math.round(profile.weeklyTargetHours / 7 * 60)} minutes
 

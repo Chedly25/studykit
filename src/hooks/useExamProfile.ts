@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { ExamProfile, ExamType, Subject, Topic, Subtopic } from '../db/schema'
+import type { ExamProfile, ExamType, Subject, Topic, Subtopic, ProfileMode } from '../db/schema'
 import { getExamBlueprint } from '../lib/examTopicMaps'
 import type { ExtractedSubject } from '../ai/topicExtractor'
 
@@ -24,7 +24,8 @@ export function useExamProfile() {
     name: string,
     examType: ExamType,
     examDate: string,
-    weeklyTargetHours: number
+    weeklyTargetHours: number,
+    profileMode?: ProfileMode
   ): Promise<string> => {
     const blueprint = getExamBlueprint(examType)
     const profileId = crypto.randomUUID()
@@ -43,6 +44,7 @@ export function useExamProfile() {
       weeklyTargetHours,
       userId: effectiveUserId,
       createdAt: new Date().toISOString(),
+      profileMode: profileMode ?? 'study',
     }
     await db.examProfiles.put(profile)
 
@@ -204,6 +206,8 @@ export function useExamProfile() {
       db.flashcardDecks, db.flashcards, db.assignments, db.conversations,
       db.chatMessages, db.dailyStudyLogs,
       db.tutorPreferences, db.sessionInsights, db.studyPlans, db.studyPlanDays,
+      db.milestones, db.researchNotes, db.annotations, db.habitGoals, db.habitLogs,
+      db.writingSessions, db.advisorMeetings,
     ], async () => {
       await db.subtopics.where('examProfileId').equals(profileId).delete()
       await db.topics.where('examProfileId').equals(profileId).delete()
@@ -212,6 +216,12 @@ export function useExamProfile() {
       await db.questionResults.where('examProfileId').equals(profileId).delete()
       await db.documentChunks.where('examProfileId').equals(profileId).delete()
       await db.documents.where('examProfileId').equals(profileId).delete()
+      const decks = await db.flashcardDecks.where('examProfileId').equals(profileId).toArray()
+      for (const deck of decks) {
+        await db.flashcards.where('deckId').equals(deck.id).delete()
+      }
+      await db.flashcardDecks.where('examProfileId').equals(profileId).delete()
+      await db.assignments.where('examProfileId').equals(profileId).delete()
       await db.dailyStudyLogs.where('examProfileId').equals(profileId).delete()
       await db.tutorPreferences.where('examProfileId').equals(profileId).delete()
       await db.sessionInsights.where('examProfileId').equals(profileId).delete()
@@ -226,6 +236,17 @@ export function useExamProfile() {
         await db.chatMessages.where('conversationId').equals(c.id).delete()
       }
       await db.conversations.where('examProfileId').equals(profileId).delete()
+      // Research mode tables
+      await db.milestones.where('examProfileId').equals(profileId).delete()
+      await db.researchNotes.where('examProfileId').equals(profileId).delete()
+      await db.annotations.where('examProfileId').equals(profileId).delete()
+      const goals = await db.habitGoals.where('examProfileId').equals(profileId).toArray()
+      for (const goal of goals) {
+        await db.habitLogs.where('goalId').equals(goal.id).delete()
+      }
+      await db.habitGoals.where('examProfileId').equals(profileId).delete()
+      await db.writingSessions.where('examProfileId').equals(profileId).delete()
+      await db.advisorMeetings.where('examProfileId').equals(profileId).delete()
       await db.examProfiles.delete(profileId)
     })
   }, [])
