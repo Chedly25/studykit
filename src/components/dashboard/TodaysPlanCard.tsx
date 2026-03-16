@@ -32,10 +32,12 @@ export function TodaysPlanCard({ dueTopics, dueFlashcardCount, upcomingAssignmen
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)]">{t('dashboard.noPlan')}</p>
-        <Link to="/study-plan" className="inline-block mt-2 text-sm text-[var(--accent-text)] hover:underline">
-          {t('dashboard.generatePlan')}
-        </Link>
+        <div>
+          <p className="text-sm text-[var(--text-muted)]">{t('dashboard.noPlan')}</p>
+          <Link to="/study-plan" className="inline-block mt-2 text-sm text-[var(--accent-text)] hover:underline">
+            {t('dashboard.generatePlan')}
+          </Link>
+        </div>
       ) : (
         <div className="space-y-2">
           {items.map((item, i) => (
