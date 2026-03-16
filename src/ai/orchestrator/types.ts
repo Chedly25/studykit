@@ -43,6 +43,10 @@ export interface WorkflowProgress {
   currentStepName: string
   completedSteps: number
   failedSteps: number
+  /** True when the current step involves an LLM call and tokens are streaming */
+  isStreaming: boolean
+  /** Number of characters received so far from the LLM in the current step */
+  streamedChars: number
 }
 
 export interface WorkflowResult<T = unknown> {

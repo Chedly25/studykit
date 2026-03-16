@@ -1,6 +1,6 @@
 /**
  * Orchestrator engine — runs multi-step AI workflows sequentially,
- * reporting progress at the step level (no token streaming to UI).
+ * reporting progress at the step level with LLM streaming indicators.
  */
 import { streamChat } from '../client'
 import { searchChunks } from '../../lib/sources'
@@ -30,6 +30,14 @@ export async function runWorkflow<T>(
 ): Promise<WorkflowResult<T>> {
   const start = Date.now()
   const results: Record<string, StepResult> = {}
+  let currentProgress: WorkflowProgress | null = null
+
+  function emitProgress(update: Partial<WorkflowProgress>) {
+    if (currentProgress) {
+      currentProgress = { ...currentProgress, ...update }
+      callbacks?.onProgress?.({ ...currentProgress })
+    }
+  }
 
   // Build context with bound helpers
   const ctx: WorkflowContext = {
@@ -39,13 +47,23 @@ export async function runWorkflow<T>(
     results,
 
     async llm(prompt: string, system?: string): Promise<string> {
+      let charCount = 0
+      emitProgress({ isStreaming: true, streamedChars: 0 })
+
       const response = await streamChat({
         messages: [{ role: 'user', content: prompt }],
         system: system ?? 'You are a helpful assistant. Respond with the requested format only.',
         tools: [],
+        maxTokens: 8192,
         authToken: config.authToken,
         signal: config.signal,
+        onToken(token: string) {
+          charCount += token.length
+          emitProgress({ streamedChars: charCount })
+        },
       })
+
+      emitProgress({ isStreaming: false })
       const textBlock = response.content.find(b => b.type === 'text')
       return textBlock && 'text' in textBlock ? textBlock.text : ''
     },
@@ -75,26 +93,32 @@ export async function runWorkflow<T>(
     // Check shouldRun
     if (step.shouldRun && !step.shouldRun(ctx)) {
       results[step.id] = { status: 'skipped', durationMs: 0 }
-      callbacks?.onProgress?.({
+      currentProgress = {
         workflowName: workflow.name,
         currentStepIndex: i,
         totalSteps: workflow.steps.length,
         currentStepName: step.name,
         completedSteps,
         failedSteps,
-      })
+        isStreaming: false,
+        streamedChars: 0,
+      }
+      callbacks?.onProgress?.({ ...currentProgress })
       continue
     }
 
     // Report progress: step starting
-    callbacks?.onProgress?.({
+    currentProgress = {
       workflowName: workflow.name,
       currentStepIndex: i,
       totalSteps: workflow.steps.length,
       currentStepName: step.name,
       completedSteps,
       failedSteps,
-    })
+      isStreaming: false,
+      streamedChars: 0,
+    }
+    callbacks?.onProgress?.({ ...currentProgress })
 
     const stepStart = Date.now()
     try {
@@ -108,14 +132,7 @@ export async function runWorkflow<T>(
 
       if (!step.optional) {
         // Abort workflow on required step failure
-        callbacks?.onProgress?.({
-          workflowName: workflow.name,
-          currentStepIndex: i,
-          totalSteps: workflow.steps.length,
-          currentStepName: step.name,
-          completedSteps,
-          failedSteps,
-        })
+        emitProgress({ failedSteps })
         return { success: false, stepResults: results, totalDurationMs: Date.now() - start }
       }
     }
@@ -125,7 +142,7 @@ export async function runWorkflow<T>(
   try {
     const data = await workflow.aggregate(ctx)
     return { success: true, data, stepResults: results, totalDurationMs: Date.now() - start }
-  } catch (err) {
+  } catch {
     return { success: false, stepResults: results, totalDurationMs: Date.now() - start }
   }
 }
