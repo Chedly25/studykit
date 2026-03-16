@@ -95,15 +95,18 @@ Rules:
 
   const response = await streamChat({
     messages: [{ role: 'user', content: prompt }],
-    system: 'You are a study planning expert. Return only valid JSON.',
+    system: 'You are a study planning expert. Return only valid JSON, no markdown fences.',
     tools: [],
     authToken,
+    maxTokens: 8192,
   })
 
   const text = response.content
     .filter((c): c is { type: 'text'; text: string } => c.type === 'text')
     .map(c => c.text)
     .join('')
+    .replace(/```json\s*/g, '')
+    .replace(/```\s*/g, '')
 
   const jsonMatch = text.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('Failed to parse study plan response')
