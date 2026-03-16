@@ -70,9 +70,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     userId = sub
     userPlan = metadata?.plan
   } catch (err) {
-    console.error('JWT verification failed:', err)
+    const reason = err instanceof Error ? err.message : String(err)
+    console.error('JWT verification failed:', reason)
     return new Response(
-      JSON.stringify({ error: 'Authentication failed' }),
+      JSON.stringify({ error: `Authentication failed: ${reason}` }),
       { status: 401, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
   }

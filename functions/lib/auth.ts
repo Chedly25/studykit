@@ -69,7 +69,7 @@ export async function verifyClerkJWT(
 
   const payload = JSON.parse(new TextDecoder().decode(base64urlDecode(parts[1])))
   const now = Math.floor(Date.now() / 1000)
-  const GRACE_SECONDS = 10
+  const GRACE_SECONDS = 30
 
   if (payload.exp && payload.exp + GRACE_SECONDS < now) throw new Error('JWT expired')
   if (payload.nbf && payload.nbf > now + GRACE_SECONDS) throw new Error('JWT not yet valid')
