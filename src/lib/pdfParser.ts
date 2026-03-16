@@ -4,7 +4,7 @@
  */
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
-const MAX_PAGES = 200
+const PAGE_BATCH_SIZE = 20
 
 export interface PdfParseResult {
   text: string
@@ -24,19 +24,20 @@ export async function parsePdf(file: File): Promise<PdfParseResult> {
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
 
-  if (pdf.numPages > MAX_PAGES) {
-    throw new Error(`PDF has ${pdf.numPages} pages (maximum ${MAX_PAGES})`)
-  }
+  // Extract text from pages in parallel batches for speed
+  const pages: string[] = new Array(pdf.numPages)
 
-  const pages: string[] = []
+  for (let start = 0; start < pdf.numPages; start += PAGE_BATCH_SIZE) {
+    const end = Math.min(start + PAGE_BATCH_SIZE, pdf.numPages)
+    const batch = Array.from({ length: end - start }, (_, i) => start + i + 1)
 
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const textContent = await page.getTextContent()
-    const pageText = textContent.items
-      .map((item: { str?: string }) => item.str ?? '')
-      .join(' ')
-    pages.push(pageText)
+    await Promise.all(batch.map(async (pageNum) => {
+      const page = await pdf.getPage(pageNum)
+      const textContent = await page.getTextContent()
+      pages[pageNum - 1] = textContent.items
+        .map((item: { str?: string }) => item.str ?? '')
+        .join(' ')
+    }))
   }
 
   const text = pages.join('\n\n').trim()
