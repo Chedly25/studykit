@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { toast } from 'sonner'
@@ -40,38 +40,21 @@ export default function Sources() {
   const navigate = useNavigate()
   const { getToken } = useAuth()
 
-  // Queue-based auto-processing for new documents
-  const prevDocIdsRef = useRef<Set<string>>(new Set())
-  const [processingQueue, setProcessingQueue] = useState<string[]>([])
-  const isProcessingDocRef = useRef(isProcessingDoc)
-  isProcessingDocRef.current = isProcessingDoc
+  // Count unprocessed documents (no summary yet)
+  const unprocessedDocs = documents.filter(d => !d.summary)
 
-  // Detect new documents and add to queue
-  useEffect(() => {
-    const currentIds = new Set(documents.map(d => d.id))
-    const newIds: string[] = []
-    for (const id of currentIds) {
-      if (!prevDocIdsRef.current.has(id)) {
-        const doc = documents.find(d => d.id === id)
-        if (doc && !doc.summary) {
-          newIds.push(id)
-        }
+  // Batch process all unprocessed documents sequentially
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false)
+  const handleProcessAll = async () => {
+    setIsBatchProcessing(true)
+    try {
+      for (const doc of unprocessedDocs) {
+        await processDocument(doc.id)
       }
+    } finally {
+      setIsBatchProcessing(false)
     }
-    prevDocIdsRef.current = currentIds
-    if (newIds.length > 0) {
-      setProcessingQueue(prev => [...prev, ...newIds])
-    }
-  }, [documents])
-
-  // Drain queue: process one at a time
-  useEffect(() => {
-    if (!isProcessingDocRef.current && processingQueue.length > 0) {
-      const [nextId, ...rest] = processingQueue
-      setProcessingQueue(rest)
-      processDocument(nextId)
-    }
-  }, [processingQueue, isProcessingDoc, processDocument])
+  }
 
   const [showPaste, setShowPaste] = useState(false)
   const [showNotes, setShowNotes] = useState(false)
@@ -219,10 +202,25 @@ export default function Sources() {
         />
       )}
 
-      {processingQueue.length > 0 && !isProcessingDoc && (
-        <div className="glass-card p-3 mb-4 flex items-center gap-2 text-sm text-[var(--text-body)]">
-          <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin" />
-          {t('sources.processingQueue', { current: 1, total: processingQueue.length + 1 })}
+      {unprocessedDocs.length > 0 && !isProcessingDoc && (
+        <div className="glass-card p-3 mb-4 flex items-center justify-between">
+          <span className="text-sm text-[var(--text-body)]">
+            {t('sources.readyToProcess', { count: unprocessedDocs.length })}
+          </span>
+          <button
+            onClick={handleProcessAll}
+            disabled={isBatchProcessing}
+            className="btn-primary text-sm px-4 py-1.5 disabled:opacity-50"
+          >
+            {isBatchProcessing ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                {t('sources.processingAll')}
+              </span>
+            ) : (
+              t('sources.processAll')
+            )}
+          </button>
         </div>
       )}
 

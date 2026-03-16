@@ -41,7 +41,7 @@ export function useProactiveInsights(examProfileId: string | undefined) {
     if (overdue.length > 0) {
       result.push({
         type: 'warning',
-        message: `You have ${overdue.length} overdue assignment${overdue.length > 1 ? 's' : ''}. Consider prioritizing ${overdue[0].title}.`,
+        message: `You have ${overdue.length} overdue assignment${overdue.length > 1 ? 's' : ''}. "${overdue[0].title}" might need attention.`,
       })
     }
 
@@ -61,7 +61,7 @@ export function useProactiveInsights(examProfileId: string | undefined) {
       if (avgSeconds < 1800 && profile?.weeklyTargetHours && profile.weeklyTargetHours >= 10) {
         result.push({
           type: 'warning',
-          message: 'Your study time has dropped below 30 min/day recently. Try a quick 25-minute focus session.',
+          message: 'Your recent sessions averaged under 30 min/day.',
         })
       }
     }
@@ -70,9 +70,10 @@ export function useProactiveInsights(examProfileId: string | undefined) {
     if (profile?.examDate) {
       const daysLeft = Math.ceil((new Date(profile.examDate).getTime() - Date.now()) / 86400000)
       if (daysLeft <= 30 && daysLeft > 0) {
+        const veryWeakCount = topics.filter(t => t.mastery < 0.3).length
         result.push({
           type: 'warning',
-          message: `Only ${daysLeft} days until your exam. Focus on weak topics to maximize your score.`,
+          message: `${daysLeft} days remaining. You have ${veryWeakCount} topics below 30% depth.`,
         })
       }
     }
@@ -82,7 +83,7 @@ export function useProactiveInsights(examProfileId: string | undefined) {
     if (veryWeak.length >= 3) {
       result.push({
         type: 'tip',
-        message: `${veryWeak.length} topics are below 20% mastery. Consider scheduling focused review sessions.`,
+        message: `${veryWeak.length} topics are below 20% depth.`,
       })
     }
 
@@ -101,7 +102,7 @@ export function useProactiveInsights(examProfileId: string | undefined) {
     if (result.length === 0 && dailyLogs.length === 0 && topics.filter(t => t.questionsAttempted > 0).length === 0) {
       result.push({
         type: 'tip',
-        message: 'Welcome! Start by uploading your study materials to get personalized recommendations.',
+        message: 'Welcome! Upload your study materials to see your learning landscape.',
       })
     }
 

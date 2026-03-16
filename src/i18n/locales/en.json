@@ -98,7 +98,7 @@
   },
   "dashboard": {
     "title": "Dashboard",
-    "subtitle": "Your study command center",
+    "subtitle": "Your learning landscape",
     "welcome": "Welcome to StudiesKit",
     "setupPrompt": "Set up a study profile to unlock your personalized dashboard.",
     "createProfile": "Create Study Profile",
@@ -106,7 +106,7 @@
     "sourceCoverage": "Sources cover <1>{{percent}}%</1> of your topics",
     "viewSources": "View Sources",
     "readiness": "Readiness",
-    "readinessLabel": "Exam Readiness",
+    "readinessLabel": "Overall Progress",
     "countdown": "Countdown",
     "daysLeft": "{{count}} day left",
     "daysLeft_plural": "{{count}} days left",
@@ -117,7 +117,7 @@
     "weeklyProgress": "Weekly Progress",
     "hoursStudied": "{{hours}}h studied",
     "hoursTarget": "target: {{hours}}h",
-    "weakTopics": "Weak Topics",
+    "weakTopics": "Topic Depth",
     "noWeakTopics": "No weak topics yet — start practicing!",
     "todaysPlan": "Today's Plan",
     "noPlan": "No study plan active",
@@ -136,14 +136,14 @@
     "openQuestions": "Open Questions",
     "breakthroughs": "Breakthroughs",
     "quickActions": {
-      "aiTutor": "AI Tutor",
-      "aiTutorDesc": "Ask questions, get explanations",
+      "aiTutor": "AI Advisor",
+      "aiTutorDesc": "Ask questions, explore options",
       "practiceExam": "Practice Exam",
       "practiceExamDesc": "Test your knowledge",
       "uploadSources": "Upload Sources",
       "uploadSourcesDesc": "Import PDFs and notes",
-      "studyPlan": "Study Plan",
-      "studyPlanDesc": "AI-generated daily plan"
+      "studyPlan": "Explore Options",
+      "studyPlanDesc": "See what you could focus on"
     },
     "onboarding": {
       "title": "Get Started",
@@ -174,14 +174,38 @@
       "planError": "We couldn't generate your study plan. Please try again.",
       "reAnalyzing": "Re-analyzing your materials..."
     },
-    "todaysPriority": "Today's Priority",
-    "topPriority": "Top Priority",
-    "readinessNewUser": "Starting fresh!",
+    "todaysPriority": "Intelligence Brief",
+    "topPriority": "Key Observation",
+    "readinessNewUser": "Getting started",
     "streakStartPrompt": "Start a session to begin your streak",
-    "weakTopicsEmpty": "Practice to discover your weak areas",
+    "weakTopicsEmpty": "Your topic depth will appear as you explore",
     "activityEmpty": "Your study sessions will appear here",
     "knowledgeGraphEmpty": "Complete a practice session to see your knowledge map",
-    "welcomeInsight": "Welcome! Start by uploading your study materials to get personalized recommendations."
+    "welcomeInsight": "Welcome! Upload your materials to see your learning landscape.",
+    "intelligenceBrief": "Intelligence Brief",
+    "decisionConsole": "Study Options",
+    "decisionConsolePrompt": "I have time to study",
+    "showOptions": "Show my options",
+    "timeAvailable": "Time available",
+    "optionLabel": "Option {{letter}}",
+    "tradeoff": "Tradeoff",
+    "letAiDecide": "Let AI decide",
+    "notReviewedDays": "Not reviewed in {{count}} days",
+    "gettingStartedTitle": "Getting Started",
+    "gettingStartedHint": "Here are some things to get you going",
+    "hintUpload": "Upload study materials to your library",
+    "hintExtract": "Extract topics from your documents to map your landscape",
+    "hintExplore": "Start exploring — chat with your AI advisor or take a practice session",
+    "dismissHints": "Dismiss",
+    "landscapeEmpty": "Your topic depth will appear as you explore",
+    "topicDepth": "Topic Depth",
+    "depthLevels": {
+      "unexplored": "Unexplored",
+      "gettingStarted": "Getting Started",
+      "building": "Building",
+      "deepening": "Deepening",
+      "strong": "Strong"
+    }
   },
   "ai": {
     "chat": "AI Chat",
@@ -333,7 +357,11 @@
     "batchComplete": "{{count}} documents uploaded",
     "batchPartial": "{{success}}/{{total}} uploaded, {{failed}} failed",
     "fileSizeHint": "Max 50MB per file. Select multiple files at once.",
-    "processingQueue": "Processing {{current}}/{{total}} documents..."
+    "processingQueue": "Processing {{current}}/{{total}} documents...",
+    "readyToProcess": "{{count}} document ready to process",
+    "readyToProcess_plural": "{{count}} documents ready to process",
+    "processAll": "Process All",
+    "processingAll": "Processing..."
   },
   "subscription": {
     "pricing": "Pricing",

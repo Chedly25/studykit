@@ -98,7 +98,7 @@
   },
   "dashboard": {
     "title": "Tableau de bord",
-    "subtitle": "Votre centre de commande",
+    "subtitle": "Votre paysage d'apprentissage",
     "welcome": "Bienvenue sur StudiesKit",
     "setupPrompt": "Creez un profil d'etude pour acceder a votre tableau de bord personnalise.",
     "createProfile": "Creer un profil d'etude",
@@ -106,7 +106,7 @@
     "sourceCoverage": "Les sources couvrent <1>{{percent}}%</1> de vos sujets",
     "viewSources": "Voir les sources",
     "readiness": "Preparation",
-    "readinessLabel": "Niveau de preparation",
+    "readinessLabel": "Progression globale",
     "countdown": "Compte a rebours",
     "daysLeft": "{{count}} jour restant",
     "daysLeft_plural": "{{count}} jours restants",
@@ -117,7 +117,7 @@
     "weeklyProgress": "Progression hebdomadaire",
     "hoursStudied": "{{hours}}h etudiees",
     "hoursTarget": "objectif : {{hours}}h",
-    "weakTopics": "Sujets faibles",
+    "weakTopics": "Profondeur des sujets",
     "noWeakTopics": "Aucun sujet faible — commencez a pratiquer !",
     "todaysPlan": "Plan du jour",
     "noPlan": "Aucun plan d'etude actif",
@@ -136,14 +136,14 @@
     "openQuestions": "Questions ouvertes",
     "breakthroughs": "Progres",
     "quickActions": {
-      "aiTutor": "Tuteur IA",
-      "aiTutorDesc": "Posez des questions, obtenez des explications",
+      "aiTutor": "Conseiller IA",
+      "aiTutorDesc": "Posez des questions, explorez vos options",
       "practiceExam": "Examen pratique",
       "practiceExamDesc": "Testez vos connaissances",
       "uploadSources": "Importer des sources",
       "uploadSourcesDesc": "Importez des PDF et des notes",
-      "studyPlan": "Plan d'etude",
-      "studyPlanDesc": "Plan quotidien genere par l'IA"
+      "studyPlan": "Explorer les options",
+      "studyPlanDesc": "Voyez sur quoi vous concentrer"
     },
     "onboarding": {
       "title": "Pour commencer",
@@ -174,14 +174,38 @@
       "planError": "Impossible de generer votre plan d'etude. Veuillez reessayer.",
       "reAnalyzing": "Re-analyse de vos supports..."
     },
-    "todaysPriority": "Priorite du jour",
-    "topPriority": "Priorite absolue",
-    "readinessNewUser": "Nouveau depart !",
+    "todaysPriority": "Rapport d'intelligence",
+    "topPriority": "Observation cle",
+    "readinessNewUser": "C'est parti",
     "streakStartPrompt": "Demarrez une session pour commencer votre serie",
-    "weakTopicsEmpty": "Pratiquez pour decouvrir vos points faibles",
+    "weakTopicsEmpty": "La profondeur de vos sujets apparaitra a mesure que vous explorez",
     "activityEmpty": "Vos sessions d'etude apparaitront ici",
     "knowledgeGraphEmpty": "Completez une session de pratique pour voir votre carte de connaissances",
-    "welcomeInsight": "Bienvenue ! Commencez par importer vos supports de cours pour obtenir des recommandations personnalisees."
+    "welcomeInsight": "Bienvenue ! Importez vos supports pour voir votre paysage d'apprentissage.",
+    "intelligenceBrief": "Rapport d'intelligence",
+    "decisionConsole": "Options d'etude",
+    "decisionConsolePrompt": "J'ai du temps pour etudier",
+    "showOptions": "Voir mes options",
+    "timeAvailable": "Temps disponible",
+    "optionLabel": "Option {{letter}}",
+    "tradeoff": "Compromis",
+    "letAiDecide": "Laisser l'IA decider",
+    "notReviewedDays": "Non revu depuis {{count}} jours",
+    "gettingStartedTitle": "Pour commencer",
+    "gettingStartedHint": "Voici quelques pistes pour demarrer",
+    "hintUpload": "Importez vos supports de cours dans votre bibliotheque",
+    "hintExtract": "Extrayez les sujets de vos documents pour cartographier votre paysage",
+    "hintExplore": "Commencez a explorer — discutez avec votre conseiller IA ou lancez une session pratique",
+    "dismissHints": "Masquer",
+    "landscapeEmpty": "La profondeur de vos sujets apparaitra a mesure que vous explorez",
+    "topicDepth": "Profondeur des sujets",
+    "depthLevels": {
+      "unexplored": "Inexplore",
+      "gettingStarted": "Debut",
+      "building": "Construction",
+      "deepening": "Approfondissement",
+      "strong": "Solide"
+    }
   },
   "ai": {
     "chat": "Chat IA",
@@ -333,7 +357,11 @@
     "batchComplete": "{{count}} documents importes",
     "batchPartial": "{{success}}/{{total}} importes, {{failed}} echoues",
     "fileSizeHint": "Max 50 Mo par fichier. Selectionnez plusieurs fichiers a la fois.",
-    "processingQueue": "Traitement de {{current}}/{{total}} documents..."
+    "processingQueue": "Traitement de {{current}}/{{total}} documents...",
+    "readyToProcess": "{{count}} document pret a traiter",
+    "readyToProcess_plural": "{{count}} documents prets a traiter",
+    "processAll": "Tout traiter",
+    "processingAll": "Traitement en cours..."
   },
   "subscription": {
     "pricing": "Tarifs",
