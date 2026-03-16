@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BarChart3, Play, Clock, Sparkles, X } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -31,6 +31,23 @@ export function PracticeExamSetup({
   const [customFocus, setCustomFocus] = useState('')
   const [examSection, setExamSection] = useState('')
   const [sourcesEnabled, setSourcesEnabled] = useState(false)
+  const hasUserToggledSources = useRef(false)
+
+  useEffect(() => {
+    hasUserToggledSources.current = false
+  }, [examProfileId])
+
+  useEffect(() => {
+    if (!hasUserToggledSources.current && documentCount > 0) {
+      setSourcesEnabled(true)
+    }
+  }, [documentCount])
+
+  const handleToggleSources = (v: boolean) => {
+    hasUserToggledSources.current = true
+    setSourcesEnabled(v)
+  }
+
   const [timerEnabled, setTimerEnabled] = useState(false)
   const [timerMinutes, setTimerMinutes] = useState(30)
 
@@ -218,7 +235,7 @@ export function PracticeExamSetup({
         {/* Sources toggle */}
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-[var(--text-body)]">{t('ai.useSources')}</label>
-          <SourcesToggle enabled={sourcesEnabled} onToggle={setSourcesEnabled} documentCount={documentCount} />
+          <SourcesToggle enabled={sourcesEnabled} onToggle={handleToggleSources} documentCount={documentCount} />
         </div>
 
         {/* Timer */}

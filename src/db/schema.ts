@@ -356,6 +356,7 @@ export interface GeneratedQuestion {
   points: number
   scenarioText?: string
   subQuestions?: string
+  sourceReference?: string
   userAnswer?: string
   isAnswered: boolean
   isCorrect?: boolean

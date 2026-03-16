@@ -1,16 +1,17 @@
 /**
  * Practice exam generation workflow — 5 steps:
  * 1. Gather context (DB) — profile, subjects, topics, documents, student model
- * 2. Search documents (optional)
+ * 2. Search documents (optional) — per-topic semantic search for deep source grounding
  * 3. Search web (optional)
  * 4. Generate questions (LLM)
  * 5. Validate questions (LLM, optional)
  */
 import { db } from '../../db'
 import type { GeneratedQuestion } from '../../db/schema'
-import { dbQueryStep, sourceSearchStep, webSearchStep, llmJsonStep } from '../orchestrator/steps'
+import { dbQueryStep, webSearchStep, llmJsonStep } from '../orchestrator/steps'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { getKnowledgeGraph, getWeakTopicsTool, getErrorPatterns } from '../tools/knowledgeState'
+import { semanticSearch } from '../../lib/embeddings'
 
 export interface PracticeExamConfig {
   sessionId: string
@@ -34,6 +35,7 @@ interface GeneratedQuestionData {
   points: number
   scenarioText?: string
   subQuestions?: Array<{ text: string; correctAnswer: string }>
+  sourceReference?: string
 }
 
 interface GatherContextResult {
@@ -46,10 +48,14 @@ interface GatherContextResult {
   knowledgeGraph: string
   weakTopics: string
   errorPatterns: string
-  sourceExcerpts: string
+  documentSummaries: string
+  documentIds: string[]
   studentModel?: { learningStyle: string; commonMistakes: string }
   examFormats: Array<{ formatName: string; description: string; samplePrompt?: string }>
 }
+
+/** Max chars of source content to include from per-topic search (~20K tokens) */
+const SOURCE_CONTENT_BUDGET = 80_000
 
 export function createPracticeExamWorkflow(config: PracticeExamConfig): WorkflowDefinition<GeneratedQuestion[]> {
   return {
@@ -79,20 +85,17 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
 
         const topicsList = topics.map(t => t.name).join(', ')
 
-        // Load source excerpts — grab summaries and first chunks from each document
-        let sourceExcerpts = ''
+        // Collect document summaries (compact overview) instead of raw chunks
+        let documentSummaries = ''
+        const documentIds: string[] = []
         if (documents.length > 0) {
-          const excerptParts: string[] = []
-          for (const doc of documents.slice(0, 5)) {
-            const chunks = await db.documentChunks
-              .where('documentId').equals(doc.id)
-              .limit(3)
-              .toArray()
-            const content = chunks.map(c => c.content).join('\n')
-            const summary = doc.summary ? `Summary: ${doc.summary}\n` : ''
-            excerptParts.push(`[${doc.title}]\n${summary}${content.slice(0, 1500)}`)
+          const summaryParts: string[] = []
+          for (const doc of documents) {
+            documentIds.push(doc.id)
+            const summary = doc.summary || '(no summary available)'
+            summaryParts.push(`- ${doc.title}: ${summary}`)
           }
-          sourceExcerpts = excerptParts.join('\n\n---\n\n')
+          documentSummaries = summaryParts.join('\n')
         }
 
         return {
@@ -105,7 +108,8 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
           knowledgeGraph,
           weakTopics,
           errorPatterns,
-          sourceExcerpts,
+          documentSummaries,
+          documentIds,
           studentModel: studentModel ? {
             learningStyle: studentModel.learningStyle,
             commonMistakes: studentModel.commonMistakes,
@@ -114,21 +118,87 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
         }
       }),
 
-      // Step 2: Search uploaded documents for focus-area-specific content (optional)
+      // Step 2: Per-topic semantic search for deep source grounding (optional)
       {
-        ...sourceSearchStep('searchDocuments', 'Searching your study materials', (ctx) => {
-          const context = ctx.results['gatherContext']?.data as GatherContextResult | undefined
-          const focusParts = [
-            config.customFocus,
-            config.focusSubject,
-            ...(config.selectedTopics ?? []),
-          ].filter(Boolean).join(' ')
-          return focusParts
-            ? `${focusParts} key concepts definitions examples`
-            : `${context?.topicsList?.slice(0, 300) ?? ''} exam questions key concepts`
-        }, 10),
+        id: 'searchDocuments',
+        name: 'Searching your study materials',
         optional: true,
         shouldRun: () => config.sourcesEnabled,
+        async execute(_input: unknown, ctx: WorkflowContext): Promise<string> {
+          const context = ctx.results['gatherContext']?.data as GatherContextResult | undefined
+
+          // Determine search queries — one per topic for targeted results
+          let queries: string[] = []
+          if (config.selectedTopics?.length) {
+            queries = config.selectedTopics.map(t => t)
+          } else if (config.customFocus) {
+            queries = [config.customFocus]
+          } else if (config.focusSubject) {
+            queries = [config.focusSubject]
+          } else {
+            // Use top 5 weak topic names as queries
+            const weakNames: string[] = []
+            try {
+              const parsed = JSON.parse(context?.weakTopics ?? '[]') as Array<{ name: string }>
+              weakNames.push(...parsed.map(t => t.name).filter(Boolean).slice(0, 5))
+            } catch {
+              // weakTopics not valid JSON — fall through to topicsList
+            }
+            queries = weakNames.length > 0 ? weakNames : (context?.topicsList?.split(', ').slice(0, 5) ?? [])
+          }
+
+          if (queries.length === 0) return ''
+
+          // Run parallel semantic searches — topN=15 per query for rich coverage
+          const searchResults = await Promise.all(
+            queries.map(query =>
+              semanticSearch(ctx.examProfileId, query, ctx.authToken, 15)
+                .then(chunks => chunks.map(c => ({ ...c, query })))
+                .catch((err) => {
+                  console.warn(`[practiceExam] semantic search failed for "${query}":`, err)
+                  return [] as typeof searchResults[0]
+                })
+            )
+          )
+
+          // Deduplicate by chunk ID — chunks appearing in multiple searches rank higher
+          const chunkScores = new Map<string, { chunk: typeof searchResults[0][0]; totalScore: number; queries: string[] }>()
+          for (const results of searchResults) {
+            for (const chunk of results) {
+              const existing = chunkScores.get(chunk.id)
+              if (existing) {
+                existing.totalScore += chunk.score
+                if (!existing.queries.includes(chunk.query)) {
+                  existing.queries.push(chunk.query)
+                }
+              } else {
+                chunkScores.set(chunk.id, {
+                  chunk,
+                  totalScore: chunk.score,
+                  queries: [chunk.query],
+                })
+              }
+            }
+          }
+
+          // Sort by total score (multi-query matches rank highest)
+          const ranked = Array.from(chunkScores.values())
+            .sort((a, b) => b.totalScore - a.totalScore)
+
+          // Format with source labels, cap at budget
+          let totalChars = 0
+          const parts: string[] = []
+          for (const entry of ranked) {
+            const docTitle = entry.chunk.documentTitle ?? 'Source'
+            const topicLabel = entry.queries.join(', ')
+            const formatted = `[Source: "${docTitle}" | Topic: ${topicLabel}]\n${entry.chunk.content}`
+            if (totalChars + formatted.length > SOURCE_CONTENT_BUDGET) break
+            parts.push(formatted)
+            totalChars += formatted.length
+          }
+
+          return parts.join('\n\n---\n\n')
+        },
       },
 
       // Step 3: Search web for reference material (optional)
@@ -180,17 +250,40 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
             ? `\nExam format sections:\n${context.examFormats.map(f => `- ${f.formatName}: ${f.description}${f.samplePrompt ? ` (Example: ${f.samplePrompt})` : ''}`).join('\n')}`
             : ''
 
-          // Build the source context block — combine direct excerpts with search results
+          // Build source content block — different structure when sources are enabled
+          const hasSourceContent = config.sourcesEnabled && (context?.documentSummaries || sourceSearchContent)
           let sourceBlock = ''
-          if (context?.sourceExcerpts) {
-            sourceBlock += `\n\nUPLOADED STUDY MATERIALS (use these as the primary basis for questions):\n${context.sourceExcerpts.slice(0, 4000)}`
+
+          if (hasSourceContent) {
+            // Sources enabled: structured source content for grounded generation
+            if (context?.documentSummaries) {
+              sourceBlock += `\n\nSTUDY MATERIAL OVERVIEW:\n${context.documentSummaries}`
+            }
+            if (sourceSearchContent) {
+              sourceBlock += `\n\nDETAILED SOURCE CONTENT (by topic):\n${sourceSearchContent}`
+            }
+            if (webContent) {
+              sourceBlock += `\n\nSUPPLEMENTARY WEB RESEARCH:\n${webContent.slice(0, 3000)}`
+            }
+          } else {
+            // Sources disabled or no documents: use web content only
+            if (webContent) {
+              sourceBlock += `\n\nWEB RESEARCH:\n${webContent.slice(0, 3000)}`
+            }
           }
-          if (sourceSearchContent) {
-            sourceBlock += `\n\nADDITIONAL SOURCE SEARCH RESULTS:\n${sourceSearchContent.slice(0, 2000)}`
-          }
-          if (webContent) {
-            sourceBlock += `\n\nWEB RESEARCH:\n${webContent.slice(0, 1500)}`
-          }
+
+          // Source-grounding instructions when sources are enabled
+          const sourceInstructions = hasSourceContent
+            ? `- Base at least 80% of questions directly on the provided source content
+- In each question's explanation, reference the source document by name
+- Do NOT invent facts not in the provided materials — generate fewer questions rather than fabricating
+- Include a "sourceReference" field with the document title or section for each question`
+            : ''
+
+          // JSON schema — include sourceReference field when sources enabled
+          const sourceRefField = hasSourceContent
+            ? `\n      "sourceReference": "Document title or section",`
+            : ''
 
           return `You are generating a practice exam for a student studying for: "${context.profileName}" (${context.examType}).
 ${context.examDate ? `Exam date: ${context.examDate}.` : ''}
@@ -214,11 +307,11 @@ CRITICAL INSTRUCTIONS:
 - Generate EXACTLY ${config.questionCount} questions
 - Every question MUST be directly relevant to the subjects and topics listed above
 - Questions must be at the appropriate academic level for "${context.profileName}"
-- If study materials are provided above, base questions on that actual content
 - topicName for each question MUST be one of these topics: ${context.topicsList || 'use the subject names'}
 - Do NOT generate generic or unrelated questions
 - Vary difficulty (1-5) across questions, with more questions at difficulty 2-4
 - Prefer multiple-choice format (at least 60% of questions)
+${sourceInstructions}
 
 Respond with ONLY a JSON object in this exact format:
 {
@@ -231,7 +324,7 @@ Respond with ONLY a JSON object in this exact format:
       "correctOptionIndex": 1,
       "explanation": "Why this is correct...",
       "difficulty": 3,
-      "topicName": "Topic Name",
+      "topicName": "Topic Name",${sourceRefField}
       "points": 2
     }
   ]
@@ -305,6 +398,7 @@ If all questions are correct, return them unchanged.`
         points: q.points,
         scenarioText: q.scenarioText,
         subQuestions: q.subQuestions ? JSON.stringify(q.subQuestions) : undefined,
+        sourceReference: q.sourceReference,
         isAnswered: false,
       }))
 
