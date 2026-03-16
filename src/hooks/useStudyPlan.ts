@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { StudyPlanDay } from '../db/schema'
@@ -60,6 +60,42 @@ export function useStudyPlan(examProfileId: string | undefined) {
     })
   }, [])
 
+  const replanPlan = useCallback(async (authToken: string, reason: string) => {
+    if (!examProfileId || !activePlan) return
+    setIsGenerating(true)
+    try {
+      const today = new Date().toISOString().slice(0, 10)
+      const remainingDays = planDays.filter(d => d.date >= today).length
+      await generateStudyPlan(examProfileId, authToken, remainingDays || 7)
+    } finally {
+      setIsGenerating(false)
+    }
+  }, [examProfileId, activePlan, planDays])
+
+  // Check if replan is suggested
+  const replanSuggestion = useMemo(() => {
+    if (!activePlan || planDays.length === 0) return null
+
+    // Need topics and daily logs for the check — fetch synchronously from what we have
+    // We do a simple check: just look at skipped days
+    const today = new Date().toISOString().slice(0, 10)
+    const pastDays = planDays.filter(d => d.date < today)
+    let consecutiveSkipped = 0
+    const sorted = [...pastDays].sort((a, b) => b.date.localeCompare(a.date))
+    for (const day of sorted) {
+      const activities = JSON.parse(day.activities) as Array<{ completed: boolean }>
+      if (!activities.some(a => a.completed)) {
+        consecutiveSkipped++
+      } else {
+        break
+      }
+    }
+    if (consecutiveSkipped >= 2) {
+      return `${consecutiveSkipped} consecutive days skipped`
+    }
+    return null
+  }, [activePlan, planDays])
+
   const deactivatePlan = useCallback(async () => {
     if (!activePlan) return
     await db.studyPlans.update(activePlan.id, { isActive: false })
@@ -73,5 +109,7 @@ export function useStudyPlan(examProfileId: string | undefined) {
     generatePlan,
     markActivityCompleted,
     deactivatePlan,
+    replanPlan,
+    replanSuggestion,
   }
 }

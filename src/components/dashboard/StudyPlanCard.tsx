@@ -13,9 +13,11 @@ interface StudyActivity {
 interface Props {
   todaysPlan: StudyPlanDay | null
   onToggleActivity: (dayId: string, index: number) => void
+  replanSuggestion?: string | null
+  onReplan?: () => void
 }
 
-export function StudyPlanCard({ todaysPlan, onToggleActivity }: Props) {
+export function StudyPlanCard({ todaysPlan, onToggleActivity, replanSuggestion, onReplan }: Props) {
   const { t } = useTranslation()
   if (!todaysPlan) return null
 
@@ -54,6 +56,13 @@ export function StudyPlanCard({ todaysPlan, onToggleActivity }: Props) {
           </div>
         ))}
       </div>
+
+      {replanSuggestion && onReplan && (
+        <div className="mt-2 p-2 rounded-lg bg-amber-500/10 text-xs">
+          <span className="text-amber-600">{replanSuggestion}</span>
+          <button onClick={onReplan} className="ml-2 text-[var(--accent-text)] hover:underline font-medium">Replan</button>
+        </div>
+      )}
 
       <Link to="/study-plan" className="text-xs text-[var(--accent-text)] hover:underline mt-3 block">
         {t('ai.studyPlan')}

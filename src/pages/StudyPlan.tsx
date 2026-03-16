@@ -38,6 +38,7 @@ export default function StudyPlan() {
   const {
     activePlan, planDays, todaysPlan, isGenerating,
     generatePlan, markActivityCompleted, deactivatePlan,
+    replanPlan, replanSuggestion,
   } = useStudyPlan(profileId)
 
   if (!activeProfile) {
@@ -117,6 +118,27 @@ export default function StudyPlan() {
           </button>
         </div>
       </div>
+
+      {/* Replan suggestion banner */}
+      {replanSuggestion && (
+        <div className="glass-card p-4 mb-4 border-l-4 border-amber-500 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-[var(--text-heading)]">{t('studyPlan.replanSuggested')}</p>
+            <p className="text-xs text-[var(--text-muted)]">{replanSuggestion}</p>
+          </div>
+          <button
+            onClick={async () => {
+              const token = await getToken()
+              if (token) replanPlan(token, replanSuggestion)
+            }}
+            disabled={isGenerating}
+            className="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+            {t('studyPlan.replan')}
+          </button>
+        </div>
+      )}
 
       {/* Today's activities */}
       {todaysPlan && (

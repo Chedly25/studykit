@@ -9,11 +9,14 @@ import { LanguageToggle } from './LanguageToggle'
 import { ExamProfileSelector } from './knowledge/ExamProfileSelector'
 import { ChatPanel } from './chat/ChatPanel'
 import { ProBadge } from './subscription/ProBadge'
+import { NotificationBell } from './NotificationBell'
 import { useSubscription } from '../hooks/useSubscription'
+import { useExamProfile } from '../hooks/useExamProfile'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
   const { isPro } = useSubscription()
+  const { activeProfile } = useExamProfile()
   const { t } = useTranslation()
 
   return (
@@ -59,6 +62,7 @@ export function Layout() {
             <MegaMenu />
             <SignedIn>
               <ExamProfileSelector />
+              <NotificationBell examProfileId={activeProfile?.id} />
               <button
                 onClick={() => setChatOpen(!chatOpen)}
                 className={`p-2 rounded-lg transition-colors ${

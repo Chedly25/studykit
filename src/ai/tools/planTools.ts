@@ -24,6 +24,44 @@ export async function generateStudyPlanTool(
   }
 }
 
+export async function adjustStudyPlanTool(
+  examProfileId: string,
+  authToken: string,
+  reason: string,
+): Promise<string> {
+  try {
+    const plan = await db.studyPlans
+      .where('examProfileId').equals(examProfileId)
+      .filter(p => p.isActive)
+      .first()
+
+    if (!plan) return JSON.stringify({ error: 'No active study plan to adjust' })
+
+    const today = new Date().toISOString().slice(0, 10)
+    const days = await db.studyPlanDays.where('planId').equals(plan.id).sortBy('date')
+    const remainingDays = days.filter(d => d.date >= today).length
+
+    // Regenerate with remaining days
+    const { plan: newPlan, days: newDays } = await generateStudyPlan(examProfileId, authToken, remainingDays || 7)
+
+    return JSON.stringify({
+      success: true,
+      reason,
+      previousPlanId: plan.id,
+      newPlanId: newPlan.id,
+      daysReplanned: newDays.length,
+      newDays: newDays.map(d => ({
+        date: d.date,
+        activities: JSON.parse(d.activities),
+      })),
+    }, null, 2)
+  } catch (err) {
+    return JSON.stringify({
+      error: err instanceof Error ? err.message : 'Failed to adjust study plan',
+    })
+  }
+}
+
 export async function getStudyPlanTool(examProfileId: string): Promise<string> {
   const plan = await db.studyPlans
     .where('examProfileId').equals(examProfileId)

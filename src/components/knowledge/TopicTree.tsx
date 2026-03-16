@@ -1,13 +1,23 @@
 import { useState } from 'react'
-import { ChevronRight, ChevronDown } from 'lucide-react'
+import { ChevronRight, ChevronDown, Lock } from 'lucide-react'
 import type { Subject, Topic } from '../../db/schema'
 
 interface Props {
   subjects: Subject[]
   getTopicsForSubject: (subjectId: string) => Topic[]
+  allTopics?: Topic[]
 }
 
-export function TopicTree({ subjects, getTopicsForSubject }: Props) {
+export function TopicTree({ subjects, getTopicsForSubject, allTopics }: Props) {
+  const topicMap = new Map((allTopics ?? []).map(t => [t.id, t]))
+
+  function hasUnmetPrereqs(topic: Topic): boolean {
+    if (!topic.prerequisiteTopicIds || topic.prerequisiteTopicIds.length === 0) return false
+    return topic.prerequisiteTopicIds.some(id => {
+      const prereq = topicMap.get(id)
+      return prereq && prereq.mastery < 0.6
+    })
+  }
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const toggle = (id: string) => {
@@ -45,6 +55,9 @@ export function TopicTree({ subjects, getTopicsForSubject }: Props) {
               <div className="ml-9 space-y-0.5 pb-1">
                 {topics.map(topic => (
                   <div key={topic.id} className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[var(--bg-input)]/50">
+                    {hasUnmetPrereqs(topic) && (
+                      <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" title="Prerequisites not met" />
+                    )}
                     <span className="text-sm text-[var(--text-body)] flex-1">{topic.name}</span>
                     <MasteryBar value={topic.mastery} />
                     <span className="text-xs text-[var(--text-muted)] w-10 text-right">{Math.round(topic.mastery * 100)}%</span>

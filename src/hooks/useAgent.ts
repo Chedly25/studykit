@@ -8,7 +8,7 @@ import { QuotaExceededError } from '../ai/client'
 import { generateSessionInsight } from '../ai/insightGenerator'
 import { useSubscription } from './useSubscription'
 import type { Message } from '../ai/types'
-import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPreferences, SessionInsight } from '../db/schema'
+import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPreferences, SessionInsight, StudentModel, ConversationSummary, ExamFormat } from '../db/schema'
 import { db } from '../db'
 import { searchChunks } from '../lib/sources'
 
@@ -45,10 +45,12 @@ interface UseAgentOptions {
   sourcesEnabled?: boolean
   tutorPreferences?: TutorPreferences
   sessionInsights?: SessionInsight[]
+  studentModel?: StudentModel
+  conversationSummaries?: ConversationSummary[]
 }
 
 export function useAgent(options: UseAgentOptions) {
-  const { profile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences, sessionInsights } = options
+  const { profile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries } = options
   const { getToken } = useAuth()
   const { i18n } = useTranslation()
   const { isPro } = useSubscription()
@@ -128,6 +130,29 @@ export function useAgent(options: UseAgentOptions) {
         }
       }
 
+      // Load exam formats
+      const examFormats = await db.examFormats.where('examProfileId').equals(profile.id).toArray() as ExamFormat[]
+
+      // Build flashcard performance data
+      let flashcardPerformance: Array<{ deckName: string; cardCount: number; retentionRate: number; dueCount: number; averageEaseFactor: number }> | undefined
+      const decks = await db.flashcardDecks.where('examProfileId').equals(profile.id).toArray()
+      if (decks.length > 0) {
+        const today = new Date().toISOString().slice(0, 10)
+        flashcardPerformance = await Promise.all(decks.map(async deck => {
+          const cards = await db.flashcards.where('deckId').equals(deck.id).toArray()
+          const retained = cards.filter(c => c.easeFactor >= 2.5 && c.repetitions >= 2).length
+          const due = cards.filter(c => c.nextReviewDate <= today).length
+          const avgEF = cards.length > 0 ? cards.reduce((s, c) => s + c.easeFactor, 0) / cards.length : 2.5
+          return {
+            deckName: deck.name,
+            cardCount: cards.length,
+            retentionRate: cards.length > 0 ? Math.round((retained / cards.length) * 100) : 0,
+            dueCount: due,
+            averageEaseFactor: Math.round(avgEF * 100) / 100,
+          }
+        }))
+      }
+
       const ctx = {
         profile,
         subjects,
@@ -139,6 +164,10 @@ export function useAgent(options: UseAgentOptions) {
         tutorPreferences,
         sessionInsights,
         language: i18n.language,
+        studentModel,
+        conversationSummaries,
+        flashcardPerformance,
+        examFormats: examFormats.length > 0 ? examFormats : undefined,
       }
 
       const systemPrompt = isExplainBack && explainBackTopic
@@ -197,7 +226,7 @@ export function useAgent(options: UseAgentOptions) {
     } finally {
       setIsLoading(false)
     }
-  }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, isSocratic, socraticTopic, isExplainBack, explainBackTopic, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights])
+  }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, isSocratic, socraticTopic, isExplainBack, explainBackTopic, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries])
 
   const loadConversation = useCallback(async (convId: string) => {
     const msgs = await loadMessages(convId)

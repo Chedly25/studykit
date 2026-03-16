@@ -369,6 +369,39 @@
     "allTools": "Tous les outils",
     "allToolsSubtitle": "Outils d'etude gratuits pour les etudiants"
   },
+  "studyPlan": {
+    "replanSuggested": "Votre plan d'etude pourrait necessiter une mise a jour",
+    "replan": "Replanifier"
+  },
+  "mockExam": {
+    "title": "Examen blanc",
+    "subtitle": "Simulation d'examen chronometree avec correction par l'IA",
+    "timeLimit": "Duree limite",
+    "sections": "Sections de l'examen",
+    "startExam": "Commencer l'examen blanc",
+    "submit": "Soumettre l'examen",
+    "answerPlaceholder": "Tapez votre reponse...",
+    "reviewPlaceholder": "Posez des questions sur vos resultats...",
+    "timeUp": "Temps ecoule !",
+    "grading": "Correction de votre examen..."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Tout marquer comme lu",
+    "noNotifications": "Aucune notification",
+    "preferences": "Preferences de notification"
+  },
+  "dependencies": {
+    "prerequisites": "Prerequis",
+    "editPrerequisites": "Modifier les prerequis",
+    "unmetPrerequisites": "Prerequis non remplis"
+  },
+  "examFormat": {
+    "title": "Format d'examen",
+    "editFormat": "Modifier le format d'examen",
+    "addSection": "Ajouter une section",
+    "noFormats": "Aucun format d'examen defini"
+  },
   "notFound": {
     "title": "Page introuvable",
     "subtitle": "La page que vous recherchez n'existe pas.",

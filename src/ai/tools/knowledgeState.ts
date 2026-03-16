@@ -126,6 +126,30 @@ export async function getUpcomingDeadlines(examProfileId: string, days = 7): Pro
   )
 }
 
+export async function getFlashcardPerformance(examProfileId: string): Promise<string> {
+  const decks = await db.flashcardDecks.where('examProfileId').equals(examProfileId).toArray()
+  if (decks.length === 0) return JSON.stringify({ decks: [], message: 'No flashcard decks yet.' })
+
+  const today = new Date().toISOString().slice(0, 10)
+  const result = await Promise.all(decks.map(async deck => {
+    const cards = await db.flashcards.where('deckId').equals(deck.id).toArray()
+    const retained = cards.filter(c => c.easeFactor >= 2.5 && c.repetitions >= 2).length
+    const due = cards.filter(c => c.nextReviewDate <= today).length
+    const avgEF = cards.length > 0 ? cards.reduce((s, c) => s + c.easeFactor, 0) / cards.length : 2.5
+
+    return {
+      deckName: deck.name,
+      deckId: deck.id,
+      cardCount: cards.length,
+      retentionRate: cards.length > 0 ? Math.round((retained / cards.length) * 100) : 0,
+      dueCount: due,
+      averageEaseFactor: Math.round(avgEF * 100) / 100,
+    }
+  }))
+
+  return JSON.stringify({ decks: result }, null, 2)
+}
+
 export async function getErrorPatterns(examProfileId: string, topicName?: string): Promise<string> {
   const questionResults = await db.questionResults.where('examProfileId').equals(examProfileId).toArray()
   const topics = await db.topics.where('examProfileId').equals(examProfileId).toArray()

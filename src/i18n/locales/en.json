@@ -369,6 +369,39 @@
     "allTools": "All Tools",
     "allToolsSubtitle": "Free study tools for students"
   },
+  "studyPlan": {
+    "replanSuggested": "Your study plan may need updating",
+    "replan": "Replan"
+  },
+  "mockExam": {
+    "title": "Mock Exam",
+    "subtitle": "Full-length timed exam simulation with AI grading",
+    "timeLimit": "Time Limit",
+    "sections": "Exam Sections",
+    "startExam": "Start Mock Exam",
+    "submit": "Submit Exam",
+    "answerPlaceholder": "Type your answer...",
+    "reviewPlaceholder": "Ask about your results...",
+    "timeUp": "Time's up!",
+    "grading": "Grading your exam..."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "noNotifications": "No notifications",
+    "preferences": "Notification Preferences"
+  },
+  "dependencies": {
+    "prerequisites": "Prerequisites",
+    "editPrerequisites": "Edit Prerequisites",
+    "unmetPrerequisites": "Prerequisites not met"
+  },
+  "examFormat": {
+    "title": "Exam Format",
+    "editFormat": "Edit Exam Format",
+    "addSection": "Add Section",
+    "noFormats": "No exam format defined"
+  },
   "notFound": {
     "title": "Page Not Found",
     "subtitle": "The page you're looking for doesn't exist.",

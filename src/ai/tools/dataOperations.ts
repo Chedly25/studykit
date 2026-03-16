@@ -2,7 +2,7 @@
  * Write tools — modify the student's data.
  */
 import { db } from '../../db'
-import type { FlashcardDeck, Flashcard, Assignment, QuestionResult, DailyStudyLog } from '../../db/schema'
+import type { FlashcardDeck, Flashcard, Assignment, QuestionResult, DailyStudyLog, Topic } from '../../db/schema'
 
 export async function logQuestionResult(
   examProfileId: string,
@@ -209,5 +209,108 @@ export async function getStudyRecommendation(examProfileId: string): Promise<str
       daysLeft,
       suggestedSessionMinutes: Math.min(90, Math.max(25, Math.round(profile.weeklyTargetHours * 60 / 7))),
     },
+  })
+}
+
+export async function startQuickReview(
+  examProfileId: string,
+  input: { topicName?: string; limit?: number }
+): Promise<string> {
+  const today = new Date().toISOString().slice(0, 10)
+  const limit = input.limit ?? 5
+
+  let cards: Flashcard[]
+  if (input.topicName) {
+    const topics = await db.topics.where('examProfileId').equals(examProfileId).toArray()
+    const topic = topics.find((t: Topic) => t.name.toLowerCase() === input.topicName!.toLowerCase())
+    if (!topic) return JSON.stringify({ error: `Topic "${input.topicName}" not found` })
+    cards = await db.flashcards
+      .where('nextReviewDate')
+      .belowOrEqual(today)
+      .filter(c => c.topicId === topic.id)
+      .limit(limit)
+      .toArray()
+  } else {
+    // Scope to current profile via deck ownership
+    const profileDecks = await db.flashcardDecks.where('examProfileId').equals(examProfileId).toArray()
+    const profileDeckIds = new Set(profileDecks.map(d => d.id))
+    cards = await db.flashcards
+      .where('nextReviewDate')
+      .belowOrEqual(today)
+      .filter(c => profileDeckIds.has(c.deckId))
+      .limit(limit)
+      .toArray()
+  }
+
+  if (cards.length === 0) {
+    return JSON.stringify({ cards: [], message: 'No flashcards due for review right now!' })
+  }
+
+  // Get deck names for context
+  const deckIds = [...new Set(cards.map(c => c.deckId))]
+  const decks = await db.flashcardDecks.where('id').anyOf(deckIds).toArray()
+  const deckMap = new Map(decks.map(d => [d.id, d.name]))
+
+  return JSON.stringify({
+    count: cards.length,
+    cards: cards.map(c => ({
+      id: c.id,
+      front: c.front,
+      back: c.back,
+      deckName: deckMap.get(c.deckId) ?? 'Unknown',
+      easeFactor: c.easeFactor,
+      repetitions: c.repetitions,
+    })),
+    instructions: 'Present cards one at a time. Show the front, wait for the student to answer, then reveal the back. Use rateFlashcard to record their recall quality.',
+  }, null, 2)
+}
+
+export async function rateFlashcard(
+  _examProfileId: string,
+  input: { cardId: string; rating: number }
+): Promise<string> {
+  const card = await db.flashcards.get(input.cardId)
+  if (!card) return JSON.stringify({ error: 'Flashcard not found' })
+
+  const rating = Math.max(0, Math.min(5, input.rating))
+
+  // SM-2 algorithm
+  let { easeFactor, interval, repetitions } = card
+
+  if (rating >= 3) {
+    if (repetitions === 0) {
+      interval = 1
+    } else if (repetitions === 1) {
+      interval = 6
+    } else {
+      interval = Math.round(interval * easeFactor)
+    }
+    repetitions++
+  } else {
+    repetitions = 0
+    interval = 1
+  }
+
+  easeFactor = easeFactor + (0.1 - (5 - rating) * (0.08 + (5 - rating) * 0.02))
+  easeFactor = Math.max(1.3, easeFactor)
+
+  const nextDate = new Date()
+  nextDate.setDate(nextDate.getDate() + interval)
+
+  await db.flashcards.update(input.cardId, {
+    easeFactor,
+    interval,
+    repetitions,
+    lastRating: rating,
+    nextReviewDate: nextDate.toISOString().slice(0, 10),
+  })
+
+  const ratingLabel = rating <= 2 ? 'Again' : rating === 3 ? 'Hard' : rating === 4 ? 'Good' : 'Easy'
+
+  return JSON.stringify({
+    success: true,
+    rating: ratingLabel,
+    nextReviewDate: nextDate.toISOString().slice(0, 10),
+    newInterval: interval,
   })
 }

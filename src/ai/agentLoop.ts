@@ -12,6 +12,7 @@ import {
   getStudyStats,
   getDueFlashcards,
   getUpcomingDeadlines,
+  getFlashcardPerformance,
 } from './tools/knowledgeState'
 import {
   logQuestionResult,
@@ -27,7 +28,17 @@ import {
 } from './tools/sourceTools'
 import { getCalibrationData } from './tools/calibrationTools'
 import { getErrorPatterns } from './tools/knowledgeState'
-import { generateStudyPlanTool, getStudyPlanTool } from './tools/planTools'
+import { generateStudyPlanTool, getStudyPlanTool, adjustStudyPlanTool } from './tools/planTools'
+import {
+  getStudentModel,
+  updateStudentModel,
+  getConversationHistory,
+  getRecentSessions,
+} from './tools/memoryTools'
+import { getTopicDependencies, setTopicPrerequisites } from './tools/dependencyTools'
+import { autoMapSourceToTopics } from './tools/conceptTools'
+import { startQuickReview, rateFlashcard } from './tools/dataOperations'
+import { createMockExam, gradeMockExam } from './tools/examTools'
 
 const MAX_ITERATIONS = 10
 const TIMEOUT_MS = 60000
@@ -66,6 +77,8 @@ async function executeToolLocally(
       return getDueFlashcards(input.topicId as string | undefined)
     case 'getUpcomingDeadlines':
       return getUpcomingDeadlines(examProfileId, (input.days as number) ?? 7)
+    case 'getFlashcardPerformance':
+      return getFlashcardPerformance(examProfileId)
     case 'logQuestionResult':
       return logQuestionResult(examProfileId, input as Parameters<typeof logQuestionResult>[1])
     case 'updateTopicConfidence':
@@ -100,6 +113,33 @@ async function executeToolLocally(
       return generateStudyPlanTool(examProfileId, authToken, (input.daysAhead as number) ?? 7)
     case 'getStudyPlan':
       return getStudyPlanTool(examProfileId)
+    case 'getStudentModel':
+      return getStudentModel(examProfileId)
+    case 'updateStudentModel':
+      return updateStudentModel(examProfileId, input as Parameters<typeof updateStudentModel>[1])
+    case 'getConversationHistory':
+      return getConversationHistory(examProfileId, input as { keyword?: string; topicName?: string })
+    case 'getRecentSessions':
+      return getRecentSessions(examProfileId, input as { limit?: number })
+    case 'getTopicDependencies':
+      return getTopicDependencies(examProfileId, input as { topicName: string })
+    case 'setTopicPrerequisites':
+      return setTopicPrerequisites(examProfileId, input as { topicName: string; prerequisiteNames: string[] })
+    case 'adjustStudyPlan':
+      if (!authToken) return JSON.stringify({ error: 'Authentication required' })
+      return adjustStudyPlanTool(examProfileId, authToken, (input.reason as string) ?? '')
+    case 'autoMapSourceToTopics':
+      if (!authToken) return JSON.stringify({ error: 'Authentication required' })
+      return autoMapSourceToTopics(examProfileId, input as { documentId: string }, authToken)
+    case 'startQuickReview':
+      return startQuickReview(examProfileId, input as { topicName?: string; limit?: number })
+    case 'rateFlashcard':
+      return rateFlashcard(examProfileId, input as { cardId: string; rating: number })
+    case 'createMockExam':
+      return createMockExam(examProfileId, input as { timeLimitMinutes: number; formatIds?: string[] })
+    case 'gradeMockExam':
+      if (!authToken) return JSON.stringify({ error: 'Authentication required' })
+      return gradeMockExam(examProfileId, input as { examId: string }, authToken)
     default:
       return JSON.stringify({ error: `Unknown tool: ${toolName}` })
   }

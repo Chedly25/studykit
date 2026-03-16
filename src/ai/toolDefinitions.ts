@@ -52,6 +52,12 @@ export const agentTools: ToolDefinition[] = [
     },
   },
 
+  {
+    name: 'getFlashcardPerformance',
+    description: 'Get detailed flashcard performance per deck: card count, retention rate, due count, average ease factor.',
+    input_schema: { type: 'object', properties: {} },
+  },
+
   // ─── Content Generation ───────────────────────────────────
   {
     name: 'generateQuestions',
@@ -189,6 +195,153 @@ export const agentTools: ToolDefinition[] = [
     name: 'getStudyRecommendation',
     description: 'Get a personalized study recommendation based on weak topics, exam proximity, and study patterns.',
     input_schema: { type: 'object', properties: {} },
+  },
+
+  // ─── Student Memory ─────────────────────────────────────
+  {
+    name: 'getStudentModel',
+    description: 'Load the persistent student model with observed learning patterns, common mistakes, personality notes, and preferred explanation styles.',
+    input_schema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'updateStudentModel',
+    description: 'Record new observations about the student after teaching. Merges with existing data. Use this after substantive interactions to build up a persistent model of the student.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        learningStyle: { type: 'object', description: 'Key-value observations about learning style (e.g. {"visual": true, "prefersExamples": true})' },
+        commonMistakes: { type: 'array', items: { type: 'string' }, description: 'Patterns of mistakes observed (e.g. "Confuses mitosis and meiosis")' },
+        personalityNotes: { type: 'array', items: { type: 'string' }, description: 'Observations about personality and interaction style' },
+        preferredExplanations: { type: 'array', items: { type: 'string' }, description: 'What types of explanations work best (e.g. "Responds well to real-world analogies")' },
+        motivationTriggers: { type: 'array', items: { type: 'string' }, description: 'What motivates or demotivates the student' },
+      },
+    },
+  },
+  {
+    name: 'getConversationHistory',
+    description: 'Search past conversation summaries by keyword or topic name. Returns matching sessions with topics covered and outcomes.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        keyword: { type: 'string', description: 'Search keyword to match in topics or outcomes' },
+        topicName: { type: 'string', description: 'Filter by topic name' },
+      },
+    },
+  },
+  {
+    name: 'getRecentSessions',
+    description: 'Get the most recent conversation summaries to understand what was covered in past sessions.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: 'Number of recent sessions to return (default 5)' },
+      },
+    },
+  },
+
+  // ─── Topic Dependencies ─────────────────────────────────
+  {
+    name: 'getTopicDependencies',
+    description: 'Get prerequisites and dependents for a topic. Shows which topics must be mastered first and which topics depend on this one.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        topicName: { type: 'string', description: 'Topic name to look up dependencies for' },
+      },
+      required: ['topicName'],
+    },
+  },
+  {
+    name: 'setTopicPrerequisites',
+    description: 'Set prerequisite topics that should be mastered before a given topic. AI can auto-detect these from source materials.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        topicName: { type: 'string', description: 'Topic to set prerequisites for' },
+        prerequisiteNames: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of prerequisite topic names',
+        },
+      },
+      required: ['topicName', 'prerequisiteNames'],
+    },
+  },
+
+  // ─── Plan Management ───────────────────────────────────
+  {
+    name: 'adjustStudyPlan',
+    description: 'Adjust the active study plan based on current progress. Regenerates remaining days while preserving completed work.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        reason: { type: 'string', description: 'Reason for replanning (e.g. "2 days skipped", "mastery changed significantly")' },
+      },
+      required: ['reason'],
+    },
+  },
+
+  // ─── Concept Extraction ────────────────────────────────
+  {
+    name: 'autoMapSourceToTopics',
+    description: 'Automatically extract concepts from an uploaded document and map them to existing topics.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        documentId: { type: 'string', description: 'Document ID to extract concepts from' },
+      },
+      required: ['documentId'],
+    },
+  },
+
+  // ─── Flashcard Review in Chat ──────────────────────────
+  {
+    name: 'startQuickReview',
+    description: 'Pull due flashcards for an in-chat quick review session. Returns cards one at a time for the student to answer.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        topicName: { type: 'string', description: 'Optional topic to filter cards by' },
+        limit: { type: 'number', description: 'Max number of cards to review (default 5)' },
+      },
+    },
+  },
+  {
+    name: 'rateFlashcard',
+    description: 'Apply SM-2 rating to a flashcard after the student reviews it in chat. Rating: 0=again, 3=hard, 4=good, 5=easy.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        cardId: { type: 'string', description: 'Flashcard ID' },
+        rating: { type: 'number', description: 'SM-2 rating: 0 (again), 3 (hard), 4 (good), 5 (easy)' },
+      },
+      required: ['cardId', 'rating'],
+    },
+  },
+
+  // ─── Mock Exams ────────────────────────────────────────
+  {
+    name: 'createMockExam',
+    description: 'Create a new timed mock exam session using defined exam formats.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        timeLimitMinutes: { type: 'number', description: 'Time limit in minutes' },
+        formatIds: { type: 'array', items: { type: 'string' }, description: 'Optional specific format IDs to include' },
+      },
+      required: ['timeLimitMinutes'],
+    },
+  },
+  {
+    name: 'gradeMockExam',
+    description: 'Grade a completed mock exam using AI. Returns per-section scores and detailed feedback.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        examId: { type: 'string', description: 'Mock exam ID to grade' },
+      },
+      required: ['examId'],
+    },
   },
 
   // ─── Source Retrieval ──────────────────────────────────────

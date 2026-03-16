@@ -6,6 +6,7 @@ import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useAgent } from '../hooks/useAgent'
 import { useTutorPreferences } from '../hooks/useTutorPreferences'
 import { useSessionInsights } from '../hooks/useSessionInsights'
+import { useStudentModel } from '../hooks/useStudentModel'
 import { ChatMessageBubble } from '../components/chat/ChatMessage'
 import { ChatInput } from '../components/chat/ChatInput'
 import { ToolCallIndicator } from '../components/chat/ToolCallIndicator'
@@ -26,13 +27,14 @@ export default function Chat() {
   const { documentCount } = useSources(profileId)
   const { preferences, updatePreferences, resetToDefaults } = useTutorPreferences(profileId)
   const { recentInsights } = useSessionInsights(profileId)
+  const { studentModel, conversationSummaries } = useStudentModel(profileId)
   const [showSettings, setShowSettings] = useState(false)
 
   const {
     messages, isLoading, currentToolCall, streamingText, error,
     conversationId, quotaExceeded, messagesUsedToday,
     sendMessage, loadConversation, newConversation,
-  } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences, sessionInsights: recentInsights })
+  } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences, sessionInsights: recentInsights, studentModel, conversationSummaries })
 
   const scrollRef = useRef<HTMLDivElement>(null)
 

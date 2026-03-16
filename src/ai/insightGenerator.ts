@@ -3,7 +3,7 @@
  */
 import { streamChat } from './client'
 import { db } from '../db'
-import type { SessionInsight } from '../db/schema'
+import type { SessionInsight, ConversationSummary, StudentModel } from '../db/schema'
 import type { Message } from './types'
 
 export async function generateSessionInsight(
@@ -28,6 +28,16 @@ export async function generateSessionInsight(
 - breakthroughs: string[] - moments where the student demonstrated understanding (empty if none)
 - openQuestions: string[] - questions or topics left unresolved (empty if none)
 - summary: string - 1-2 sentence summary of the session
+- topicsCovered: string[] - specific topic names covered (for session history)
+- keyOutcomes: string[] - what was achieved (e.g. "Understood recursion basics", "Practiced 5 MCQs on cell biology")
+- masteryChanges: object - any mastery changes observed (e.g. {"recursion": "+15%", "cell biology": "-5%"})
+- durationEstimate: number - estimated session duration in minutes
+- studentObservations: object - new observations about the student with optional fields:
+  - learningStyle: object (e.g. {"visual": true}) - only include if new patterns observed
+  - commonMistakes: string[] - recurring mistake patterns
+  - personalityNotes: string[] - interaction style observations
+  - preferredExplanations: string[] - what explanation types worked best
+  - motivationTriggers: string[] - what motivated or discouraged the student
 
 Return ONLY valid JSON, no markdown or explanation.
 
@@ -57,6 +67,17 @@ ${transcript}`
       breakthroughs?: string[]
       openQuestions?: string[]
       summary?: string
+      topicsCovered?: string[]
+      keyOutcomes?: string[]
+      masteryChanges?: Record<string, string>
+      durationEstimate?: number
+      studentObservations?: {
+        learningStyle?: Record<string, unknown>
+        commonMistakes?: string[]
+        personalityNotes?: string[]
+        preferredExplanations?: string[]
+        motivationTriggers?: string[]
+      }
     }
 
     const insight: SessionInsight = {
@@ -72,6 +93,47 @@ ${transcript}`
     }
 
     await db.sessionInsights.put(insight)
+
+    // Save conversation summary for session history (upsert by conversationId)
+    const existingSummary = await db.conversationSummaries.where('conversationId').equals(conversationId).first()
+    const summary: ConversationSummary = {
+      id: existingSummary?.id ?? crypto.randomUUID(),
+      examProfileId,
+      conversationId,
+      topicsCovered: JSON.stringify(parsed.topicsCovered ?? parsed.conceptsDiscussed ?? []),
+      keyOutcomes: JSON.stringify(parsed.keyOutcomes ?? []),
+      masteryChanges: JSON.stringify(parsed.masteryChanges ?? {}),
+      sessionDate: new Date().toISOString().slice(0, 10),
+      durationEstimate: parsed.durationEstimate ?? 0,
+    }
+    await db.conversationSummaries.put(summary)
+
+    // Update student model if observations were extracted
+    const obs = parsed.studentObservations
+    if (obs) {
+      const existing = await db.studentModels.get(examProfileId)
+      const mergeArr = (prev: string[], next?: string[], max = 10): string[] => {
+        if (!next || next.length === 0) return prev.slice(0, max)
+        return [...new Set([...prev, ...next])].slice(-max)
+      }
+
+      const model: StudentModel = {
+        id: examProfileId,
+        examProfileId,
+        learningStyle: JSON.stringify(
+          obs.learningStyle
+            ? { ...JSON.parse(existing?.learningStyle || '{}'), ...obs.learningStyle }
+            : JSON.parse(existing?.learningStyle || '{}')
+        ),
+        commonMistakes: JSON.stringify(mergeArr(JSON.parse(existing?.commonMistakes || '[]'), obs.commonMistakes)),
+        personalityNotes: JSON.stringify(mergeArr(JSON.parse(existing?.personalityNotes || '[]'), obs.personalityNotes)),
+        preferredExplanations: JSON.stringify(mergeArr(JSON.parse(existing?.preferredExplanations || '[]'), obs.preferredExplanations)),
+        motivationTriggers: JSON.stringify(mergeArr(JSON.parse(existing?.motivationTriggers || '[]'), obs.motivationTriggers)),
+        updatedAt: new Date().toISOString(),
+      }
+      await db.studentModels.put(model)
+    }
+
     return insight
   } catch {
     return null

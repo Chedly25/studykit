@@ -36,6 +36,21 @@ export async function generateStudyPlan(
     return d.toISOString().slice(0, 10)
   })
 
+  // Build prerequisite info
+  const topicMap = new Map(topics.map(t => [t.id, t]))
+  const prereqLines: string[] = []
+  for (const topic of topics) {
+    if (topic.prerequisiteTopicIds && topic.prerequisiteTopicIds.length > 0) {
+      const prereqs = topic.prerequisiteTopicIds
+        .map(id => topicMap.get(id))
+        .filter(Boolean)
+        .map(t => `${t!.name} (${Math.round(t!.mastery * 100)}%)`)
+      if (prereqs.length > 0) {
+        prereqLines.push(`- ${topic.name} requires: ${prereqs.join(', ')}`)
+      }
+    }
+  }
+
   const prompt = `Create a ${actualDays}-day study plan for a student preparing for ${profile.name} (${profile.examType}).
 
 Context:
@@ -48,6 +63,7 @@ ${weakTopics.map(t => `- ${t.name} (${t.subject}) - ${t.mastery}% mastery`).join
 
 Subjects with weights:
 ${subjects.map(s => `- ${s.name}: ${s.weight}% weight, ${Math.round(s.mastery * 100)}% mastery`).join('\n')}
+${prereqLines.length > 0 ? `\nTopic dependencies (schedule prerequisites before dependents):\n${prereqLines.join('\n')}` : ''}
 
 Dates for the plan: ${dates.join(', ')}
 

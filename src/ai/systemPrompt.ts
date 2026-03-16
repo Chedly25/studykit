@@ -2,7 +2,7 @@
  * Dynamic system prompt builder.
  * Injects exam profile, knowledge graph snapshot, recent activity.
  */
-import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPreferences, SessionInsight } from '../db/schema'
+import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPreferences, SessionInsight, StudentModel, ConversationSummary, ExamFormat } from '../db/schema'
 import type { ExamType } from '../db/schema'
 import { computeReadiness, getWeakTopics, getStrongTopics, computeStreak, computeWeeklyHours } from '../lib/knowledgeGraph'
 
@@ -28,6 +28,14 @@ interface SourceContext {
   preRetrievedChunks?: string
 }
 
+interface FlashcardPerformance {
+  deckName: string
+  cardCount: number
+  retentionRate: number
+  dueCount: number
+  averageEaseFactor: number
+}
+
 interface PromptContext {
   profile: ExamProfile
   subjects: Subject[]
@@ -39,6 +47,10 @@ interface PromptContext {
   tutorPreferences?: TutorPreferences
   sessionInsights?: SessionInsight[]
   language?: string
+  studentModel?: StudentModel
+  conversationSummaries?: ConversationSummary[]
+  flashcardPerformance?: FlashcardPerformance[]
+  examFormats?: ExamFormat[]
 }
 
 export function buildSystemPrompt(ctx: PromptContext): string {
@@ -95,7 +107,13 @@ You have tools to read and write the student's data. Always use tools to access 
 7. When asked about a topic, explain it clearly and then offer to quiz the student
 8. Use flashcard and question generation tools proactively when teaching
 9. When a student answers incorrectly, classify the error type (recall/conceptual/application/distractor) and include errorType in logQuestionResult
-10. Use getErrorPatterns to understand systematic weaknesses before designing practice sessions${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${ctx.sessionInsights && ctx.sessionInsights.length > 0 ? buildSessionMemorySection(ctx.sessionInsights) : ''}${buildCalibrationSection(ctx.topics)}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
+10. Use getErrorPatterns to understand systematic weaknesses before designing practice sessions
+11. After each substantive teaching session, use updateStudentModel to record new observations about the student's learning patterns, mistakes, and preferences
+12. Reference past sessions using getRecentSessions or getConversationHistory to build continuity across conversations
+13. Don't suggest advanced topics until their prerequisites reach 60% mastery. Use getTopicDependencies to check.
+14. At conversation start, if flashcards are due, offer a quick review using startQuickReview
+15. When teaching a topic, if related cards are due, weave in a quiz. Present cards one at a time, wait for answer, reveal, then use rateFlashcard.
+16. Match question format to exam sections when exam formats are defined${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.conversationSummaries && ctx.conversationSummaries.length > 0 ? buildConversationHistorySection(ctx.conversationSummaries) : ''}${ctx.flashcardPerformance && ctx.flashcardPerformance.length > 0 ? buildFlashcardPerformanceSection(ctx.flashcardPerformance) : ''}${buildTopicDependencySection(ctx.topics)}${ctx.examFormats && ctx.examFormats.length > 0 ? buildExamFormatSection(ctx.examFormats) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${ctx.sessionInsights && ctx.sessionInsights.length > 0 ? buildSessionMemorySection(ctx.sessionInsights) : ''}${buildCalibrationSection(ctx.topics)}${buildEmotionalIntelligenceSection()}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
 }
 
 function buildSourceSection(sc: SourceContext): string {
@@ -226,4 +244,131 @@ function buildCalibrationSection(topics: Topic[]): string {
   }
   section += '\nGently address miscalibration. Challenge overconfident topics with harder questions. Encourage students on underconfident topics.'
   return section
+}
+
+function safeParse<T>(json: string | undefined | null, fallback: T): T {
+  try { return JSON.parse(json || '') ?? fallback }
+  catch { return fallback }
+}
+
+function buildStudentModelSection(model: StudentModel): string {
+  const learningStyle = safeParse(model.learningStyle, {} as Record<string, unknown>)
+  const commonMistakes: string[] = safeParse(model.commonMistakes, [])
+  const personalityNotes: string[] = safeParse(model.personalityNotes, [])
+  const preferredExplanations: string[] = safeParse(model.preferredExplanations, [])
+  const motivationTriggers: string[] = safeParse(model.motivationTriggers, [])
+
+  const hasData = Object.keys(learningStyle).length > 0 || commonMistakes.length > 0 ||
+    personalityNotes.length > 0 || preferredExplanations.length > 0 || motivationTriggers.length > 0
+
+  if (!hasData) return ''
+
+  let section = '\n\n## Student Profile (Observed)'
+  if (Object.keys(learningStyle).length > 0) {
+    section += `\nLearning style: ${Object.entries(learningStyle).map(([k, v]) => `${k}: ${v}`).join(', ')}`
+  }
+  if (commonMistakes.length > 0) {
+    section += `\nCommon mistakes: ${commonMistakes.slice(0, 10).join('; ')}`
+  }
+  if (personalityNotes.length > 0) {
+    section += `\nPersonality: ${personalityNotes.slice(0, 10).join('; ')}`
+  }
+  if (preferredExplanations.length > 0) {
+    section += `\nWhat works: ${preferredExplanations.slice(0, 10).join('; ')}`
+  }
+  if (motivationTriggers.length > 0) {
+    section += `\nMotivation: ${motivationTriggers.slice(0, 10).join('; ')}`
+  }
+  section += '\nUse these observations to tailor your teaching. Update them as you learn more about the student.'
+  return section
+}
+
+function buildConversationHistorySection(summaries: ConversationSummary[]): string {
+  const recent = summaries.slice(0, 5)
+  if (recent.length === 0) return ''
+
+  const entries = recent.map(s => {
+    const topics: string[] = safeParse(s.topicsCovered, [])
+    const outcomes: string[] = safeParse(s.keyOutcomes, [])
+    let entry = `- ${s.sessionDate}: ${topics.join(', ') || 'general discussion'}`
+    if (outcomes.length > 0) entry += ` → ${outcomes.slice(0, 3).join('; ')}`
+    return entry
+  })
+
+  return `
+
+## Recent Session History
+${entries.join('\n')}
+Build on previous sessions. Reference what was covered before to create continuity.`
+}
+
+function buildFlashcardPerformanceSection(decks: FlashcardPerformance[]): string {
+  if (decks.length === 0) return ''
+
+  const lines = decks.slice(0, 10).map(d => {
+    const status = d.retentionRate >= 80 ? 'strong' : d.retentionRate >= 50 ? 'needs review' : 'struggling'
+    return `  - [${d.deckName}] ${d.cardCount} cards, ${d.retentionRate}% retention, ${d.dueCount} due (${status})`
+  })
+
+  return `
+
+## Flashcard Performance
+${decks.length} deck${decks.length === 1 ? '' : 's'}:
+${lines.join('\n')}
+Reference flashcard performance when suggesting reviews or creating new cards.`
+}
+
+function buildTopicDependencySection(topics: Topic[]): string {
+  const withPrereqs = topics.filter(t => t.prerequisiteTopicIds && t.prerequisiteTopicIds.length > 0)
+  if (withPrereqs.length === 0) return ''
+
+  const topicMap = new Map(topics.map(t => [t.id, t]))
+  const lines = withPrereqs.slice(0, 10).map(t => {
+    const prereqs = (t.prerequisiteTopicIds ?? [])
+      .map(id => topicMap.get(id))
+      .filter(Boolean)
+      .map(p => `${p!.name} (${Math.round(p!.mastery * 100)}%)`)
+    const allMet = (t.prerequisiteTopicIds ?? []).every(id => {
+      const p = topicMap.get(id)
+      return p && p.mastery >= 0.6
+    })
+    return `  - [${t.name}] requires [${prereqs.join(', ')}]${allMet ? '' : ' ⚠ not met'}`
+  })
+
+  let section = '\n\n## Topic Dependencies'
+  section += '\n' + lines.join('\n')
+  if (withPrereqs.length > 10) section += `\n  ...and ${withPrereqs.length - 10} more`
+  section += '\nDo not suggest topics whose prerequisites are below 60% mastery.'
+  return section
+}
+
+function buildExamFormatSection(formats: ExamFormat[]): string {
+  if (formats.length === 0) return ''
+
+  const lines = formats.map(f => {
+    let line = `  - ${f.formatName}: ${f.timeAllocation}min, ${f.pointWeight}% weight`
+    if (f.questionCount) line += `, ${f.questionCount} questions`
+    return line
+  })
+
+  return `
+
+## Exam Format
+The exam has ${formats.length} section${formats.length === 1 ? '' : 's'}:
+${lines.join('\n')}
+Match question format to exam sections when generating practice questions.`
+}
+
+function buildEmotionalIntelligenceSection(): string {
+  return `
+
+## Emotional Intelligence
+Adapt your responses to the student's emotional state:
+- Frustration signals (short answers, "I don't get it", repeated mistakes): Simplify the explanation, use a different approach, offer encouragement. Say "This is a tricky concept, let's try a different angle."
+- Anxiety signals (worrying about exam, "I'll never learn this"): Acknowledge the feeling, focus on concrete actionable steps, highlight progress made. Say "I understand the pressure. Let's focus on what you can control."
+- Disengagement signals (one-word answers, topic changes): Switch approach — offer a quiz, change topics, or suggest a break.
+- After 60+ minutes of continuous study: Suggest a short break for better retention.
+- After 2+ frustration signals in a row: Offer to switch to an easier related topic or a different activity.
+- Never dismiss emotions — validate first ("I can see this is frustrating"), then redirect to productive learning.
+- Celebrate breakthroughs genuinely but briefly — don't over-praise.`
 }

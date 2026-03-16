@@ -43,6 +43,8 @@ export interface Topic {
   interval: number
   repetitions: number
   nextReviewDate: string
+  // Dependencies (Phase 3)
+  prerequisiteTopicIds?: string[] // IDs of prerequisite topics
 }
 
 export interface Subtopic {
@@ -232,6 +234,82 @@ export interface UserPreferences {
   pomodoroShortBreak: number
   pomodoroLongBreak: number
   pomodoroLongBreakInterval: number
+}
+
+// ─── Student Model (persistent AI-observed traits) ──────────────
+export interface StudentModel {
+  id: string            // same as examProfileId (1:1)
+  examProfileId: string
+  learningStyle: string        // JSON object
+  commonMistakes: string       // JSON string[]
+  personalityNotes: string     // JSON string[]
+  preferredExplanations: string // JSON string[]
+  motivationTriggers: string   // JSON string[]
+  updatedAt: string
+}
+
+// ─── Conversation Summaries ─────────────────────────────────────
+export interface ConversationSummary {
+  id: string
+  examProfileId: string
+  conversationId: string
+  topicsCovered: string       // JSON string[]
+  keyOutcomes: string         // JSON string[]
+  masteryChanges: string      // JSON object
+  sessionDate: string
+  durationEstimate: number    // minutes
+}
+
+// ─── Notifications ──────────────────────────────────────────────
+export type NotificationType = 'study-reminder' | 'review-due' | 'streak-warning' | 'plan-suggestion' | 'milestone'
+
+export interface Notification {
+  id: string
+  examProfileId: string
+  type: NotificationType
+  title: string
+  message: string
+  isRead: boolean
+  createdAt: string
+  actionUrl?: string
+}
+
+export interface NotificationPreferences {
+  id: string // same as examProfileId (1:1)
+  examProfileId: string
+  studyReminders: boolean
+  reviewDue: boolean
+  streakWarnings: boolean
+  planSuggestions: boolean
+  milestones: boolean
+}
+
+// ─── Exam Formats ───────────────────────────────────────────────
+export interface ExamFormat {
+  id: string
+  examProfileId: string
+  formatName: string
+  description: string
+  timeAllocation: number    // minutes
+  pointWeight: number       // percentage
+  questionCount?: number
+  samplePrompt?: string
+}
+
+// ─── Mock Exams ─────────────────────────────────────────────────
+export type MockExamStatus = 'in-progress' | 'completed' | 'graded'
+
+export interface MockExam {
+  id: string
+  examProfileId: string
+  startTime: string
+  endTime?: string
+  timeLimitMinutes: number
+  sections: string          // JSON array of { formatId, questions, answers }
+  totalScore?: number
+  maxScore?: number
+  status: MockExamStatus
+  feedback?: string         // JSON AI feedback
 }
 
 // ─── Daily Study Logs ───────────────────────────────────────────

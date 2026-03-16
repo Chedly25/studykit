@@ -19,6 +19,12 @@ import type {
   SessionInsight,
   StudyPlan,
   StudyPlanDay,
+  StudentModel,
+  ConversationSummary,
+  Notification,
+  NotificationPreferences,
+  ExamFormat,
+  MockExam,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -41,6 +47,12 @@ export class StudiesKitDB extends Dexie {
   sessionInsights!: Table<SessionInsight>
   studyPlans!: Table<StudyPlan>
   studyPlanDays!: Table<StudyPlanDay>
+  studentModels!: Table<StudentModel>
+  conversationSummaries!: Table<ConversationSummary>
+  notifications!: Table<Notification>
+  notificationPreferences!: Table<NotificationPreferences>
+  examFormats!: Table<ExamFormat>
+  mockExams!: Table<MockExam>
 
   constructor() {
     super('studieskit')
@@ -99,6 +111,27 @@ export class StudiesKitDB extends Dexie {
       tx.table('userPreferences').toCollection().modify(pref => {
         if (pref.language === undefined) pref.language = 'en'
       })
+    })
+
+    this.version(6).stores({
+      studentModels: 'id, examProfileId',
+      conversationSummaries: 'id, examProfileId, conversationId, sessionDate',
+    })
+
+    this.version(7).stores({}).upgrade(tx => {
+      tx.table('topics').toCollection().modify(topic => {
+        if (topic.prerequisiteTopicIds === undefined) topic.prerequisiteTopicIds = []
+      })
+    })
+
+    this.version(8).stores({
+      notifications: 'id, examProfileId, type, isRead, createdAt',
+      notificationPreferences: 'id, examProfileId',
+      examFormats: 'id, examProfileId',
+    })
+
+    this.version(9).stores({
+      mockExams: 'id, examProfileId, status, startTime',
     })
   }
 }
