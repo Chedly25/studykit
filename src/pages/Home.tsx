@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
-import { GraduationCap, ArrowRight, ArrowDown } from 'lucide-react'
+import { ArrowRight, ArrowDown } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { InteractiveDemo } from '../components/home/InteractiveDemo'
 import { FeaturePillars } from '../components/home/FeaturePillars'
@@ -26,7 +26,7 @@ export default function Home() {
           <title>StudiesKit — {t('common.tagline')}</title>
         </Helmet>
         <div className="animate-fade-in text-center py-16 max-w-2xl mx-auto">
-          <GraduationCap className="w-16 h-16 text-[var(--accent-text)] mx-auto mb-6" />
+          <img src="/android-chrome-192x192.png" alt="StudiesKit" className="w-16 h-16 mx-auto mb-6 rounded-2xl" />
           <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold text-[var(--text-heading)] mb-4">
             {t('home.onboardingTitle')}
           </h1>
@@ -34,7 +34,7 @@ export default function Home() {
             {t('home.onboardingSubtitle')}
           </p>
           <Link to="/exam-profile" className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-lg">
-            <GraduationCap size={20} /> {t('home.createProfile')}
+            {t('home.createProfile')}
           </Link>
         </div>
       </>
@@ -63,7 +63,7 @@ export default function Home() {
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <Link to="/sign-up" className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-lg">
-              <GraduationCap size={20} /> {t('home.startLearning')}
+              {t('home.startLearning')}
             </Link>
             <a
               href="#demo"

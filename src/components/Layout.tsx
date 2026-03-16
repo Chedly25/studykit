@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
-import { GraduationCap, LayoutDashboard, BarChart3, Focus, MessageCircle, FileText } from 'lucide-react'
+import { LayoutDashboard, BarChart3, Focus, MessageCircle, FileText } from 'lucide-react'
 import { MegaMenu } from './MegaMenu'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
@@ -24,9 +24,7 @@ export function Layout() {
       <header className="border-b border-[var(--border-header)] backdrop-blur-md bg-[var(--bg-header)] sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center">
-              <GraduationCap size={18} className="text-[var(--accent-text)]" />
-            </div>
+            <img src="/favicon-48x48.png" alt="StudiesKit" className="w-8 h-8 rounded-lg" />
             <span className="font-[family-name:var(--font-display)] font-bold text-lg text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors">
               StudiesKit
             </span>
@@ -110,7 +108,7 @@ export function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
-              <GraduationCap size={16} />
+              <img src="/favicon-32x32.png" alt="" className="w-4 h-4" />
               <span>{t('footer.tagline')}</span>
             </div>
             <div className="flex items-center gap-4 text-sm">
