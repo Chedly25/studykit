@@ -11,6 +11,7 @@ interface PracticeExamTakerProps {
   currentIndex: number
   answers: Map<string, string>
   timeRemaining: number | null
+  targetDifficulty?: number
   onAnswer: (questionId: string, answer: string) => void
   onNavigate: (index: number) => void
   onSubmit: () => void
@@ -21,6 +22,7 @@ export function PracticeExamTaker({
   currentIndex,
   answers,
   timeRemaining,
+  targetDifficulty,
   onAnswer,
   onNavigate,
   onSubmit,
@@ -70,6 +72,11 @@ export function PracticeExamTaker({
           </div>
 
           <div className="flex items-center gap-3">
+            {targetDifficulty !== undefined && (
+              <span className="text-xs text-[var(--text-muted)] bg-[var(--bg-input)] px-2 py-1 rounded">
+                {t('practiceExam.difficulty')}: {targetDifficulty}/5
+              </span>
+            )}
             {timeRemaining !== null && <ExamTimer timeRemaining={timeRemaining} />}
             <button
               onClick={handleSubmit}

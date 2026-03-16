@@ -1,15 +1,17 @@
 /**
  * AI tool implementations for source retrieval.
  */
-import { searchChunks, getChunksByDocumentId } from '../../lib/sources'
+import { getChunksByDocumentId } from '../../lib/sources'
+import { semanticSearch } from '../../lib/embeddings'
 import { db } from '../../db'
 
 export async function searchSourcesTool(
   examProfileId: string,
   query: string,
   topN = 5,
+  authToken?: string,
 ): Promise<string> {
-  const results = await searchChunks(examProfileId, query, topN)
+  const results = await semanticSearch(examProfileId, query, authToken, topN)
   if (results.length === 0) {
     return JSON.stringify({ results: [], message: 'No matching content found in uploaded sources.' })
   }

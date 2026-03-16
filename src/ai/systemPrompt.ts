@@ -4,7 +4,7 @@
  */
 import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPreferences, SessionInsight, StudentModel, ConversationSummary, ExamFormat } from '../db/schema'
 import type { ExamType } from '../db/schema'
-import { computeReadiness, getWeakTopics, getStrongTopics, computeStreak, computeWeeklyHours } from '../lib/knowledgeGraph'
+import { computeReadiness, getWeakTopics, getStrongTopics, computeStreak, computeWeeklyHours, decayedMastery } from '../lib/knowledgeGraph'
 
 function getFormatGuidance(examType: ExamType): string {
   switch (examType) {
@@ -58,13 +58,15 @@ export function buildSystemPrompt(ctx: PromptContext): string {
 
   const daysLeft = Math.max(0, Math.ceil((new Date(profile.examDate).getTime() - Date.now()) / 86400000))
   const readiness = computeReadiness({ subjects, passingThreshold: profile.passingThreshold })
-  const weakTopics = getWeakTopics(topics, 5)
-  const strongTopics = getStrongTopics(topics, 3)
+  // Use decayed mastery for topic lists
+  const topicsDecayed = topics.map(t => ({ ...t, decayed: decayedMastery(t) }))
+  const weakTopicsSorted = [...topicsDecayed].sort((a, b) => a.decayed - b.decayed).slice(0, 5)
+  const strongTopicsSorted = [...topicsDecayed].filter(t => t.decayed > 0).sort((a, b) => b.decayed - a.decayed).slice(0, 3)
   const streak = computeStreak(dailyLogs)
   const weeklyHours = computeWeeklyHours(dailyLogs)
 
-  const weakList = weakTopics.map(t => `  - ${t.name} (${Math.round(t.mastery * 100)}%)`).join('\n')
-  const strongList = strongTopics.map(t => `  - ${t.name} (${Math.round(t.mastery * 100)}%)`).join('\n')
+  const weakList = weakTopicsSorted.map(t => `  - ${t.name} (${Math.round(t.decayed * 100)}%${t.decayed < t.mastery ? `, decayed from ${Math.round(t.mastery * 100)}%` : ''})`).join('\n')
+  const strongList = strongTopicsSorted.map(t => `  - ${t.name} (${Math.round(t.decayed * 100)}%)`).join('\n')
 
   const assignmentList = upcomingAssignments.slice(0, 3).map(a =>
     `  - ${a.title} (due ${a.dueDate}, ${a.priority} priority)`
@@ -113,14 +115,19 @@ You have tools to read and write the student's data. Always use tools to access 
 13. Don't suggest advanced topics until their prerequisites reach 60% mastery. Use getTopicDependencies to check.
 14. At conversation start, if flashcards are due, offer a quick review using startQuickReview
 15. When teaching a topic, if related cards are due, weave in a quiz. Present cards one at a time, wait for answer, reveal, then use rateFlashcard.
-16. Match question format to exam sections when exam formats are defined${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.conversationSummaries && ctx.conversationSummaries.length > 0 ? buildConversationHistorySection(ctx.conversationSummaries) : ''}${ctx.flashcardPerformance && ctx.flashcardPerformance.length > 0 ? buildFlashcardPerformanceSection(ctx.flashcardPerformance) : ''}${buildTopicDependencySection(ctx.topics)}${ctx.examFormats && ctx.examFormats.length > 0 ? buildExamFormatSection(ctx.examFormats) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${ctx.sessionInsights && ctx.sessionInsights.length > 0 ? buildSessionMemorySection(ctx.sessionInsights) : ''}${buildCalibrationSection(ctx.topics)}${buildEmotionalIntelligenceSection()}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
+16. Match question format to exam sections when exam formats are defined${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.conversationSummaries && ctx.conversationSummaries.length > 0 ? buildConversationHistorySection(ctx.conversationSummaries) : ''}${ctx.flashcardPerformance && ctx.flashcardPerformance.length > 0 ? buildFlashcardPerformanceSection(ctx.flashcardPerformance) : ''}${buildTopicDependencySection(ctx.topics)}${ctx.examFormats && ctx.examFormats.length > 0 ? buildExamFormatSection(ctx.examFormats) : ''}${ctx.profile.examIntelligence ? buildExamIntelligenceSection(ctx.profile.examIntelligence) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${ctx.sessionInsights && ctx.sessionInsights.length > 0 ? buildSessionMemorySection(ctx.sessionInsights) : ''}${buildCalibrationSection(ctx.topics)}${buildEmotionalIntelligenceSection()}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
 }
 
 function buildSourceSection(sc: SourceContext): string {
   let section = `
 
 ## Uploaded Sources
-The student has uploaded ${sc.documentCount} document${sc.documentCount === 1 ? '' : 's'}. Use the searchSources tool to find relevant content when answering questions about their study materials.`
+The student has uploaded ${sc.documentCount} document${sc.documentCount === 1 ? '' : 's'}. Use the searchSources tool to find relevant content when answering questions about their study materials.
+
+### Citation Instructions
+When referencing content from uploaded sources, cite as: [Source: "Document Title", §ChunkIndex]
+Example: According to the lecture notes [Source: "Biology Ch.5", §3], mitochondria...
+Only cite sources you are actually referencing. Do not fabricate citations.`
 
   if (sc.preRetrievedChunks) {
     section += `
@@ -357,6 +364,29 @@ function buildExamFormatSection(formats: ExamFormat[]): string {
 The exam has ${formats.length} section${formats.length === 1 ? '' : 's'}:
 ${lines.join('\n')}
 Match question format to exam sections when generating practice questions.`
+}
+
+function buildExamIntelligenceSection(intelligenceJson: string): string {
+  try {
+    const intel = JSON.parse(intelligenceJson) as {
+      overview?: string
+      totalDuration?: number
+      passingScore?: number
+      tips?: string[]
+    }
+    let section = '\n\n## Exam Intelligence (Researched)'
+    if (intel.overview) section += `\n${intel.overview}`
+    if (intel.totalDuration) section += `\nTotal duration: ${intel.totalDuration} minutes`
+    if (intel.passingScore) section += `\nPassing score: ${intel.passingScore}%`
+    if (intel.tips && intel.tips.length > 0) {
+      section += '\nPreparation tips:'
+      intel.tips.slice(0, 5).forEach(tip => { section += `\n  - ${tip}` })
+    }
+    section += '\nUse this intelligence to tailor practice questions, study plans, and exam strategy advice.'
+    return section
+  } catch {
+    return ''
+  }
 }
 
 function buildEmotionalIntelligenceSection(): string {

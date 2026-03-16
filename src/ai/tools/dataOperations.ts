@@ -3,6 +3,7 @@
  */
 import { db } from '../../db'
 import type { FlashcardDeck, Flashcard, Assignment, QuestionResult, DailyStudyLog, Topic } from '../../db/schema'
+import { computeDailyRecommendations } from '../../lib/studyRecommender'
 
 export async function logQuestionResult(
   examProfileId: string,
@@ -182,30 +183,34 @@ export async function getStudyRecommendation(examProfileId: string): Promise<str
 
   const daysLeft = Math.max(1, Math.ceil((new Date(profile.examDate).getTime() - Date.now()) / 86400000))
 
-  // Priority: low mastery + high weight subjects
-  const subjectMap = new Map(subjects.map(s => [s.id, s]))
-  const prioritized = [...topics]
-    .map(t => {
-      const subject = subjectMap.get(t.subjectId)
-      const weight = subject?.weight ?? 0
-      const urgency = (1 - t.mastery) * (weight / 100) * (1 + (daysLeft < 30 ? 0.5 : 0))
-      return { ...t, urgency, subjectName: subject?.name ?? '' }
-    })
-    .sort((a, b) => b.urgency - a.urgency)
-    .slice(0, 5)
-
+  // Compute due flashcards by topic
   const today = new Date().toISOString().slice(0, 10)
-  const dueCards = await db.flashcards.where('nextReviewDate').belowOrEqual(today).count()
+  const dueCards = await db.flashcards.where('nextReviewDate').belowOrEqual(today).toArray()
+  const dueByTopic = new Map<string, number>()
+  for (const card of dueCards) {
+    if (card.topicId) {
+      dueByTopic.set(card.topicId, (dueByTopic.get(card.topicId) ?? 0) + 1)
+    }
+  }
+
+  const recommendations = computeDailyRecommendations({
+    topics,
+    subjects,
+    daysUntilExam: daysLeft,
+    dueFlashcardsByTopic: dueByTopic,
+  })
 
   return JSON.stringify({
     recommendation: {
-      focusTopics: prioritized.map(t => ({
-        name: t.name,
-        subject: t.subjectName,
-        mastery: Math.round(t.mastery * 100),
-        urgency: Math.round(t.urgency * 100),
+      focusTopics: recommendations.map(r => ({
+        name: r.topicName,
+        subject: r.subjectName,
+        mastery: Math.round(r.decayedMastery * 100),
+        action: r.action,
+        reason: r.reason,
+        urgency: Math.round(r.score * 100),
       })),
-      dueFlashcards: dueCards,
+      dueFlashcards: dueCards.length,
       daysLeft,
       suggestedSessionMinutes: Math.min(90, Math.max(25, Math.round(profile.weeklyTargetHours * 60 / 7))),
     },

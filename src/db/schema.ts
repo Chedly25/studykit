@@ -16,6 +16,7 @@ export interface ExamProfile {
   weeklyTargetHours: number
   createdAt: string
   userId?: string
+  examIntelligence?: string // JSON exam research data
 }
 
 // ─── Knowledge Graph ────────────────────────────────────────────
@@ -353,6 +354,15 @@ export interface GeneratedQuestion {
   isCorrect?: boolean
   earnedPoints?: number
   feedback?: string
+}
+
+// ─── Chunk Embeddings ───────────────────────────────────────────
+export interface ChunkEmbedding {
+  id: string
+  chunkId: string
+  documentId: string
+  examProfileId: string
+  embedding: string // base64-encoded Float32Array (768-dim)
 }
 
 // ─── Daily Study Logs ───────────────────────────────────────────

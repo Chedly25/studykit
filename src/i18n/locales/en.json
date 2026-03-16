@@ -149,7 +149,9 @@
       "startSession": "Start a practice session",
       "chatTutor": "Chat with your AI tutor",
       "generatePlan": "Generate a study plan"
-    }
+    },
+    "todaysPriority": "Today's Priority",
+    "topPriority": "Top Priority"
   },
   "ai": {
     "chat": "AI Chat",
@@ -262,7 +264,16 @@
       "chatDesc": "Ask your AI tutor about uploaded content",
       "extractConcepts": "Extract Concepts",
       "extractConceptsDesc": "Auto-map source content to your topics"
-    }
+    },
+    "processing": {
+      "title": "Processing your document...",
+      "gatherContext": "Gathering context",
+      "embedChunks": "Generating search embeddings",
+      "extractConcepts": "Extracting concepts and summary",
+      "generateFlashcards": "Generating flashcards",
+      "saveResults": "Saving results"
+    },
+    "upgradeSearch": "Upgrade search for better results"
   },
   "subscription": {
     "pricing": "Pricing",
@@ -401,6 +412,9 @@
     "clearSelection": "Clear all",
     "topicsSelected": "{{count}} topic(s) selected",
     "suggestWeakTopics": "Focus on weak areas: {{topics}}",
+    "difficulty": "Difficulty",
+    "explainDifferently": "Explain differently",
+    "difficultyAdapting": "Difficulty adapting",
     "steps": {
       "gatherContext": "Gathering your study data",
       "searchDocuments": "Searching your study materials",

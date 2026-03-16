@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { toast } from 'sonner'
@@ -9,12 +9,14 @@ import { useSources } from '../hooks/useSources'
 import { useAgent } from '../hooks/useAgent'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useSourceCoverage } from '../hooks/useSourceCoverage'
+import { useSourceProcessing } from '../hooks/useSourceProcessing'
 import { SourceUploadBar } from '../components/sources/SourceUploadBar'
 import { SourceList } from '../components/sources/SourceList'
 import { SourceCoverageChart } from '../components/sources/SourceCoverageChart'
 import { PasteTextModal } from '../components/sources/PasteTextModal'
 import { NotesEditor } from '../components/sources/NotesEditor'
 import { SourceDetailModal } from '../components/sources/SourceDetailModal'
+import { SourceProcessingBanner } from '../components/sources/SourceProcessingBanner'
 import { buildSummaryPrompt, buildFlashcardPrompt } from '../lib/sourceActions'
 import { getChunksByDocumentId } from '../lib/sources'
 import { db } from '../db'
@@ -32,9 +34,27 @@ export default function Sources() {
   } = useSources(profileId)
 
   const { coverage } = useSourceCoverage(profileId)
+  const { processDocument, cancel: cancelProcessing, isRunning: isProcessingDoc, progress: processingProgress, error: processingError } = useSourceProcessing(profileId)
   const agent = useAgent({ profile: activeProfile, subjects, topics, dailyLogs })
   const navigate = useNavigate()
   const { getToken } = useAuth()
+
+  // Auto-process new documents when count increases
+  const prevDocCountRef = useRef(documents.length)
+  const documentsRef = useRef(documents)
+  documentsRef.current = documents
+  const isProcessingDocRef = useRef(isProcessingDoc)
+  isProcessingDocRef.current = isProcessingDoc
+  useEffect(() => {
+    const docs = documentsRef.current
+    if (documents.length > prevDocCountRef.current && docs.length > 0) {
+      const newestDoc = docs[0] // sorted by createdAt desc
+      if (newestDoc && !newestDoc.summary && !isProcessingDocRef.current) {
+        processDocument(newestDoc.id)
+      }
+    }
+    prevDocCountRef.current = documents.length
+  }, [documents.length, processDocument])
 
   const [showPaste, setShowPaste] = useState(false)
   const [showNotes, setShowNotes] = useState(false)
@@ -160,6 +180,14 @@ export default function Sources() {
           <Loader2 className="w-5 h-5 text-[var(--accent-text)] animate-spin" />
           <span className="text-sm text-[var(--text-body)]">{processingStatus || t('common.loading')}</span>
         </div>
+      )}
+
+      {isProcessingDoc && (
+        <SourceProcessingBanner
+          progress={processingProgress}
+          error={processingError}
+          onCancel={cancelProcessing}
+        />
       )}
 
       <div className="mb-6">

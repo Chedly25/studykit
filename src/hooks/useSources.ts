@@ -5,18 +5,20 @@
 import { useState, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useAuth } from '@clerk/clerk-react'
 import { db } from '../db'
 import {
   createDocument,
   deleteDocument,
   saveChunks,
   chunkText,
-  searchChunks,
 } from '../lib/sources'
 import { parsePdf } from '../lib/pdfParser'
+import { semanticSearch, deleteEmbeddings } from '../lib/embeddings'
 import type { DocumentChunk } from '../db/schema'
 
 export function useSources(examProfileId: string | undefined) {
+  const { getToken } = useAuth()
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingStatus, setProcessingStatus] = useState('')
 
@@ -50,6 +52,7 @@ export function useSources(examProfileId: string | undefined) {
       await saveChunks(doc.id, examProfileId, chunks)
       setProcessingStatus('')
       toast.success(`"${title}" uploaded`)
+      // Embeddings are handled by the source processing orchestrator workflow
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Upload failed')
       throw err
@@ -94,13 +97,15 @@ export function useSources(examProfileId: string | undefined) {
   }, [examProfileId])
 
   const deleteSource = useCallback(async (documentId: string) => {
+    await deleteEmbeddings(documentId)
     await deleteDocument(documentId)
   }, [])
 
   const searchSources = useCallback(async (query: string, topN = 5): Promise<(DocumentChunk & { score: number; documentTitle?: string })[]> => {
     if (!examProfileId) return []
-    return searchChunks(examProfileId, query, topN)
-  }, [examProfileId])
+    const token = await getToken()
+    return semanticSearch(examProfileId, query, token ?? undefined, topN)
+  }, [examProfileId, getToken])
 
   const documentCount = useMemo(() => documents?.length ?? 0, [documents])
 

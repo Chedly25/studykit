@@ -8,6 +8,7 @@ import {
   getDueTopics,
   computeStreak,
   computeWeeklyHours,
+  decayedMastery,
 } from '../lib/knowledgeGraph'
 
 export function useKnowledgeGraph(examProfileId: string | undefined) {
@@ -37,13 +38,26 @@ export function useKnowledgeGraph(examProfileId: string | undefined) {
     [examProfileId]
   )
 
-  // Computed values
+  // Compute decayed mastery for all topics
+  const topicsWithDecay = topics.map(t => ({
+    ...t,
+    decayedMastery: decayedMastery(t),
+  }))
+
+  // Use decayed mastery for weak/strong topic identification
+  const weakTopics = [...topicsWithDecay]
+    .sort((a, b) => a.decayedMastery - b.decayedMastery)
+    .slice(0, 5)
+  const strongTopics = [...topicsWithDecay]
+    .filter(t => t.decayedMastery > 0)
+    .sort((a, b) => b.decayedMastery - a.decayedMastery)
+    .slice(0, 5)
+
+  // Readiness uses decayed subjects
   const readiness = profile
     ? computeReadiness({ subjects, passingThreshold: profile.passingThreshold })
     : 0
 
-  const weakTopics = getWeakTopics(topics)
-  const strongTopics = getStrongTopics(topics)
   const dueTopics = getDueTopics(topics)
   const streak = computeStreak(dailyLogs)
   const weeklyHours = computeWeeklyHours(dailyLogs)
@@ -54,6 +68,7 @@ export function useKnowledgeGraph(examProfileId: string | undefined) {
   return {
     subjects,
     topics,
+    topicsWithDecay,
     dailyLogs,
     readiness,
     weakTopics,

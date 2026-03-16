@@ -149,7 +149,9 @@
       "startSession": "Demarrez une session de pratique",
       "chatTutor": "Discutez avec votre tuteur IA",
       "generatePlan": "Generez un plan d'etude"
-    }
+    },
+    "todaysPriority": "Priorite du jour",
+    "topPriority": "Priorite absolue"
   },
   "ai": {
     "chat": "Chat IA",
@@ -262,7 +264,16 @@
       "chatDesc": "Interrogez votre tuteur IA sur le contenu importe",
       "extractConcepts": "Extraire les concepts",
       "extractConceptsDesc": "Mapper automatiquement le contenu a vos sujets"
-    }
+    },
+    "processing": {
+      "title": "Traitement de votre document...",
+      "gatherContext": "Collecte du contexte",
+      "embedChunks": "Generation des embeddings de recherche",
+      "extractConcepts": "Extraction des concepts et resume",
+      "generateFlashcards": "Generation des cartes",
+      "saveResults": "Enregistrement des resultats"
+    },
+    "upgradeSearch": "Ameliorer la recherche pour de meilleurs resultats"
   },
   "subscription": {
     "pricing": "Tarifs",
@@ -401,6 +412,9 @@
     "clearSelection": "Tout effacer",
     "topicsSelected": "{{count}} sujet(s) selectionne(s)",
     "suggestWeakTopics": "Se concentrer sur les faiblesses : {{topics}}",
+    "difficulty": "Difficulte",
+    "explainDifferently": "Expliquer differemment",
+    "difficultyAdapting": "Difficulte adaptative",
     "steps": {
       "gatherContext": "Collecte de vos donnees d'etude",
       "searchDocuments": "Recherche dans vos supports de cours",

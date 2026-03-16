@@ -10,7 +10,7 @@ import { useSubscription } from './useSubscription'
 import type { Message } from '../ai/types'
 import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPreferences, SessionInsight, StudentModel, ConversationSummary, ExamFormat } from '../db/schema'
 import { db } from '../db'
-import { searchChunks } from '../lib/sources'
+import { semanticSearch } from '../lib/embeddings'
 
 const FREE_DAILY_LIMIT = 5
 
@@ -111,6 +111,15 @@ export function useAgent(options: UseAgentOptions) {
         .filter(a => a.status !== 'done' && a.dueDate >= today)
         .toArray() as Assignment[]
 
+      // Get auth token early (needed for semantic search + API calls)
+      const authToken = await getToken() ?? undefined
+
+      if (!authToken) {
+        setError('You must be signed in to use the AI assistant.')
+        setIsLoading(false)
+        return []
+      }
+
       // Build source context if sources are enabled
       let sourceContext: { documentCount: number; preRetrievedChunks?: string } | undefined
       if (sourcesEnabled) {
@@ -119,11 +128,11 @@ export function useAgent(options: UseAgentOptions) {
           .equals(profile.id)
           .count()
         if (docCount > 0) {
-          const relevant = await searchChunks(profile.id, userMessage, 5)
+          const relevant = await semanticSearch(profile.id, userMessage, authToken ?? undefined, 5)
           let preRetrievedChunks: string | undefined
           if (relevant.length > 0) {
             preRetrievedChunks = relevant
-              .map(r => `[Source: "${r.documentTitle}"] ${r.content}`)
+              .map(r => `[Source: "${r.documentTitle}", §${r.chunkIndex}]\n${r.content}`)
               .join('\n\n')
           }
           sourceContext = { documentCount: docCount, preRetrievedChunks }
@@ -176,15 +185,6 @@ export function useAgent(options: UseAgentOptions) {
         ? buildSocraticPrompt(ctx, socraticTopic)
         : buildSystemPrompt(ctx)
 
-      // Get auth token for API requests
-      const authToken = await getToken() ?? undefined
-
-      if (!authToken) {
-        setError('You must be signed in to use the AI assistant.')
-        setIsLoading(false)
-        return []
-      }
-
       // Run agent loop
       const result = await runAgentLoop({
         messages: newMessages,
@@ -226,7 +226,7 @@ export function useAgent(options: UseAgentOptions) {
     } finally {
       setIsLoading(false)
     }
-  }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, isSocratic, socraticTopic, isExplainBack, explainBackTopic, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries])
+  }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, isSocratic, socraticTopic, isExplainBack, explainBackTopic, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, i18n.language])
 
   // Track conversation state in refs for beforeunload handler
   const messagesRef = useRef(messages)

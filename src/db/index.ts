@@ -27,6 +27,7 @@ import type {
   MockExam,
   PracticeExamSession,
   GeneratedQuestion,
+  ChunkEmbedding,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -57,6 +58,7 @@ export class StudiesKitDB extends Dexie {
   mockExams!: Table<MockExam>
   practiceExamSessions!: Table<PracticeExamSession>
   generatedQuestions!: Table<GeneratedQuestion>
+  chunkEmbeddings!: Table<ChunkEmbedding>
 
   constructor() {
     super('studieskit')
@@ -141,6 +143,10 @@ export class StudiesKitDB extends Dexie {
     this.version(10).stores({
       practiceExamSessions: 'id, examProfileId, phase, createdAt',
       generatedQuestions: 'id, sessionId, examProfileId, questionIndex',
+    })
+
+    this.version(11).stores({
+      chunkEmbeddings: 'id, chunkId, documentId, examProfileId',
     })
   }
 }

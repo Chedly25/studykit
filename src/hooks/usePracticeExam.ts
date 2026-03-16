@@ -10,6 +10,7 @@ import type { GeneratedQuestion, PracticeExamSession } from '../db/schema'
 import { useOrchestrator } from './useOrchestrator'
 import { createPracticeExamWorkflow } from '../ai/workflows/practiceExam'
 import { createGradingWorkflow } from '../ai/workflows/practiceExamGrading'
+import { createAdaptiveState, updateAdaptiveState, getNextQuestionIndex, type AdaptiveState } from '../lib/adaptiveDifficulty'
 
 export type PracticePhase = 'setup' | 'generating' | 'taking' | 'grading' | 'results'
 
@@ -32,6 +33,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
   const [timerActive, setTimerActive] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [adaptiveState, setAdaptiveState] = useState<AdaptiveState>(createAdaptiveState)
 
   // Destructure stable refs from orchestrator hooks to avoid re-render churn
   const {
@@ -114,6 +116,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setPhase('generating')
     setAnswers(new Map())
     setCurrentQuestionIndex(0)
+    setAdaptiveState(createAdaptiveState())
 
     const workflow = createPracticeExamWorkflow({
       sessionId: id,
@@ -143,11 +146,28 @@ export function usePracticeExam(examProfileId: string | undefined) {
       next.set(questionId, answer)
       return next
     })
-  }, [])
+
+    // Update adaptive state for MCQ/T-F (client-side checkable)
+    const question = questions.find(q => q.id === questionId)
+    if (question && (question.format === 'multiple-choice' || question.format === 'true-false')) {
+      const isCorrect = question.correctOptionIndex !== undefined
+        ? String(question.correctOptionIndex) === answer || question.correctAnswer?.toLowerCase() === answer?.toLowerCase()
+        : question.correctAnswer?.toLowerCase() === answer?.toLowerCase()
+
+      setAdaptiveState(prev => updateAdaptiveState(prev, isCorrect, question.questionIndex))
+    }
+  }, [questions])
 
   const goToQuestion = useCallback((index: number) => {
     setCurrentQuestionIndex(index)
   }, [])
+
+  const goToNextAdaptive = useCallback(() => {
+    if (questions.length === 0) return
+    const nextIdx = getNextQuestionIndex(questions, adaptiveState, currentQuestionIndex)
+    if (nextIdx === -1) return // All answered — caller can check via answers.size
+    setCurrentQuestionIndex(nextIdx)
+  }, [questions, adaptiveState, currentQuestionIndex])
 
   const submitExam = useCallback(async () => {
     if (!sessionId || !examProfileId) return
@@ -183,6 +203,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setAnswers(new Map())
     setTimeRemaining(null)
     setTimerActive(false)
+    setAdaptiveState(createAdaptiveState())
   }, [])
 
   return {
@@ -202,8 +223,10 @@ export function usePracticeExam(examProfileId: string | undefined) {
     startGeneration,
     answerQuestion,
     goToQuestion,
+    goToNextAdaptive,
     submitExam,
     cancelGeneration,
     resetToSetup,
+    adaptiveState,
   }
 }

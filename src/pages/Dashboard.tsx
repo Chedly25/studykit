@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation, Trans } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -21,13 +22,15 @@ import { InsightCard } from '../components/dashboard/InsightCard'
 import { SessionInsightsCard } from '../components/dashboard/SessionInsightsCard'
 import { StudyPlanCard } from '../components/dashboard/StudyPlanCard'
 import { TopicTree } from '../components/knowledge/TopicTree'
+import { TodaysPriorityCard } from '../components/dashboard/TodaysPriorityCard'
+import { computeDailyRecommendations } from '../lib/studyRecommender'
 
 export default function Dashboard() {
   const { t } = useTranslation()
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
-  const { subjects, readiness, weakTopics, dueTopics, streak, weeklyHours, getTopicsForSubject } = useKnowledgeGraph(profileId)
+  const { subjects, topics, readiness, weakTopics, dueTopics, streak, weeklyHours, getTopicsForSubject } = useKnowledgeGraph(profileId)
   const insights = useProactiveInsights(profileId)
   const { recentInsights: sessionInsights } = useSessionInsights(profileId)
   const { coverage: sourceCoverage } = useSourceCoverage(profileId)
@@ -46,6 +49,30 @@ export default function Dashboard() {
       return db.flashcards.where('nextReviewDate').belowOrEqual(today).count()
     }
   ) ?? 0
+
+  // Compute due flashcards by topic for recommendations
+  const dueFlashcardsByTopic = useLiveQuery(async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    const dueCards = await db.flashcards.where('nextReviewDate').belowOrEqual(today).toArray()
+    const map = new Map<string, number>()
+    for (const card of dueCards) {
+      if (card.topicId) {
+        map.set(card.topicId, (map.get(card.topicId) ?? 0) + 1)
+      }
+    }
+    return map
+  }) ?? new Map()
+
+  const recommendations = useMemo(() => {
+    if (!activeProfile || topics.length === 0) return []
+    const daysUntilExam = Math.max(0, Math.ceil((new Date(activeProfile.examDate).getTime() - Date.now()) / 86400000))
+    return computeDailyRecommendations({
+      topics,
+      subjects,
+      daysUntilExam,
+      dueFlashcardsByTopic,
+    })
+  }, [activeProfile, topics, subjects, dueFlashcardsByTopic])
 
   const upcomingAssignments = useLiveQuery(() => {
     const today = new Date().toISOString().slice(0, 10)
@@ -159,6 +186,13 @@ export default function Dashboard() {
         <ExamCountdownCard examName={activeProfile.name} examDate={activeProfile.examDate} />
         <StudyStreakCard streak={streak} weeklyHours={weeklyHours} weeklyTarget={activeProfile.weeklyTargetHours} />
       </div>
+
+      {/* Today's Priority Recommendations */}
+      {recommendations.length > 0 && (
+        <div className="mt-4">
+          <TodaysPriorityCard recommendations={recommendations} />
+        </div>
+      )}
 
       {/* Middle row: Today's Plan + Weak Topics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

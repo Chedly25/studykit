@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Trophy, BarChart3, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react'
+import { Trophy, BarChart3, RotateCcw, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
 import type { GeneratedQuestion, PracticeExamSession } from '../../db/schema'
 import { QuestionRenderer } from './QuestionRenderer'
 import type { WorkflowProgress } from '../../ai/orchestrator/types'
@@ -12,6 +12,7 @@ interface PracticeExamResultsProps {
   isGrading: boolean
   gradingProgress: WorkflowProgress | null
   onRetake: () => void
+  onExplainDifferently?: (question: GeneratedQuestion) => void
 }
 
 export function PracticeExamResults({
@@ -20,6 +21,7 @@ export function PracticeExamResults({
   isGrading,
   gradingProgress,
   onRetake,
+  onExplainDifferently,
 }: PracticeExamResultsProps) {
   const { t } = useTranslation()
   const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null)
@@ -154,6 +156,15 @@ export function PracticeExamResults({
                         readOnly
                         onAnswer={() => {}}
                       />
+                      {!q.isCorrect && onExplainDifferently && (
+                        <button
+                          onClick={() => onExplainDifferently(q)}
+                          className="mt-3 flex items-center gap-1.5 text-xs text-[var(--accent-text)] hover:underline"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          {t('practiceExam.explainDifferently')}
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

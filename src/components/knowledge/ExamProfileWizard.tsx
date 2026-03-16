@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { GraduationCap, Briefcase, FlaskConical, Languages, Wrench, Calendar, Target, ChevronRight, ChevronLeft, BookOpen, Check } from 'lucide-react'
+import { GraduationCap, Briefcase, FlaskConical, Languages, Wrench, Calendar, Target, ChevronRight, ChevronLeft, BookOpen, Check, Loader2 } from 'lucide-react'
 import { useExamProfile } from '../../hooks/useExamProfile'
+import { useExamResearch } from '../../hooks/useExamResearch'
 import type { ExamType } from '../../db/schema'
 import { examBlueprints, getAllExamTypes } from '../../lib/examTopicMaps'
 
@@ -19,6 +20,7 @@ type Step = 'exam-type' | 'details' | 'review'
 export function ExamProfileWizard() {
   const navigate = useNavigate()
   const { createProfile } = useExamProfile()
+  const { researchExam, isRunning: isResearching, progress: researchProgress } = useExamResearch()
   const { t } = useTranslation()
 
   const [step, setStep] = useState<Step>('exam-type')
@@ -34,7 +36,11 @@ export function ExamProfileWizard() {
     if (!examType || !name || !examDate) return
     setIsCreating(true)
     try {
-      await createProfile(name, examType, examDate, weeklyTarget)
+      const profileId = await createProfile(name, examType, examDate, weeklyTarget)
+      // Trigger exam research for non-custom types (fire-and-forget)
+      if (examType !== 'custom' && profileId) {
+        researchExam(profileId, name, examType).catch(() => {})
+      }
       navigate('/dashboard')
     } catch (err) {
       console.error('Failed to create profile:', err)

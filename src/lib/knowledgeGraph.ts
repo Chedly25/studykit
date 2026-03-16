@@ -73,6 +73,32 @@ export function computeTopicMastery(input: TopicMasteryInput): number {
   return Math.max(0, Math.min(1, mastery))
 }
 
+// ─── Mastery Decay (Ebbinghaus) ─────────────────────────────────
+
+/**
+ * Compute decayed mastery using Ebbinghaus forgetting curve.
+ * mastery_decayed = mastery * e^(-t/S)
+ * where S = stability derived from SRS fields.
+ * Computed on read — never overwrites stored mastery.
+ */
+export function decayedMastery(topic: Topic): number {
+  if (topic.mastery === 0) return 0
+
+  // Stability: higher interval + higher ease = slower decay
+  const S = Math.max(1, topic.interval * Math.sqrt(topic.easeFactor / 2.5))
+
+  // Days since last review (when the topic was last due)
+  const today = new Date()
+  const nextReview = new Date(topic.nextReviewDate)
+  const daysSinceReview = Math.max(0, (today.getTime() - nextReview.getTime()) / (24 * 60 * 60 * 1000))
+
+  // If not overdue, no decay
+  if (daysSinceReview <= 0) return topic.mastery
+
+  const decay = Math.exp(-daysSinceReview / S)
+  return Math.max(0, Math.min(1, topic.mastery * decay))
+}
+
 // ─── Subject Mastery ────────────────────────────────────────────
 
 export function computeSubjectMastery(topics: Topic[]): number {
