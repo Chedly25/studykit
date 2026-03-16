@@ -220,7 +220,31 @@
     "markComplete": "Mark Complete",
     "minutes": "{{count}} min",
     "explainInstructions": "Explain the topic in your own words. The AI will evaluate your understanding and identify gaps.",
-    "socraticInstructions": "The AI will guide you through questions to help you discover the answer yourself."
+    "socraticInstructions": "The AI will guide you through questions to help you discover the answer yourself.",
+    "attachFile": "Attach file",
+    "parsingAttachment": "Parsing...",
+    "addToSources": "Add to your Sources library?",
+    "addToSourcesYes": "Yes, save",
+    "addToSourcesNo": "No thanks",
+    "attachmentSaved": "\"{{name}}\" added to Sources",
+    "attachmentError": "Failed to parse \"{{name}}\"",
+    "emptyStateGreeting": "What would you like to study?",
+    "emptyStateSubtitle": "Ask anything, or pick a suggestion below",
+    "suggestHelpWith": "Help me with {{topic}}",
+    "suggestReview": "Review {{topic}}",
+    "suggestExplainSource": "Explain {{source}}",
+    "suggestStudyPlan": "Create a study plan for this week",
+    "suggestFocusToday": "What should I focus on today?",
+    "suggestQuizWeak": "Quiz me on my weakest topics",
+    "mastery": "{{percent}}% mastery",
+    "dueForReview": "Due for review",
+    "conversations": "Conversations",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "previousWeek": "Previous 7 days",
+    "older": "Older",
+    "dropFilesHere": "Drop files here",
+    "toggleSidebar": "Toggle sidebar"
   },
   "sources": {
     "title": "Sources Library",
@@ -273,7 +297,13 @@
       "generateFlashcards": "Generating flashcards",
       "saveResults": "Saving results"
     },
-    "upgradeSearch": "Upgrade search for better results"
+    "upgradeSearch": "Upgrade search for better results",
+    "uploadMultiple": "Select multiple files",
+    "batchUploading": "Uploading {{completed}}/{{total}} documents...",
+    "batchComplete": "{{count}} documents uploaded",
+    "batchPartial": "{{success}}/{{total}} uploaded, {{failed}} failed",
+    "fileSizeHint": "Max 50MB per file. Select multiple files at once.",
+    "processingQueue": "Processing {{current}}/{{total}} documents..."
   },
   "subscription": {
     "pricing": "Pricing",

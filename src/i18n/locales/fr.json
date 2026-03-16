@@ -220,7 +220,31 @@
     "markComplete": "Marquer comme termine",
     "minutes": "{{count}} min",
     "explainInstructions": "Expliquez le sujet dans vos propres mots. L'IA evaluera votre comprehension et identifiera les lacunes.",
-    "socraticInstructions": "L'IA vous guidera par des questions pour vous aider a trouver la reponse par vous-meme."
+    "socraticInstructions": "L'IA vous guidera par des questions pour vous aider a trouver la reponse par vous-meme.",
+    "attachFile": "Joindre un fichier",
+    "parsingAttachment": "Analyse en cours...",
+    "addToSources": "Ajouter a votre bibliotheque de sources ?",
+    "addToSourcesYes": "Oui, enregistrer",
+    "addToSourcesNo": "Non merci",
+    "attachmentSaved": "\"{{name}}\" ajoute aux sources",
+    "attachmentError": "Echec de l'analyse de \"{{name}}\"",
+    "emptyStateGreeting": "Qu'aimeriez-vous etudier ?",
+    "emptyStateSubtitle": "Posez une question ou choisissez une suggestion",
+    "suggestHelpWith": "Aidez-moi avec {{topic}}",
+    "suggestReview": "Reviser {{topic}}",
+    "suggestExplainSource": "Expliquer {{source}}",
+    "suggestStudyPlan": "Creer un plan d'etude pour cette semaine",
+    "suggestFocusToday": "Sur quoi devrais-je me concentrer aujourd'hui ?",
+    "suggestQuizWeak": "Interrogez-moi sur mes sujets les plus faibles",
+    "mastery": "{{percent}}% de maitrise",
+    "dueForReview": "A reviser",
+    "conversations": "Conversations",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "previousWeek": "7 derniers jours",
+    "older": "Plus ancien",
+    "dropFilesHere": "Deposez les fichiers ici",
+    "toggleSidebar": "Basculer la barre laterale"
   },
   "sources": {
     "title": "Bibliotheque de sources",
@@ -273,7 +297,13 @@
       "generateFlashcards": "Generation des cartes",
       "saveResults": "Enregistrement des resultats"
     },
-    "upgradeSearch": "Ameliorer la recherche pour de meilleurs resultats"
+    "upgradeSearch": "Ameliorer la recherche pour de meilleurs resultats",
+    "uploadMultiple": "Selectionner plusieurs fichiers",
+    "batchUploading": "Importation de {{completed}}/{{total}} documents...",
+    "batchComplete": "{{count}} documents importes",
+    "batchPartial": "{{success}}/{{total}} importes, {{failed}} echoues",
+    "fileSizeHint": "Max 50 Mo par fichier. Selectionnez plusieurs fichiers a la fois.",
+    "processingQueue": "Traitement de {{current}}/{{total}} documents..."
   },
   "subscription": {
     "pricing": "Tarifs",

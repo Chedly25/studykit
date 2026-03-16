@@ -1,16 +1,17 @@
 import { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { User, Bot } from 'lucide-react'
+import { Bot } from 'lucide-react'
 import type { Message } from '../../ai/types'
 import { parseCitations, CitationBadge, type Citation } from './SourceCitation'
 
 interface Props {
   message: Message
   onCitationClick?: (citation: Citation) => void
+  isStreaming?: boolean
 }
 
-export function ChatMessageBubble({ message, onCitationClick }: Props) {
+export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Props) {
   const isUser = message.role === 'user'
   const content = typeof message.content === 'string' ? message.content : ''
 
@@ -40,45 +41,38 @@ export function ChatMessageBubble({ message, onCitationClick }: Props) {
 
   if (!text) return null
 
-  return (
-    <div className={`flex gap-3 ${isUser ? 'justify-end' : ''}`}>
-      {!isUser && (
-        <div className="w-7 h-7 rounded-full bg-[var(--accent-bg)] flex items-center justify-center flex-shrink-0 mt-0.5">
-          <Bot className="w-4 h-4 text-[var(--accent-text)]" />
+  if (isUser) {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-[var(--accent-bg)] border border-[var(--border-card)] text-[var(--text-body)]">
+          <p className="text-base whitespace-pre-wrap">{text}</p>
         </div>
-      )}
-      <div className={`max-w-[80%] rounded-xl px-3.5 py-2.5 ${
-        isUser
-          ? 'bg-[var(--accent-text)] text-white'
-          : 'bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-body)]'
-      }`}>
-        {isUser ? (
-          <p className="text-sm whitespace-pre-wrap">{text}</p>
-        ) : (
-          <>
-            <div className="text-sm prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-code:text-[var(--accent-text)] prose-code:bg-[var(--accent-bg)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{textWithoutCitations}</ReactMarkdown>
-            </div>
-            {citations.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-[var(--border-card)]">
-                {citations.map((citation, i) => (
-                  <CitationBadge
-                    key={i}
-                    citation={citation}
-                    index={i}
-                    onClick={() => onCitationClick?.(citation)}
-                  />
-                ))}
-              </div>
-            )}
-          </>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex gap-3">
+      <div className="w-8 h-8 rounded-full bg-[var(--accent-bg)] flex items-center justify-center flex-shrink-0 mt-0.5">
+        <Bot className="w-4 h-4 text-[var(--accent-text)]" />
+      </div>
+      <div className="max-w-none py-1 text-[var(--text-body)] min-w-0 flex-1">
+        <div className={`text-base prose prose-base max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-3 prose-code:text-[var(--accent-text)] prose-code:bg-[var(--accent-bg)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded ${isStreaming ? 'streaming-cursor' : ''}`}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{textWithoutCitations}</ReactMarkdown>
+        </div>
+        {citations.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-[var(--border-card)]">
+            {citations.map((citation, i) => (
+              <CitationBadge
+                key={i}
+                citation={citation}
+                index={i}
+                onClick={() => onCitationClick?.(citation)}
+              />
+            ))}
+          </div>
         )}
       </div>
-      {isUser && (
-        <div className="w-7 h-7 rounded-full bg-[var(--bg-input)] border border-[var(--border-card)] flex items-center justify-center flex-shrink-0 mt-0.5">
-          <User className="w-4 h-4 text-[var(--text-muted)]" />
-        </div>
-      )}
     </div>
   )
 }

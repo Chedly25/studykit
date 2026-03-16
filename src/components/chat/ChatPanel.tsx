@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Brain, Settings } from 'lucide-react'
 import { useExamProfile } from '../../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../../hooks/useKnowledgeGraph'
 import { useAgent } from '../../hooks/useAgent'
 import { useTutorPreferences } from '../../hooks/useTutorPreferences'
+import { useAttachments } from '../../hooks/useAttachments'
 import { ChatMessageBubble } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { ToolCallIndicator } from './ToolCallIndicator'
@@ -13,7 +14,9 @@ import { TutorSettingsModal } from './TutorSettingsModal'
 import { QuotaIndicator } from '../subscription/QuotaIndicator'
 import { UpgradePrompt } from '../subscription/UpgradePrompt'
 import { SourcesToggle } from '../sources/SourcesToggle'
+import { AttachmentSavePrompt } from './AttachmentSavePrompt'
 import { useSources } from '../../hooks/useSources'
+import type { ChatAttachment } from '../../hooks/useAttachments'
 
 interface Props {
   open: boolean
@@ -32,12 +35,17 @@ export function ChatPanel({ open, onClose }: Props) {
   const [showSettings, setShowSettings] = useState(false)
 
   const {
+    attachments, addFiles, removeAttachment, clearAttachments, isParsing, getRelevantChunks,
+  } = useAttachments()
+
+  const {
     messages, isLoading, currentToolCall, streamingText, error,
     conversationId, isSocratic, quotaExceeded, messagesUsedToday,
     sendMessage, loadConversation, newConversation,
   } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences })
 
   const scrollRef = useRef<HTMLDivElement>(null)
+  const [pendingSaveAttachments, setPendingSaveAttachments] = useState<ChatAttachment[] | null>(null)
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -45,10 +53,25 @@ export function ChatPanel({ open, onClose }: Props) {
     }
   }, [messages, streamingText])
 
+  const handleSend = useCallback(async (message: string, sentAttachments?: ChatAttachment[]) => {
+    let attachmentContext: { chunks: Array<{ content: string; documentTitle: string; chunkIndex: number }> } | undefined
+
+    if (sentAttachments && sentAttachments.length > 0) {
+      const chunks = getRelevantChunks(message, 5)
+      if (chunks.length > 0) {
+        attachmentContext = { chunks }
+      }
+      setPendingSaveAttachments([...sentAttachments])
+      clearAttachments()
+    }
+
+    await sendMessage(message, attachmentContext)
+  }, [sendMessage, getRelevantChunks, clearAttachments])
+
   if (!open) return null
 
   return (
-    <div className="fixed right-0 top-0 bottom-0 w-full sm:w-[400px] bg-[var(--bg-card)] border-l border-[var(--border-card)] z-50 flex flex-col shadow-2xl animate-fade-in">
+    <div className="fixed right-0 top-0 bottom-0 w-full sm:w-[400px] bg-[var(--bg-card)] border-l border-[var(--border-card)] z-50 flex flex-col shadow-2xl animate-slide-in-right">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-card)]">
         <div className="flex items-center gap-2">
@@ -81,23 +104,33 @@ export function ChatPanel({ open, onClose }: Props) {
           activeConversationId={conversationId}
           onSelect={loadConversation}
           onNew={newConversation}
+          compact
         />
       )}
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-        {!activeProfile && (
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-6">
+        {!activeProfile ? (
           <div className="text-center text-sm text-[var(--text-muted)] py-8">
             {t('ai.createProfileFirst')}
           </div>
-        )}
+        ) : messages.length === 0 && !streamingText ? (
+          <div className="text-center py-12">
+            <Brain className="w-10 h-10 text-[var(--accent-text)] mx-auto mb-3" />
+            <h2 className="text-lg font-semibold text-[var(--text-heading)] mb-2">{t('ai.emptyStateGreeting')}</h2>
+            <p className="text-sm text-[var(--text-muted)]">{t('ai.emptyStateSubtitle')}</p>
+          </div>
+        ) : null}
 
         {messages.map((msg, i) => (
           <ChatMessageBubble key={i} message={msg} />
         ))}
 
         {streamingText && (
-          <ChatMessageBubble message={{ role: 'assistant', content: streamingText }} />
+          <ChatMessageBubble
+            message={{ role: 'assistant', content: streamingText }}
+            isStreaming
+          />
         )}
 
         <ToolCallIndicator toolName={currentToolCall} />
@@ -109,8 +142,26 @@ export function ChatPanel({ open, onClose }: Props) {
         ) : null}
       </div>
 
+      {/* Attachment save prompt */}
+      {pendingSaveAttachments && profileId && !isLoading && (
+        <AttachmentSavePrompt
+          attachments={pendingSaveAttachments}
+          examProfileId={profileId}
+          onDismiss={() => setPendingSaveAttachments(null)}
+        />
+      )}
+
       {/* Input */}
-      <ChatInput onSend={sendMessage} disabled={isLoading || !activeProfile || quotaExceeded} />
+      <div className="p-3">
+        <ChatInput
+          onSend={handleSend}
+          disabled={isLoading || !activeProfile || quotaExceeded}
+          attachments={attachments}
+          onAddFiles={addFiles}
+          onRemoveAttachment={removeAttachment}
+          isParsing={isParsing}
+        />
+      </div>
 
       {preferences && (
         <TutorSettingsModal

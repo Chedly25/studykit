@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
 import { LayoutDashboard, BarChart3, Focus, MessageCircle, FileText } from 'lucide-react'
@@ -18,6 +18,8 @@ export function Layout() {
   const { isPro } = useSubscription()
   const { activeProfile } = useExamProfile()
   const { t } = useTranslation()
+  const location = useLocation()
+  const isChatPage = location.pathname === '/chat'
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -100,29 +102,31 @@ export function Layout() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full">
+      <main className={isChatPage ? 'flex-1 w-full' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full'}>
         <Outlet />
       </main>
 
-      <footer className="border-t border-[var(--border-header)] py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
-              <img src="/favicon-32x32.png" alt="" className="w-4 h-4" />
-              <span>{t('footer.tagline')}</span>
-            </div>
-            <div className="flex items-center gap-4 text-sm">
-              <Link to="/all-tools" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
-                {t('footer.freeTools')}
-              </Link>
-              <Link to="/pricing" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
-                {t('footer.pricing')}
-              </Link>
-              <span className="text-[var(--text-faint)]">{t('footer.dataLocal')}</span>
+      {!isChatPage && (
+        <footer className="border-t border-[var(--border-header)] py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
+                <img src="/favicon-32x32.png" alt="" className="w-4 h-4" />
+                <span>{t('footer.tagline')}</span>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <Link to="/all-tools" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
+                  {t('footer.freeTools')}
+                </Link>
+                <Link to="/pricing" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
+                  {t('footer.pricing')}
+                </Link>
+                <span className="text-[var(--text-faint)]">{t('footer.dataLocal')}</span>
+              </div>
             </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
 
       {/* Chat Panel */}
       <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />

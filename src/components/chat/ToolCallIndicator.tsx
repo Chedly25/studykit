@@ -38,9 +38,9 @@ export function ToolCallIndicator({ toolName }: Props) {
   const label = translated !== key ? translated : (toolLabels[toolName] ?? t('ai.toolCalls.default'))
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 text-xs text-[var(--accent-text)]">
-      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-      <span>{label}</span>
+    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--accent-bg)]">
+      <Loader2 className="w-4 h-4 animate-spin text-[var(--accent-text)]" />
+      <span className="text-sm text-[var(--accent-text)]">{label}</span>
     </div>
   )
 }

@@ -253,3 +253,25 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+/* ─── Streaming cursor ─── */
+@keyframes cursor-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.streaming-cursor::after {
+  content: '|'; animation: cursor-blink 1s step-end infinite;
+  color: var(--accent-text); font-weight: 600; margin-left: 1px;
+}
+
+/* ─── Chat sidebar transition ─── */
+.chat-sidebar { transition: width 0.25s ease, opacity 0.2s ease; overflow: hidden; }
+
+/* ─── Slide-in for ChatPanel ─── */
+@keyframes slide-in-right { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
+
+/* ─── Floating input shadow ─── */
+.chat-input-shadow { box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.08); }
+.dark .chat-input-shadow { box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3); }
+
+/* ─── Drag overlay ─── */
+.drag-overlay { background: rgba(16, 185, 129, 0.08); border: 2px dashed var(--accent-text); border-radius: 1rem; }
+.dark .drag-overlay { background: rgba(16, 185, 129, 0.12); }
