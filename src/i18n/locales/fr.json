@@ -375,6 +375,29 @@
     "replanSuggested": "Votre plan d'etude pourrait necessiter une mise a jour",
     "replan": "Replanifier"
   },
+  "practiceExam": {
+    "timer": "Minuteur",
+    "timerDuration": "Duree limite",
+    "generating": "Generation de votre examen...",
+    "estimatedCalls": "Utilise ~{{count}} messages IA",
+    "questionOf": "Question {{current}} sur {{total}}",
+    "answered": "repondues",
+    "submitExam": "Soumettre l'examen",
+    "gradingExam": "Correction de votre examen...",
+    "points": "points",
+    "passed": "Reussi !",
+    "needsWork": "Necessite plus de pratique",
+    "topicBreakdown": "Performance par sujet",
+    "questionReview": "Revision des questions",
+    "retake": "Repasser l'examen",
+    "steps": {
+      "gatherContext": "Collecte de vos donnees d'etude",
+      "searchDocuments": "Recherche dans vos supports de cours",
+      "searchWeb": "Recherche de ressources en ligne",
+      "generateQuestions": "Generation des questions d'examen",
+      "validateQuestions": "Validation de la qualite des questions"
+    }
+  },
   "mockExam": {
     "title": "Examen blanc",
     "subtitle": "Simulation d'examen chronometree avec correction par l'IA",

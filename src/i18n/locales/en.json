@@ -375,6 +375,29 @@
     "replanSuggested": "Your study plan may need updating",
     "replan": "Replan"
   },
+  "practiceExam": {
+    "timer": "Timer",
+    "timerDuration": "Time Limit",
+    "generating": "Generating your practice exam...",
+    "estimatedCalls": "Uses ~{{count}} AI messages",
+    "questionOf": "Question {{current}} of {{total}}",
+    "answered": "answered",
+    "submitExam": "Submit Exam",
+    "gradingExam": "Grading your exam...",
+    "points": "points",
+    "passed": "Passed!",
+    "needsWork": "Needs more practice",
+    "topicBreakdown": "Performance by Topic",
+    "questionReview": "Question Review",
+    "retake": "Retake Exam",
+    "steps": {
+      "gatherContext": "Gathering your study data",
+      "searchDocuments": "Searching your study materials",
+      "searchWeb": "Researching online resources",
+      "generateQuestions": "Generating exam questions",
+      "validateQuestions": "Validating question quality"
+    }
+  },
   "mockExam": {
     "title": "Mock Exam",
     "subtitle": "Full-length timed exam simulation with AI grading",

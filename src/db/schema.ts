@@ -312,6 +312,49 @@ export interface MockExam {
   feedback?: string         // JSON AI feedback
 }
 
+// ─── Practice Exam Sessions ────────────────────────────────────
+export type PracticeExamPhase = 'generating' | 'ready' | 'in-progress' | 'grading' | 'graded'
+
+export interface PracticeExamSession {
+  id: string
+  examProfileId: string
+  phase: PracticeExamPhase
+  questionCount: number
+  focusSubject?: string
+  examSection?: string
+  sourcesEnabled: boolean
+  timeLimitSeconds?: number
+  startedAt?: string
+  completedAt?: string
+  totalScore?: number
+  maxScore?: number
+  overallFeedback?: string
+  createdAt: string
+}
+
+export interface GeneratedQuestion {
+  id: string
+  sessionId: string
+  examProfileId: string
+  questionIndex: number
+  text: string
+  format: QuestionFormat
+  options?: string
+  correctAnswer: string
+  correctOptionIndex?: number
+  explanation: string
+  difficulty: number
+  topicName: string
+  points: number
+  scenarioText?: string
+  subQuestions?: string
+  userAnswer?: string
+  isAnswered: boolean
+  isCorrect?: boolean
+  earnedPoints?: number
+  feedback?: string
+}
+
 // ─── Daily Study Logs ───────────────────────────────────────────
 export interface SubjectBreakdown {
   subjectId: string

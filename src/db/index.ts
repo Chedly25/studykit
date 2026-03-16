@@ -25,6 +25,8 @@ import type {
   NotificationPreferences,
   ExamFormat,
   MockExam,
+  PracticeExamSession,
+  GeneratedQuestion,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -53,6 +55,8 @@ export class StudiesKitDB extends Dexie {
   notificationPreferences!: Table<NotificationPreferences>
   examFormats!: Table<ExamFormat>
   mockExams!: Table<MockExam>
+  practiceExamSessions!: Table<PracticeExamSession>
+  generatedQuestions!: Table<GeneratedQuestion>
 
   constructor() {
     super('studieskit')
@@ -132,6 +136,11 @@ export class StudiesKitDB extends Dexie {
 
     this.version(9).stores({
       mockExams: 'id, examProfileId, status, startTime',
+    })
+
+    this.version(10).stores({
+      practiceExamSessions: 'id, examProfileId, phase, createdAt',
+      generatedQuestions: 'id, sessionId, examProfileId, questionIndex',
     })
   }
 }
