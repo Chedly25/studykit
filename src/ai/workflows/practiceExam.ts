@@ -150,13 +150,14 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
           if (queries.length === 0) return ''
 
           // Run parallel semantic searches — topN=15 per query for rich coverage
+          type SearchChunk = Awaited<ReturnType<typeof semanticSearch>>[number] & { query: string }
           const searchResults = await Promise.all(
             queries.map(query =>
               semanticSearch(ctx.examProfileId, query, ctx.authToken, 15)
                 .then(chunks => chunks.map(c => ({ ...c, query })))
-                .catch((err) => {
+                .catch((err): SearchChunk[] => {
                   console.warn(`[practiceExam] semantic search failed for "${query}":`, err)
-                  return [] as typeof searchResults[0]
+                  return []
                 })
             )
           )
