@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { ChevronRight, ChevronDown, Lock } from 'lucide-react'
 import type { Subject, Topic } from '../../db/schema'
 
@@ -9,7 +11,9 @@ interface Props {
 }
 
 export function TopicTree({ subjects, getTopicsForSubject, allTopics }: Props) {
-  const topicMap = new Map((allTopics ?? []).map(t => [t.id, t]))
+  const { t } = useTranslation()
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const topicMap = new Map((allTopics ?? []).map(tp => [tp.id, tp]))
 
   function hasUnmetPrereqs(topic: Topic): boolean {
     if (!topic.prerequisiteTopicIds || topic.prerequisiteTopicIds.length === 0) return false
@@ -18,7 +22,17 @@ export function TopicTree({ subjects, getTopicsForSubject, allTopics }: Props) {
       return prereq && prereq.mastery < 0.6
     })
   }
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  if (subjects.length === 0) {
+    return (
+      <div className="text-center py-4">
+        <p className="text-sm text-[var(--text-muted)]">{t('dashboard.knowledgeGraphEmpty')}</p>
+        <Link to="/practice-exam" className="inline-block mt-2 text-sm text-[var(--accent-text)] hover:underline">
+          {t('dashboard.quickActions.practiceExam')}
+        </Link>
+      </div>
+    )
+  }
 
   const toggle = (id: string) => {
     setExpanded(prev => {

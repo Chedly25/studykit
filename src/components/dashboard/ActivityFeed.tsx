@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { Clock, BookOpen, CheckCircle } from 'lucide-react'
 import type { StudySession } from '../../db/schema'
 
@@ -43,7 +44,10 @@ export function ActivityFeed({ sessions }: Props) {
     return (
       <div className="glass-card p-4">
         <h3 className="font-semibold text-[var(--text-heading)] mb-2">{t('dashboard.activityFeed')}</h3>
-        <p className="text-sm text-[var(--text-muted)]">{t('dashboard.noActivity')}</p>
+        <p className="text-sm text-[var(--text-muted)]">{t('dashboard.activityEmpty')}</p>
+        <Link to="/focus" className="inline-block mt-2 text-sm text-[var(--accent-text)] hover:underline">
+          {t('focus.startFocus')}
+        </Link>
       </div>
     )
   }

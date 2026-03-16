@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import type { Topic, Subject } from '../../db/schema'
 
 interface Props {
@@ -14,7 +15,10 @@ export function WeakTopicsCard({ topics, subjects }: Props) {
     return (
       <div className="glass-card p-4">
         <h3 className="font-semibold text-[var(--text-heading)] mb-2">{t('dashboard.weakTopics')}</h3>
-        <p className="text-sm text-[var(--text-muted)]">{t('dashboard.noWeakTopics')}</p>
+        <p className="text-sm text-[var(--text-muted)]">{t('dashboard.weakTopicsEmpty')}</p>
+        <Link to="/practice-exam" className="inline-block mt-2 text-sm text-[var(--accent-text)] hover:underline">
+          {t('dashboard.quickActions.practiceExam')}
+        </Link>
       </div>
     )
   }

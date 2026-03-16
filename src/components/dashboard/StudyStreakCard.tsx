@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { Flame } from 'lucide-react'
 
 interface Props {
@@ -21,6 +22,11 @@ export function StudyStreakCard({ streak, weeklyHours, weeklyTarget }: Props) {
         {streak}
         <span className="text-base font-normal text-[var(--text-muted)]"> {t('dashboard.streakDays', { count: streak })}</span>
       </div>
+      {streak === 0 && (
+        <Link to="/focus" className="inline-block mt-2 text-sm text-[var(--accent-text)] hover:underline">
+          {t('dashboard.streakStartPrompt')}
+        </Link>
+      )}
       <div className="mt-3">
         <div className="flex justify-between text-xs text-[var(--text-muted)] mb-1">
           <span>{t('dashboard.weeklyProgress')}</span>

@@ -12,7 +12,7 @@ export function ReadinessGauge({ value, label }: Props) {
   const radius = 60
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (clamped / 100) * circumference
-  const color = clamped >= 80 ? 'var(--accent-text)' : clamped >= 50 ? '#f59e0b' : '#ef4444'
+  const color = clamped === 0 ? 'var(--border-card)' : clamped >= 80 ? 'var(--accent-text)' : clamped >= 50 ? '#f59e0b' : '#ef4444'
 
   return (
     <div className="flex flex-col items-center">
@@ -35,8 +35,8 @@ export function ReadinessGauge({ value, label }: Props) {
         />
       </svg>
       <div className="absolute flex flex-col items-center justify-center" style={{ marginTop: '40px' }}>
-        <span className="text-3xl font-bold text-[var(--text-heading)]">{clamped}%</span>
-        <span className="text-xs text-[var(--text-muted)]">{displayLabel}</span>
+        <span className="text-3xl font-bold text-[var(--text-heading)]">{clamped === 0 ? '---' : `${clamped}%`}</span>
+        <span className="text-xs text-[var(--text-muted)]">{clamped === 0 ? t('dashboard.readinessNewUser') : displayLabel}</span>
       </div>
     </div>
   )

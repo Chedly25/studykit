@@ -126,48 +126,67 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        {([
-          { icon: MessageCircle, label: t('dashboard.quickActions.aiTutor'), desc: t('dashboard.quickActions.aiTutorDesc'), to: '/chat' },
-          { icon: ClipboardCheck, label: t('dashboard.quickActions.practiceExam'), desc: t('dashboard.quickActions.practiceExamDesc'), to: '/practice-exam' },
-          { icon: Upload, label: t('dashboard.quickActions.uploadSources'), desc: t('dashboard.quickActions.uploadSourcesDesc'), to: '/sources' },
-          { icon: Target, label: t('dashboard.quickActions.studyPlan'), desc: t('dashboard.quickActions.studyPlanDesc'), to: '/study-plan' },
-        ] as const).map(({ icon: Icon, label, desc, to }) => (
-          <Link key={to} to={to} className="glass-card glass-card-hover p-4 flex flex-col items-start gap-2 group">
-            <div className="w-10 h-10 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center">
-              <Icon className="w-5 h-5 text-[var(--accent-text)]" />
-            </div>
-            <span className="font-semibold text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors">{label}</span>
-            <span className="text-sm text-[var(--text-muted)]">{desc}</span>
-          </Link>
-        ))}
-      </div>
+      {/* Quick Actions — hidden during onboarding */}
+      {!showOnboarding && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          {([
+            { icon: MessageCircle, label: t('dashboard.quickActions.aiTutor'), desc: t('dashboard.quickActions.aiTutorDesc'), to: '/chat' },
+            { icon: ClipboardCheck, label: t('dashboard.quickActions.practiceExam'), desc: t('dashboard.quickActions.practiceExamDesc'), to: '/practice-exam' },
+            { icon: Upload, label: t('dashboard.quickActions.uploadSources'), desc: t('dashboard.quickActions.uploadSourcesDesc'), to: '/sources' },
+            { icon: Target, label: t('dashboard.quickActions.studyPlan'), desc: t('dashboard.quickActions.studyPlanDesc'), to: '/study-plan' },
+          ] as const).map(({ icon: Icon, label, desc, to }) => (
+            <Link key={to} to={to} className="glass-card glass-card-hover p-4 flex flex-col items-start gap-2 group">
+              <div className="w-10 h-10 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center">
+                <Icon className="w-5 h-5 text-[var(--accent-text)]" />
+              </div>
+              <span className="font-semibold text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors">{label}</span>
+              <span className="text-sm text-[var(--text-muted)]">{desc}</span>
+            </Link>
+          ))}
+        </div>
+      )}
 
-      {/* Onboarding Checklist */}
+      {/* Hero Onboarding Checklist */}
       {showOnboarding && (
-        <div className="glass-card p-4 mb-4">
-          <h3 className="font-semibold text-[var(--text-heading)] mb-1">{t('dashboard.onboarding.title')}</h3>
-          <p className="text-sm text-[var(--text-muted)] mb-3">
-            {t('dashboard.onboarding.subtitle', { completed: completedSteps, total: onboardingSteps.length })}
-          </p>
-          <div className="flex flex-col gap-2">
+        <div className="glass-card p-6 mb-6 border border-[var(--accent-text)]/20">
+          <div className="flex items-start gap-4 mb-4">
+            {/* Progress ring */}
+            <svg width="56" height="56" className="-rotate-90 flex-shrink-0">
+              <circle cx="28" cy="28" r="22" fill="none" stroke="var(--border-card)" strokeWidth="4" />
+              <circle
+                cx="28" cy="28" r="22" fill="none"
+                stroke="var(--accent-text)" strokeWidth="4" strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 22}
+                strokeDashoffset={2 * Math.PI * 22 - (completedSteps / onboardingSteps.length) * 2 * Math.PI * 22}
+                className="transition-all duration-500"
+              />
+            </svg>
+            <div>
+              <h2 className="text-xl font-bold text-[var(--text-heading)]">{t('dashboard.onboarding.heroTitle')}</h2>
+              <p className="text-sm text-[var(--text-muted)]">{t('dashboard.onboarding.heroSubtitle')}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {onboardingSteps.map((step) => (
               <Link
                 key={step.to}
                 to={step.to}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-[var(--accent-bg)] transition-colors group"
+                className={`p-3 rounded-xl flex items-center gap-3 transition-colors group ${
+                  step.done
+                    ? 'bg-green-500/10'
+                    : 'bg-[var(--accent-bg)] hover:bg-[var(--accent-bg)]/80'
+                }`}
               >
                 {step.done ? (
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
                 ) : (
-                  <Circle className="w-5 h-5 text-[var(--text-muted)] opacity-40 flex-shrink-0" />
+                  <Circle className="w-6 h-6 text-[var(--accent-text)] flex-shrink-0" />
                 )}
-                <span className={`flex-1 text-sm ${step.done ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-body)]'}`}>
+                <span className={`flex-1 font-medium ${step.done ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-body)]'}`}>
                   {step.label}
                 </span>
                 {!step.done && (
-                  <ArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-text)] transition-colors" />
+                  <ArrowRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--accent-text)] transition-colors" />
                 )}
               </Link>
             ))}
@@ -175,71 +194,83 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Insights */}
+      {/* ExamCountdown — always visible */}
+      {showOnboarding && (
+        <div className="mb-4">
+          <ExamCountdownCard examName={activeProfile.name} examDate={activeProfile.examDate} />
+        </div>
+      )}
+
+      {/* Insights — always visible (has welcome branch for new users) */}
       <InsightCard insights={insights} />
 
-      {/* Top row: Readiness + Countdown + Streak */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-        <div className="glass-card p-4 flex items-center justify-center relative">
-          <ReadinessGauge value={readiness} />
-        </div>
-        <ExamCountdownCard examName={activeProfile.name} examDate={activeProfile.examDate} />
-        <StudyStreakCard streak={streak} weeklyHours={weeklyHours} weeklyTarget={activeProfile.weeklyTargetHours} />
-      </div>
+      {/* Everything below is hidden during onboarding */}
+      {!showOnboarding && (
+        <>
+          {/* Top row: Readiness + Countdown + Streak */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div className="glass-card p-4 flex items-center justify-center relative">
+              <ReadinessGauge value={readiness} />
+            </div>
+            <ExamCountdownCard examName={activeProfile.name} examDate={activeProfile.examDate} />
+            <StudyStreakCard streak={streak} weeklyHours={weeklyHours} weeklyTarget={activeProfile.weeklyTargetHours} />
+          </div>
 
-      {/* Today's Priority Recommendations */}
-      {recommendations.length > 0 && (
-        <div className="mt-4">
-          <TodaysPriorityCard recommendations={recommendations} />
-        </div>
-      )}
+          {/* Today's Priority Recommendations */}
+          {recommendations.length > 0 && (
+            <div className="mt-4">
+              <TodaysPriorityCard recommendations={recommendations} />
+            </div>
+          )}
 
-      {/* Middle row: Today's Plan + Weak Topics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        {todaysPlan ? (
-          <StudyPlanCard
-            todaysPlan={todaysPlan}
-            onToggleActivity={markActivityCompleted}
-            replanSuggestion={replanSuggestion}
-            onReplan={async () => {
-              const token = await getToken()
-              if (token && replanSuggestion) replanPlan(token, replanSuggestion)
-            }}
-          />
-        ) : (
-          <TodaysPlanCard dueTopics={dueTopics} dueFlashcardCount={dueFlashcards} upcomingAssignments={upcomingAssignments} />
-        )}
-        <WeakTopicsCard topics={weakTopics} subjects={subjects} />
-      </div>
+          {/* Middle row: Today's Plan + Weak Topics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {todaysPlan ? (
+              <StudyPlanCard
+                todaysPlan={todaysPlan}
+                onToggleActivity={markActivityCompleted}
+                replanSuggestion={replanSuggestion}
+                onReplan={async () => {
+                  const token = await getToken()
+                  if (token && replanSuggestion) replanPlan(token, replanSuggestion)
+                }}
+              />
+            ) : (
+              <TodaysPlanCard dueTopics={dueTopics} dueFlashcardCount={dueFlashcards} upcomingAssignments={upcomingAssignments} />
+            )}
+            <WeakTopicsCard topics={weakTopics} subjects={subjects} />
+          </div>
 
-      {/* Source coverage indicator */}
-      {sourceCoverage && sourceCoverage.totalTopics > 0 && (
-        <div className="glass-card p-3 mt-4 flex items-center justify-between">
-          <span className="text-sm text-[var(--text-body)]">
-            <Trans
-              i18nKey="dashboard.sourceCoverage"
-              values={{ percent: sourceCoverage.coveragePercent }}
-              components={{ 1: <strong /> }}
-            />
-          </span>
-          <a href="/sources" className="text-xs text-[var(--accent-text)] hover:underline">{t('dashboard.viewSources')}</a>
-        </div>
-      )}
+          {/* Source coverage indicator */}
+          {sourceCoverage && sourceCoverage.totalTopics > 0 && (
+            <div className="glass-card p-3 mt-4 flex items-center justify-between">
+              <span className="text-sm text-[var(--text-body)]">
+                <Trans
+                  i18nKey="dashboard.sourceCoverage"
+                  values={{ percent: sourceCoverage.coveragePercent }}
+                  components={{ 1: <strong /> }}
+                />
+              </span>
+              <a href="/sources" className="text-xs text-[var(--accent-text)] hover:underline">{t('dashboard.viewSources')}</a>
+            </div>
+          )}
 
-      {/* Bottom row: Activity + Knowledge Graph */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <ActivityFeed sessions={sessions} />
-        <div className="glass-card p-4">
-          <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('dashboard.knowledgeGraph')}</h3>
-          <TopicTree subjects={subjects} getTopicsForSubject={getTopicsForSubject} />
-        </div>
-      </div>
+          {/* Bottom row: Activity + Knowledge Graph */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <ActivityFeed sessions={sessions} />
+            <div className="glass-card p-4">
+              <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('dashboard.knowledgeGraph')}</h3>
+              <TopicTree subjects={subjects} getTopicsForSubject={getTopicsForSubject} />
+            </div>
+          </div>
 
-      {/* Session Insights */}
-      {sessionInsights.length > 0 && (
-        <div className="mt-4">
-          <SessionInsightsCard insights={sessionInsights} />
-        </div>
+          {/* Session Insights */}
+          {sessionInsights.length > 0 && (
+            <div className="mt-4">
+              <SessionInsightsCard insights={sessionInsights} />
+            </div>
+          )}
+        </>
       )}
     </div>
   )

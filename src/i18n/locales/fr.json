@@ -145,13 +145,21 @@
     "onboarding": {
       "title": "Pour commencer",
       "subtitle": "{{completed}} sur {{total}} etapes completees",
+      "heroTitle": "Preparons votre espace",
+      "heroSubtitle": "Completez ces etapes pour acceder a votre tableau de bord complet",
       "uploadSource": "Importez votre premiere source",
       "startSession": "Demarrez une session de pratique",
       "chatTutor": "Discutez avec votre tuteur IA",
       "generatePlan": "Generez un plan d'etude"
     },
     "todaysPriority": "Priorite du jour",
-    "topPriority": "Priorite absolue"
+    "topPriority": "Priorite absolue",
+    "readinessNewUser": "Nouveau depart !",
+    "streakStartPrompt": "Demarrez une session pour commencer votre serie",
+    "weakTopicsEmpty": "Pratiquez pour decouvrir vos points faibles",
+    "activityEmpty": "Vos sessions d'etude apparaitront ici",
+    "knowledgeGraphEmpty": "Completez une session de pratique pour voir votre carte de connaissances",
+    "welcomeInsight": "Bienvenue ! Commencez par importer vos supports de cours pour obtenir des recommandations personnalisees."
   },
   "ai": {
     "chat": "Chat IA",

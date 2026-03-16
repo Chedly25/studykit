@@ -97,6 +97,14 @@ export function useProactiveInsights(examProfileId: string | undefined) {
       }
     }
 
+    // Welcome insight for brand-new users
+    if (result.length === 0 && dailyLogs.length === 0 && topics.filter(t => t.questionsAttempted > 0).length === 0) {
+      result.push({
+        type: 'tip',
+        message: 'Welcome! Start by uploading your study materials to get personalized recommendations.',
+      })
+    }
+
     return result
   }, [assignments, dailyLogs, topics, profile])
 

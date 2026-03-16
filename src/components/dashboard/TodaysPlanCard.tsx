@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { ListChecks } from 'lucide-react'
 import type { Topic } from '../../db/schema'
 
@@ -31,7 +32,10 @@ export function TodaysPlanCard({ dueTopics, dueFlashcardCount, upcomingAssignmen
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)]">{t('dashboard.noWeakTopics')}</p>
+        <p className="text-sm text-[var(--text-muted)]">{t('dashboard.noPlan')}</p>
+        <Link to="/study-plan" className="inline-block mt-2 text-sm text-[var(--accent-text)] hover:underline">
+          {t('dashboard.generatePlan')}
+        </Link>
       ) : (
         <div className="space-y-2">
           {items.map((item, i) => (

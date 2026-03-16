@@ -145,13 +145,21 @@
     "onboarding": {
       "title": "Get Started",
       "subtitle": "{{completed}} of {{total}} steps completed",
+      "heroTitle": "Let's get you set up",
+      "heroSubtitle": "Complete these steps to unlock your full dashboard",
       "uploadSource": "Upload your first source",
       "startSession": "Start a practice session",
       "chatTutor": "Chat with your AI tutor",
       "generatePlan": "Generate a study plan"
     },
     "todaysPriority": "Today's Priority",
-    "topPriority": "Top Priority"
+    "topPriority": "Top Priority",
+    "readinessNewUser": "Starting fresh!",
+    "streakStartPrompt": "Start a session to begin your streak",
+    "weakTopicsEmpty": "Practice to discover your weak areas",
+    "activityEmpty": "Your study sessions will appear here",
+    "knowledgeGraphEmpty": "Complete a practice session to see your knowledge map",
+    "welcomeInsight": "Welcome! Start by uploading your study materials to get personalized recommendations."
   },
   "ai": {
     "chat": "AI Chat",
