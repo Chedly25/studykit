@@ -201,6 +201,13 @@ export function useExamProfile() {
     if (subtopics.length > 0) await db.subtopics.bulkPut(subtopics)
   }, [])
 
+  const updateProfile = useCallback(async (
+    profileId: string,
+    updates: Partial<Pick<ExamProfile, 'name' | 'examDate' | 'weeklyTargetHours' | 'passingThreshold'>>
+  ) => {
+    await db.examProfiles.update(profileId, updates)
+  }, [])
+
   const deleteProfile = useCallback(async (profileId: string) => {
     await db.transaction('rw', [
       db.examProfiles, db.subjects, db.topics, db.subtopics,
@@ -260,6 +267,7 @@ export function useExamProfile() {
     createProfile,
     seedTopicsForProfile,
     setActiveProfile,
+    updateProfile,
     deleteProfile,
   }
 }
