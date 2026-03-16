@@ -12,18 +12,27 @@ import type { Topic } from '../db/schema'
 
 export default function ExamProfile() {
   const { t } = useTranslation()
-  const { profiles, activeProfile, setActiveProfile, deleteProfile } = useExamProfile()
+  const { profiles, activeProfile, setActiveProfile, deleteProfile, profilesLoaded } = useExamProfile()
   const { topics } = useKnowledgeGraph(activeProfile?.id)
-  const [showWizard, setShowWizard] = useState(profiles.length === 0)
+  const [showWizard, setShowWizard] = useState(false)
   const [showDependencyEditor, setShowDependencyEditor] = useState(false)
   const [dependencyTopic, setDependencyTopic] = useState<Topic | null>(null)
   const [showExamFormatEditor, setShowExamFormatEditor] = useState(false)
 
-  if (showWizard || profiles.length === 0) {
+  // Show wizard only after profiles have loaded and there are truly none
+  if (showWizard || (profilesLoaded && profiles.length === 0)) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
         <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-6">{t('profile.create')}</h1>
         <ExamProfileWizard />
+      </div>
+    )
+  }
+
+  if (!profilesLoaded) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-8 h-8 border-2 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
       </div>
     )
   }

@@ -10,10 +10,12 @@ export function useExamProfile() {
   const { userId } = useAuth()
   const effectiveUserId = userId ?? 'local'
 
-  const profiles = useLiveQuery(
+  const profilesRaw = useLiveQuery(
     () => db.examProfiles.where('userId').equals(effectiveUserId).toArray(),
     [effectiveUserId]
-  ) ?? []
+  )
+  const profiles = profilesRaw ?? []
+  const profilesLoaded = profilesRaw !== undefined
   const activeProfile = useLiveQuery(
     () => db.examProfiles.where('userId').equals(effectiveUserId).toArray()
       .then(all => all.find(p => p.isActive)),
@@ -253,6 +255,7 @@ export function useExamProfile() {
 
   return {
     profiles,
+    profilesLoaded,
     activeProfile,
     createProfile,
     seedTopicsForProfile,
