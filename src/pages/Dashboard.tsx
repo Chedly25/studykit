@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation, Trans } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -24,6 +24,7 @@ import { MilestoneTrackerCard } from '../components/dashboard/MilestoneTrackerCa
 import { ResearchThreadsCard } from '../components/dashboard/ResearchThreadsCard'
 import { HabitGoalsCard } from '../components/dashboard/HabitGoalsCard'
 import { GettingStartedCard } from '../components/dashboard/GettingStartedCard'
+import { WelcomeHero } from '../components/dashboard/WelcomeHero'
 import { IntelligenceBriefCard } from '../components/dashboard/IntelligenceBriefCard'
 import { LandscapeCard } from '../components/dashboard/LandscapeCard'
 import { DecisionConsoleCard } from '../components/dashboard/DecisionConsoleCard'
@@ -88,6 +89,11 @@ export default function Dashboard() {
   ) ?? 0
 
   const hasActivity = sessions.length > 0 || topics.some(t => t.questionsAttempted > 0)
+  const isBrandNew = documentsCount === 0 && !hasActivity
+
+  const [welcomeDismissed, setWelcomeDismissed] = useState(() => {
+    try { return sessionStorage.getItem('welcomeHeroDismissed') === '1' } catch { return false }
+  })
 
   if (!activeProfile) {
     return (
@@ -96,6 +102,21 @@ export default function Dashboard() {
         <p className="text-[var(--text-muted)] mb-6">{t('dashboard.setupPrompt')}</p>
         <a href="/exam-profile" className="btn-primary px-6 py-2.5 inline-block">{t('dashboard.createProfile')}</a>
       </div>
+    )
+  }
+
+  if (isBrandNew && !welcomeDismissed) {
+    return (
+      <WelcomeHero
+        profileName={activeProfile.name}
+        isResearch={isResearch}
+        topics={topics}
+        subjects={subjects}
+        onSkip={() => {
+          setWelcomeDismissed(true)
+          try { sessionStorage.setItem('welcomeHeroDismissed', '1') } catch { /* noop */ }
+        }}
+      />
     )
   }
 
