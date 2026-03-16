@@ -28,7 +28,7 @@ export function ResearchThreadsCard({ topics, subjects }: Props) {
   }
 
   // Combine unset with exploring for display
-  const displayGroups: { key: TopicStatus; label: string; items: Topic[] }[] = [
+  const displayGroups: { key: string; label: string; items: Topic[] }[] = [
     { key: 'active', label: t('research.threadStatus.active'), items: grouped.active },
     { key: 'exploring', label: t('research.threadStatus.exploring'), items: [...grouped.exploring, ...grouped.unset] },
     { key: 'blocked', label: t('research.threadStatus.blocked'), items: grouped.blocked },
@@ -51,7 +51,7 @@ export function ResearchThreadsCard({ topics, subjects }: Props) {
         {displayGroups.map(group => (
           <div key={group.key}>
             <div className="flex items-center gap-2 mb-1.5">
-              <div className={`w-2 h-2 rounded-full ${statusConfig[group.key].bg}`} />
+              <div className={`w-2 h-2 rounded-full ${(statusConfig as Record<string, { color: string; bg: string }>)[group.key]?.bg ?? 'bg-gray-400'}`} />
               <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">{group.label}</span>
               <span className="text-xs text-[var(--text-faint)]">({group.items.length})</span>
             </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { Trash2, Check, Link2, FileBarChart, ArrowRight } from 'lucide-react'
+import { Trash2, Link2, FileBarChart, ArrowRight } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { ExamProfileWizard } from '../components/knowledge/ExamProfileWizard'

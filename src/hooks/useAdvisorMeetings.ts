@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { AdvisorMeeting, AdvisorMeetingStatus } from '../db/schema'
+import type { AdvisorMeeting } from '../db/schema'
 
 export function useAdvisorMeetings(examProfileId: string | undefined) {
   const meetings = useLiveQuery(

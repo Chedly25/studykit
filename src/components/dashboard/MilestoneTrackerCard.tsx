@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Flag, Plus, Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { Flag, Plus, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Milestone, MilestoneStatus } from '../../db/schema'
 
 interface Props {
@@ -17,11 +17,8 @@ const statusColors: Record<MilestoneStatus, string> = {
   'done': 'bg-green-500',
 }
 
-const statusLabels: Record<MilestoneStatus, string> = {
-  'pending': 'Pending',
-  'in-progress': 'In Progress',
-  'done': 'Done',
-}
+// statusLabels reserved for future use with i18n
+void ({ 'pending': 'Pending', 'in-progress': 'In Progress', 'done': 'Done' })
 
 export function MilestoneTrackerCard({ milestones, doneCount, daysUntilNext, onAdd, onUpdate }: Props) {
   const { t } = useTranslation()

@@ -36,7 +36,7 @@ export default function Dashboard() {
   const profileId = activeProfile?.id
   const { milestones, doneCount, daysUntilNext, addMilestone, updateMilestone } = useMilestones(profileId)
   const { goals: habitGoals, getTodayProgress, addGoal: addHabitGoal, logProgress: logHabitProgress, deleteGoal: deleteHabitGoal } = useHabitGoals(profileId)
-  const { subjects, topics, readiness, weakTopics, dueTopics, streak, weeklyHours, getTopicsForSubject } = useKnowledgeGraph(profileId)
+  const { subjects, topics, readiness, weakTopics, streak, weeklyHours, getTopicsForSubject } = useKnowledgeGraph(profileId)
   const insights = useProactiveInsights(profileId)
   const { recentInsights: sessionInsights } = useSessionInsights(profileId)
   const { coverage: sourceCoverage } = useSourceCoverage(profileId)

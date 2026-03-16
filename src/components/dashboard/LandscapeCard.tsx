@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { Map } from 'lucide-react'
+import { Map as MapIcon } from 'lucide-react'
 import type { Topic, Subject } from '../../db/schema'
 import { decayedMastery } from '../../lib/knowledgeGraph'
 
@@ -67,7 +67,7 @@ export function LandscapeCard({ topics, subjects }: Props) {
   return (
     <div className="glass-card p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Map className="w-5 h-5 text-[var(--accent-text)]" />
+        <MapIcon className="w-5 h-5 text-[var(--accent-text)]" />
         <h3 className="font-semibold text-[var(--text-heading)]">{t('dashboard.topicDepth')}</h3>
       </div>
 

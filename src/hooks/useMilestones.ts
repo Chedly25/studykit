@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { Milestone, MilestoneStatus } from '../db/schema'
+import type { Milestone } from '../db/schema'
 
 export function useMilestones(examProfileId: string | undefined) {
   const milestones = useLiveQuery(
