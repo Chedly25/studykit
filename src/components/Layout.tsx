@@ -37,6 +37,12 @@ export function Layout() {
           <nav className="flex items-center gap-3">
             <SignedIn>
               <Link
+                to="/exam-profile"
+                className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden sm:flex items-center gap-1"
+              >
+                <BookOpen size={15} /> {t('nav.projects', 'Projects')}
+              </Link>
+              <Link
                 to="/dashboard"
                 className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden sm:flex items-center gap-1"
               >

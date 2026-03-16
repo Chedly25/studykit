@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Trash2, Check, Link2, FileBarChart } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Trash2, Check, Link2, FileBarChart, ArrowRight } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { ExamProfileWizard } from '../components/knowledge/ExamProfileWizard'
@@ -30,7 +31,10 @@ export default function ExamProfile() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-heading)]">{t('profile.studyProfile')}</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--text-heading)]">{t('nav.projects', 'Projects')}</h1>
+          <p className="text-sm text-[var(--text-muted)]">{t('profile.projectsSubtitle', 'Switch between profiles or create a new one')}</p>
+        </div>
         <button onClick={() => setShowWizard(true)} className="btn-primary px-4 py-2 text-sm">
           {t('profile.create')}
         </button>
@@ -40,7 +44,7 @@ export default function ExamProfile() {
         {profiles.map(p => {
           const bp = examBlueprints[p.examType]
           const isActive = p.id === activeProfile?.id
-          const daysLeft = Math.max(0, Math.ceil((new Date(p.examDate).getTime() - Date.now()) / 86400000))
+          const daysLeft = p.examDate ? Math.max(0, Math.ceil((new Date(p.examDate).getTime() - Date.now()) / 86400000)) : 0
 
           return (
             <div key={p.id} className={`glass-card p-4 transition-all ${isActive ? 'border-[var(--accent-text)] ring-1 ring-[var(--accent-text)]/20' : ''}`}>
@@ -53,17 +57,27 @@ export default function ExamProfile() {
                     )}
                   </div>
                   <div className="text-sm text-[var(--text-muted)] mt-1">
-                    {bp?.label ?? t(`goalTypes.${p.examType}`)} &middot; {t('dashboard.daysLeft', { count: daysLeft })} &middot; {t('dashboard.hoursTarget', { hours: p.weeklyTargetHours })}
+                    {bp?.label ?? t(`goalTypes.${p.examType}`)}
+                    {p.examDate ? ` · ${t('dashboard.daysLeft', { count: daysLeft })}` : ''}
+                    {p.profileMode === 'research' ? ` · ${t('research.modeResearch')}` : ''}
+                    {' · '}{t('dashboard.hoursTarget', { hours: p.weeklyTargetHours })}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {!isActive && (
+                  {isActive ? (
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent-bg)] text-[var(--accent-text)] text-sm font-medium hover:bg-[var(--accent-text)] hover:text-white transition-colors"
+                    >
+                      {t('nav.dashboard')} <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  ) : (
                     <button
                       onClick={() => setActiveProfile(p.id)}
-                      className="p-2 rounded-lg hover:bg-[var(--accent-bg)] text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
+                      className="px-3 py-1.5 rounded-lg text-sm text-[var(--text-muted)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-colors"
                       title={t('profile.switchProfile')}
                     >
-                      <Check className="w-4 h-4" />
+                      {t('profile.switchProfile')}
                     </button>
                   )}
                   <button

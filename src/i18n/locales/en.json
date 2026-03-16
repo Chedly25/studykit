@@ -23,6 +23,7 @@
     "pause": "Pause",
     "resume": "Resume",
     "search": "Search",
+    "skip": "Skip",
     "noResults": "No results found",
     "error": "An error occurred",
     "signIn": "Sign In",
@@ -39,7 +40,8 @@
     "features": "Features",
     "allTools": "All Tools",
     "pricing": "Pricing",
-    "aiChat": "AI Chat"
+    "aiChat": "AI Chat",
+    "projects": "Projects"
   },
   "footer": {
     "tagline": "StudiesKit — AI-Powered Learning Platform",
@@ -79,7 +81,8 @@
     "addTopic": "Add Topic",
     "topicName": "Topic Name",
     "review": "Review Your Profile",
-    "looksGood": "Looks good! Create your profile to get started."
+    "looksGood": "Looks good! Create your profile to get started.",
+    "projectsSubtitle": "Switch between profiles or create a new one"
   },
   "goalTypes": {
     "university-course": "University Course",

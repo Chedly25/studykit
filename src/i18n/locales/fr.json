@@ -23,6 +23,7 @@
     "pause": "Pause",
     "resume": "Reprendre",
     "search": "Rechercher",
+    "skip": "Passer",
     "noResults": "Aucun resultat trouve",
     "error": "Une erreur est survenue",
     "signIn": "Se connecter",
@@ -39,7 +40,8 @@
     "features": "Fonctionnalites",
     "allTools": "Tous les outils",
     "pricing": "Tarifs",
-    "aiChat": "Chat IA"
+    "aiChat": "Chat IA",
+    "projects": "Projets"
   },
   "footer": {
     "tagline": "StudiesKit — Plateforme d'apprentissage propulsee par l'IA",
@@ -79,7 +81,8 @@
     "addTopic": "Ajouter un sujet",
     "topicName": "Nom du sujet",
     "review": "Verifiez votre profil",
-    "looksGood": "Tout est pret ! Creez votre profil pour commencer."
+    "looksGood": "Tout est pret ! Creez votre profil pour commencer.",
+    "projectsSubtitle": "Basculer entre vos profils ou en creer un nouveau"
   },
   "goalTypes": {
     "university-course": "Cours universitaire",
