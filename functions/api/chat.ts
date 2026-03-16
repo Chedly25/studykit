@@ -10,7 +10,8 @@ import { corsHeaders } from '../lib/cors'
 
 const DEFAULT_MODEL = 'kimi-k2.5'
 const DEFAULT_API_URL = 'https://api.moonshot.ai/v1/chat/completions'
-const MAX_RETRIES = 2
+const MAX_RETRIES = 1
+const PRO_DAILY_LIMIT = 500
 
 const FREE_TIER_DAILY_LIMIT = 5
 
@@ -106,6 +107,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           limit: FREE_TIER_DAILY_LIMIT,
           used: Math.min(newCount, FREE_TIER_DAILY_LIMIT),
         }),
+        { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
+  // Pro-tier daily safety cap (prevents runaway costs)
+  if (userPlan === 'pro' && env.USAGE_KV) {
+    const today = new Date().toISOString().slice(0, 10)
+    const kvKey = `quota:${userId}:${today}`
+    const currentStr = await env.USAGE_KV.get(kvKey)
+    const current = currentStr ? parseInt(currentStr, 10) : 0
+    const newCount = current + 1
+    await env.USAGE_KV.put(kvKey, String(newCount), { expirationTtl: 86400 })
+
+    if (newCount > PRO_DAILY_LIMIT) {
+      return new Response(
+        JSON.stringify({ error: 'Daily safety limit reached (500 requests). Resets at midnight UTC.' }),
         { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }

@@ -65,6 +65,7 @@ export function useAgent(options: UseAgentOptions) {
   const [quotaExceeded, setQuotaExceeded] = useState(false)
   const [messagesUsedToday, setMessagesUsedToday] = useState(getMessagesUsedToday)
   const abortRef = useRef(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const sendMessage = useCallback(async (userMessage: string): Promise<Message[]> => {
     if (!profile || isLoading) return []
@@ -82,6 +83,9 @@ export function useAgent(options: UseAgentOptions) {
     setStreamingText('')
     setCurrentToolCall(null)
     abortRef.current = false
+    abortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
 
     try {
       // Get or create conversation
@@ -158,6 +162,7 @@ export function useAgent(options: UseAgentOptions) {
         systemPrompt,
         examProfileId: profile.id,
         authToken,
+        signal: abortController.signal,
         onToken: (text) => {
           if (!abortRef.current) {
             setStreamingText(prev => prev + text)

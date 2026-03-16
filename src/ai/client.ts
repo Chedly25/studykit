@@ -30,6 +30,7 @@ export interface ChatRequestOptions {
   authToken?: string
   onToken?: (text: string) => void
   onToolCall?: (name: string) => void
+  signal?: AbortSignal
 }
 
 export interface ChatResponse {
@@ -120,7 +121,7 @@ function toOpenAIMessages(messages: Message[], system: string) {
 }
 
 export async function streamChat(options: ChatRequestOptions): Promise<ChatResponse> {
-  const { messages, system, tools, model, maxTokens = 4096, authToken, onToken, onToolCall } = options
+  const { messages, system, tools, model, maxTokens = 4096, authToken, onToken, onToolCall, signal } = options
 
   const openaiMessages = toOpenAIMessages(messages, system)
   const openaiTools = tools.length > 0 ? toOpenAITools(tools) : undefined
@@ -140,6 +141,7 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
     method: 'POST',
     headers,
     body: JSON.stringify(body),
+    signal,
   })
 
   if (!response.ok) {

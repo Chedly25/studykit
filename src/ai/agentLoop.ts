@@ -39,6 +39,7 @@ interface AgentLoopOptions {
   authToken?: string
   onToken?: (text: string) => void
   onToolCall?: (toolName: string) => void
+  signal?: AbortSignal
 }
 
 interface AgentLoopResult {
@@ -105,13 +106,16 @@ async function executeToolLocally(
 }
 
 export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoopResult> {
-  const { systemPrompt, examProfileId, authToken, onToken, onToolCall } = options
+  const { systemPrompt, examProfileId, authToken, onToken, onToolCall, signal } = options
   const messages = [...options.messages]
   let finalText = ''
 
   const startTime = Date.now()
 
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+    // Abort check
+    if (signal?.aborted) break
+
     // Timeout check
     if (Date.now() - startTime > TIMEOUT_MS) {
       finalText += '\n\n[Agent timed out after 60 seconds]'
@@ -125,6 +129,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
       authToken,
       onToken: iteration === 0 || !hasToolCalls(messages) ? onToken : undefined,
       onToolCall,
+      signal,
     })
 
     // Check for tool use
