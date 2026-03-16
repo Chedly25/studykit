@@ -52,6 +52,7 @@ import {
 
 const MAX_ITERATIONS = 10
 const TIMEOUT_MS = 60000
+const MAX_TOOL_RESULT_CHARS = 15000 // Truncate oversized tool results to prevent payload bloat
 
 interface AgentLoopOptions {
   messages: Message[]
@@ -226,11 +227,14 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
       if (response.reasoningContent) assistantMsg.reasoning_content = response.reasoningContent
       messages.push(assistantMsg)
 
-      // Execute tools and add results
+      // Execute tools and add results (truncate oversized results to keep payload manageable)
       const resultBlocks: ContentBlock[] = []
       for (const toolUse of toolUses) {
         onToolCall?.(toolUse.name)
-        const result = await executeToolLocally(toolUse.name, toolUse.input, examProfileId, authToken)
+        let result = await executeToolLocally(toolUse.name, toolUse.input, examProfileId, authToken)
+        if (result.length > MAX_TOOL_RESULT_CHARS) {
+          result = result.slice(0, MAX_TOOL_RESULT_CHARS) + '\n...[truncated]'
+        }
         resultBlocks.push({
           type: 'tool_result',
           tool_use_id: toolUse.id,

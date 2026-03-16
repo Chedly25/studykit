@@ -130,7 +130,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   // Body size check — read actual body, don't trust Content-Length
-  const MAX_BODY_SIZE = 1024 * 1024 // 1MB
+  const MAX_BODY_SIZE = 4 * 1024 * 1024 // 4MB — agent loop accumulates tool results across iterations
   let rawBody: string
   try {
     const reader = request.body?.getReader()
