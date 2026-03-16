@@ -69,7 +69,7 @@ export function useAgent(options: UseAgentOptions) {
   const abortRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  const sendMessage = useCallback(async (userMessage: string): Promise<Message[]> => {
+  const sendMessage = useCallback(async (userMessage: string, attachmentContext?: { chunks: Array<{ content: string; documentTitle: string; chunkIndex: number }> }): Promise<Message[]> => {
     if (!profile || isLoading) return []
 
     // Client-side quota pre-check for free users
@@ -136,6 +136,20 @@ export function useAgent(options: UseAgentOptions) {
               .join('\n\n')
           }
           sourceContext = { documentCount: docCount, preRetrievedChunks }
+        }
+      }
+
+      // Inject attachment chunks (always, regardless of sources toggle)
+      if (attachmentContext && attachmentContext.chunks.length > 0) {
+        const attachmentText = attachmentContext.chunks
+          .map(c => `[Attachment: "${c.documentTitle}", §${c.chunkIndex}]\n${c.content}`)
+          .join('\n\n')
+        if (sourceContext) {
+          sourceContext.preRetrievedChunks = sourceContext.preRetrievedChunks
+            ? `${sourceContext.preRetrievedChunks}\n\n${attachmentText}`
+            : attachmentText
+        } else {
+          sourceContext = { documentCount: 0, preRetrievedChunks: attachmentText }
         }
       }
 

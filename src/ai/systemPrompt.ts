@@ -127,6 +127,7 @@ The student has uploaded ${sc.documentCount} document${sc.documentCount === 1 ? 
 ### Citation Instructions
 When referencing content from uploaded sources, cite as: [Source: "Document Title", §ChunkIndex]
 Example: According to the lecture notes [Source: "Biology Ch.5", §3], mitochondria...
+When referencing content from message attachments, cite as: [Attachment: "Title", §N]
 Only cite sources you are actually referencing. Do not fabricate citations.`
 
   if (sc.preRetrievedChunks) {

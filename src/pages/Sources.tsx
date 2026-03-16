@@ -17,6 +17,7 @@ import { PasteTextModal } from '../components/sources/PasteTextModal'
 import { NotesEditor } from '../components/sources/NotesEditor'
 import { SourceDetailModal } from '../components/sources/SourceDetailModal'
 import { SourceProcessingBanner } from '../components/sources/SourceProcessingBanner'
+import { BatchUploadProgress } from '../components/sources/BatchUploadProgress'
 import { buildSummaryPrompt, buildFlashcardPrompt } from '../lib/sourceActions'
 import { getChunksByDocumentId } from '../lib/sources'
 import { db } from '../db'
@@ -29,8 +30,8 @@ export default function Sources() {
   const { subjects, topics, dailyLogs } = useKnowledgeGraph(profileId)
   const {
     documents, totalChunks,
-    uploadPdf, pasteText, saveNote, deleteSource,
-    isProcessing, processingStatus,
+    uploadPdf, uploadMultiplePdfs, pasteText, saveNote, deleteSource,
+    isProcessing, processingStatus, batchProgress,
   } = useSources(profileId)
 
   const { coverage } = useSourceCoverage(profileId)
@@ -39,22 +40,38 @@ export default function Sources() {
   const navigate = useNavigate()
   const { getToken } = useAuth()
 
-  // Auto-process new documents when count increases
-  const prevDocCountRef = useRef(documents.length)
-  const documentsRef = useRef(documents)
-  documentsRef.current = documents
+  // Queue-based auto-processing for new documents
+  const prevDocIdsRef = useRef<Set<string>>(new Set())
+  const [processingQueue, setProcessingQueue] = useState<string[]>([])
   const isProcessingDocRef = useRef(isProcessingDoc)
   isProcessingDocRef.current = isProcessingDoc
+
+  // Detect new documents and add to queue
   useEffect(() => {
-    const docs = documentsRef.current
-    if (documents.length > prevDocCountRef.current && docs.length > 0) {
-      const newestDoc = docs[0] // sorted by createdAt desc
-      if (newestDoc && !newestDoc.summary && !isProcessingDocRef.current) {
-        processDocument(newestDoc.id)
+    const currentIds = new Set(documents.map(d => d.id))
+    const newIds: string[] = []
+    for (const id of currentIds) {
+      if (!prevDocIdsRef.current.has(id)) {
+        const doc = documents.find(d => d.id === id)
+        if (doc && !doc.summary) {
+          newIds.push(id)
+        }
       }
     }
-    prevDocCountRef.current = documents.length
-  }, [documents.length, processDocument])
+    prevDocIdsRef.current = currentIds
+    if (newIds.length > 0) {
+      setProcessingQueue(prev => [...prev, ...newIds])
+    }
+  }, [documents])
+
+  // Drain queue: process one at a time
+  useEffect(() => {
+    if (!isProcessingDocRef.current && processingQueue.length > 0) {
+      const [nextId, ...rest] = processingQueue
+      setProcessingQueue(rest)
+      processDocument(nextId)
+    }
+  }, [processingQueue, isProcessingDoc, processDocument])
 
   const [showPaste, setShowPaste] = useState(false)
   const [showNotes, setShowNotes] = useState(false)
@@ -73,6 +90,14 @@ export default function Sources() {
         <a href="/exam-profile" className="btn-primary px-6 py-2.5 inline-block">Create Profile</a>
       </div>
     )
+  }
+
+  const handleUploadPdfs = (files: File[]) => {
+    if (files.length === 1) {
+      uploadPdf(files[0])
+    } else {
+      uploadMultiplePdfs(files)
+    }
   }
 
   const handleDelete = async (docId: string) => {
@@ -175,11 +200,15 @@ export default function Sources() {
         </div>
       </div>
 
-      {isProcessing && (
+      {isProcessing && !batchProgress && (
         <div className="glass-card p-4 mb-4 flex items-center gap-3">
           <Loader2 className="w-5 h-5 text-[var(--accent-text)] animate-spin" />
           <span className="text-sm text-[var(--text-body)]">{processingStatus || t('common.loading')}</span>
         </div>
+      )}
+
+      {batchProgress && (
+        <BatchUploadProgress progress={batchProgress} />
       )}
 
       {isProcessingDoc && (
@@ -190,9 +219,16 @@ export default function Sources() {
         />
       )}
 
+      {processingQueue.length > 0 && !isProcessingDoc && (
+        <div className="glass-card p-3 mb-4 flex items-center gap-2 text-sm text-[var(--text-body)]">
+          <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin" />
+          {t('sources.processingQueue', { current: 1, total: processingQueue.length + 1 })}
+        </div>
+      )}
+
       <div className="mb-6">
         <SourceUploadBar
-          onUploadPdf={uploadPdf}
+          onUploadPdfs={handleUploadPdfs}
           onPasteText={() => setShowPaste(true)}
           onWriteNote={() => setShowNotes(true)}
           disabled={isProcessing}

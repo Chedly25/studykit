@@ -22,7 +22,7 @@ function generateId(): string {
   return crypto.randomUUID()
 }
 
-function tokenize(text: string): string[] {
+export function tokenize(text: string): string[] {
   return text
     .toLowerCase()
     .split(/[^a-z0-9]+/)

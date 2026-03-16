@@ -6,6 +6,7 @@ import { useState, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useAuth } from '@clerk/clerk-react'
+import { useTranslation } from 'react-i18next'
 import { db } from '../db'
 import {
   createDocument,
@@ -14,13 +15,17 @@ import {
   chunkText,
 } from '../lib/sources'
 import { parsePdf } from '../lib/pdfParser'
+import { processFile } from '../lib/fileProcessor'
 import { semanticSearch, deleteEmbeddings } from '../lib/embeddings'
 import type { DocumentChunk } from '../db/schema'
+import type { BatchUploadProgressState } from '../components/sources/BatchUploadProgress'
 
 export function useSources(examProfileId: string | undefined) {
   const { getToken } = useAuth()
+  const { t } = useTranslation()
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingStatus, setProcessingStatus] = useState('')
+  const [batchProgress, setBatchProgress] = useState<BatchUploadProgressState | null>(null)
 
   const documents = useLiveQuery(
     () => examProfileId
@@ -61,6 +66,52 @@ export function useSources(examProfileId: string | undefined) {
       setProcessingStatus('')
     }
   }, [examProfileId])
+
+  const uploadMultiplePdfs = useCallback(async (files: File[]) => {
+    if (!examProfileId || files.length === 0) return
+
+    const progress: BatchUploadProgressState = {
+      total: files.length,
+      completed: 0,
+      currentFile: '',
+      results: [],
+    }
+    setBatchProgress({ ...progress })
+    setIsProcessing(true)
+
+    for (const file of files) {
+      progress.currentFile = file.name
+      setBatchProgress({ ...progress })
+
+      try {
+        const processed = await processFile(file)
+        const doc = await createDocument(examProfileId, processed.title, 'pdf', processed.text)
+        await saveChunks(doc.id, examProfileId, processed.chunks)
+        progress.results.push({ fileName: file.name, status: 'done' })
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Upload failed'
+        progress.results.push({ fileName: file.name, status: 'error', error: errorMsg })
+      }
+
+      progress.completed++
+      progress.currentFile = ''
+      setBatchProgress({ ...progress })
+    }
+
+    setIsProcessing(false)
+
+    // Toast with summary
+    const success = progress.results.filter(r => r.status === 'done').length
+    const failed = progress.results.filter(r => r.status === 'error').length
+    if (failed === 0) {
+      toast.success(t('sources.batchComplete', { count: success }))
+    } else {
+      toast.warning(t('sources.batchPartial', { success, total: progress.total, failed }))
+    }
+
+    // Clear batch progress after a delay
+    setTimeout(() => setBatchProgress(null), 3000)
+  }, [examProfileId, t])
 
   const pasteText = useCallback(async (title: string, text: string) => {
     if (!examProfileId || !text.trim()) return
@@ -114,11 +165,13 @@ export function useSources(examProfileId: string | undefined) {
     totalChunks: totalChunks ?? 0,
     documentCount,
     uploadPdf,
+    uploadMultiplePdfs,
     pasteText,
     saveNote,
     deleteSource,
     searchSources,
     isProcessing,
     processingStatus,
+    batchProgress,
   }
 }
