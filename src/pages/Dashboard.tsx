@@ -100,12 +100,11 @@ export default function Dashboard() {
 
   const onboardingSteps = [
     { done: documentsCount > 0, label: t('dashboard.onboarding.uploadSource'), to: '/sources' },
-    { done: sessions.length > 0, label: t('dashboard.onboarding.startSession'), to: '/practice-exam' },
     { done: conversationsCount > 0, label: t('dashboard.onboarding.chatTutor'), to: '/chat' },
     { done: !!activePlan, label: t('dashboard.onboarding.generatePlan'), to: '/study-plan' },
   ]
   const completedSteps = onboardingSteps.filter(s => s.done).length
-  const showOnboarding = completedSteps < 3
+  const showOnboarding = completedSteps < 2
 
   if (!activeProfile) {
     return (
