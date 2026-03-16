@@ -1,8 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation, Trans } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { MessageCircle, ClipboardCheck, Upload, Target, CheckCircle, Circle, ArrowRight } from 'lucide-react'
+import { MessageCircle, ClipboardCheck, Upload, Target, Loader2 } from 'lucide-react'
 import { useAuth } from '@clerk/clerk-react'
 import { db } from '../db'
 import type { StudySession } from '../db/schema'
@@ -24,6 +24,10 @@ import { StudyPlanCard } from '../components/dashboard/StudyPlanCard'
 import { TopicTree } from '../components/knowledge/TopicTree'
 import { TodaysPriorityCard } from '../components/dashboard/TodaysPriorityCard'
 import { computeDailyRecommendations } from '../lib/studyRecommender'
+import { OnboardingUpload } from '../components/dashboard/onboarding/OnboardingUpload'
+import { OnboardingAssess } from '../components/dashboard/onboarding/OnboardingAssess'
+import { OnboardingPlan } from '../components/dashboard/onboarding/OnboardingPlan'
+import { extractTopicStructure, type ExtractionResult } from '../ai/topicExtractor'
 
 export default function Dashboard() {
   const { t } = useTranslation()
@@ -50,7 +54,6 @@ export default function Dashboard() {
     }
   ) ?? 0
 
-  // Compute due flashcards by topic for recommendations
   const dueFlashcardsByTopic = useLiveQuery(async () => {
     const today = new Date().toISOString().slice(0, 10)
     const dueCards = await db.flashcards.where('nextReviewDate').belowOrEqual(today).toArray()
@@ -91,20 +94,45 @@ export default function Dashboard() {
     [profileId]
   ) ?? 0
 
-  const conversationsCount = useLiveQuery(
-    () => profileId
-      ? db.conversations.where('examProfileId').equals(profileId).count()
-      : Promise.resolve(0),
-    [profileId]
-  ) ?? 0
+  // Onboarding phase derivation
+  const onboardingPhase = useMemo(() => {
+    if (documentsCount === 0) return 'upload' as const
+    if (topics.length === 0) return 'assess' as const
+    if (!activePlan) return 'plan' as const
+    return 'done' as const
+  }, [documentsCount, topics.length, activePlan])
 
-  const onboardingSteps = [
-    { done: documentsCount > 0, label: t('dashboard.onboarding.uploadSource'), to: '/sources' },
-    { done: conversationsCount > 0, label: t('dashboard.onboarding.chatTutor'), to: '/chat' },
-    { done: !!activePlan, label: t('dashboard.onboarding.generatePlan'), to: '/study-plan' },
-  ]
-  const completedSteps = onboardingSteps.filter(s => s.done).length
-  const showOnboarding = completedSteps < 2
+  const [extractedTopics, setExtractedTopics] = useState<ExtractionResult | null>(null)
+
+  // Re-extraction for page refresh during assess phase
+  const reExtractionAttempted = useRef(false)
+  useEffect(() => {
+    if (onboardingPhase === 'assess' && !extractedTopics && profileId && !reExtractionAttempted.current) {
+      reExtractionAttempted.current = true
+      ;(async () => {
+        try {
+          const token = await getToken()
+          if (!token) return
+          const result = await extractTopicStructure(profileId, token)
+          setExtractedTopics(result)
+        } catch {
+          // User can refresh the page to retry
+        }
+      })()
+    }
+  }, [onboardingPhase, extractedTopics, profileId, getToken])
+
+  const handleUploadComplete = useCallback((result: ExtractionResult) => {
+    setExtractedTopics(result)
+  }, [])
+
+  const handleAssessComplete = useCallback(() => {
+    // Topics are now in DB, phase auto-transitions to 'plan'
+  }, [])
+
+  const handlePlanComplete = useCallback(() => {
+    // Plan is already in DB, phase auto-transitions to 'done'
+  }, [])
 
   if (!activeProfile) {
     return (
@@ -115,6 +143,8 @@ export default function Dashboard() {
       </div>
     )
   }
+
+  const showOnboarding = onboardingPhase !== 'done'
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 animate-fade-in">
@@ -145,55 +175,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Hero Onboarding Checklist */}
-      {showOnboarding && (
-        <div className="glass-card p-6 mb-6 border border-[var(--accent-text)]/20">
-          <div className="flex items-start gap-4 mb-4">
-            {/* Progress ring */}
-            <svg width="56" height="56" className="-rotate-90 flex-shrink-0">
-              <circle cx="28" cy="28" r="22" fill="none" stroke="var(--border-card)" strokeWidth="4" />
-              <circle
-                cx="28" cy="28" r="22" fill="none"
-                stroke="var(--accent-text)" strokeWidth="4" strokeLinecap="round"
-                strokeDasharray={2 * Math.PI * 22}
-                strokeDashoffset={2 * Math.PI * 22 - (completedSteps / onboardingSteps.length) * 2 * Math.PI * 22}
-                className="transition-all duration-500"
-              />
-            </svg>
-            <div>
-              <h2 className="text-xl font-bold text-[var(--text-heading)]">{t('dashboard.onboarding.heroTitle')}</h2>
-              <p className="text-sm text-[var(--text-muted)]">{t('dashboard.onboarding.heroSubtitle')}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {onboardingSteps.map((step) => (
-              <Link
-                key={step.to}
-                to={step.to}
-                className={`p-3 rounded-xl flex items-center gap-3 transition-colors group ${
-                  step.done
-                    ? 'bg-green-500/10'
-                    : 'bg-[var(--accent-bg)] hover:bg-[var(--accent-bg)]/80'
-                }`}
-              >
-                {step.done ? (
-                  <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
-                ) : (
-                  <Circle className="w-6 h-6 text-[var(--accent-text)] flex-shrink-0" />
-                )}
-                <span className={`flex-1 font-medium ${step.done ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-body)]'}`}>
-                  {step.label}
-                </span>
-                {!step.done && (
-                  <ArrowRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--accent-text)] transition-colors" />
-                )}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ExamCountdown — always visible */}
+      {/* Onboarding: ExamCountdown always visible */}
       {showOnboarding && (
         <div className="mb-4">
           <ExamCountdownCard examName={activeProfile.name} examDate={activeProfile.examDate} />
@@ -203,7 +185,39 @@ export default function Dashboard() {
       {/* Insights — always visible (has welcome branch for new users) */}
       <InsightCard insights={insights} />
 
-      {/* Everything below is hidden during onboarding */}
+      {/* Onboarding Phase Components */}
+      {onboardingPhase === 'upload' && profileId && (
+        <div className="mt-4">
+          <OnboardingUpload examProfileId={profileId} onComplete={handleUploadComplete} />
+        </div>
+      )}
+
+      {onboardingPhase === 'assess' && profileId && extractedTopics && (
+        <div className="mt-4">
+          <OnboardingAssess
+            examProfileId={profileId}
+            extractedData={extractedTopics}
+            onComplete={handleAssessComplete}
+          />
+        </div>
+      )}
+
+      {onboardingPhase === 'assess' && profileId && !extractedTopics && (
+        <div className="mt-4 glass-card p-8 text-center">
+          <Loader2 className="w-10 h-10 text-[var(--accent-text)] mx-auto mb-4 animate-spin" />
+          <h3 className="text-lg font-semibold text-[var(--text-heading)]">
+            {t('dashboard.onboarding.reAnalyzing')}
+          </h3>
+        </div>
+      )}
+
+      {onboardingPhase === 'plan' && profileId && (
+        <div className="mt-4">
+          <OnboardingPlan examProfileId={profileId} onComplete={handlePlanComplete} />
+        </div>
+      )}
+
+      {/* Full dashboard — visible after onboarding */}
       {!showOnboarding && (
         <>
           {/* Top row: Readiness + Countdown + Streak */}

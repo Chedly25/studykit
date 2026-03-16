@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { ExamProfile, ExamType, Subject, Topic, Subtopic } from '../db/schema'
 import { getExamBlueprint } from '../lib/examTopicMaps'
+import type { ExtractedSubject } from '../ai/topicExtractor'
 
 export function useExamProfile() {
   const { userId } = useAuth()
@@ -106,6 +107,96 @@ export function useExamProfile() {
     await db.examProfiles.update(profileId, { isActive: true })
   }, [])
 
+  const seedTopicsForProfile = useCallback(async (
+    profileId: string,
+    extractedSubjects: ExtractedSubject[],
+    assessments: Record<string, 'new' | 'some' | 'confident'>,
+  ) => {
+    const COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4']
+    const FAMILIARITY_MAP = {
+      new: { confidence: 0, mastery: 0 },
+      some: { confidence: 0.5, mastery: 0.2 },
+      confident: { confidence: 0.8, mastery: 0.4 },
+    }
+
+    // Normalize weights to sum to 100
+    const equalShare = 100 / extractedSubjects.length
+    const effectiveWeights = extractedSubjects.map(s => s.weight > 0 ? s.weight : equalShare)
+    const totalWeight = effectiveWeights.reduce((sum, w) => sum + w, 0)
+    const weightScale = 100 / totalWeight
+
+    // Clear any existing blueprint-seeded subjects/topics
+    await db.subtopics.where('examProfileId').equals(profileId).delete()
+    await db.topics.where('examProfileId').equals(profileId).delete()
+    await db.subjects.where('examProfileId').equals(profileId).delete()
+
+    const subjects: Subject[] = []
+    const topics: Topic[] = []
+    const subtopics: Subtopic[] = []
+    const today = new Date().toISOString().slice(0, 10)
+
+    for (let si = 0; si < extractedSubjects.length; si++) {
+      const extracted = extractedSubjects[si]
+      const subjectId = crypto.randomUUID()
+      const normalizedWeight = Math.round(effectiveWeights[si] * weightScale)
+
+      const subjectTopics: Topic[] = []
+
+      for (let ti = 0; ti < extracted.topics.length; ti++) {
+        const extractedTopic = extracted.topics[ti]
+        const topicId = crypto.randomUUID()
+        const key = `${si}-${ti}`
+        const level = assessments[key] ?? 'new'
+        const { confidence, mastery } = FAMILIARITY_MAP[level]
+
+        const topic: Topic = {
+          id: topicId,
+          subjectId,
+          examProfileId: profileId,
+          name: extractedTopic.name,
+          mastery,
+          confidence,
+          questionsAttempted: 0,
+          questionsCorrect: 0,
+          easeFactor: 2.5,
+          interval: 0,
+          repetitions: 0,
+          nextReviewDate: today,
+        }
+        topics.push(topic)
+        subjectTopics.push(topic)
+
+        for (const stName of extractedTopic.subtopics ?? []) {
+          subtopics.push({
+            id: crypto.randomUUID(),
+            topicId,
+            examProfileId: profileId,
+            name: stName,
+          })
+        }
+      }
+
+      // Subject mastery = average of its topic masteries
+      const subjectMastery = subjectTopics.length > 0
+        ? subjectTopics.reduce((sum, t) => sum + t.mastery, 0) / subjectTopics.length
+        : 0
+
+      subjects.push({
+        id: subjectId,
+        examProfileId: profileId,
+        name: extracted.name,
+        weight: normalizedWeight,
+        mastery: subjectMastery,
+        color: COLORS[si % COLORS.length],
+        order: si,
+      })
+    }
+
+    await db.subjects.bulkPut(subjects)
+    await db.topics.bulkPut(topics)
+    if (subtopics.length > 0) await db.subtopics.bulkPut(subtopics)
+  }, [])
+
   const deleteProfile = useCallback(async (profileId: string) => {
     await db.transaction('rw', [
       db.examProfiles, db.subjects, db.topics, db.subtopics,
@@ -143,6 +234,7 @@ export function useExamProfile() {
     profiles,
     activeProfile,
     createProfile,
+    seedTopicsForProfile,
     setActiveProfile,
     deleteProfile,
   }
