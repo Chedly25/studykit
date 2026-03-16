@@ -28,6 +28,13 @@ const ExplainBack = lazy(() => import('./pages/ExplainBack'))
 const StudyPlan = lazy(() => import('./pages/StudyPlan'))
 const MockExam = lazy(() => import('./pages/MockExam'))
 
+// Admin
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout'))
+const AdminOverview = lazy(() => import('./pages/admin/Overview'))
+const AdminRevenue = lazy(() => import('./pages/admin/Revenue'))
+const AdminUsers = lazy(() => import('./pages/admin/Users'))
+const AdminUsage = lazy(() => import('./pages/admin/Usage'))
+
 // Subscription
 const Pricing = lazy(() => import('./pages/Pricing'))
 const SubscriptionSuccess = lazy(() => import('./pages/SubscriptionSuccess'))
@@ -85,6 +92,14 @@ export default function App() {
         {/* Auth routes — outside Layout */}
         <Route path="/sign-in/*" element={<AuthLayout><SignIn routing="path" path="/sign-in" /></AuthLayout>} />
         <Route path="/sign-up/*" element={<AuthLayout><SignUp routing="path" path="/sign-up" /></AuthLayout>} />
+
+        {/* Admin routes — outside Layout */}
+        <Route path="admin" element={<AdminLayout />}>
+          <Route index element={<AdminOverview />} />
+          <Route path="revenue" element={<AdminRevenue />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="usage" element={<AdminUsage />} />
+        </Route>
 
         <Route element={<Layout />}>
           {/* Public */}

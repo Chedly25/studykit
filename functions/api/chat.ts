@@ -130,6 +130,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
   }
 
+  // Global usage counter for admin dashboard
+  if (env.USAGE_KV) {
+    const today = new Date().toISOString().slice(0, 10)
+    const chatKey = `usage:chat:${today}`
+    const chatCount = await env.USAGE_KV.get(chatKey)
+    await env.USAGE_KV.put(chatKey, String((chatCount ? parseInt(chatCount, 10) : 0) + 1), { expirationTtl: 86400 * 90 })
+  }
+
   // Body size check — read actual body, don't trust Content-Length
   const MAX_BODY_SIZE = 4 * 1024 * 1024 // 4MB — agent loop accumulates tool results across iterations
   let rawBody: string

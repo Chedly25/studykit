@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
-import { LayoutDashboard, BarChart3, Focus, MessageCircle, FileText, PenTool, BookOpen, Users } from 'lucide-react'
+import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react'
+import { LayoutDashboard, BarChart3, Focus, MessageCircle, FileText, PenTool, BookOpen, Users, Shield } from 'lucide-react'
 import { MegaMenu } from './MegaMenu'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
@@ -16,6 +16,7 @@ import { useProfileMode } from '../hooks/useProfileMode'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
+  const { user } = useUser()
   const { isPro } = useSubscription()
   const { activeProfile } = useExamProfile()
   const { isResearch } = useProfileMode()
@@ -96,6 +97,15 @@ export function Layout() {
             <SignedIn>
               <ExamProfileSelector />
               <NotificationBell examProfileId={activeProfile?.id} />
+              {user?.primaryEmailAddress?.emailAddress === 'chedlyboukhris21@gmail.com' && (
+                <Link
+                  to="/admin"
+                  className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
+                  title="Admin"
+                >
+                  <Shield size={18} />
+                </Link>
+              )}
               <button
                 onClick={() => setChatOpen(!chatOpen)}
                 className={`p-2 rounded-lg transition-colors ${

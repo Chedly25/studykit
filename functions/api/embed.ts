@@ -75,6 +75,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
   }
 
+  // Global usage counter for admin dashboard
+  if (env.USAGE_KV) {
+    const today = new Date().toISOString().slice(0, 10)
+    const embedKey = `usage:embed:${today}`
+    const embedCount = await env.USAGE_KV.get(embedKey)
+    await env.USAGE_KV.put(embedKey, String((embedCount ? parseInt(embedCount, 10) : 0) + 1), { expirationTtl: 86400 * 90 })
+  }
+
   try {
     const body = (await request.json()) as { texts?: string[] }
 

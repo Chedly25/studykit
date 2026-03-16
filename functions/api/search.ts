@@ -76,6 +76,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
   }
 
+  // Global usage counter for admin dashboard
+  if (env.USAGE_KV) {
+    const today = new Date().toISOString().slice(0, 10)
+    const searchKey = `usage:search:${today}`
+    const searchCount = await env.USAGE_KV.get(searchKey)
+    await env.USAGE_KV.put(searchKey, String((searchCount ? parseInt(searchCount, 10) : 0) + 1), { expirationTtl: 86400 * 90 })
+  }
+
   // Check Tavily API key
   if (!env.TAVILY_API_KEY) {
     return new Response(
