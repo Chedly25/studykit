@@ -64,9 +64,14 @@ export function OnboardingPlan({ examProfileId, onComplete }: OnboardingPlanProp
           {t('dashboard.onboarding.planError')}
         </h3>
         <p className="text-sm text-[var(--text-muted)] mb-4">{error}</p>
-        <button onClick={doGenerate} className="btn-primary px-6 py-2">
-          {t('dashboard.onboarding.retry')}
-        </button>
+        <div className="flex items-center justify-center gap-3">
+          <button onClick={doGenerate} className="btn-primary px-6 py-2">
+            {t('dashboard.onboarding.retry')}
+          </button>
+          <button onClick={onComplete} className="btn-secondary px-6 py-2">
+            {t('common.skip', 'Skip')}
+          </button>
+        </div>
       </div>
     )
   }

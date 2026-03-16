@@ -105,14 +105,16 @@ export default function Dashboard() {
     [profileId]
   ) ?? 0
 
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false)
+
   // Onboarding phase derivation
   const onboardingPhase = useMemo(() => {
-    if (isResearch) return 'done' as const
+    if (isResearch || onboardingDismissed) return 'done' as const
     if (documentsCount === 0) return 'upload' as const
     if (topics.length === 0) return 'assess' as const
     if (!activePlan) return 'plan' as const
     return 'done' as const
-  }, [isResearch, documentsCount, topics.length, activePlan])
+  }, [isResearch, onboardingDismissed, documentsCount, topics.length, activePlan])
 
   const [extractedTopics, setExtractedTopics] = useState<ExtractionResult | null>(null)
 
@@ -143,7 +145,8 @@ export default function Dashboard() {
   }, [])
 
   const handlePlanComplete = useCallback(() => {
-    // Plan is already in DB, phase auto-transitions to 'done'
+    // Plan may be in DB (auto-transitions) or user skipped — dismiss either way
+    setOnboardingDismissed(true)
   }, [])
 
   if (!activeProfile) {
