@@ -16,7 +16,7 @@ export function QuestionNav({
   questionIds,
   onNavigate,
 }: QuestionNavProps) {
-  const { t } = useTranslation()
+  useTranslation()
 
   return (
     <div className="flex items-center gap-2">

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { GraduationCap, Briefcase, FlaskConical, Languages, Wrench, Calendar, Target, ChevronRight, ChevronLeft, BookOpen, Check, Loader2 } from 'lucide-react'
+import { GraduationCap, Briefcase, FlaskConical, Languages, Wrench, Calendar, Target, ChevronRight, ChevronLeft, BookOpen, Check } from 'lucide-react'
 import { useExamProfile } from '../../hooks/useExamProfile'
 import { useExamResearch } from '../../hooks/useExamResearch'
 import type { ExamType } from '../../db/schema'
@@ -20,7 +20,7 @@ type Step = 'exam-type' | 'details' | 'review'
 export function ExamProfileWizard() {
   const navigate = useNavigate()
   const { createProfile } = useExamProfile()
-  const { researchExam, isRunning: isResearching, progress: researchProgress } = useExamResearch()
+  const { researchExam } = useExamResearch()
   const { t } = useTranslation()
 
   const [step, setStep] = useState<Step>('exam-type')

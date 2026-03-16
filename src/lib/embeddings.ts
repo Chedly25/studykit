@@ -19,14 +19,6 @@ function base64ToFloat32Array(base64: string): Float32Array {
   return new Float32Array(bytes.buffer)
 }
 
-function float32ArrayToBase64(arr: Float32Array): string {
-  const bytes = new Uint8Array(arr.buffer)
-  let binary = ''
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i])
-  }
-  return btoa(binary)
-}
 
 // ─── API calls ──────────────────────────────────────────────────
 

@@ -30,7 +30,7 @@ export default function MockExam() {
   const [started, setStarted] = useState(false)
   const [timeLimit, setTimeLimit] = useState(60)
   const [timeLeft, setTimeLeft] = useState(0)
-  const [examId, setExamId] = useState<string | null>(null)
+  const [, setExamId] = useState<string | null>(null)
   const [isFinished, setIsFinished] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -198,7 +198,7 @@ export default function MockExam() {
         </div>
 
         <ChatInput
-          onSend={sendMessage}
+          onSend={(msg) => sendMessage(msg)}
           disabled={isLoading}
           placeholder={isFinished ? t('mockExam.reviewPlaceholder') : t('mockExam.answerPlaceholder')}
         />

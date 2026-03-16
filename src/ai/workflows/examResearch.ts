@@ -3,7 +3,7 @@
  * Steps: web search format → web search scoring → LLM synthesize → save to DB
  */
 import { db } from '../../db'
-import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
+import type { WorkflowDefinition } from '../orchestrator/types'
 import { llmJsonStep, webSearchStep, localStep } from '../orchestrator/steps'
 
 interface ExamResearchResult {

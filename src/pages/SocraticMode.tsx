@@ -160,7 +160,7 @@ export default function SocraticMode() {
         </div>
 
         <ChatInput
-          onSend={sendMessage}
+          onSend={(msg) => sendMessage(msg)}
           disabled={isLoading || quotaExceeded}
           placeholder={t('ai.typeAnswer')}
         />

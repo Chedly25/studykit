@@ -60,7 +60,7 @@ export function useStudyPlan(examProfileId: string | undefined) {
     })
   }, [])
 
-  const replanPlan = useCallback(async (authToken: string, reason: string) => {
+  const replanPlan = useCallback(async (authToken: string, _reason: string) => {
     if (!examProfileId || !activePlan) return
     setIsGenerating(true)
     try {

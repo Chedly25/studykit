@@ -2,7 +2,7 @@
  * Pure function: compute daily study recommendations.
  * Combines decayed mastery, subject weight, exam urgency, and activity state.
  */
-import type { Topic, Subject, Flashcard } from '../db/schema'
+import type { Topic, Subject } from '../db/schema'
 import { decayedMastery } from './knowledgeGraph'
 
 export type RecommendationAction = 'read' | 'practice' | 'review' | 'explain-back' | 'flashcards'

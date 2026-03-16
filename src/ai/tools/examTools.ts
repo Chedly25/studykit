@@ -5,7 +5,7 @@ import { db } from '../../db'
 import { streamChat } from '../client'
 
 export async function gradeMockExam(
-  examProfileId: string,
+  _examProfileId: string,
   input: { examId: string },
   authToken: string,
 ): Promise<string> {

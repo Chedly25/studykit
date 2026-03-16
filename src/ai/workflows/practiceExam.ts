@@ -7,7 +7,7 @@
  * 5. Validate questions (LLM, optional)
  */
 import { db } from '../../db'
-import type { GeneratedQuestion, PracticeExamSession } from '../../db/schema'
+import type { GeneratedQuestion } from '../../db/schema'
 import { dbQueryStep, sourceSearchStep, webSearchStep, llmJsonStep } from '../orchestrator/steps'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { getKnowledgeGraph, getWeakTopicsTool, getErrorPatterns } from '../tools/knowledgeState'

@@ -3,8 +3,6 @@ import { db } from '../db'
 import type { Topic, Subject, DailyStudyLog } from '../db/schema'
 import {
   computeReadiness,
-  getWeakTopics,
-  getStrongTopics,
   getDueTopics,
   computeStreak,
   computeWeeklyHours,

@@ -142,7 +142,7 @@ export default function ExplainBack() {
         </div>
 
         <ChatInput
-          onSend={sendMessage}
+          onSend={(msg) => sendMessage(msg)}
           disabled={isLoading || quotaExceeded}
           placeholder={t('ai.typeAnswer')}
         />

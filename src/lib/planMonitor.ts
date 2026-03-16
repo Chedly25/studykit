@@ -9,10 +9,10 @@ interface ReplanResult {
 }
 
 export function shouldReplan(
-  plan: StudyPlan,
+  _plan: StudyPlan,
   planDays: StudyPlanDay[],
   topics: Topic[],
-  dailyLogs: DailyStudyLog[],
+  _dailyLogs: DailyStudyLog[],
 ): ReplanResult {
   const today = new Date().toISOString().slice(0, 10)
 
@@ -36,7 +36,6 @@ export function shouldReplan(
   }
 
   // Check if topic mastery changed > 20% since plan generation
-  const planGenDate = plan.generatedAt.slice(0, 10)
   const topicMap = new Map(topics.map(t => [t.name, t.mastery]))
 
   // Parse activities from all plan days to get planned topics

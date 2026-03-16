@@ -2,7 +2,7 @@
  * Memory tools — persistent student model + conversation history.
  */
 import { db } from '../../db'
-import type { StudentModel, ConversationSummary } from '../../db/schema'
+import type { StudentModel } from '../../db/schema'
 
 function safeParse<T>(json: string | undefined | null, fallback: T): T {
   try { return JSON.parse(json || '') ?? fallback }

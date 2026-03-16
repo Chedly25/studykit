@@ -56,7 +56,7 @@ export function TopicTree({ subjects, getTopicsForSubject, allTopics }: Props) {
                 {topics.map(topic => (
                   <div key={topic.id} className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[var(--bg-input)]/50">
                     {hasUnmetPrereqs(topic) && (
-                      <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" title="Prerequisites not met" />
+                      <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
                     )}
                     <span className="text-sm text-[var(--text-body)] flex-1">{topic.name}</span>
                     <MasteryBar value={topic.mastery} />

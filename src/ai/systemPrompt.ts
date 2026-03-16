@@ -4,7 +4,7 @@
  */
 import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPreferences, SessionInsight, StudentModel, ConversationSummary, ExamFormat } from '../db/schema'
 import type { ExamType } from '../db/schema'
-import { computeReadiness, getWeakTopics, getStrongTopics, computeStreak, computeWeeklyHours, decayedMastery } from '../lib/knowledgeGraph'
+import { computeReadiness, computeStreak, computeWeeklyHours, decayedMastery } from '../lib/knowledgeGraph'
 
 function getFormatGuidance(examType: ExamType): string {
   switch (examType) {

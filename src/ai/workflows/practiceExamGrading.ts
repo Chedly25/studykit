@@ -6,7 +6,6 @@
  * 4. Update mastery stats
  */
 import { db } from '../../db'
-import type { GeneratedQuestion } from '../../db/schema'
 import { localStep, llmJsonStep } from '../orchestrator/steps'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { logQuestionResult } from '../tools/dataOperations'
@@ -84,7 +83,7 @@ export function createGradingWorkflow(config: GradingConfig): WorkflowDefinition
         ...llmJsonStep<{ grades: QuestionGrade[] }>(
           'gradeSubjective',
           'AI grading written answers',
-          async (ctx) => {
+          async (_ctx) => {
             const questions = await db.generatedQuestions
               .where('sessionId').equals(config.sessionId)
               .toArray()
