@@ -394,6 +394,13 @@
     "confirmSubmit": "Submit exam?",
     "unansweredWarning": "You have {{count}} unanswered question(s). They will be marked as incorrect.",
     "submitAnyway": "Submit Anyway",
+    "customFocus": "What do you want to practice?",
+    "customFocusPlaceholder": "e.g., tax law, organic chemistry, verb conjugation...",
+    "customFocusHint": "Be specific — the AI will tailor questions to exactly what you type",
+    "selectTopics": "Or pick specific topics",
+    "clearSelection": "Clear all",
+    "topicsSelected": "{{count}} topic(s) selected",
+    "suggestWeakTopics": "Focus on weak areas: {{topics}}",
     "steps": {
       "gatherContext": "Gathering your study data",
       "searchDocuments": "Searching your study materials",

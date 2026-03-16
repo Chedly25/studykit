@@ -12,7 +12,7 @@ export default function PracticeExam() {
   const { t } = useTranslation()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
-  const { subjects, weakTopics } = useKnowledgeGraph(profileId)
+  const { subjects, topics, weakTopics } = useKnowledgeGraph(profileId)
   const { documentCount } = useSources(profileId)
 
   const exam = usePracticeExam(profileId)
@@ -32,6 +32,7 @@ export default function PracticeExam() {
       <PracticeExamSetup
         examProfileId={activeProfile.id}
         subjects={subjects}
+        topics={topics}
         weakTopics={weakTopics}
         documentCount={documentCount}
         onStart={exam.startGeneration}

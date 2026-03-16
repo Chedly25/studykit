@@ -16,6 +16,8 @@ export interface PracticeExamConfig {
   sessionId: string
   questionCount: number
   focusSubject?: string
+  selectedTopics?: string[]
+  customFocus?: string
   examSection?: string
   sourcesEnabled: boolean
 }
@@ -116,8 +118,13 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
       {
         ...sourceSearchStep('searchDocuments', 'Searching your study materials', (ctx) => {
           const context = ctx.results['gatherContext']?.data as GatherContextResult | undefined
-          return config.focusSubject
-            ? `${config.focusSubject} key concepts definitions examples`
+          const focusParts = [
+            config.customFocus,
+            config.focusSubject,
+            ...(config.selectedTopics ?? []),
+          ].filter(Boolean).join(' ')
+          return focusParts
+            ? `${focusParts} key concepts definitions examples`
             : `${context?.topicsList?.slice(0, 300) ?? ''} exam questions key concepts`
         }, 10),
         optional: true,
@@ -129,7 +136,12 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
         ...webSearchStep('searchWeb', 'Researching online resources', (ctx) => {
           const context = ctx.results['gatherContext']?.data as GatherContextResult | undefined
           const profileName = context?.profileName ?? ''
-          const focus = config.focusSubject ?? context?.topicsList?.slice(0, 100) ?? ''
+          const focusParts = [
+            config.customFocus,
+            config.focusSubject,
+            ...(config.selectedTopics?.slice(0, 3) ?? []),
+          ].filter(Boolean).join(' ')
+          const focus = focusParts || context?.topicsList?.slice(0, 100) || ''
           return `${profileName} ${focus} exam practice questions`
         }),
         optional: true,
@@ -145,8 +157,19 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
           const sourceSearchContent = ctx.results['searchDocuments']?.data as string | undefined
           const webContent = ctx.results['searchWeb']?.data as string | undefined
 
-          const focusNote = config.focusSubject
-            ? `Focus primarily on the subject: "${config.focusSubject}".`
+          // Build focus instructions from all available specificity
+          const focusParts: string[] = []
+          if (config.customFocus) {
+            focusParts.push(`The student specifically requested questions about: "${config.customFocus}". This is the PRIMARY focus — most questions should target this area.`)
+          }
+          if (config.selectedTopics?.length) {
+            focusParts.push(`Focus on these specific topics: ${config.selectedTopics.join(', ')}.`)
+          }
+          if (config.focusSubject) {
+            focusParts.push(`Focus on the subject: "${config.focusSubject}".`)
+          }
+          const focusNote = focusParts.length > 0
+            ? focusParts.join('\n')
             : 'Cover a mix of subjects, weighted toward the student\'s weakest topics.'
 
           const sectionNote = config.examSection

@@ -16,6 +16,8 @@ export type PracticePhase = 'setup' | 'generating' | 'taking' | 'grading' | 'res
 export interface PracticeExamOptions {
   questionCount: number
   focusSubject?: string
+  selectedTopics?: string[]
+  customFocus?: string
   examSection?: string
   sourcesEnabled: boolean
   timeLimitSeconds?: number
@@ -117,6 +119,8 @@ export function usePracticeExam(examProfileId: string | undefined) {
       sessionId: id,
       questionCount: options.questionCount,
       focusSubject: options.focusSubject,
+      selectedTopics: options.selectedTopics,
+      customFocus: options.customFocus,
       examSection: options.examSection,
       sourcesEnabled: options.sourcesEnabled,
     })

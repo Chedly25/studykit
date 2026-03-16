@@ -1,15 +1,16 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BarChart3, Play, Clock } from 'lucide-react'
+import { BarChart3, Play, Clock, Sparkles, X } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
-import type { ExamFormat, Subject, Topic } from '../../db/schema'
+import type { Subject, Topic } from '../../db/schema'
 import { SourcesToggle } from '../sources/SourcesToggle'
 import type { PracticeExamOptions } from '../../hooks/usePracticeExam'
 
 interface PracticeExamSetupProps {
   examProfileId: string
   subjects: Subject[]
+  topics: Topic[]
   weakTopics: Topic[]
   documentCount: number
   onStart: (options: PracticeExamOptions) => void
@@ -18,6 +19,7 @@ interface PracticeExamSetupProps {
 export function PracticeExamSetup({
   examProfileId,
   subjects,
+  topics,
   weakTopics,
   documentCount,
   onStart,
@@ -25,6 +27,8 @@ export function PracticeExamSetup({
   const { t } = useTranslation()
   const [questionCount, setQuestionCount] = useState(10)
   const [focusSubject, setFocusSubject] = useState('')
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([])
+  const [customFocus, setCustomFocus] = useState('')
   const [examSection, setExamSection] = useState('')
   const [sourcesEnabled, setSourcesEnabled] = useState(false)
   const [timerEnabled, setTimerEnabled] = useState(false)
@@ -35,17 +39,41 @@ export function PracticeExamSetup({
     [examProfileId],
   ) ?? []
 
+  // Topics for the selected subject (or all if none selected)
+  const availableTopics = useMemo(() => {
+    if (!focusSubject) return topics
+    const subject = subjects.find(s => s.name === focusSubject)
+    return subject ? topics.filter(t => t.subjectId === subject.id) : topics
+  }, [focusSubject, subjects, topics])
+
+  const toggleTopic = (topicName: string) => {
+    setSelectedTopics(prev =>
+      prev.includes(topicName)
+        ? prev.filter(t => t !== topicName)
+        : [...prev, topicName]
+    )
+  }
+
+  const addWeakTopics = () => {
+    const weakNames = weakTopics.slice(0, 5).map(t => t.name)
+    setSelectedTopics(prev => {
+      const combined = new Set([...prev, ...weakNames])
+      return Array.from(combined)
+    })
+  }
+
   const handleStart = () => {
     onStart({
       questionCount,
       focusSubject: focusSubject || undefined,
+      selectedTopics: selectedTopics.length > 0 ? selectedTopics : undefined,
+      customFocus: customFocus.trim() || undefined,
       examSection: examSection || undefined,
       sourcesEnabled,
       timeLimitSeconds: timerEnabled ? timerMinutes * 60 : undefined,
     })
   }
 
-  // Estimate: ~3 LLM calls (generate + validate + grade feedback)
   const estimatedCalls = 3
 
   return (
@@ -57,6 +85,23 @@ export function PracticeExamSetup({
       </div>
 
       <div className="glass-card p-6 space-y-5">
+        {/* Custom focus — free text for specific requests */}
+        <div>
+          <label className="block text-sm font-medium text-[var(--text-body)] mb-1">
+            {t('practiceExam.customFocus')}
+          </label>
+          <input
+            type="text"
+            value={customFocus}
+            onChange={e => setCustomFocus(e.target.value)}
+            placeholder={t('practiceExam.customFocusPlaceholder')}
+            className="input-field w-full"
+          />
+          <p className="text-xs text-[var(--text-muted)] mt-1">
+            {t('practiceExam.customFocusHint')}
+          </p>
+        </div>
+
         {/* Question count */}
         <div>
           <label className="block text-sm font-medium text-[var(--text-body)] mb-1">
@@ -74,14 +119,14 @@ export function PracticeExamSetup({
           <div className="text-center text-lg font-semibold text-[var(--accent-text)]">{questionCount}</div>
         </div>
 
-        {/* Focus area */}
+        {/* Focus area — subject level */}
         <div>
           <label className="block text-sm font-medium text-[var(--text-body)] mb-1">
             {t('ai.focusArea')}
           </label>
           <select
             value={focusSubject}
-            onChange={e => setFocusSubject(e.target.value)}
+            onChange={e => { setFocusSubject(e.target.value); setSelectedTopics([]) }}
             className="select-field w-full"
           >
             <option value="">{t('ai.autoWeakest')}</option>
@@ -90,6 +135,66 @@ export function PracticeExamSetup({
             ))}
           </select>
         </div>
+
+        {/* Topic selection — pills */}
+        {availableTopics.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-[var(--text-body)]">
+                {t('practiceExam.selectTopics')}
+              </label>
+              {selectedTopics.length > 0 && (
+                <button
+                  onClick={() => setSelectedTopics([])}
+                  className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
+                >
+                  {t('practiceExam.clearSelection')}
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {availableTopics.map(topic => {
+                const isSelected = selectedTopics.includes(topic.name)
+                const isWeak = weakTopics.some(w => w.id === topic.id)
+                return (
+                  <button
+                    key={topic.id}
+                    onClick={() => toggleTopic(topic.name)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      isSelected
+                        ? 'bg-[var(--accent-text)] text-white'
+                        : isWeak
+                        ? 'border border-amber-400/50 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:border-amber-400'
+                        : 'border border-[var(--border-card)] text-[var(--text-muted)] hover:border-[var(--text-muted)]'
+                    }`}
+                  >
+                    {topic.name}
+                    {isSelected && <X className="inline w-3 h-3 ml-1" />}
+                    {!isSelected && isWeak && <span className="ml-1 opacity-60">{Math.round(topic.mastery * 100)}%</span>}
+                  </button>
+                )
+              })}
+            </div>
+            {selectedTopics.length > 0 && (
+              <p className="text-xs text-[var(--accent-text)] mt-1.5">
+                {t('practiceExam.topicsSelected', { count: selectedTopics.length })}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* AI suggestions — weak topics quick-add */}
+        {weakTopics.length > 0 && selectedTopics.length === 0 && !customFocus && (
+          <button
+            onClick={addWeakTopics}
+            className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-[var(--accent-text)]/30 text-sm text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors"
+          >
+            <Sparkles className="w-4 h-4" />
+            {t('practiceExam.suggestWeakTopics', {
+              topics: weakTopics.slice(0, 3).map(t => t.name).join(', ')
+            })}
+          </button>
+        )}
 
         {/* Exam format section */}
         {examFormats.length > 0 && (
@@ -145,16 +250,9 @@ export function PracticeExamSetup({
               className="select-field w-full"
             >
               {[10, 15, 20, 30, 45, 60, 90, 120].map(m => (
-                <option key={m} value={m}>{m} {t('ai.minutes', { count: m }).replace(String(m), '').trim() || 'min'}</option>
+                <option key={m} value={m}>{m} min</option>
               ))}
             </select>
-          </div>
-        )}
-
-        {/* Weak areas hint */}
-        {weakTopics.length > 0 && (
-          <div className="text-xs text-[var(--text-muted)]">
-            {t('ai.weakAreas')}: {weakTopics.slice(0, 3).map(t => t.name).join(', ')}
           </div>
         )}
 

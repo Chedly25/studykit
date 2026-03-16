@@ -394,6 +394,13 @@
     "confirmSubmit": "Soumettre l'examen ?",
     "unansweredWarning": "Vous avez {{count}} question(s) sans reponse. Elles seront comptees comme incorrectes.",
     "submitAnyway": "Soumettre quand meme",
+    "customFocus": "Que voulez-vous reviser ?",
+    "customFocusPlaceholder": "ex. droit fiscal, chimie organique, conjugaison des verbes...",
+    "customFocusHint": "Soyez precis — l'IA adaptera les questions exactement a ce que vous ecrivez",
+    "selectTopics": "Ou choisissez des sujets specifiques",
+    "clearSelection": "Tout effacer",
+    "topicsSelected": "{{count}} sujet(s) selectionne(s)",
+    "suggestWeakTopics": "Se concentrer sur les faiblesses : {{topics}}",
     "steps": {
       "gatherContext": "Collecte de vos donnees d'etude",
       "searchDocuments": "Recherche dans vos supports de cours",
