@@ -35,13 +35,24 @@ export function Layout() {
       {/* ─── Header ─────────────────────────────────────────── */}
       <header className="border-b border-[var(--border-header)] backdrop-blur-md bg-[var(--bg-header)] sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          {/* Left: logo */}
+          {/* Left: menu toggle + logo */}
+          <div className="flex items-center gap-2">
+            <SignedIn>
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
+                aria-label="Toggle navigation"
+              >
+                {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            </SignedIn>
           <Link to="/" className="flex items-center gap-2 group">
             <img src="/favicon-48x48.png" alt="StudiesKit" className="w-7 h-7 rounded-lg" />
             <span className="font-[family-name:var(--font-display)] font-bold text-lg text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors hidden sm:inline">
               StudiesKit
             </span>
           </Link>
+          </div>
 
           {/* Right */}
           <div className="flex items-center gap-2">
@@ -74,14 +85,6 @@ export function Layout() {
                 </Link>
               )}
               <UserButton afterSignOutUrl="/" />
-              {/* Menu toggle — part of the header, rightmost for signed-in users */}
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
-                aria-label="Toggle navigation"
-              >
-                {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
             </SignedIn>
             <SignedOut>
               <Link to="/sign-in" className="btn-primary text-sm px-4 py-1.5">
