@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
-import { Plus, Trash2, Download, Upload, ArrowLeft, RotateCcw, BookOpen, BarChart3, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Download, Upload, ArrowLeft, RotateCcw, BookOpen, BarChart3, Loader2, Brain, Layers, GraduationCap } from 'lucide-react'
 import { ToolSEO } from '../../components/SEO'
 import { FormToolPage } from '../../components/FormToolPage'
 import { getToolBySlug } from '../../lib/tools'
@@ -153,15 +153,54 @@ export default function FlashcardMaker() {
         {/* ─── MANAGE MODE ─── */}
         {mode === 'manage' && (
           <div className="space-y-6">
+
+            {/* How it works — only show when no decks */}
+            {decks.length === 0 && (
+              <div className="glass-card p-6 space-y-4">
+                <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--text-heading)]">
+                  How Flashcards Work
+                </h2>
+                <p className="text-[var(--text-body)] text-sm leading-relaxed">
+                  Flashcards use <span className="font-medium text-[var(--text-heading)]">spaced repetition</span> to help you memorize anything. Each card has a question on the front and the answer on the back. When you study, you see the question, try to recall the answer, then rate how well you remembered. Cards you struggle with come back sooner; cards you know well appear less often.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-[var(--bg-input)]">
+                    <Layers size={20} className="text-[var(--accent-text)] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[var(--text-heading)] text-sm font-medium">1. Create a deck</p>
+                      <p className="text-[var(--text-muted)] text-xs mt-0.5">Group cards by subject, chapter, or topic</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-[var(--bg-input)]">
+                    <Brain size={20} className="text-[var(--accent-text)] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[var(--text-heading)] text-sm font-medium">2. Add cards</p>
+                      <p className="text-[var(--text-muted)] text-xs mt-0.5">Write a question/term and its answer/definition</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-[var(--bg-input)]">
+                    <GraduationCap size={20} className="text-[var(--accent-text)] shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-[var(--text-heading)] text-sm font-medium">3. Study & rate</p>
+                      <p className="text-[var(--text-muted)] text-xs mt-0.5">Flip each card, rate your recall — the system schedules reviews for you</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Create deck */}
             <div className="glass-card p-4">
-              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--text-heading)] mb-3">
+              <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--text-heading)] mb-1">
                 Create New Deck
               </h2>
+              <p className="text-[var(--text-muted)] text-sm mb-3">
+                A deck is a collection of flashcards on one topic (e.g. &ldquo;Biology Ch. 5&rdquo; or &ldquo;Spanish Verbs&rdquo;)
+              </p>
               <div className="flex gap-3">
                 <input
                   type="text"
-                  placeholder="Deck name..."
+                  placeholder="e.g. Organic Chemistry Reactions"
                   value={newDeckName}
                   onChange={e => setNewDeckName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && createDeck()}
@@ -194,6 +233,7 @@ export default function FlashcardMaker() {
               <div className="glass-card p-8 text-center">
                 <BookOpen size={40} className="mx-auto text-[var(--text-faint)] mb-3" />
                 <p className="text-[var(--text-muted)]">No decks yet. Create one above to get started.</p>
+                <p className="text-[var(--text-faint)] text-xs mt-2">Tip: You can also ask the AI tutor to generate flashcards for any topic</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -240,7 +280,7 @@ export default function FlashcardMaker() {
                             disabled={deckCards.length === 0}
                             className="btn-primary text-sm px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
                           >
-                            Study{dueCount > 0 ? ` (${dueCount})` : ''}
+                            {dueCount > 0 ? `Review ${dueCount} due` : 'Study All'}
                           </button>
                           <button
                             onClick={() => deleteDeck(deck.id)}
@@ -262,11 +302,11 @@ export default function FlashcardMaker() {
                             >
                               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div>
-                                  <span className="text-[var(--text-faint)] text-xs uppercase tracking-wider">Front</span>
+                                  <span className="text-[var(--text-faint)] text-xs uppercase tracking-wider">Question</span>
                                   <p className="text-[var(--text-body)] text-sm mt-0.5">{card.front}</p>
                                 </div>
                                 <div>
-                                  <span className="text-[var(--text-faint)] text-xs uppercase tracking-wider">Back</span>
+                                  <span className="text-[var(--text-faint)] text-xs uppercase tracking-wider">Answer</span>
                                   <p className="text-[var(--text-body)] text-sm mt-0.5">{card.back}</p>
                                 </div>
                               </div>
@@ -285,21 +325,27 @@ export default function FlashcardMaker() {
 
                           {/* Add card form */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <input
-                              type="text"
-                              placeholder="Front side..."
-                              value={newCardFront}
-                              onChange={e => setNewCardFront(e.target.value)}
-                              className="input-field"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Back side..."
-                              value={newCardBack}
-                              onChange={e => setNewCardBack(e.target.value)}
-                              onKeyDown={e => e.key === 'Enter' && addCard(deck.id)}
-                              className="input-field"
-                            />
+                            <div>
+                              <label className="text-[var(--text-faint)] text-xs uppercase tracking-wider mb-1 block">Question / Term</label>
+                              <input
+                                type="text"
+                                placeholder="e.g. What is mitosis?"
+                                value={newCardFront}
+                                onChange={e => setNewCardFront(e.target.value)}
+                                className="input-field"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[var(--text-faint)] text-xs uppercase tracking-wider mb-1 block">Answer / Definition</label>
+                              <input
+                                type="text"
+                                placeholder="e.g. Cell division producing two identical cells"
+                                value={newCardBack}
+                                onChange={e => setNewCardBack(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && addCard(deck.id)}
+                                className="input-field"
+                              />
+                            </div>
                           </div>
                           <button
                             onClick={() => addCard(deck.id)}
@@ -369,11 +415,11 @@ export default function FlashcardMaker() {
                       className="glass-card p-8 absolute inset-0 flex flex-col items-center justify-center"
                       style={{ backfaceVisibility: 'hidden' }}
                     >
-                      <span className="text-[var(--text-faint)] text-xs uppercase tracking-wider mb-3">Front</span>
+                      <span className="text-[var(--text-faint)] text-xs uppercase tracking-wider mb-3">Question</span>
                       <p className="text-[var(--text-heading)] text-xl text-center font-medium">
                         {studyCards[currentIndex]?.front}
                       </p>
-                      <p className="text-[var(--text-faint)] text-xs mt-4">Click to flip</p>
+                      <p className="text-[var(--text-faint)] text-xs mt-4">Try to recall the answer, then click to reveal</p>
                     </div>
 
                     <div
@@ -383,7 +429,7 @@ export default function FlashcardMaker() {
                         transform: 'rotateY(180deg)',
                       }}
                     >
-                      <span className="text-[var(--text-faint)] text-xs uppercase tracking-wider mb-3">Back</span>
+                      <span className="text-[var(--text-faint)] text-xs uppercase tracking-wider mb-3">Answer</span>
                       <p className="text-[var(--text-heading)] text-xl text-center font-medium">
                         {studyCards[currentIndex]?.back}
                       </p>
@@ -393,16 +439,20 @@ export default function FlashcardMaker() {
 
                 {/* Rating buttons */}
                 {flipped && (
-                  <div className="flex justify-center gap-3 animate-fade-in">
-                    {RATING_BUTTONS.map(btn => (
-                      <button
-                        key={btn.quality}
-                        onClick={() => rateCard(btn.quality)}
-                        className={`px-5 py-3 rounded-xl border font-medium transition-colors ${btn.color}`}
-                      >
-                        {btn.label}
-                      </button>
-                    ))}
+                  <div className="space-y-2 animate-fade-in">
+                    <p className="text-center text-[var(--text-muted)] text-sm">How well did you remember?</p>
+                    <div className="flex justify-center gap-3">
+                      {RATING_BUTTONS.map(btn => (
+                        <button
+                          key={btn.quality}
+                          onClick={() => rateCard(btn.quality)}
+                          className={`px-5 py-3 rounded-xl border font-medium transition-colors ${btn.color}`}
+                        >
+                          {btn.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-center text-[var(--text-faint)] text-xs">Cards you find harder will appear more often</p>
                   </div>
                 )}
               </>
