@@ -1,10 +1,13 @@
 import { useState, useCallback, useRef } from 'react'
-import { Plus, Trash2, Download, Upload, ArrowLeft, RotateCcw, BookOpen, BarChart3, Loader2, Brain, Layers, GraduationCap } from 'lucide-react'
+import { Plus, Trash2, Download, Upload, ArrowLeft, RotateCcw, BookOpen, BarChart3, Loader2, Brain, Layers, GraduationCap, Sparkles } from 'lucide-react'
+import { useAuth } from '@clerk/clerk-react'
 import { ToolSEO } from '../../components/SEO'
 import { FormToolPage } from '../../components/FormToolPage'
 import { getToolBySlug } from '../../lib/tools'
 import { useFlashcards } from '../../hooks/useFlashcards'
 import { useExamProfile } from '../../hooks/useExamProfile'
+import { streamChat } from '../../ai/client'
+import { db } from '../../db'
 import type { Flashcard } from '../../db/schema'
 
 const tool = getToolBySlug('flashcard-maker')!
@@ -30,6 +33,7 @@ const RATING_BUTTONS = [
 ]
 
 export default function FlashcardMaker() {
+  const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const {
     decks, isLoading, getCardsForDeck, getDueCount, getStatsForDeck,
@@ -54,6 +58,12 @@ export default function FlashcardMaker() {
 
   // Stats state
   const [statsDeckId, setStatsDeckId] = useState<string | null>(null)
+
+  // AI generation state
+  const [aiTopic, setAiTopic] = useState('')
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [aiDeckId, setAiDeckId] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -136,6 +146,58 @@ export default function FlashcardMaker() {
       fileInputRef.current.value = ''
     }
   }, [hookImportDeck])
+
+  // AI generation
+  const generateWithAI = useCallback(async (deckId: string) => {
+    const topic = aiTopic.trim()
+    if (!topic) return
+    setAiGenerating(true)
+    setAiError('')
+    setAiDeckId(deckId)
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Not authenticated')
+
+      const response = await streamChat({
+        messages: [{ role: 'user', content: `Generate 10 flashcards about: ${topic}` }],
+        system: `You generate flashcards for studying. Return ONLY a JSON object with this exact format, no other text:\n{"cards":[{"front":"question or term","back":"answer or definition"}]}\n\nGenerate clear, concise flashcards that test key concepts. Each "front" should be a question or term, and "back" should be the answer or definition.`,
+        tools: [],
+        authToken: token,
+      })
+
+      const text = response.content.find(c => c.type === 'text')
+      if (!text || text.type !== 'text') throw new Error('No response from AI')
+
+      // Extract JSON from response (handle markdown code blocks)
+      const jsonMatch = text.text.match(/\{[\s\S]*"cards"[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('Could not parse AI response')
+
+      const parsed = JSON.parse(jsonMatch[0]) as { cards: Array<{ front: string; back: string }> }
+      if (!parsed.cards?.length) throw new Error('AI returned no cards')
+
+      const today = new Date().toISOString().slice(0, 10)
+      const flashcards: Flashcard[] = parsed.cards.map(c => ({
+        id: crypto.randomUUID(),
+        deckId,
+        front: c.front,
+        back: c.back,
+        source: 'ai-generated' as const,
+        easeFactor: 2.5,
+        interval: 0,
+        repetitions: 0,
+        nextReviewDate: today,
+        lastRating: 0,
+      }))
+
+      await db.flashcards.bulkPut(flashcards)
+      setAiTopic('')
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Generation failed')
+    } finally {
+      setAiGenerating(false)
+      setAiDeckId(null)
+    }
+  }, [aiTopic, getToken])
 
   const studyDeck = studyDeckId ? decks.find(d => d.id === studyDeckId) : null
 
@@ -354,6 +416,39 @@ export default function FlashcardMaker() {
                             <Plus size={14} />
                             Add Card
                           </button>
+
+                          {/* AI Generate */}
+                          <div className="border-t border-[var(--border-card)] pt-3 mt-3">
+                            <p className="text-[var(--text-heading)] text-sm font-medium mb-2 flex items-center gap-1.5">
+                              <Sparkles size={14} className="text-[var(--accent-text)]" />
+                              Generate cards with AI
+                            </p>
+                            <div className="flex gap-3">
+                              <input
+                                type="text"
+                                placeholder="e.g. Photosynthesis, French Revolution, Linear Algebra..."
+                                value={aiDeckId === deck.id ? aiTopic : aiTopic}
+                                onChange={e => setAiTopic(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && !aiGenerating && generateWithAI(deck.id)}
+                                disabled={aiGenerating}
+                                className="input-field flex-1"
+                              />
+                              <button
+                                onClick={() => generateWithAI(deck.id)}
+                                disabled={aiGenerating || !aiTopic.trim()}
+                                className="btn-primary flex items-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                {aiGenerating && aiDeckId === deck.id ? (
+                                  <><Loader2 size={14} className="animate-spin" /> Generating...</>
+                                ) : (
+                                  <><Sparkles size={14} /> Generate</>
+                                )}
+                              </button>
+                            </div>
+                            {aiError && aiDeckId === deck.id && (
+                              <p className="text-red-400 text-xs mt-2">{aiError}</p>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
