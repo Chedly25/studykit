@@ -213,6 +213,11 @@ export function useAgent(options: UseAgentOptions) {
         },
         onToolCall: (name) => {
           setCurrentToolCall(name)
+          setStreamingText('')
+        },
+        onMessagesUpdate: (msgs) => {
+          setMessages(msgs)
+          setStreamingText('')
         },
       })
 
@@ -301,6 +306,11 @@ export function useAgent(options: UseAgentOptions) {
     setExplainBackTopic('')
   }, [messages, conversationId, profile, getToken])
 
+  const cancel = useCallback(() => {
+    abortRef.current = true
+    abortControllerRef.current?.abort()
+  }, [])
+
   const startSocraticMode = useCallback((topicName: string) => {
     setIsSocratic(true)
     setSocraticTopic(topicName)
@@ -335,6 +345,7 @@ export function useAgent(options: UseAgentOptions) {
     quotaExceeded,
     messagesUsedToday,
     sendMessage,
+    cancel,
     loadConversation,
     newConversation,
     startSocraticMode,

@@ -41,7 +41,7 @@ export function ChatPanel({ open, onClose }: Props) {
   const {
     messages, isLoading, currentToolCall, streamingText, error,
     conversationId, isSocratic, quotaExceeded, messagesUsedToday,
-    sendMessage, loadConversation, newConversation,
+    sendMessage, cancel, loadConversation, newConversation,
   } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences })
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -133,7 +133,7 @@ export function ChatPanel({ open, onClose }: Props) {
           />
         )}
 
-        <ToolCallIndicator toolName={currentToolCall} />
+        <ToolCallIndicator toolName={currentToolCall} onCancel={cancel} />
 
         {quotaExceeded ? (
           <UpgradePrompt messagesUsed={messagesUsedToday} />

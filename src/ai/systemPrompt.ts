@@ -59,6 +59,7 @@ export function buildSystemPrompt(ctx: PromptContext): string {
   }
 
   const { profile, subjects, topics, dailyLogs, dueFlashcardCount, upcomingAssignments } = ctx
+  const isEmptyProfile = subjects.length === 0 && topics.length === 0
 
   const daysLeft = profile.examDate
     ? Math.max(0, Math.ceil((new Date(profile.examDate).getTime() - Date.now()) / 86400000))
@@ -120,7 +121,8 @@ You have tools to read and write the student's data. Always use tools to access 
 13. Don't suggest advanced topics until their prerequisites reach 60% mastery. Use getTopicDependencies to check.
 14. At conversation start, if flashcards are due, mention them as an observation — don't auto-start a review
 15. When teaching a topic, if related cards are due, weave in a quiz. Present cards one at a time, wait for answer, reveal, then use rateFlashcard.
-16. Match question format to exam sections when exam formats are defined${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.conversationSummaries && ctx.conversationSummaries.length > 0 ? buildConversationHistorySection(ctx.conversationSummaries) : ''}${ctx.flashcardPerformance && ctx.flashcardPerformance.length > 0 ? buildFlashcardPerformanceSection(ctx.flashcardPerformance) : ''}${buildTopicDependencySection(ctx.topics)}${ctx.examFormats && ctx.examFormats.length > 0 ? buildExamFormatSection(ctx.examFormats) : ''}${ctx.profile.examIntelligence ? buildExamIntelligenceSection(ctx.profile.examIntelligence) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${ctx.sessionInsights && ctx.sessionInsights.length > 0 ? buildSessionMemorySection(ctx.sessionInsights) : ''}${buildCalibrationSection(ctx.topics)}${buildEmotionalIntelligenceSection()}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
+16. Match question format to exam sections when exam formats are defined${isEmptyProfile ? `
+17. CRITICAL: The student's profile has no subjects or topics yet. Before using any tools that require topic data (generateStudyPlan, getWeakTopics, generateQuestions, etc.), you MUST first ask the student about what they're studying, their subjects/topics, exam date, and available study time. Do NOT call generateStudyPlan or generateQuestions when there are no topics — it will produce empty results.` : ''}${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.conversationSummaries && ctx.conversationSummaries.length > 0 ? buildConversationHistorySection(ctx.conversationSummaries) : ''}${ctx.flashcardPerformance && ctx.flashcardPerformance.length > 0 ? buildFlashcardPerformanceSection(ctx.flashcardPerformance) : ''}${buildTopicDependencySection(ctx.topics)}${ctx.examFormats && ctx.examFormats.length > 0 ? buildExamFormatSection(ctx.examFormats) : ''}${ctx.profile.examIntelligence ? buildExamIntelligenceSection(ctx.profile.examIntelligence) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${ctx.sessionInsights && ctx.sessionInsights.length > 0 ? buildSessionMemorySection(ctx.sessionInsights) : ''}${buildCalibrationSection(ctx.topics)}${buildEmotionalIntelligenceSection()}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
 }
 
 function buildSourceSection(sc: SourceContext): string {

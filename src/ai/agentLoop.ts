@@ -1,6 +1,6 @@
 /**
  * Core agent loop: send messages → parse response → if tool_use: execute locally,
- * feed result back, loop → if text: done. Max 10 iterations. 60s timeout.
+ * feed result back, loop → if text: done. Max 10 iterations. 120s timeout.
  */
 import { streamChat } from './client'
 import { agentTools } from './toolDefinitions'
@@ -51,7 +51,7 @@ import {
 } from './tools/researchTools'
 
 const MAX_ITERATIONS = 10
-const TIMEOUT_MS = 60000
+const TIMEOUT_MS = 120000
 const MAX_TOOL_RESULT_CHARS = 15000 // Truncate oversized tool results to prevent payload bloat
 
 interface AgentLoopOptions {
@@ -61,6 +61,7 @@ interface AgentLoopOptions {
   authToken?: string
   onToken?: (text: string) => void
   onToolCall?: (toolName: string) => void
+  onMessagesUpdate?: (messages: Message[]) => void
   signal?: AbortSignal
 }
 
@@ -74,6 +75,7 @@ async function executeToolLocally(
   input: Record<string, unknown>,
   examProfileId: string,
   authToken?: string,
+  signal?: AbortSignal,
 ): Promise<string> {
   switch (toolName) {
     case 'getKnowledgeGraph':
@@ -121,7 +123,7 @@ async function executeToolLocally(
       return getErrorPatterns(examProfileId, input.topicName as string | undefined)
     case 'generateStudyPlan':
       if (!authToken) return JSON.stringify({ error: 'Authentication required to generate study plan' })
-      return generateStudyPlanTool(examProfileId, authToken, (input.daysAhead as number) ?? 7)
+      return generateStudyPlanTool(examProfileId, authToken, (input.daysAhead as number) ?? 7, signal)
     case 'getStudyPlan':
       return getStudyPlanTool(examProfileId)
     case 'getStudentModel':
@@ -138,10 +140,10 @@ async function executeToolLocally(
       return setTopicPrerequisites(examProfileId, input as { topicName: string; prerequisiteNames: string[] })
     case 'adjustStudyPlan':
       if (!authToken) return JSON.stringify({ error: 'Authentication required' })
-      return adjustStudyPlanTool(examProfileId, authToken, (input.reason as string) ?? '')
+      return adjustStudyPlanTool(examProfileId, authToken, (input.reason as string) ?? '', signal)
     case 'autoMapSourceToTopics':
       if (!authToken) return JSON.stringify({ error: 'Authentication required' })
-      return autoMapSourceToTopics(examProfileId, input as { documentId: string }, authToken)
+      return autoMapSourceToTopics(examProfileId, input as { documentId: string }, authToken, signal)
     case 'startQuickReview':
       return startQuickReview(examProfileId, input as { topicName?: string; limit?: number })
     case 'rateFlashcard':
@@ -150,7 +152,7 @@ async function executeToolLocally(
       return createMockExam(examProfileId, input as { timeLimitMinutes: number; formatIds?: string[] })
     case 'gradeMockExam':
       if (!authToken) return JSON.stringify({ error: 'Authentication required' })
-      return gradeMockExam(examProfileId, input as { examId: string }, authToken)
+      return gradeMockExam(examProfileId, input as { examId: string }, authToken, signal)
     case 'getResearchThreads':
       return getResearchThreads(examProfileId)
     case 'updateThreadStatus':
@@ -185,7 +187,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
 
     // Timeout check
     if (Date.now() - startTime > TIMEOUT_MS) {
-      finalText += '\n\n[Agent timed out after 60 seconds]'
+      finalText += '\n\n[Agent timed out after 120 seconds]'
       break
     }
 
@@ -194,7 +196,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
       system: systemPrompt,
       tools: agentTools,
       authToken,
-      onToken: iteration === 0 || !hasToolCalls(messages) ? onToken : undefined,
+      onToken,
       onToolCall,
       signal,
     })
@@ -231,17 +233,29 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
       const resultBlocks: ContentBlock[] = []
       for (const toolUse of toolUses) {
         onToolCall?.(toolUse.name)
-        let result = await executeToolLocally(toolUse.name, toolUse.input, examProfileId, authToken)
-        if (result.length > MAX_TOOL_RESULT_CHARS) {
-          result = result.slice(0, MAX_TOOL_RESULT_CHARS) + '\n...[truncated]'
+        try {
+          let result = await executeToolLocally(toolUse.name, toolUse.input, examProfileId, authToken, signal)
+          if (result.length > MAX_TOOL_RESULT_CHARS) {
+            result = result.slice(0, MAX_TOOL_RESULT_CHARS) + '\n...[truncated]'
+          }
+          resultBlocks.push({
+            type: 'tool_result',
+            tool_use_id: toolUse.id,
+            content: result,
+          } as ToolResultBlock)
+        } catch (err) {
+          if (signal?.aborted) break
+          resultBlocks.push({
+            type: 'tool_result',
+            tool_use_id: toolUse.id,
+            content: JSON.stringify({ error: err instanceof Error ? err.message : 'Tool execution failed' }),
+            is_error: true,
+          } as ToolResultBlock)
         }
-        resultBlocks.push({
-          type: 'tool_result',
-          tool_use_id: toolUse.id,
-          content: result,
-        } as ToolResultBlock)
       }
+      if (signal?.aborted) break
       messages.push({ role: 'user', content: resultBlocks })
+      options.onMessagesUpdate?.([...messages])
 
       continue // Loop back
     }
@@ -256,9 +270,3 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
   return { messages, finalText }
 }
 
-function hasToolCalls(messages: Message[]): boolean {
-  return messages.some(m =>
-    Array.isArray(m.content) &&
-    m.content.some(b => 'type' in b && b.type === 'tool_use')
-  )
-}

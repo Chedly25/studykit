@@ -9,6 +9,7 @@ export async function generateStudyPlan(
   examProfileId: string,
   authToken: string,
   daysAhead = 7,
+  signal?: AbortSignal,
 ): Promise<{ plan: StudyPlan; days: StudyPlanDay[] }> {
   // Gather context
   const profile = await db.examProfiles.get(examProfileId)
@@ -99,6 +100,7 @@ Rules:
     tools: [],
     authToken,
     maxTokens: 8192,
+    signal,
   })
 
   const text = response.content

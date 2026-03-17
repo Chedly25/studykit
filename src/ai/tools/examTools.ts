@@ -8,6 +8,7 @@ export async function gradeMockExam(
   _examProfileId: string,
   input: { examId: string },
   authToken: string,
+  signal?: AbortSignal,
 ): Promise<string> {
   const exam = await db.mockExams.get(input.examId)
   if (!exam) return JSON.stringify({ error: 'Mock exam not found' })
@@ -58,6 +59,7 @@ Return ONLY valid JSON:
       system: 'You are an expert exam grader. Grade fairly and provide constructive feedback. Return only valid JSON.',
       tools: [],
       authToken,
+      signal,
     })
 
     const text = response.content

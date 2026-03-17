@@ -47,7 +47,7 @@ export default function Chat() {
   const {
     messages, isLoading, currentToolCall, streamingText, error,
     conversationId, quotaExceeded, messagesUsedToday,
-    sendMessage, loadConversation, newConversation,
+    sendMessage, cancel, loadConversation, newConversation,
   } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences, sessionInsights: recentInsights, studentModel, conversationSummaries })
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -227,7 +227,7 @@ export default function Chat() {
                   />
                 )}
 
-                <ToolCallIndicator toolName={currentToolCall} />
+                <ToolCallIndicator toolName={currentToolCall} onCancel={cancel} />
 
                 {quotaExceeded ? (
                   <UpgradePrompt messagesUsed={messagesUsedToday} />

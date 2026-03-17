@@ -5,9 +5,10 @@ export async function generateStudyPlanTool(
   examProfileId: string,
   authToken: string,
   daysAhead?: number,
+  signal?: AbortSignal,
 ): Promise<string> {
   try {
-    const { plan, days } = await generateStudyPlan(examProfileId, authToken, daysAhead ?? 7)
+    const { plan, days } = await generateStudyPlan(examProfileId, authToken, daysAhead ?? 7, signal)
     return JSON.stringify({
       success: true,
       planId: plan.id,
@@ -28,6 +29,7 @@ export async function adjustStudyPlanTool(
   examProfileId: string,
   authToken: string,
   reason: string,
+  signal?: AbortSignal,
 ): Promise<string> {
   try {
     const plan = await db.studyPlans
@@ -42,7 +44,7 @@ export async function adjustStudyPlanTool(
     const remainingDays = days.filter(d => d.date >= today).length
 
     // Regenerate with remaining days
-    const { plan: newPlan, days: newDays } = await generateStudyPlan(examProfileId, authToken, remainingDays || 7)
+    const { plan: newPlan, days: newDays } = await generateStudyPlan(examProfileId, authToken, remainingDays || 7, signal)
 
     return JSON.stringify({
       success: true,

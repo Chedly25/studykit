@@ -8,6 +8,7 @@ export async function autoMapSourceToTopics(
   examProfileId: string,
   input: { documentId: string },
   authToken: string,
+  signal?: AbortSignal,
 ): Promise<string> {
   const doc = await db.documents.get(input.documentId)
   if (!doc) return JSON.stringify({ error: 'Document not found' })
@@ -49,6 +50,7 @@ Return ONLY valid JSON:
       system: 'You are a concept extraction expert. Analyze documents and map content to study topics. Return only valid JSON.',
       tools: [],
       authToken,
+      signal,
     })
 
     const text = response.content
