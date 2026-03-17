@@ -35,26 +35,15 @@ export function Layout() {
       {/* ─── Header ─────────────────────────────────────────── */}
       <header className="border-b border-[var(--border-header)] backdrop-blur-md bg-[var(--bg-header)] sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          {/* Left: menu + logo */}
-          <div className="flex items-center gap-2">
-            <SignedIn>
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-2 -ml-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
-                aria-label="Open navigation"
-              >
-                <Menu size={20} />
-              </button>
-            </SignedIn>
-            <Link to="/" className="flex items-center gap-2 group">
-              <img src="/favicon-48x48.png" alt="StudiesKit" className="w-7 h-7 rounded-lg" />
-              <span className="font-[family-name:var(--font-display)] font-bold text-lg text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors hidden sm:inline">
-                StudiesKit
-              </span>
-            </Link>
-          </div>
+          {/* Left: logo */}
+          <Link to="/" className="flex items-center gap-2 group">
+            <img src="/favicon-48x48.png" alt="StudiesKit" className="w-7 h-7 rounded-lg" />
+            <span className="font-[family-name:var(--font-display)] font-bold text-lg text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors hidden sm:inline">
+              StudiesKit
+            </span>
+          </Link>
 
-          {/* Right: essentials only */}
+          {/* Right */}
           <div className="flex items-center gap-2">
             <SignedIn>
               <ExamProfileSelector />
@@ -70,11 +59,31 @@ export function Layout() {
               >
                 <MessageCircle size={18} />
               </button>
+            </SignedIn>
+            <LanguageToggle />
+            <ThemeToggle />
+            <SignedIn>
+              {isPro ? (
+                <ProBadge />
+              ) : (
+                <Link
+                  to="/pricing"
+                  className="btn-secondary text-xs px-3 py-1 hidden sm:block"
+                >
+                  {t('common.upgrade')}
+                </Link>
+              )}
               <UserButton afterSignOutUrl="/" />
+              {/* Menu toggle — part of the header, rightmost for signed-in users */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
+                aria-label="Toggle navigation"
+              >
+                {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
             </SignedIn>
             <SignedOut>
-              <LanguageToggle />
-              <ThemeToggle />
               <Link to="/sign-in" className="btn-primary text-sm px-4 py-1.5">
                 {t('common.signIn')}
               </Link>
@@ -95,7 +104,7 @@ export function Layout() {
           {/* Drawer */}
           <aside className="relative w-72 max-w-[80vw] bg-[var(--bg-card)] border-r border-[var(--border-card)] flex flex-col h-full overflow-y-auto animate-fade-in">
             {/* Sidebar header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-card)]">
+            <div className="flex items-center justify-between px-5 h-14 border-b border-[var(--border-card)]">
               <Link to="/" onClick={closeSidebar} className="flex items-center gap-2">
                 <img src="/favicon-48x48.png" alt="" className="w-7 h-7 rounded-lg" />
                 <span className="font-[family-name:var(--font-display)] font-bold text-lg text-[var(--text-heading)]">
@@ -147,20 +156,9 @@ export function Layout() {
               </SidebarSection>
             </nav>
 
-            {/* Sidebar footer */}
-            <div className="px-4 py-4 border-t border-[var(--border-card)] space-y-3">
-              <div className="flex items-center gap-2">
-                <LanguageToggle />
-                <ThemeToggle />
-                {isPro ? (
-                  <ProBadge />
-                ) : (
-                  <Link to="/pricing" onClick={closeSidebar} className="btn-secondary text-xs px-3 py-1">
-                    {t('common.upgrade')}
-                  </Link>
-                )}
-              </div>
-              {user?.primaryEmailAddress?.emailAddress === 'chedlyboukhris21@gmail.com' && (
+            {/* Sidebar footer — admin only */}
+            {user?.primaryEmailAddress?.emailAddress === 'chedlyboukhris21@gmail.com' && (
+              <div className="px-4 py-4 border-t border-[var(--border-card)]">
                 <Link
                   to="/admin"
                   onClick={closeSidebar}
@@ -168,8 +166,8 @@ export function Layout() {
                 >
                   <Shield size={14} /> Admin
                 </Link>
-              )}
-            </div>
+              </div>
+            )}
           </aside>
         </div>
       )}
