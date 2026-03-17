@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '@clerk/clerk-react'
 import { X, Brain, Settings } from 'lucide-react'
 import { useExamProfile } from '../../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../../hooks/useKnowledgeGraph'
@@ -11,6 +12,7 @@ import { ChatInput } from './ChatInput'
 import { ToolCallIndicator } from './ToolCallIndicator'
 import { ChatHistory } from './ChatHistory'
 import { TutorSettingsModal } from './TutorSettingsModal'
+import { ChatContextProvider } from './ChatContext'
 import { QuotaIndicator } from '../subscription/QuotaIndicator'
 import { UpgradePrompt } from '../subscription/UpgradePrompt'
 import { SourcesToggle } from '../sources/SourcesToggle'
@@ -25,6 +27,7 @@ interface Props {
 
 export function ChatPanel({ open, onClose }: Props) {
   const { t } = useTranslation()
+  const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { subjects, topics, dailyLogs } = useKnowledgeGraph(profileId)
@@ -109,6 +112,7 @@ export function ChatPanel({ open, onClose }: Props) {
       )}
 
       {/* Messages */}
+      <ChatContextProvider value={{ examProfileId: profileId, getToken }}>
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-6">
         {!activeProfile ? (
           <div className="text-center text-sm text-[var(--text-muted)] py-8">
@@ -141,6 +145,7 @@ export function ChatPanel({ open, onClose }: Props) {
           <div className="text-sm text-red-500 bg-red-500/10 rounded-lg p-3">{error}</div>
         ) : null}
       </div>
+      </ChatContextProvider>
 
       {/* Attachment save prompt */}
       {pendingSaveAttachments && profileId && !isLoading && (

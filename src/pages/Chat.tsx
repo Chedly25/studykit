@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '@clerk/clerk-react'
 import { Brain, Settings, PanelLeftClose, PanelLeft, Upload } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
@@ -14,6 +15,7 @@ import { ToolCallIndicator } from '../components/chat/ToolCallIndicator'
 import { ChatHistory } from '../components/chat/ChatHistory'
 import { ChatEmptyState, suggestionIcons } from '../components/chat/ChatEmptyState'
 import { TutorSettingsModal } from '../components/chat/TutorSettingsModal'
+import { ChatContextProvider } from '../components/chat/ChatContext'
 import { QuotaIndicator } from '../components/subscription/QuotaIndicator'
 import { UpgradePrompt } from '../components/subscription/UpgradePrompt'
 import { SourcesToggle } from '../components/sources/SourcesToggle'
@@ -25,6 +27,7 @@ const SIDEBAR_KEY = 'studykit_chat_sidebar'
 
 export default function Chat() {
   const { t } = useTranslation()
+  const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { subjects, topics, dailyLogs, weakTopics, dueTopics } = useKnowledgeGraph(profileId)
@@ -210,6 +213,7 @@ export default function Chat() {
         </div>
 
         {/* Messages scroll area */}
+        <ChatContextProvider value={{ examProfileId: profileId, getToken }}>
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <div className="max-w-[740px] mx-auto w-full px-6 py-6">
             {messages.length === 0 && !streamingText ? (
@@ -238,6 +242,7 @@ export default function Chat() {
             )}
           </div>
         </div>
+        </ChatContextProvider>
 
         {/* Attachment save prompt */}
         {pendingSaveAttachments && profileId && !isLoading && (
