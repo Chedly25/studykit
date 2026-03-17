@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react'
-import { LayoutDashboard, BarChart3, Focus, MessageCircle, FileText, PenTool, BookOpen, Users, Shield } from 'lucide-react'
+import { LayoutDashboard, BarChart3, Focus, MessageCircle, FileText, PenTool, BookOpen, Users, Shield, FileSearch } from 'lucide-react'
 import { MegaMenu } from './MegaMenu'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
@@ -92,6 +92,12 @@ export function Layout() {
                   </Link>
                 </>
               )}
+              <Link
+                to="/article-review"
+                className="text-[var(--text-body)] hover:text-[var(--accent-text)] transition-colors font-medium text-sm hidden md:flex items-center gap-1"
+              >
+                <FileSearch size={15} /> Review
+              </Link>
             </SignedIn>
             <MegaMenu />
             <SignedIn>

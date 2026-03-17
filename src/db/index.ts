@@ -35,6 +35,8 @@ import type {
   HabitLog,
   WritingSession,
   AdvisorMeeting,
+  ReviewProject,
+  ReviewArticle,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -73,6 +75,8 @@ export class StudiesKitDB extends Dexie {
   habitLogs!: Table<HabitLog>
   writingSessions!: Table<WritingSession>
   advisorMeetings!: Table<AdvisorMeeting>
+  reviewProjects!: Table<ReviewProject>
+  reviewArticles!: Table<ReviewArticle>
 
   constructor() {
     super('studieskit')
@@ -175,6 +179,11 @@ export class StudiesKitDB extends Dexie {
       tx.table('examProfiles').toCollection().modify(profile => {
         if (profile.profileMode === undefined) profile.profileMode = 'study'
       })
+    })
+
+    this.version(13).stores({
+      reviewProjects: 'id, examProfileId, status, createdAt',
+      reviewArticles: 'id, projectId, examProfileId, documentId, decision, processingStatus, compositeScore, [projectId+decision], [projectId+processingStatus]',
     })
   }
 }

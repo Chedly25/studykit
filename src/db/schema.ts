@@ -471,3 +471,46 @@ export interface AdvisorMeeting {
   notes: string
   status: AdvisorMeetingStatus
 }
+
+// ─── Article Review ────────────────────────────────────────────
+export type ReviewProjectStatus = 'setup' | 'processing' | 'reviewing' | 'completed'
+export type ArticleDecision = 'pending' | 'shortlisted' | 'maybe' | 'rejected'
+export type ArticleProcessingStatus = 'queued' | 'ingesting' | 'analyzing' | 'researching' | 'done' | 'failed'
+
+export interface ReviewProject {
+  id: string
+  examProfileId: string
+  name: string
+  description: string
+  deadline: string
+  targetShortlistCount: number
+  status: ReviewProjectStatus
+  synthesisResult?: string // JSON: theme clusters, comparative ranking
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ReviewArticle {
+  id: string
+  projectId: string
+  examProfileId: string
+  documentId: string
+
+  processingStatus: ArticleProcessingStatus
+  processingError?: string
+
+  aiAnalysis?: string // JSON: { summary, keyFindings[], methodology, themes[], notableQuotes[] }
+  noveltyScore?: number
+  relevanceScore?: number
+  qualityScore?: number
+
+  researchContext?: string // JSON: { authorCredentials, citationInfo, relatedWork[] }
+
+  userNotes?: string
+  userScore?: number
+  decision: ArticleDecision
+
+  compositeScore?: number
+  createdAt: string
+  updatedAt: string
+}

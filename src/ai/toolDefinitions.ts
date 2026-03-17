@@ -417,6 +417,46 @@ export const agentTools: ToolDefinition[] = [
     },
   },
 
+  // ─── Article Review ──────────────────────────────────────────
+  {
+    name: 'searchReviewArticles',
+    description: 'Search across review project articles using semantic search. Finds relevant content from uploaded PDFs in article review projects.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query to find relevant content across review articles' },
+        projectId: { type: 'string', description: 'Optional project ID to scope the search' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'getArticleComparison',
+    description: 'Get a side-by-side comparison of 2 or more review articles including scores, analysis, and research context.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        articleIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of article IDs to compare (minimum 2)',
+        },
+      },
+      required: ['articleIds'],
+    },
+  },
+  {
+    name: 'getReviewProjectSummary',
+    description: 'Get a summary of a review project including stats, synthesis themes, and ranking.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'Review project ID' },
+      },
+      required: ['projectId'],
+    },
+  },
+
   // ─── Source Retrieval ──────────────────────────────────────
   {
     name: 'searchSources',

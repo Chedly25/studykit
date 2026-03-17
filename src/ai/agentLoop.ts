@@ -49,6 +49,11 @@ import {
   searchNotes,
   findNoteConnections,
 } from './tools/researchTools'
+import {
+  searchReviewArticles,
+  getArticleComparison,
+  getReviewProjectSummary,
+} from './tools/reviewTools'
 
 const MAX_ITERATIONS = 10
 const TIMEOUT_MS = 120000
@@ -169,6 +174,12 @@ async function executeToolLocally(
       return searchNotes(examProfileId, input as { query: string })
     case 'findNoteConnections':
       return findNoteConnections(examProfileId, input as { noteId: string })
+    case 'searchReviewArticles':
+      return searchReviewArticles(examProfileId, input as { query: string; projectId?: string }, authToken)
+    case 'getArticleComparison':
+      return getArticleComparison(examProfileId, input as { articleIds: string[] })
+    case 'getReviewProjectSummary':
+      return getReviewProjectSummary(examProfileId, input as { projectId: string })
     default:
       return JSON.stringify({ error: `Unknown tool: ${toolName}` })
   }
