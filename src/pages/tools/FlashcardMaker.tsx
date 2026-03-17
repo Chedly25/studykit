@@ -1,42 +1,15 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Plus, Trash2, Download, Upload, ArrowLeft, RotateCcw, BookOpen, BarChart3 } from 'lucide-react'
+import { useState, useCallback, useRef } from 'react'
+import { Plus, Trash2, Download, Upload, ArrowLeft, RotateCcw, BookOpen, BarChart3, Loader2 } from 'lucide-react'
 import { ToolSEO } from '../../components/SEO'
 import { FormToolPage } from '../../components/FormToolPage'
 import { getToolBySlug } from '../../lib/tools'
-import { calculateSM2, getDueCards, createNewCard, type SM2Card } from '../../lib/spacedRepetition'
+import { useFlashcards } from '../../hooks/useFlashcards'
+import { useExamProfile } from '../../hooks/useExamProfile'
+import type { Flashcard } from '../../db/schema'
 
 const tool = getToolBySlug('flashcard-maker')!
 
-const STORAGE_KEY = 'studieskit-smart-flashcards'
-
-interface Deck {
-  id: string
-  name: string
-  cards: SM2Card[]
-}
-
 type Mode = 'manage' | 'study' | 'stats'
-
-function generateId(): string {
-  return crypto.randomUUID()
-}
-
-function loadDecks(): Deck[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      const parsed = JSON.parse(saved) as Deck[]
-      if (Array.isArray(parsed)) return parsed
-    }
-  } catch {
-    // ignore
-  }
-  return []
-}
-
-function saveDecks(decks: Deck[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(decks))
-}
 
 function fisherYatesShuffle<T>(arr: T[]): T[] {
   const shuffled = [...arr]
@@ -57,7 +30,14 @@ const RATING_BUTTONS = [
 ]
 
 export default function FlashcardMaker() {
-  const [decks, setDecks] = useState<Deck[]>(loadDecks)
+  const { activeProfile } = useExamProfile()
+  const {
+    decks, isLoading, getCardsForDeck, getDueCount, getStatsForDeck,
+    createDeck: hookCreateDeck, deleteDeck: hookDeleteDeck,
+    addCard: hookAddCard, removeCard: hookRemoveCard,
+    rateCard: hookRateCard, importDeck: hookImportDeck, exportDeck: hookExportDeck,
+  } = useFlashcards(activeProfile?.id)
+
   const [mode, setMode] = useState<Mode>('manage')
   const [expandedDeckId, setExpandedDeckId] = useState<string | null>(null)
   const [newDeckName, setNewDeckName] = useState('')
@@ -66,7 +46,7 @@ export default function FlashcardMaker() {
 
   // Study state
   const [studyDeckId, setStudyDeckId] = useState<string | null>(null)
-  const [studyCards, setStudyCards] = useState<SM2Card[]>([])
+  const [studyCards, setStudyCards] = useState<Flashcard[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [studyComplete, setStudyComplete] = useState(false)
@@ -77,55 +57,35 @@ export default function FlashcardMaker() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    saveDecks(decks)
-  }, [decks])
-
   // Deck management
   const createDeck = useCallback(() => {
     const trimmed = newDeckName.trim()
     if (!trimmed) return
-    setDecks(prev => [...prev, { id: generateId(), name: trimmed, cards: [] }])
+    hookCreateDeck(trimmed)
     setNewDeckName('')
-  }, [newDeckName])
+  }, [newDeckName, hookCreateDeck])
 
   const deleteDeck = useCallback((deckId: string) => {
-    setDecks(prev => prev.filter(d => d.id !== deckId))
+    hookDeleteDeck(deckId)
     if (expandedDeckId === deckId) setExpandedDeckId(null)
-  }, [expandedDeckId])
+  }, [expandedDeckId, hookDeleteDeck])
 
   const addCard = useCallback((deckId: string) => {
     const front = newCardFront.trim()
     const back = newCardBack.trim()
     if (!front || !back) return
-    const card = createNewCard(generateId(), front, back)
-    setDecks(prev =>
-      prev.map(d =>
-        d.id === deckId
-          ? { ...d, cards: [...d.cards, card] }
-          : d
-      )
-    )
+    hookAddCard(deckId, front, back)
     setNewCardFront('')
     setNewCardBack('')
-  }, [newCardFront, newCardBack])
-
-  const removeCard = useCallback((deckId: string, cardId: string) => {
-    setDecks(prev =>
-      prev.map(d =>
-        d.id === deckId
-          ? { ...d, cards: d.cards.filter(c => c.id !== cardId) }
-          : d
-      )
-    )
-  }, [])
+  }, [newCardFront, newCardBack, hookAddCard])
 
   // Study mode
   const startStudy = useCallback((deckId: string) => {
-    const deck = decks.find(d => d.id === deckId)
-    if (!deck || deck.cards.length === 0) return
-    const due = getDueCards(deck.cards)
-    const cardsToStudy = due.length > 0 ? fisherYatesShuffle(due) : fisherYatesShuffle(deck.cards)
+    const deckCards = getCardsForDeck(deckId)
+    if (deckCards.length === 0) return
+    const today = new Date().toISOString().slice(0, 10)
+    const due = deckCards.filter(c => c.nextReviewDate <= today)
+    const cardsToStudy = due.length > 0 ? fisherYatesShuffle(due) : fisherYatesShuffle(deckCards)
     setStudyDeckId(deckId)
     setStudyCards(cardsToStudy)
     setCurrentIndex(0)
@@ -133,31 +93,13 @@ export default function FlashcardMaker() {
     setStudyComplete(false)
     setSessionReviewed(0)
     setMode('study')
-  }, [decks])
+  }, [getCardsForDeck])
 
-  const rateCard = useCallback((quality: number) => {
+  const rateCard = useCallback(async (quality: number) => {
     const currentCard = studyCards[currentIndex]
     if (!currentCard) return
 
-    const result = calculateSM2(quality, currentCard)
-    const updatedCard: SM2Card = {
-      ...currentCard,
-      easeFactor: result.easeFactor,
-      interval: result.interval,
-      repetitions: result.repetitions,
-      nextReviewDate: result.nextReviewDate,
-      lastRating: quality,
-    }
-
-    // Update in decks
-    setDecks(prev =>
-      prev.map(d =>
-        d.id === studyDeckId
-          ? { ...d, cards: d.cards.map(c => c.id === updatedCard.id ? updatedCard : c) }
-          : d
-      )
-    )
-
+    await hookRateCard(currentCard.id, quality)
     setSessionReviewed(prev => prev + 1)
 
     if (currentIndex + 1 >= studyCards.length) {
@@ -166,7 +108,7 @@ export default function FlashcardMaker() {
       setCurrentIndex(prev => prev + 1)
       setFlipped(false)
     }
-  }, [studyCards, currentIndex, studyDeckId])
+  }, [studyCards, currentIndex, hookRateCard])
 
   const exitStudy = useCallback(() => {
     setMode('manage')
@@ -182,105 +124,18 @@ export default function FlashcardMaker() {
   }, [])
 
   const statsDeck = statsDeckId ? decks.find(d => d.id === statsDeckId) : null
-
-  const statsData = useMemo(() => {
-    if (!statsDeck) return null
-    const cards = statsDeck.cards
-    const today = new Date().toISOString().slice(0, 10)
-    const dueToday = cards.filter(c => c.nextReviewDate <= today).length
-    const mastered = cards.filter(c => c.repetitions >= 3 && c.easeFactor >= 2.0).length
-    const avgEase = cards.length > 0
-      ? cards.reduce((sum, c) => sum + c.easeFactor, 0) / cards.length
-      : 0
-
-    // Upcoming schedule (next 7 days)
-    const upcoming: { date: string; count: number }[] = []
-    for (let i = 0; i < 7; i++) {
-      const d = new Date()
-      d.setDate(d.getDate() + i)
-      const dateStr = d.toISOString().slice(0, 10)
-      const count = cards.filter(c => c.nextReviewDate === dateStr).length
-      upcoming.push({ date: dateStr, count })
-    }
-
-    return { dueToday, mastered, total: cards.length, avgEase, upcoming }
-  }, [statsDeck])
+  const statsData = statsDeck ? getStatsForDeck(statsDeck.id) : null
+  const statsCards = statsDeck ? getCardsForDeck(statsDeck.id) : []
 
   // Import / Export
-  const exportDeck = useCallback((deck: Deck) => {
-    const json = JSON.stringify(deck, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${deck.name.replace(/\s+/g, '-').toLowerCase()}-flashcards.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }, [])
-
   const importDeck = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      try {
-        const text = reader.result as string
-
-        // Try JSON first
-        const parsed = JSON.parse(text)
-        if (parsed.name && Array.isArray(parsed.cards)) {
-          const imported: Deck = {
-            id: generateId(),
-            name: parsed.name,
-            cards: parsed.cards.map((c: Record<string, unknown>) => {
-              if (c.easeFactor !== undefined) {
-                // SM2Card format
-                return {
-                  id: generateId(),
-                  front: String(c.front ?? ''),
-                  back: String(c.back ?? ''),
-                  easeFactor: Number(c.easeFactor) || 2.5,
-                  interval: Number(c.interval) || 0,
-                  repetitions: Number(c.repetitions) || 0,
-                  nextReviewDate: typeof c.nextReviewDate === 'string' ? c.nextReviewDate : new Date().toISOString().slice(0, 10),
-                  lastRating: Number(c.lastRating) || 0,
-                }
-              }
-              // Simple front/back format
-              return createNewCard(generateId(), String(c.front), String(c.back))
-            }),
-          }
-          setDecks(prev => [...prev, imported])
-        }
-      } catch {
-        // Try CSV: front,back per line
-        try {
-          const text = reader.result as string
-          const lines = text.trim().split('\n').filter(l => l.includes(','))
-          if (lines.length > 0) {
-            const cards = lines.map(line => {
-              const [front, ...rest] = line.split(',')
-              return createNewCard(generateId(), front.trim(), rest.join(',').trim())
-            })
-            const imported: Deck = {
-              id: generateId(),
-              name: file.name.replace(/\.[^.]+$/, ''),
-              cards,
-            }
-            setDecks(prev => [...prev, imported])
-          }
-        } catch {
-          // invalid file
-        }
-      }
-    }
-    reader.readAsText(file)
+    hookImportDeck(file)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
-  }, [])
+  }, [hookImportDeck])
 
   const studyDeck = studyDeckId ? decks.find(d => d.id === studyDeckId) : null
 
@@ -289,6 +144,12 @@ export default function FlashcardMaker() {
       <ToolSEO title={tool.seoTitle} description={tool.seoDescription} slug={tool.slug} keywords={tool.keywords} />
       <FormToolPage toolId={tool.id} title={tool.name} description={tool.description}>
 
+        {isLoading ? (
+          <div className="glass-card p-8 flex items-center justify-center">
+            <Loader2 size={24} className="animate-spin text-[var(--text-muted)]" />
+          </div>
+        ) : (
+        <>
         {/* ─── MANAGE MODE ─── */}
         {mode === 'manage' && (
           <div className="space-y-6">
@@ -337,7 +198,8 @@ export default function FlashcardMaker() {
             ) : (
               <div className="space-y-3">
                 {decks.map(deck => {
-                  const dueCount = getDueCards(deck.cards).length
+                  const deckCards = getCardsForDeck(deck.id)
+                  const dueCount = getDueCount(deck.id)
                   return (
                     <div key={deck.id} className="glass-card overflow-hidden">
                       {/* Deck header */}
@@ -350,7 +212,7 @@ export default function FlashcardMaker() {
                             {deck.name}
                           </h3>
                           <p className="text-[var(--text-muted)] text-sm">
-                            {deck.cards.length} card{deck.cards.length !== 1 ? 's' : ''}
+                            {deckCards.length} card{deckCards.length !== 1 ? 's' : ''}
                             {dueCount > 0 && (
                               <span className="ml-2 text-[var(--accent-text)] font-medium">
                                 {dueCount} due
@@ -367,7 +229,7 @@ export default function FlashcardMaker() {
                             <BarChart3 size={16} />
                           </button>
                           <button
-                            onClick={() => exportDeck(deck)}
+                            onClick={() => hookExportDeck(deck.id)}
                             className="p-2 text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
                             aria-label="Export deck"
                           >
@@ -375,7 +237,7 @@ export default function FlashcardMaker() {
                           </button>
                           <button
                             onClick={() => startStudy(deck.id)}
-                            disabled={deck.cards.length === 0}
+                            disabled={deckCards.length === 0}
                             className="btn-primary text-sm px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             Study{dueCount > 0 ? ` (${dueCount})` : ''}
@@ -393,7 +255,7 @@ export default function FlashcardMaker() {
                       {/* Expanded: cards */}
                       {expandedDeckId === deck.id && (
                         <div className="border-t border-[var(--border-card)] p-4 space-y-3">
-                          {deck.cards.map(card => (
+                          {deckCards.map(card => (
                             <div
                               key={card.id}
                               className="flex items-start gap-3 p-3 rounded-lg bg-[var(--bg-input)]"
@@ -411,7 +273,7 @@ export default function FlashcardMaker() {
                               <div className="text-right shrink-0">
                                 <p className="text-[var(--text-faint)] text-[10px]">EF {card.easeFactor.toFixed(1)}</p>
                                 <button
-                                  onClick={() => removeCard(deck.id, card.id)}
+                                  onClick={() => hookRemoveCard(card.id)}
                                   className="p-1.5 text-[var(--text-muted)] hover:text-red-400 transition-colors"
                                   aria-label="Remove card"
                                 >
@@ -629,13 +491,13 @@ export default function FlashcardMaker() {
             </div>
 
             {/* Ease factor distribution */}
-            {statsDeck.cards.length > 0 && (
+            {statsCards.length > 0 && (
               <div className="glass-card p-4">
                 <h3 className="font-[family-name:var(--font-display)] text-sm font-semibold text-[var(--text-body)] uppercase tracking-wider mb-3">
                   Ease Factor Distribution
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {statsDeck.cards.map(card => (
+                  {statsCards.map(card => (
                     <div
                       key={card.id}
                       className={`w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-mono font-bold ${
@@ -656,6 +518,8 @@ export default function FlashcardMaker() {
               </div>
             )}
           </div>
+        )}
+        </>
         )}
 
       </FormToolPage>

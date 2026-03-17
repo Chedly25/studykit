@@ -64,14 +64,17 @@ async function migrateFlashcards(): Promise<void> {
   const legacyDecks = loadFromStorage<LegacyDeck[]>('studieskit-smart-flashcards', [])
   if (legacyDecks.length === 0) return
 
-  // Check if already migrated (idempotent)
-  const existing = await db.flashcardDecks.count()
-  if (existing > 0) return
+  // Check each legacy deck individually — skip those already in DB
+  const existingIds = new Set(
+    (await db.flashcardDecks.where('id').anyOf(legacyDecks.map(d => d.id)).primaryKeys())
+  )
 
   const decks: FlashcardDeck[] = []
   const cards: Flashcard[] = []
 
   for (const ld of legacyDecks) {
+    if (existingIds.has(ld.id)) continue
+
     decks.push({
       id: ld.id,
       name: ld.name,
@@ -94,8 +97,12 @@ async function migrateFlashcards(): Promise<void> {
     }
   }
 
-  await db.flashcardDecks.bulkPut(decks)
-  await db.flashcards.bulkPut(cards)
+  if (decks.length > 0) {
+    await db.flashcardDecks.bulkPut(decks)
+    await db.flashcards.bulkPut(cards)
+  }
+
+  localStorage.removeItem('studieskit-smart-flashcards')
 }
 
 async function migrateAssignments(): Promise<void> {
