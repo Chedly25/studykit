@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react'
@@ -6,6 +6,7 @@ import {
   Menu, X, LayoutDashboard, BarChart3, Focus, MessageCircle,
   FileText, PenTool, BookOpen, Users, Shield, FileSearch,
   Brain, ClipboardCheck, Lightbulb, Calendar, StickyNote, GraduationCap,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
@@ -19,7 +20,10 @@ import { useProfileMode } from '../hooks/useProfileMode'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false) // mobile drawer
+  const [sidebarPinned, setSidebarPinned] = useState(false) // desktop pin
+  const [sidebarHovered, setSidebarHovered] = useState(false) // desktop hover
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { user } = useUser()
   const { isPro } = useSubscription()
   const { activeProfile } = useExamProfile()
@@ -28,19 +32,46 @@ export function Layout() {
   const location = useLocation()
   const isChatPage = location.pathname === '/chat'
 
+  const sidebarExpanded = sidebarPinned || sidebarHovered
+  const collapsed = !sidebarExpanded
+
   const closeSidebar = () => setSidebarOpen(false)
+
+  // Auto-collapse on route change
+  useEffect(() => {
+    setSidebarHovered(false)
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
+  }, [location.pathname])
+
+  // Auto-collapse when chat opens
+  useEffect(() => {
+    if (chatOpen) {
+      setSidebarPinned(false)
+      setSidebarHovered(false)
+    }
+  }, [chatOpen])
+
+  const handleMouseEnter = useCallback(() => {
+    if (sidebarPinned) return
+    hoverTimeout.current = setTimeout(() => setSidebarHovered(true), 200)
+  }, [sidebarPinned])
+
+  const handleMouseLeave = useCallback(() => {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
+    if (!sidebarPinned) setSidebarHovered(false)
+  }, [sidebarPinned])
 
   return (
     <div className="min-h-screen flex flex-col">
       {/* ─── Header ─────────────────────────────────────────── */}
       <header className="border-b border-[var(--border-header)] backdrop-blur-md bg-[var(--bg-header)] sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          {/* Left: menu toggle + logo */}
+          {/* Left: menu toggle (mobile only) + logo */}
           <div className="flex items-center gap-2">
             <SignedIn>
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
+                className="md:hidden p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
                 aria-label="Toggle navigation"
               >
                 {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
@@ -95,90 +126,161 @@ export function Layout() {
         </div>
       </header>
 
-      {/* ─── Left Sidebar Overlay ───────────────────────────── */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={closeSidebar}
-          />
-
-          {/* Drawer */}
-          <aside className="relative w-72 max-w-[80vw] bg-[var(--bg-card)] border-r border-[var(--border-card)] flex flex-col h-full overflow-y-auto animate-fade-in">
-            {/* Sidebar header */}
-            <div className="flex items-center justify-between px-5 h-14 border-b border-[var(--border-card)]">
-              <Link to="/" onClick={closeSidebar} className="flex items-center gap-2">
-                <img src="/favicon-48x48.png" alt="" className="w-7 h-7 rounded-lg" />
-                <span className="font-[family-name:var(--font-display)] font-bold text-lg text-[var(--text-heading)]">
-                  StudiesKit
-                </span>
-              </Link>
+      <div className="flex flex-1">
+        {/* ─── Desktop Sidebar Rail ───────────────────────────── */}
+        <SignedIn>
+          <aside
+            className={`hidden md:flex flex-col flex-shrink-0 bg-[var(--bg-card)] border-r border-[var(--border-card)] h-[calc(100vh-3.5rem)] sticky top-14 overflow-y-auto overflow-x-hidden transition-[width] duration-200 ease-in-out z-30 ${
+              sidebarExpanded ? 'w-60' : 'w-[60px]'
+            }`}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            {/* Pin/unpin button */}
+            <div className={`flex items-center h-10 px-2 ${sidebarExpanded ? 'justify-end' : 'justify-center'}`}>
               <button
-                onClick={closeSidebar}
+                onClick={() => setSidebarPinned(!sidebarPinned)}
                 className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
+                title={sidebarPinned ? 'Collapse sidebar' : 'Pin sidebar'}
               >
-                <X size={18} />
+                {sidebarPinned ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
               </button>
             </div>
 
             {/* Nav links */}
-            <nav className="flex-1 px-3 py-4 space-y-6">
-              {/* Navigation */}
-              <SidebarSection label={t('nav.navigation', 'Navigation')}>
-                <SidebarLink to="/dashboard" icon={LayoutDashboard} label={t('nav.dashboard')} active={location.pathname === '/dashboard'} onClick={closeSidebar} />
-                <SidebarLink to="/exam-profile" icon={GraduationCap} label={t('nav.projects', 'Projects')} active={location.pathname === '/exam-profile'} onClick={closeSidebar} />
+            <nav className="flex-1 px-2 py-2 space-y-4">
+              <SidebarSection label={t('nav.navigation', 'Navigation')} collapsed={collapsed}>
+                <SidebarLink to="/dashboard" icon={LayoutDashboard} label={t('nav.dashboard')} active={location.pathname === '/dashboard'} collapsed={collapsed} />
+                <SidebarLink to="/exam-profile" icon={GraduationCap} label={t('nav.projects', 'Projects')} active={location.pathname === '/exam-profile'} collapsed={collapsed} />
                 {isResearch ? (
                   <>
-                    <SidebarLink to="/writing" icon={PenTool} label={t('research.writingSession')} active={location.pathname === '/writing'} onClick={closeSidebar} />
-                    <SidebarLink to="/sources" icon={BookOpen} label={t('research.literature')} active={location.pathname === '/sources'} onClick={closeSidebar} />
-                    <SidebarLink to="/notes" icon={StickyNote} label={t('research.notes')} active={location.pathname === '/notes'} onClick={closeSidebar} />
-                    <SidebarLink to="/meetings" icon={Users} label={t('research.meetings')} active={location.pathname === '/meetings'} onClick={closeSidebar} />
+                    <SidebarLink to="/writing" icon={PenTool} label={t('research.writingSession')} active={location.pathname === '/writing'} collapsed={collapsed} />
+                    <SidebarLink to="/sources" icon={BookOpen} label={t('research.literature')} active={location.pathname === '/sources'} collapsed={collapsed} />
+                    <SidebarLink to="/notes" icon={StickyNote} label={t('research.notes')} active={location.pathname === '/notes'} collapsed={collapsed} />
+                    <SidebarLink to="/meetings" icon={Users} label={t('research.meetings')} active={location.pathname === '/meetings'} collapsed={collapsed} />
                   </>
                 ) : (
                   <>
-                    <SidebarLink to="/focus" icon={Focus} label={t('focus.title', 'Focus')} active={location.pathname === '/focus'} onClick={closeSidebar} />
-                    <SidebarLink to="/analytics" icon={BarChart3} label={t('nav.analytics')} active={location.pathname === '/analytics'} onClick={closeSidebar} />
-                    <SidebarLink to="/sources" icon={FileText} label={t('sources.title', 'Sources')} active={location.pathname === '/sources'} onClick={closeSidebar} />
+                    <SidebarLink to="/focus" icon={Focus} label={t('focus.title', 'Focus')} active={location.pathname === '/focus'} collapsed={collapsed} />
+                    <SidebarLink to="/analytics" icon={BarChart3} label={t('nav.analytics')} active={location.pathname === '/analytics'} collapsed={collapsed} />
+                    <SidebarLink to="/sources" icon={FileText} label={t('sources.title', 'Sources')} active={location.pathname === '/sources'} collapsed={collapsed} />
                   </>
                 )}
-                <SidebarLink to="/article-review" icon={FileSearch} label="Article Review" active={location.pathname === '/article-review'} onClick={closeSidebar} pro />
+                <SidebarLink to="/article-review" icon={FileSearch} label="Article Review" active={location.pathname === '/article-review'} collapsed={collapsed} pro />
               </SidebarSection>
 
-              {/* AI Features */}
-              <SidebarSection label={t('nav.aiFeatures', 'AI Features')}>
-                <SidebarLink to="/chat" icon={MessageCircle} label={isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')} active={location.pathname === '/chat'} onClick={closeSidebar} pro />
+              <SidebarSection label={t('nav.aiFeatures', 'AI Features')} collapsed={collapsed}>
+                <SidebarLink to="/chat" icon={MessageCircle} label={isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')} active={location.pathname === '/chat'} collapsed={collapsed} pro />
                 {!isResearch && (
                   <>
-                    <SidebarLink to="/socratic" icon={Brain} label={t('ai.socratic', 'Socratic Mode')} active={location.pathname === '/socratic'} onClick={closeSidebar} pro />
-                    <SidebarLink to="/practice-exam" icon={ClipboardCheck} label={t('ai.practiceSession', 'Practice Exam')} active={location.pathname === '/practice-exam'} onClick={closeSidebar} pro />
-                    <SidebarLink to="/explain-back" icon={Lightbulb} label={t('ai.explainBack', 'Explain Back')} active={location.pathname === '/explain-back'} onClick={closeSidebar} pro />
+                    <SidebarLink to="/socratic" icon={Brain} label={t('ai.socratic', 'Socratic Mode')} active={location.pathname === '/socratic'} collapsed={collapsed} pro />
+                    <SidebarLink to="/practice-exam" icon={ClipboardCheck} label={t('ai.practiceSession', 'Practice Exam')} active={location.pathname === '/practice-exam'} collapsed={collapsed} pro />
+                    <SidebarLink to="/explain-back" icon={Lightbulb} label={t('ai.explainBack', 'Explain Back')} active={location.pathname === '/explain-back'} collapsed={collapsed} pro />
                   </>
                 )}
-                <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} onClick={closeSidebar} pro />
+                <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} collapsed={collapsed} pro />
               </SidebarSection>
             </nav>
 
             {/* Sidebar footer — admin only */}
             {user?.primaryEmailAddress?.emailAddress === 'chedlyboukhris21@gmail.com' && (
-              <div className="px-4 py-4 border-t border-[var(--border-card)]">
+              <div className={`px-2 py-3 border-t border-[var(--border-card)] ${collapsed ? 'flex justify-center' : ''}`}>
                 <Link
                   to="/admin"
-                  onClick={closeSidebar}
                   className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
+                  title={collapsed ? 'Admin' : undefined}
                 >
-                  <Shield size={14} /> Admin
+                  <Shield size={collapsed ? 20 : 14} />
+                  {!collapsed && 'Admin'}
                 </Link>
               </div>
             )}
           </aside>
-        </div>
-      )}
+        </SignedIn>
 
-      {/* ─── Main content ───────────────────────────────────── */}
-      <main className={isChatPage ? 'flex-1 w-full' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full'}>
-        <Outlet />
-      </main>
+        {/* ─── Mobile Sidebar Overlay ───────────────────────────── */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-50 flex md:hidden">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={closeSidebar}
+            />
+
+            {/* Drawer */}
+            <aside className="relative w-72 max-w-[80vw] bg-[var(--bg-card)] border-r border-[var(--border-card)] flex flex-col h-full overflow-y-auto animate-fade-in">
+              {/* Sidebar header */}
+              <div className="flex items-center justify-between px-5 h-14 border-b border-[var(--border-card)]">
+                <Link to="/" onClick={closeSidebar} className="flex items-center gap-2">
+                  <img src="/favicon-48x48.png" alt="" className="w-7 h-7 rounded-lg" />
+                  <span className="font-[family-name:var(--font-display)] font-bold text-lg text-[var(--text-heading)]">
+                    StudiesKit
+                  </span>
+                </Link>
+                <button
+                  onClick={closeSidebar}
+                  className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Nav links */}
+              <nav className="flex-1 px-3 py-4 space-y-6">
+                <SidebarSection label={t('nav.navigation', 'Navigation')} collapsed={false}>
+                  <SidebarLink to="/dashboard" icon={LayoutDashboard} label={t('nav.dashboard')} active={location.pathname === '/dashboard'} onClick={closeSidebar} collapsed={false} />
+                  <SidebarLink to="/exam-profile" icon={GraduationCap} label={t('nav.projects', 'Projects')} active={location.pathname === '/exam-profile'} onClick={closeSidebar} collapsed={false} />
+                  {isResearch ? (
+                    <>
+                      <SidebarLink to="/writing" icon={PenTool} label={t('research.writingSession')} active={location.pathname === '/writing'} onClick={closeSidebar} collapsed={false} />
+                      <SidebarLink to="/sources" icon={BookOpen} label={t('research.literature')} active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
+                      <SidebarLink to="/notes" icon={StickyNote} label={t('research.notes')} active={location.pathname === '/notes'} onClick={closeSidebar} collapsed={false} />
+                      <SidebarLink to="/meetings" icon={Users} label={t('research.meetings')} active={location.pathname === '/meetings'} onClick={closeSidebar} collapsed={false} />
+                    </>
+                  ) : (
+                    <>
+                      <SidebarLink to="/focus" icon={Focus} label={t('focus.title', 'Focus')} active={location.pathname === '/focus'} onClick={closeSidebar} collapsed={false} />
+                      <SidebarLink to="/analytics" icon={BarChart3} label={t('nav.analytics')} active={location.pathname === '/analytics'} onClick={closeSidebar} collapsed={false} />
+                      <SidebarLink to="/sources" icon={FileText} label={t('sources.title', 'Sources')} active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
+                    </>
+                  )}
+                  <SidebarLink to="/article-review" icon={FileSearch} label="Article Review" active={location.pathname === '/article-review'} onClick={closeSidebar} collapsed={false} pro />
+                </SidebarSection>
+
+                <SidebarSection label={t('nav.aiFeatures', 'AI Features')} collapsed={false}>
+                  <SidebarLink to="/chat" icon={MessageCircle} label={isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')} active={location.pathname === '/chat'} onClick={closeSidebar} collapsed={false} pro />
+                  {!isResearch && (
+                    <>
+                      <SidebarLink to="/socratic" icon={Brain} label={t('ai.socratic', 'Socratic Mode')} active={location.pathname === '/socratic'} onClick={closeSidebar} collapsed={false} pro />
+                      <SidebarLink to="/practice-exam" icon={ClipboardCheck} label={t('ai.practiceSession', 'Practice Exam')} active={location.pathname === '/practice-exam'} onClick={closeSidebar} collapsed={false} pro />
+                      <SidebarLink to="/explain-back" icon={Lightbulb} label={t('ai.explainBack', 'Explain Back')} active={location.pathname === '/explain-back'} onClick={closeSidebar} collapsed={false} pro />
+                    </>
+                  )}
+                  <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} onClick={closeSidebar} collapsed={false} pro />
+                </SidebarSection>
+              </nav>
+
+              {/* Sidebar footer — admin only */}
+              {user?.primaryEmailAddress?.emailAddress === 'chedlyboukhris21@gmail.com' && (
+                <div className="px-4 py-4 border-t border-[var(--border-card)]">
+                  <Link
+                    to="/admin"
+                    onClick={closeSidebar}
+                    className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
+                  >
+                    <Shield size={14} /> Admin
+                  </Link>
+                </div>
+              )}
+            </aside>
+          </div>
+        )}
+
+        {/* ─── Main content ───────────────────────────────────── */}
+        <main className={isChatPage ? 'flex-1 w-full min-w-0' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0'}>
+          <Outlet />
+        </main>
+      </div>
 
       {!isChatPage && (
         <footer className="border-t border-[var(--border-header)] py-8">
@@ -210,7 +312,14 @@ export function Layout() {
 
 // ─── Sidebar sub-components ─────────────────────────────────────
 
-function SidebarSection({ label, children }: { label: string; children: React.ReactNode }) {
+function SidebarSection({ label, children, collapsed }: { label: string; children: React.ReactNode; collapsed: boolean }) {
+  if (collapsed) {
+    return (
+      <div className="space-y-0.5">
+        {children}
+      </div>
+    )
+  }
   return (
     <div>
       <span className="px-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
@@ -224,15 +333,33 @@ function SidebarSection({ label, children }: { label: string; children: React.Re
 }
 
 function SidebarLink({
-  to, icon: Icon, label, active, onClick, pro,
+  to, icon: Icon, label, active, onClick, pro, collapsed,
 }: {
   to: string
   icon: React.ComponentType<{ size?: number }>
   label: string
   active: boolean
-  onClick: () => void
+  onClick?: () => void
   pro?: boolean
+  collapsed: boolean
 }) {
+  if (collapsed) {
+    return (
+      <Link
+        to={to}
+        onClick={onClick}
+        className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors ${
+          active
+            ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+            : 'text-[var(--text-body)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)]'
+        }`}
+        title={label}
+      >
+        <Icon size={20} />
+      </Link>
+    )
+  }
+
   return (
     <Link
       to={to}
@@ -244,7 +371,7 @@ function SidebarLink({
       }`}
     >
       <Icon size={16} />
-      <span className="flex-1">{label}</span>
+      <span className="flex-1 truncate">{label}</span>
       {pro && <ProBadge />}
     </Link>
   )

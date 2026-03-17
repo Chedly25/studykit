@@ -1,16 +1,105 @@
+import { useMemo } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useAnalytics } from '../hooks/useAnalytics'
+import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
+import { useProfileMode } from '../hooks/useProfileMode'
+import { useProactiveInsights } from '../hooks/useProactiveInsights'
+import { useSessionInsights } from '../hooks/useSessionInsights'
+import { useSourceCoverage } from '../hooks/useSourceCoverage'
+import { useStudentModel } from '../hooks/useStudentModel'
 import { BarChart3 } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 import { CalibrationChart } from '../components/analytics/CalibrationChart'
 import { ErrorPatternChart } from '../components/analytics/ErrorPatternChart'
 import { computeCalibrationData } from '../lib/calibration'
 import { computeErrorPatterns } from '../lib/errorPatterns'
+import { computeDailyRecommendations } from '../lib/studyRecommender'
+import { db } from '../db'
+import type { StudySession } from '../db/schema'
+
+// Relocated dashboard cards
+import { StudyStreakCard } from '../components/dashboard/StudyStreakCard'
+import { InsightCard } from '../components/dashboard/InsightCard'
+import { IntelligenceBriefCard } from '../components/dashboard/IntelligenceBriefCard'
+import { SessionInsightsCard } from '../components/dashboard/SessionInsightsCard'
+import { LandscapeCard } from '../components/dashboard/LandscapeCard'
+import { ResearchThreadsCard } from '../components/dashboard/ResearchThreadsCard'
+import { WeakTopicsCard } from '../components/dashboard/WeakTopicsCard'
+import { ActivityFeed } from '../components/dashboard/ActivityFeed'
+import { TopicTree } from '../components/knowledge/TopicTree'
 
 export default function Analytics() {
   const { t, i18n } = useTranslation()
   const { activeProfile } = useExamProfile()
-  const { weeklyHours, sessionDistribution, subjectBalance, scoreTrend, topics, subjects, questionResults } = useAnalytics(activeProfile?.id)
+  const { isResearch } = useProfileMode()
+  const profileId = activeProfile?.id
+  const { weeklyHours, sessionDistribution, subjectBalance, scoreTrend, topics, subjects, questionResults } = useAnalytics(profileId)
+  const {
+    subjects: kgSubjects, topics: kgTopics, weakTopics, streak, freezeUsed,
+    weeklyHours: kgWeeklyHours, getTopicsForSubject, dailyLogs,
+  } = useKnowledgeGraph(profileId)
+  const insights = useProactiveInsights(profileId)
+  const { recentInsights: sessionInsights } = useSessionInsights(profileId)
+  const { coverage: sourceCoverage } = useSourceCoverage(profileId)
+  const { studentModel } = useStudentModel(profileId)
+
+  const sessions = useLiveQuery(
+    () => profileId
+      ? db.studySessions.where('examProfileId').equals(profileId).toArray()
+      : Promise.resolve([] as StudySession[]),
+    [profileId]
+  ) ?? []
+
+  const dueFlashcards = useLiveQuery(
+    () => {
+      const today = new Date().toISOString().slice(0, 10)
+      return db.flashcards.where('nextReviewDate').belowOrEqual(today).count()
+    }
+  ) ?? 0
+
+  const dueFlashcardsByTopic = useLiveQuery(async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    const dueCards = await db.flashcards.where('nextReviewDate').belowOrEqual(today).toArray()
+    const map = new Map<string, number>()
+    for (const card of dueCards) {
+      if (card.topicId) {
+        map.set(card.topicId, (map.get(card.topicId) ?? 0) + 1)
+      }
+    }
+    return map
+  }) ?? new Map()
+
+  const recommendations = useMemo(() => {
+    if (!activeProfile || kgTopics.length === 0) return []
+    const daysUntilExam = activeProfile.examDate
+      ? Math.max(0, Math.ceil((new Date(activeProfile.examDate).getTime() - Date.now()) / 86400000))
+      : 30
+
+    let commonMistakes: string[] | undefined
+    if (studentModel?.commonMistakes) {
+      try { commonMistakes = JSON.parse(studentModel.commonMistakes) } catch { /* ignore */ }
+    }
+
+    const prerequisiteGraph = new Map<string, string[]>()
+    const topicMasteryMap = new Map<string, number>()
+    for (const t of kgTopics) {
+      topicMasteryMap.set(t.id, t.mastery)
+      if (t.prerequisiteTopicIds && t.prerequisiteTopicIds.length > 0) {
+        prerequisiteGraph.set(t.id, t.prerequisiteTopicIds)
+      }
+    }
+
+    return computeDailyRecommendations({
+      topics: kgTopics,
+      subjects: kgSubjects,
+      daysUntilExam,
+      dueFlashcardsByTopic,
+      commonMistakes,
+      prerequisiteGraph: prerequisiteGraph.size > 0 ? prerequisiteGraph : undefined,
+      topicMasteryMap,
+    })
+  }, [activeProfile, kgTopics, kgSubjects, dueFlashcardsByTopic, studentModel])
 
   if (!activeProfile) {
     return (
@@ -28,10 +117,17 @@ export default function Analytics() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-6">{t('analytics.title')}</h1>
+      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-2">{t('analytics.title')}</h1>
 
-      {/* Study Hours Chart */}
-      <div className="glass-card p-4 mb-4">
+      {/* Section navigation */}
+      <nav className="flex gap-3 mb-6 text-sm overflow-x-auto pb-1">
+        <a href="#study-hours" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.studyTime')}</a>
+        <a href="#insights" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.insights', 'Insights')}</a>
+        <a href="#knowledge" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.knowledgeMap', 'Knowledge Map')}</a>
+      </nav>
+
+      {/* ─── Study Hours ─── */}
+      <div id="study-hours" className="glass-card p-4 mb-4">
         <h2 className="font-semibold text-[var(--text-heading)] mb-4 flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-[var(--accent-text)]" /> {t('analytics.studyTime')}
         </h2>
@@ -131,6 +227,75 @@ export default function Analytics() {
           <ErrorPatternChart data={errorPatterns} />
         </div>
       </div>
+
+      {/* ─── Insights ─── */}
+      <h2 id="insights" className="text-lg font-bold text-[var(--text-heading)] mt-8 mb-4">
+        {t('analytics.insights', 'Insights')}
+      </h2>
+
+      <StudyStreakCard
+        streak={streak}
+        weeklyHours={kgWeeklyHours}
+        weeklyTarget={activeProfile.weeklyTargetHours}
+        freezeUsed={freezeUsed}
+        dailyLogs={dailyLogs}
+      />
+
+      <div className="mt-4">
+        <InsightCard insights={insights} />
+      </div>
+
+      <div className="mt-4">
+        <IntelligenceBriefCard
+          recommendations={recommendations}
+          insights={insights}
+          dueFlashcardCount={dueFlashcards}
+        />
+      </div>
+
+      {sessionInsights.length > 0 && (
+        <div className="mt-4">
+          <SessionInsightsCard insights={sessionInsights} />
+        </div>
+      )}
+
+      {/* ─── Knowledge Map ─── */}
+      <h2 id="knowledge" className="text-lg font-bold text-[var(--text-heading)] mt-8 mb-4">
+        {t('analytics.knowledgeMap', 'Knowledge Map')}
+      </h2>
+
+      {isResearch ? (
+        <ResearchThreadsCard topics={weakTopics.length > 0 ? weakTopics : kgTopics} subjects={kgSubjects} />
+      ) : (
+        <LandscapeCard topics={kgTopics} subjects={kgSubjects} />
+      )}
+
+      {!isResearch && weakTopics.length > 0 && (
+        <div className="mt-4">
+          <WeakTopicsCard topics={weakTopics} subjects={kgSubjects} />
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <ActivityFeed sessions={sessions} />
+        <div className="glass-card p-4">
+          <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('dashboard.knowledgeGraph')}</h3>
+          <TopicTree subjects={kgSubjects} getTopicsForSubject={getTopicsForSubject} showStatus={isResearch} />
+        </div>
+      </div>
+
+      {sourceCoverage && sourceCoverage.totalTopics > 0 && (
+        <div className="glass-card p-3 mt-4 flex items-center justify-between">
+          <span className="text-sm text-[var(--text-body)]">
+            <Trans
+              i18nKey="dashboard.sourceCoverage"
+              values={{ percent: sourceCoverage.coveragePercent }}
+              components={{ 1: <strong /> }}
+            />
+          </span>
+          <a href="/sources" className="text-xs text-[var(--accent-text)] hover:underline">{t('dashboard.viewSources')}</a>
+        </div>
+      )}
     </div>
   )
 }

@@ -135,6 +135,16 @@
     "misconceptions": "Misconceptions",
     "openQuestions": "Open Questions",
     "breakthroughs": "Breakthroughs",
+    "yourFocus": "Your focus",
+    "upNext": "Up next",
+    "startSession": "Start",
+    "allCaughtUp": "You're all caught up!",
+    "allCaughtUpDesc": "Great work. Here are some things you can explore:",
+    "flashcardsDueAlso": "Also: {{count}} flashcards due",
+    "ready": "ready",
+    "quickAccess": {
+      "flashcards": "Flashcards"
+    },
     "quickActions": {
       "aiTutor": "AI Advisor",
       "aiTutorDesc": "Ask questions, explore options",
@@ -424,7 +434,9 @@
     "totalHours": "Total Hours",
     "totalQuestions": "Total Questions",
     "averageAccuracy": "Average Accuracy",
-    "studySessions": "Study Sessions"
+    "studySessions": "Study Sessions",
+    "insights": "Insights",
+    "knowledgeMap": "Knowledge Map"
   },
   "focus": {
     "title": "Focus Mode",
