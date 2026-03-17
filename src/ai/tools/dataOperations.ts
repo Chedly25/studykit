@@ -4,6 +4,7 @@
 import { db } from '../../db'
 import type { FlashcardDeck, Flashcard, Assignment, QuestionResult, DailyStudyLog, Topic } from '../../db/schema'
 import { computeDailyRecommendations } from '../../lib/studyRecommender'
+import { recomputeTopicMastery, advanceTopicSRS } from '../../lib/topicMastery'
 
 export async function logQuestionResult(
   examProfileId: string,
@@ -41,21 +42,19 @@ export async function logQuestionResult(
   }
   await db.questionResults.put(result)
 
-  // Update topic stats
+  // Update topic question stats
   const newAttempted = topic.questionsAttempted + 1
   const newCorrect = topic.questionsCorrect + (input.isCorrect ? 1 : 0)
-  const newMastery = newAttempted > 0 ? newCorrect / newAttempted * 0.6 + topic.confidence * 0.4 : 0
 
   await db.topics.update(topic.id, {
     questionsAttempted: newAttempted,
     questionsCorrect: newCorrect,
-    mastery: Math.max(0, Math.min(1, newMastery)),
   })
 
-  // Update subject mastery
-  const subjectTopics = await db.topics.where('subjectId').equals(topic.subjectId).toArray()
-  const avgMastery = subjectTopics.reduce((s, t) => s + t.mastery, 0) / subjectTopics.length
-  await db.subjects.update(topic.subjectId, { mastery: avgMastery })
+  // Recompute mastery using full 4-factor formula (also updates subject mastery)
+  await recomputeTopicMastery(topic.id)
+  // Advance topic SRS: quality 4 for correct, 1 for incorrect
+  await advanceTopicSRS(topic.id, input.isCorrect ? 4 : 1)
 
   // Update daily log
   const today = new Date().toISOString().slice(0, 10)
@@ -79,9 +78,11 @@ export async function logQuestionResult(
     await db.dailyStudyLogs.put(log)
   }
 
+  // Read back recomputed mastery for the response
+  const updatedTopic = await db.topics.get(topic.id)
   return JSON.stringify({
     success: true,
-    topicMastery: Math.round(newMastery * 100),
+    topicMastery: Math.round((updatedTopic?.mastery ?? 0) * 100),
     questionsAttempted: newAttempted,
     questionsCorrect: newCorrect,
   })

@@ -13,6 +13,7 @@ import { useSourceCoverage } from '../hooks/useSourceCoverage'
 import { useProfileMode } from '../hooks/useProfileMode'
 import { useMilestones } from '../hooks/useMilestones'
 import { useHabitGoals } from '../hooks/useHabitGoals'
+import { useStudentModel } from '../hooks/useStudentModel'
 import { ReadinessGauge } from '../components/dashboard/ReadinessGauge'
 import { ExamCountdownCard } from '../components/dashboard/ExamCountdownCard'
 import { StudyStreakCard } from '../components/dashboard/StudyStreakCard'
@@ -38,6 +39,7 @@ export default function Dashboard() {
   const { milestones, doneCount, daysUntilNext, addMilestone, updateMilestone } = useMilestones(profileId)
   const { goals: habitGoals, getTodayProgress, addGoal: addHabitGoal, logProgress: logHabitProgress, deleteGoal: deleteHabitGoal } = useHabitGoals(profileId)
   const { subjects, topics, readiness, weakTopics, streak, weeklyHours, getTopicsForSubject } = useKnowledgeGraph(profileId)
+  const { studentModel } = useStudentModel(profileId)
   const insights = useProactiveInsights(profileId)
   const { recentInsights: sessionInsights } = useSessionInsights(profileId)
   const { coverage: sourceCoverage } = useSourceCoverage(profileId)
@@ -68,18 +70,57 @@ export default function Dashboard() {
     return map
   }) ?? new Map()
 
+  // Load today's study plan activities for recommender plan awareness
+  const todayPlanActivities = useLiveQuery(async () => {
+    if (!profileId) return undefined
+    const activePlan = await db.studyPlans
+      .where('examProfileId').equals(profileId)
+      .filter(p => p.isActive)
+      .first()
+    if (!activePlan) return undefined
+    const today = new Date().toISOString().slice(0, 10)
+    const planDayId = `${activePlan.id}:${today}`
+    const planDay = await db.studyPlanDays.get(planDayId)
+    if (!planDay) return undefined
+    try {
+      const activities = JSON.parse(planDay.activities) as Array<{ topicName: string; completed?: boolean }>
+      return activities.map(a => ({ topicName: a.topicName, completed: a.completed ?? false }))
+    } catch { return undefined }
+  }, [profileId])
+
   const recommendations = useMemo(() => {
     if (!activeProfile || topics.length === 0) return []
     const daysUntilExam = activeProfile.examDate
       ? Math.max(0, Math.ceil((new Date(activeProfile.examDate).getTime() - Date.now()) / 86400000))
       : 30 // Default urgency for no-deadline profiles
+
+    // Parse student model common mistakes
+    let commonMistakes: string[] | undefined
+    if (studentModel?.commonMistakes) {
+      try { commonMistakes = JSON.parse(studentModel.commonMistakes) } catch { /* ignore */ }
+    }
+
+    // Build prerequisite graph and mastery map from topics
+    const prerequisiteGraph = new Map<string, string[]>()
+    const topicMasteryMap = new Map<string, number>()
+    for (const t of topics) {
+      topicMasteryMap.set(t.id, t.mastery)
+      if (t.prerequisiteTopicIds && t.prerequisiteTopicIds.length > 0) {
+        prerequisiteGraph.set(t.id, t.prerequisiteTopicIds)
+      }
+    }
+
     return computeDailyRecommendations({
       topics,
       subjects,
       daysUntilExam,
       dueFlashcardsByTopic,
+      todayPlanActivities: todayPlanActivities ?? undefined,
+      commonMistakes,
+      prerequisiteGraph: prerequisiteGraph.size > 0 ? prerequisiteGraph : undefined,
+      topicMasteryMap,
     })
-  }, [activeProfile, topics, subjects, dueFlashcardsByTopic])
+  }, [activeProfile, topics, subjects, dueFlashcardsByTopic, todayPlanActivities, studentModel])
 
   const documentsCount = useLiveQuery(
     () => profileId

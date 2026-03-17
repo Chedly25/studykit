@@ -9,6 +9,7 @@ import { useExamProfile } from '../../hooks/useExamProfile'
 import { streamChat } from '../../ai/client'
 import { db } from '../../db'
 import type { Flashcard } from '../../db/schema'
+import { recordStudyActivity } from '../../lib/studyActivity'
 
 const tool = getToolBySlug('flashcard-maker')!
 
@@ -66,6 +67,7 @@ export default function FlashcardMaker() {
   const [aiDeckId, setAiDeckId] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const studyStartTimeRef = useRef<number>(0)
 
   // Deck management
   const createDeck = useCallback(() => {
@@ -102,8 +104,30 @@ export default function FlashcardMaker() {
     setFlipped(false)
     setStudyComplete(false)
     setSessionReviewed(0)
+    studyStartTimeRef.current = Date.now()
     setMode('study')
   }, [getCardsForDeck])
+
+  const recordSessionActivity = useCallback(async () => {
+    if (!activeProfile?.id || studyStartTimeRef.current === 0) return
+    const durationSeconds = Math.round((Date.now() - studyStartTimeRef.current) / 1000)
+    if (durationSeconds <= 0) return
+
+    // Look up subjectId from the deck's topicId
+    const deck = studyDeckId ? decks.find(d => d.id === studyDeckId) : null
+    let subjectId: string | undefined
+    if (deck?.topicId) {
+      const topic = await db.topics.get(deck.topicId)
+      subjectId = topic?.subjectId
+    }
+
+    await recordStudyActivity({
+      examProfileId: activeProfile.id,
+      durationSeconds,
+      subjectId,
+      type: 'review',
+    })
+  }, [activeProfile?.id, studyDeckId, decks])
 
   const rateCard = useCallback(async (quality: number) => {
     const currentCard = studyCards[currentIndex]
@@ -114,18 +138,24 @@ export default function FlashcardMaker() {
 
     if (currentIndex + 1 >= studyCards.length) {
       setStudyComplete(true)
+      await recordSessionActivity()
     } else {
       setCurrentIndex(prev => prev + 1)
       setFlipped(false)
     }
-  }, [studyCards, currentIndex, hookRateCard])
+  }, [studyCards, currentIndex, hookRateCard, recordSessionActivity])
 
   const exitStudy = useCallback(() => {
+    // Fire-and-forget activity recording for partial sessions so UI transitions immediately
+    if (sessionReviewed > 0 && !studyComplete) {
+      recordSessionActivity().catch(() => {})
+    }
     setMode('manage')
     setStudyDeckId(null)
     setStudyCards([])
     setStudyComplete(false)
-  }, [])
+    studyStartTimeRef.current = 0
+  }, [sessionReviewed, studyComplete, recordSessionActivity])
 
   // Stats mode
   const showStats = useCallback((deckId: string) => {

@@ -83,15 +83,26 @@ export async function getStudyStats(examProfileId: string): Promise<string> {
   })
 }
 
-export async function getDueFlashcards(topicId?: string): Promise<string> {
+export async function getDueFlashcards(examProfileId: string, topicId?: string): Promise<string> {
   const today = new Date().toISOString().slice(0, 10)
-  let query = db.flashcards.where('nextReviewDate').belowOrEqual(today)
   let cards: Flashcard[]
 
   if (topicId) {
-    cards = await query.filter(c => c.topicId === topicId).toArray()
+    cards = await db.flashcards
+      .where('nextReviewDate')
+      .belowOrEqual(today)
+      .filter(c => c.topicId === topicId)
+      .toArray()
   } else {
-    cards = await query.toArray()
+    // Scope to current profile's decks
+    const profileDecks = await db.flashcardDecks
+      .where('examProfileId').equals(examProfileId).toArray()
+    const profileDeckIds = new Set(profileDecks.map(d => d.id))
+    cards = await db.flashcards
+      .where('nextReviewDate')
+      .belowOrEqual(today)
+      .filter(c => profileDeckIds.has(c.deckId))
+      .toArray()
   }
 
   return JSON.stringify({

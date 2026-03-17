@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { FlashcardDeck, Flashcard } from '../db/schema'
 import { calculateSM2 } from '../lib/spacedRepetition'
+import { recomputeTopicMastery, advanceTopicSRS } from '../lib/topicMastery'
 
 const LEGACY_KEY = 'studieskit-smart-flashcards'
 
@@ -129,6 +130,12 @@ export function useFlashcards(examProfileId: string | undefined) {
       nextReviewDate: result.nextReviewDate,
       lastRating: quality,
     })
+
+    // Update topic mastery and advance topic SRS if card has a topicId
+    if (card.topicId) {
+      await recomputeTopicMastery(card.topicId)
+      await advanceTopicSRS(card.topicId, quality)
+    }
   }, [])
 
   const importDeck = useCallback(async (file: File) => {

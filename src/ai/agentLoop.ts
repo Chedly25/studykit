@@ -92,7 +92,7 @@ async function executeToolLocally(
     case 'getStudyStats':
       return getStudyStats(examProfileId)
     case 'getDueFlashcards':
-      return getDueFlashcards(input.topicId as string | undefined)
+      return getDueFlashcards(examProfileId, input.topicId as string | undefined)
     case 'getUpcomingDeadlines':
       return getUpcomingDeadlines(examProfileId, (input.days as number) ?? 7)
     case 'getFlashcardPerformance':

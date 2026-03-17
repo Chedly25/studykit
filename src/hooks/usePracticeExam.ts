@@ -11,6 +11,7 @@ import { useOrchestrator } from './useOrchestrator'
 import { createPracticeExamWorkflow } from '../ai/workflows/practiceExam'
 import { createGradingWorkflow } from '../ai/workflows/practiceExamGrading'
 import { createAdaptiveState, updateAdaptiveState, getNextQuestionIndex, type AdaptiveState } from '../lib/adaptiveDifficulty'
+import { recordStudyActivity } from '../lib/studyActivity'
 
 export type PracticePhase = 'setup' | 'generating' | 'taking' | 'grading' | 'results'
 
@@ -190,6 +191,21 @@ export function usePracticeExam(examProfileId: string | undefined) {
 
     if (result?.success) {
       setPhase('results')
+
+      // Record study activity with actual exam duration
+      const completedSession = await db.practiceExamSessions.get(sessionId)
+      if (completedSession?.startedAt) {
+        const startedAt = new Date(completedSession.startedAt).getTime()
+        const completedAt = completedSession.completedAt
+          ? new Date(completedSession.completedAt).getTime()
+          : Date.now()
+        const durationSeconds = Math.round((completedAt - startedAt) / 1000)
+        await recordStudyActivity({
+          examProfileId,
+          durationSeconds,
+          type: 'practice-exam',
+        })
+      }
     }
   }, [sessionId, examProfileId, answers, getToken, runGrading])
 

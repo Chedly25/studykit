@@ -4,6 +4,7 @@
  */
 import { db } from '../db'
 import type { Notification, NotificationType } from '../db/schema'
+import { decayedMastery } from './knowledgeGraph'
 
 export async function generateNotifications(examProfileId: string): Promise<void> {
   const today = new Date().toISOString().slice(0, 10)
@@ -21,11 +22,15 @@ export async function generateNotifications(examProfileId: string): Promise<void
   const prefs = await db.notificationPreferences.get(examProfileId)
   const notifications: Notification[] = []
 
-  // Check due flashcards
+  // Check due flashcards (scoped to this profile's decks)
   if (!prefs || prefs.reviewDue) {
+    const profileDecks = await db.flashcardDecks
+      .where('examProfileId').equals(examProfileId).toArray()
+    const profileDeckIds = new Set(profileDecks.map(d => d.id))
     const dueCount = await db.flashcards
       .where('nextReviewDate')
       .belowOrEqual(today)
+      .filter(c => profileDeckIds.has(c.deckId))
       .count()
     if (dueCount > 0) {
       notifications.push(createNotification(examProfileId, 'review-due',
@@ -79,6 +84,52 @@ export async function generateNotifications(examProfileId: string): Promise<void
             : `Your exam is approaching. Make sure you're on track.`,
           '/dashboard'
         ))
+      }
+    }
+  }
+
+  // Check mastery decay — topics that had decent mastery but have decayed (guarded by reviewDue)
+  if (!prefs || prefs.reviewDue) {
+    const allTopics = await db.topics.where('examProfileId').equals(examProfileId).toArray()
+    const decayedTopic = allTopics.find(t => t.mastery >= 0.4 && decayedMastery(t) < 0.3)
+    if (decayedTopic) {
+      const dm = Math.round(decayedMastery(decayedTopic) * 100)
+      notifications.push(createNotification(examProfileId, 'mastery-drop',
+        `${decayedTopic.name} needs attention`,
+        `Your mastery of ${decayedTopic.name} has decayed to ${dm}%. A quick review can help.`,
+        '/flashcard-maker'
+      ))
+    }
+
+    // Check weak topics due for review
+    const weakDueTopics = allTopics.filter(t => t.mastery < 0.4 && t.nextReviewDate <= today)
+    if (weakDueTopics.length > 0) {
+      const names = weakDueTopics.slice(0, 3).map(t => t.name).join(', ')
+      notifications.push(createNotification(examProfileId, 'weak-topic',
+        `${weakDueTopics.length} weak topic${weakDueTopics.length === 1 ? '' : 's'} need review`,
+        `${names}${weakDueTopics.length > 3 ? ` and ${weakDueTopics.length - 3} more` : ''} — these topics are below 40% mastery and due for review.`,
+        '/chat'
+      ))
+    }
+  }
+
+  // Check performance alert from latest practice exam (guarded by milestones)
+  if (!prefs || prefs.milestones) {
+    const examProfile = await db.examProfiles.get(examProfileId)
+    if (examProfile) {
+      const latestExam = await db.practiceExamSessions
+        .where('examProfileId').equals(examProfileId)
+        .filter(s => s.phase === 'graded' && s.totalScore !== undefined && s.maxScore !== undefined)
+        .last()
+      if (latestExam && latestExam.totalScore !== undefined && latestExam.maxScore !== undefined && latestExam.maxScore > 0) {
+        const scorePercent = Math.round((latestExam.totalScore / latestExam.maxScore) * 100)
+        if (scorePercent < examProfile.passingThreshold) {
+          notifications.push(createNotification(examProfileId, 'performance-alert',
+            `Practice exam scored ${scorePercent}%`,
+            `Your last practice exam scored ${scorePercent}%, below your ${examProfile.passingThreshold}% target. Focus on weak areas.`,
+            '/practice-exam'
+          ))
+        }
       }
     }
   }

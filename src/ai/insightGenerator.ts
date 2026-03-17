@@ -5,6 +5,7 @@ import { streamChat } from './client'
 import { db } from '../db'
 import type { SessionInsight, ConversationSummary, StudentModel } from '../db/schema'
 import type { Message } from './types'
+import { recomputeTopicMastery } from '../lib/topicMastery'
 
 export async function generateSessionInsight(
   messages: Message[],
@@ -107,6 +108,22 @@ ${transcript}`
       durationEstimate: parsed.durationEstimate ?? 0,
     }
     await db.conversationSummaries.put(summary)
+
+    // Apply mastery changes to knowledge graph as confidence nudges
+    const masteryChanges = parsed.masteryChanges ?? {}
+    if (Object.keys(masteryChanges).length > 0) {
+      const allTopics = await db.topics.where('examProfileId').equals(examProfileId).toArray()
+      for (const [topicName, change] of Object.entries(masteryChanges)) {
+        const matchedTopic = allTopics.find(t => t.name.toLowerCase() === topicName.toLowerCase())
+        if (!matchedTopic) continue
+        const delta = parseFloat(String(change).replace(/[+%]/g, '')) / 100
+        if (isNaN(delta)) continue
+        // Nudge confidence (the self-reported 15%-weighted factor) based on AI observation
+        const newConfidence = Math.max(0, Math.min(1, matchedTopic.confidence + delta))
+        await db.topics.update(matchedTopic.id, { confidence: newConfidence })
+        await recomputeTopicMastery(matchedTopic.id)
+      }
+    }
 
     // Update student model if observations were extracted
     const obs = parsed.studentObservations

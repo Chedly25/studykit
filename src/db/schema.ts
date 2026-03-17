@@ -269,7 +269,7 @@ export interface ConversationSummary {
 }
 
 // ─── Notifications ──────────────────────────────────────────────
-export type NotificationType = 'study-reminder' | 'review-due' | 'streak-warning' | 'plan-suggestion' | 'milestone'
+export type NotificationType = 'study-reminder' | 'review-due' | 'streak-warning' | 'plan-suggestion' | 'milestone' | 'mastery-drop' | 'weak-topic' | 'performance-alert'
 
 export interface Notification {
   id: string

@@ -103,9 +103,14 @@ export function useAgent(options: UseAgentOptions) {
 
       // Get context for system prompt
       const today = new Date().toISOString().slice(0, 10)
+      // Scope due flashcards to current profile's decks
+      const profileDecks = await db.flashcardDecks
+        .where('examProfileId').equals(profile.id).toArray()
+      const profileDeckIds = new Set(profileDecks.map(d => d.id))
       const dueFlashcardCount = await db.flashcards
         .where('nextReviewDate')
         .belowOrEqual(today)
+        .filter(c => profileDeckIds.has(c.deckId))
         .count()
       const upcomingAssignments = await db.assignments
         .filter(a => a.status !== 'done' && a.dueDate >= today)

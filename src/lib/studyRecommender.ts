@@ -1,6 +1,7 @@
 /**
  * Pure function: compute daily study recommendations.
- * Combines decayed mastery, subject weight, exam urgency, and activity state.
+ * Combines decayed mastery, subject weight, exam urgency, activity state,
+ * study plan awareness, student model signals, and prerequisite checks.
  */
 import type { Topic, Subject } from '../db/schema'
 import { decayedMastery } from './knowledgeGraph'
@@ -18,16 +19,29 @@ export interface StudyRecommendation {
   linkTo: string
 }
 
-interface RecommenderInput {
+export interface RecommenderInput {
   topics: Topic[]
   subjects: Subject[]
   daysUntilExam: number
   dueFlashcardsByTopic: Map<string, number>
+  // Optional enrichments (backward-compatible)
+  todayPlanActivities?: Array<{ topicName: string; completed: boolean }>
+  commonMistakes?: string[]
+  prerequisiteGraph?: Map<string, string[]>  // topicId → prerequisite topicIds
+  topicMasteryMap?: Map<string, number>      // topicId → mastery (for prereq check)
 }
 
 export function computeDailyRecommendations(input: RecommenderInput): StudyRecommendation[] {
-  const { topics, subjects, daysUntilExam, dueFlashcardsByTopic } = input
+  const { topics, subjects, daysUntilExam, dueFlashcardsByTopic, todayPlanActivities, commonMistakes, prerequisiteGraph, topicMasteryMap } = input
   const subjectMap = new Map(subjects.map(s => [s.id, s]))
+
+  // Build plan lookup for quick access
+  const planLookup = new Map<string, boolean>() // topicName (lowercase) → completed
+  if (todayPlanActivities) {
+    for (const act of todayPlanActivities) {
+      planLookup.set(act.topicName.toLowerCase(), act.completed)
+    }
+  }
 
   const recommendations: StudyRecommendation[] = []
 
@@ -45,7 +59,20 @@ export function computeDailyRecommendations(input: RecommenderInput): StudyRecom
     if (dueCards > 0) activityMultiplier = 1.5
     else if (topic.nextReviewDate <= new Date().toISOString().slice(0, 10)) activityMultiplier = 1.3
 
-    const score = (1 - dm) * subjectWeight * examUrgency * activityMultiplier
+    let score = (1 - dm) * subjectWeight * examUrgency * activityMultiplier
+
+    // Plan de-duplication: de-prioritize topics already scheduled in today's plan
+    const planEntry = planLookup.get(topic.name.toLowerCase())
+    if (planEntry !== undefined) {
+      score *= planEntry ? 0.3 : 0.5 // completed → strong de-prioritize, pending → moderate
+    }
+
+    // Student model boost: topics matching common mistakes get a priority bump
+    if (commonMistakes && commonMistakes.length > 0) {
+      const topicLower = topic.name.toLowerCase()
+      const hasMatchingMistake = commonMistakes.some(m => m.toLowerCase().includes(topicLower) || topicLower.includes(m.toLowerCase()))
+      if (hasMatchingMistake) score *= 1.4
+    }
 
     // Determine action
     let action: RecommendationAction
@@ -90,5 +117,34 @@ export function computeDailyRecommendations(input: RecommenderInput): StudyRecom
 
   // Sort by score descending, take top 5
   recommendations.sort((a, b) => b.score - a.score)
-  return recommendations.slice(0, 5)
+  const top = recommendations.slice(0, 5)
+
+  // Prerequisite redirect: if a recommended topic has unmastered prerequisites, swap it
+  if (prerequisiteGraph && topicMasteryMap) {
+    const topicMap = new Map(topics.map(t => [t.id, t]))
+    for (let i = 0; i < top.length; i++) {
+      const prereqIds = prerequisiteGraph.get(top[i].topicId)
+      if (!prereqIds || prereqIds.length === 0) continue
+
+      const weakPrereq = prereqIds.find(pid => (topicMasteryMap.get(pid) ?? 0) < 0.6)
+      if (weakPrereq) {
+        const prereqTopic = topicMap.get(weakPrereq)
+        if (prereqTopic) {
+          const prereqSubject = subjectMap.get(prereqTopic.subjectId)
+          top[i] = {
+            ...top[i],
+            topicId: prereqTopic.id,
+            topicName: prereqTopic.name,
+            subjectName: prereqSubject?.name ?? top[i].subjectName,
+            reason: `Master this prerequisite first (for ${top[i].topicName})`,
+            action: 'read',
+            linkTo: '/sources',
+            decayedMastery: decayedMastery(prereqTopic),
+          }
+        }
+      }
+    }
+  }
+
+  return top
 }
