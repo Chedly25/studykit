@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Send, Loader2 } from 'lucide-react'
 import type { GeneratedQuestion } from '../../db/schema'
@@ -15,6 +15,7 @@ interface PracticeExamTakerProps {
   onAnswer: (questionId: string, answer: string) => void
   onNavigate: (index: number) => void
   onSubmit: () => void
+  onNextAdaptive?: () => void
 }
 
 export function PracticeExamTaker({
@@ -26,9 +27,29 @@ export function PracticeExamTaker({
   onAnswer,
   onNavigate,
   onSubmit,
+  onNextAdaptive,
 }: PracticeExamTakerProps) {
   const { t } = useTranslation()
   const [showConfirm, setShowConfirm] = useState(false)
+  const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Clear auto-advance timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current)
+    }
+  }, [])
+
+  const handleAnswer = useCallback((questionId: string, answer: string) => {
+    onAnswer(questionId, answer)
+
+    // Auto-advance for MCQ/T-F when adaptive mode is active
+    const question = questions.find(q => q.id === questionId)
+    if (onNextAdaptive && question && (question.format === 'multiple-choice' || question.format === 'true-false')) {
+      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current)
+      autoAdvanceTimer.current = setTimeout(() => onNextAdaptive(), 300)
+    }
+  }, [onAnswer, onNextAdaptive, questions])
 
   // Loading state while live query resolves
   if (questions.length === 0) {
@@ -93,7 +114,7 @@ export function PracticeExamTaker({
           <QuestionRenderer
             question={currentQuestion}
             answer={answers.get(currentQuestion.id) ?? currentQuestion.userAnswer}
-            onAnswer={(answer) => onAnswer(currentQuestion.id, answer)}
+            onAnswer={(answer) => handleAnswer(currentQuestion.id, answer)}
           />
         </div>
 

@@ -19,15 +19,43 @@ const DEFAULT_SETTINGS: FocusModeSettings = {
   longBreakInterval: 4,
 }
 
-export function useFocusMode(examProfileId: string | undefined) {
+export function useFocusMode(examProfileId: string | undefined, onWorkPhaseComplete?: () => void) {
   const [settings, setSettings] = useState<FocusModeSettings>(DEFAULT_SETTINGS)
   const [phase, setPhase] = useState<FocusPhase>('work')
   const [timeLeft, setTimeLeft] = useState(DEFAULT_SETTINGS.workDuration)
   const [isRunning, setIsRunning] = useState(false)
-  const [sessionsCompleted, setSessionsCompleted] = useState(0)
+  const [sessionsCompleted, setSessionsCompleted] = useState(() => {
+    try {
+      const today = new Date().toISOString().slice(0, 10)
+      const val = localStorage.getItem(`focus_sessions_${today}`)
+      return val ? parseInt(val, 10) : 0
+    } catch { return 0 }
+  })
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const sessionsCompletedRef = useRef(sessionsCompleted)
+  sessionsCompletedRef.current = sessionsCompleted
+  const onWorkPhaseCompleteRef = useRef(onWorkPhaseComplete)
+  onWorkPhaseCompleteRef.current = onWorkPhaseComplete
 
   const { startSession, endSession } = useStudySession(examProfileId)
+
+  // Persist sessions completed to localStorage
+  useEffect(() => {
+    try {
+      const today = new Date().toISOString().slice(0, 10)
+      localStorage.setItem(`focus_sessions_${today}`, String(sessionsCompleted))
+
+      // Clean up old date keys (collect first to avoid mutation during iteration)
+      const keysToRemove: string[] = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('focus_sessions_') && !key.endsWith(today)) {
+          keysToRemove.push(key)
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k))
+    } catch { /* localStorage unavailable */ }
+  }, [sessionsCompleted])
 
   const getDuration = useCallback((p: FocusPhase): number => {
     switch (p) {
@@ -50,8 +78,9 @@ export function useFocusMode(examProfileId: string | undefined) {
           // Phase complete
           if (phase === 'work') {
             endSession()
-            const newCount = sessionsCompleted + 1
+            const newCount = sessionsCompletedRef.current + 1
             setSessionsCompleted(newCount)
+            onWorkPhaseCompleteRef.current?.()
             if (newCount % settings.longBreakInterval === 0) {
               setPhase('long-break')
               return settings.longBreakDuration
@@ -73,7 +102,7 @@ export function useFocusMode(examProfileId: string | undefined) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [isRunning, phase, sessionsCompleted, settings, startSession, endSession])
+  }, [isRunning, phase, settings, startSession, endSession])
 
   const start = useCallback(() => {
     if (phase === 'work') {

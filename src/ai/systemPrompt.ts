@@ -69,7 +69,7 @@ export function buildSystemPrompt(ctx: PromptContext): string {
   const topicsDecayed = topics.map(t => ({ ...t, decayed: decayedMastery(t) }))
   const weakTopicsSorted = [...topicsDecayed].sort((a, b) => a.decayed - b.decayed).slice(0, 5)
   const strongTopicsSorted = [...topicsDecayed].filter(t => t.decayed > 0).sort((a, b) => b.decayed - a.decayed).slice(0, 3)
-  const streak = computeStreak(dailyLogs)
+  const { streak } = computeStreak(dailyLogs)
   const weeklyHours = computeWeeklyHours(dailyLogs)
 
   const weakList = weakTopicsSorted.map(t => `  - ${t.name} (${Math.round(t.decayed * 100)}%${t.decayed < t.mastery ? `, decayed from ${Math.round(t.mastery * 100)}%` : ''})`).join('\n')
@@ -405,7 +405,7 @@ export function buildResearchSystemPrompt(ctx: PromptContext): string {
 
   const readiness = computeReadiness({ subjects, passingThreshold: profile.passingThreshold })
   const topicsDecayed = topics.map(t => ({ ...t, decayed: decayedMastery(t) }))
-  const streak = computeStreak(dailyLogs)
+  const { streak } = computeStreak(dailyLogs)
   const weeklyHours = computeWeeklyHours(dailyLogs)
 
   const threadsByStatus = {

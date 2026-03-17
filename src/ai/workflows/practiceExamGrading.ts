@@ -19,6 +19,7 @@ interface QuestionGrade {
   isCorrect: boolean
   earnedPoints: number
   feedback: string
+  errorType?: 'recall' | 'conceptual' | 'application' | 'distractor' | null
 }
 
 interface GradingData {
@@ -105,7 +106,14 @@ export function createGradingWorkflow(config: GradingConfig): WorkflowDefinition
               points: q.points,
             }))
 
-            return `Grade the following student answers. For each question, determine if the answer is correct (partial credit allowed for essays), assign earned points (0 to max), and provide brief feedback.
+            return `Grade the following student answers. For each question, determine if the answer is correct (partial credit allowed for essays), assign earned points (0 to max), provide brief feedback, and classify the error type if incorrect.
+
+Error types:
+- "recall": Student couldn't remember the information
+- "conceptual": Student misunderstands the underlying concept
+- "application": Student knows the concept but applied it incorrectly
+- "distractor": Student was tricked by a plausible but wrong option
+- null: If the answer is correct
 
 Questions and answers:
 ${JSON.stringify(questionsForGrading, null, 2)}
@@ -117,7 +125,8 @@ Return ONLY a JSON object:
       "questionId": "id-here",
       "isCorrect": true,
       "earnedPoints": 2,
-      "feedback": "Good explanation of..."
+      "feedback": "Good explanation of...",
+      "errorType": null
     }
   ]
 }`
@@ -214,6 +223,7 @@ Return ONLY a JSON object:
             isCorrect: grade.isCorrect,
             difficulty: q.difficulty,
             explanation: q.explanation,
+            errorType: grade.errorType ?? undefined,
           })
         }
       }),

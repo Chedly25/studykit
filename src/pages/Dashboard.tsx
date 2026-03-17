@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation, Trans } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { useAuth } from '@clerk/clerk-react'
 import { MessageCircle, ClipboardCheck, Upload, Target, PenTool, BookOpen, Users } from 'lucide-react'
 import { db } from '../db'
 import type { StudySession } from '../db/schema'
@@ -29,16 +30,21 @@ import { WelcomeHero } from '../components/dashboard/WelcomeHero'
 import { IntelligenceBriefCard } from '../components/dashboard/IntelligenceBriefCard'
 import { LandscapeCard } from '../components/dashboard/LandscapeCard'
 import { DecisionConsoleCard } from '../components/dashboard/DecisionConsoleCard'
+import { StudyPlanCard } from '../components/dashboard/StudyPlanCard'
+import { WeakTopicsCard } from '../components/dashboard/WeakTopicsCard'
 import { computeDailyRecommendations } from '../lib/studyRecommender'
+import { useStudyPlan } from '../hooks/useStudyPlan'
 
 export default function Dashboard() {
   const { t } = useTranslation()
+  const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const { isResearch } = useProfileMode()
   const profileId = activeProfile?.id
   const { milestones, doneCount, daysUntilNext, addMilestone, updateMilestone } = useMilestones(profileId)
   const { goals: habitGoals, getTodayProgress, addGoal: addHabitGoal, logProgress: logHabitProgress, deleteGoal: deleteHabitGoal } = useHabitGoals(profileId)
-  const { subjects, topics, readiness, weakTopics, streak, weeklyHours, getTopicsForSubject } = useKnowledgeGraph(profileId)
+  const { subjects, topics, readiness, weakTopics, streak, freezeUsed, weeklyHours, getTopicsForSubject, dailyLogs } = useKnowledgeGraph(profileId)
+  const { todaysPlan, markActivityCompleted, replanSuggestion, replanPlan } = useStudyPlan(profileId)
   const { studentModel } = useStudentModel(profileId)
   const insights = useProactiveInsights(profileId)
   const { recentInsights: sessionInsights } = useSessionInsights(profileId)
@@ -231,8 +237,20 @@ export default function Dashboard() {
             onUpdate={updateMilestone}
           />
         )}
-        <StudyStreakCard streak={streak} weeklyHours={weeklyHours} weeklyTarget={activeProfile.weeklyTargetHours} />
+        <StudyStreakCard streak={streak} weeklyHours={weeklyHours} weeklyTarget={activeProfile.weeklyTargetHours} freezeUsed={freezeUsed} dailyLogs={dailyLogs} />
       </div>
+
+      {/* Today's Study Plan */}
+      {todaysPlan && !isResearch && (
+        <div className="mt-4">
+          <StudyPlanCard
+            todaysPlan={todaysPlan}
+            onToggleActivity={markActivityCompleted}
+            replanSuggestion={replanSuggestion}
+            onReplan={async () => { const token = await getToken(); if (token) replanPlan(token, 'Dashboard replan') }}
+          />
+        </div>
+      )}
 
       {/* Decision Console — study mode only, full width */}
       {!isResearch && (
@@ -281,6 +299,13 @@ export default function Dashboard() {
           <TopicTree subjects={subjects} getTopicsForSubject={getTopicsForSubject} showStatus={isResearch} />
         </div>
       </div>
+
+      {/* Weak Topics */}
+      {weakTopics.length > 0 && !isResearch && (
+        <div className="mt-4">
+          <WeakTopicsCard topics={weakTopics} subjects={subjects} />
+        </div>
+      )}
 
       {/* Habit Goals */}
       {(habitGoals.length > 0 || isResearch) && (

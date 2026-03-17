@@ -6,10 +6,13 @@ import { FormToolPage } from '../../components/FormToolPage'
 import { getToolBySlug } from '../../lib/tools'
 import { useFlashcards } from '../../hooks/useFlashcards'
 import { useExamProfile } from '../../hooks/useExamProfile'
+import { useKnowledgeGraph } from '../../hooks/useKnowledgeGraph'
 import { streamChat } from '../../ai/client'
 import { db } from '../../db'
 import type { Flashcard } from '../../db/schema'
+import { decayedMastery } from '../../lib/knowledgeGraph'
 import { recordStudyActivity } from '../../lib/studyActivity'
+import { SessionCompletionOverlay, type SessionCompletionData } from '../../components/SessionCompletionOverlay'
 
 const tool = getToolBySlug('flashcard-maker')!
 
@@ -36,6 +39,9 @@ const RATING_BUTTONS = [
 export default function FlashcardMaker() {
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
+  const { streak, weeklyHours, topicsWithDecay } = useKnowledgeGraph(activeProfile?.id)
+  const masterySnapshotRef = useRef<Map<string, number>>(new Map())
+  const [completionData, setCompletionData] = useState<SessionCompletionData | null>(null)
   const {
     decks, isLoading, getCardsForDeck, getDueCount, getStatsForDeck,
     createDeck: hookCreateDeck, deleteDeck: hookDeleteDeck,
@@ -98,15 +104,26 @@ export default function FlashcardMaker() {
     const today = new Date().toISOString().slice(0, 10)
     const due = deckCards.filter(c => c.nextReviewDate <= today)
     const cardsToStudy = due.length > 0 ? fisherYatesShuffle(due) : fisherYatesShuffle(deckCards)
+
+    // Snapshot mastery for topics in this deck
+    const snapshot = new Map<string, number>()
+    const topicIds = new Set(cardsToStudy.map(c => c.topicId).filter(Boolean) as string[])
+    for (const tid of topicIds) {
+      const t = topicsWithDecay.find(tw => tw.id === tid)
+      if (t) snapshot.set(tid, t.decayedMastery)
+    }
+    masterySnapshotRef.current = snapshot
+
     setStudyDeckId(deckId)
     setStudyCards(cardsToStudy)
     setCurrentIndex(0)
     setFlipped(false)
     setStudyComplete(false)
     setSessionReviewed(0)
+    setCompletionData(null)
     studyStartTimeRef.current = Date.now()
     setMode('study')
-  }, [getCardsForDeck])
+  }, [getCardsForDeck, topicsWithDecay])
 
   const recordSessionActivity = useCallback(async () => {
     if (!activeProfile?.id || studyStartTimeRef.current === 0) return
@@ -134,16 +151,37 @@ export default function FlashcardMaker() {
     if (!currentCard) return
 
     await hookRateCard(currentCard.id, quality)
-    setSessionReviewed(prev => prev + 1)
+    const newReviewed = sessionReviewed + 1
+    setSessionReviewed(newReviewed)
 
     if (currentIndex + 1 >= studyCards.length) {
       setStudyComplete(true)
       await recordSessionActivity()
+
+      // Build mastery deltas from snapshot
+      const deltas: Array<{ topicName: string; before: number; after: number }> = []
+      for (const [tid, beforeVal] of masterySnapshotRef.current) {
+        const topic = await db.topics.get(tid)
+        if (topic) {
+          deltas.push({ topicName: topic.name, before: beforeVal, after: decayedMastery(topic) })
+        }
+      }
+
+      const deckName = studyDeckId ? decks.find(d => d.id === studyDeckId)?.name ?? 'Deck' : 'Deck'
+      setCompletionData({
+        activityType: 'flashcards',
+        timeSpentSeconds: Math.round((Date.now() - studyStartTimeRef.current) / 1000),
+        streak,
+        weeklyHours,
+        weeklyTarget: 10,
+        masteryDeltas: deltas.length > 0 ? deltas : undefined,
+        flashcardStats: { cardsReviewed: newReviewed, deckName },
+      })
     } else {
       setCurrentIndex(prev => prev + 1)
       setFlipped(false)
     }
-  }, [studyCards, currentIndex, hookRateCard, recordSessionActivity])
+  }, [studyCards, currentIndex, hookRateCard, recordSessionActivity, sessionReviewed, studyDeckId, decks, streak, weeklyHours])
 
   const exitStudy = useCallback(() => {
     // Fire-and-forget activity recording for partial sessions so UI transitions immediately
@@ -583,24 +621,33 @@ export default function FlashcardMaker() {
               </>
             ) : (
               /* Study complete */
-              <div className="glass-card p-8 text-center space-y-4">
-                <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-heading)]">
-                  Session Complete!
-                </h3>
-                <p className="text-[var(--text-body)]">
-                  You reviewed <span className="font-bold text-[var(--accent-text)]">{sessionReviewed}</span> cards
-                </p>
-                <div className="flex justify-center gap-3 pt-2">
-                  <button onClick={() => startStudy(studyDeckId!)} className="btn-primary flex items-center gap-2">
-                    <RotateCcw size={16} />
-                    Study Again
-                  </button>
-                  <button onClick={exitStudy} className="btn-secondary flex items-center gap-2">
-                    <ArrowLeft size={16} />
-                    Back to Decks
-                  </button>
-                </div>
-              </div>
+              <>
+                {completionData ? (
+                  <SessionCompletionOverlay
+                    data={completionData}
+                    onDismiss={() => { setCompletionData(null); exitStudy() }}
+                  />
+                ) : (
+                  <div className="glass-card p-8 text-center space-y-4">
+                    <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-heading)]">
+                      Session Complete!
+                    </h3>
+                    <p className="text-[var(--text-body)]">
+                      You reviewed <span className="font-bold text-[var(--accent-text)]">{sessionReviewed}</span> cards
+                    </p>
+                    <div className="flex justify-center gap-3 pt-2">
+                      <button onClick={() => startStudy(studyDeckId!)} className="btn-primary flex items-center gap-2">
+                        <RotateCcw size={16} />
+                        Study Again
+                      </button>
+                      <button onClick={exitStudy} className="btn-secondary flex items-center gap-2">
+                        <ArrowLeft size={16} />
+                        Back to Decks
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

@@ -347,6 +347,8 @@ export function useAgent(options: UseAgentOptions) {
     conversationId,
     isSocratic,
     isExplainBack,
+    socraticTopic,
+    explainBackTopic,
     quotaExceeded,
     messagesUsedToday,
     sendMessage,

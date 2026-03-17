@@ -52,12 +52,19 @@ export function useKnowledgeGraph(examProfileId: string | undefined) {
     .slice(0, 5)
 
   // Readiness uses decayed subjects
+  const decayedSubjects = subjects.map(s => {
+    const subTopics = topicsWithDecay.filter(t => t.subjectId === s.id)
+    const avgDecayed = subTopics.length > 0
+      ? subTopics.reduce((sum, t) => sum + t.decayedMastery, 0) / subTopics.length
+      : s.mastery
+    return { ...s, mastery: avgDecayed }
+  })
   const readiness = profile
-    ? computeReadiness({ subjects, passingThreshold: profile.passingThreshold })
+    ? computeReadiness({ subjects: decayedSubjects, passingThreshold: profile.passingThreshold })
     : 0
 
   const dueTopics = getDueTopics(topics)
-  const streak = computeStreak(dailyLogs)
+  const { streak, freezeUsed } = computeStreak(dailyLogs)
   const weeklyHours = computeWeeklyHours(dailyLogs)
 
   const getTopicsForSubject = (subjectId: string): Topic[] =>
@@ -73,6 +80,7 @@ export function useKnowledgeGraph(examProfileId: string | undefined) {
     strongTopics,
     dueTopics,
     streak,
+    freezeUsed,
     weeklyHours,
     getTopicsForSubject,
   }

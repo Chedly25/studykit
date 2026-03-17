@@ -66,6 +66,18 @@ export function usePracticeExam(examProfileId: string | undefined) {
     [sessionId],
   )
 
+  // Past graded sessions
+  const pastSessions = useLiveQuery(
+    () => examProfileId
+      ? db.practiceExamSessions
+          .where('examProfileId').equals(examProfileId)
+          .filter(s => s.phase === 'graded')
+          .toArray()
+          .then(sessions => sessions.sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? '')))
+      : Promise.resolve([] as PracticeExamSession[]),
+    [examProfileId],
+  ) ?? []
+
   // Timer effect
   useEffect(() => {
     if (!timerActive || timeRemaining === null || timeRemaining <= 0) return
@@ -212,6 +224,13 @@ export function usePracticeExam(examProfileId: string | undefined) {
   // Keep ref in sync
   submitExamRef.current = submitExam
 
+  const reviewSession = useCallback((reviewSessionId: string) => {
+    setSessionId(reviewSessionId)
+    setPhase('results')
+    setCurrentQuestionIndex(0)
+    setAnswers(new Map())
+  }, [])
+
   const resetToSetup = useCallback(() => {
     setPhase('setup')
     setSessionId(null)
@@ -236,6 +255,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
     gradingProgress,
     gradingError,
     isGrading,
+    pastSessions,
     startGeneration,
     answerQuestion,
     goToQuestion,
@@ -243,6 +263,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
     submitExam,
     cancelGeneration,
     resetToSetup,
+    reviewSession,
     adaptiveState,
   }
 }

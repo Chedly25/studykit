@@ -80,7 +80,7 @@ export function useStudyPlanCanvas(examProfileId: string | undefined) {
       ? Math.max(0, Math.ceil((new Date(profile.examDate).getTime() - Date.now()) / 86400000))
       : null
     const readiness = computeReadiness({ subjects, passingThreshold: profile.passingThreshold })
-    const streak = computeStreak(dailyLogs)
+    const { streak } = computeStreak(dailyLogs)
     return { examName: profile.name, daysLeft, readiness, streak, weeklyTargetHours: profile.weeklyTargetHours }
   }, [profile, subjects, dailyLogs])
 

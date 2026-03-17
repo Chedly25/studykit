@@ -67,7 +67,7 @@ export async function getStudyStats(examProfileId: string): Promise<string> {
   const sessions = await db.studySessions.where('examProfileId').equals(examProfileId).toArray()
   const questions = await db.questionResults.where('examProfileId').equals(examProfileId).toArray()
 
-  const streak = computeStreak(logs)
+  const { streak } = computeStreak(logs)
   const weeklyHours = computeWeeklyHours(logs)
   const totalSessions = sessions.length
   const totalQuestions = questions.length

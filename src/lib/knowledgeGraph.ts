@@ -163,17 +163,18 @@ export function getDueTopics(topics: Topic[]): Topic[] {
 
 // ─── Study Stats ────────────────────────────────────────────────
 
-export function computeStreak(logs: DailyStudyLog[]): number {
-  if (logs.length === 0) return 0
+export function computeStreak(logs: DailyStudyLog[]): { streak: number; freezeUsed: boolean } {
+  if (logs.length === 0) return { streak: 0, freezeUsed: false }
 
   const sorted = [...logs].sort((a, b) => b.date.localeCompare(a.date))
   const today = new Date().toISOString().slice(0, 10)
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
 
   // Must have studied today or yesterday to have an active streak
-  if (sorted[0].date !== today && sorted[0].date !== yesterday) return 0
+  if (sorted[0].date !== today && sorted[0].date !== yesterday) return { streak: 0, freezeUsed: false }
 
   let streak = 1
+  let freezeUsed = false
   for (let i = 1; i < sorted.length; i++) {
     const prev = new Date(sorted[i - 1].date)
     const curr = new Date(sorted[i].date)
@@ -181,12 +182,16 @@ export function computeStreak(logs: DailyStudyLog[]): number {
 
     if (Math.abs(diffDays - 1) < 0.01) {
       streak++
+    } else if (Math.abs(diffDays - 2) < 0.01 && !freezeUsed) {
+      // Allow one gap day (streak freeze)
+      streak++
+      freezeUsed = true
     } else {
       break
     }
   }
 
-  return streak
+  return { streak, freezeUsed }
 }
 
 export function computeWeeklyHours(logs: DailyStudyLog[]): number {

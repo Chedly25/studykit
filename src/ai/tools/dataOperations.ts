@@ -194,11 +194,49 @@ export async function getStudyRecommendation(examProfileId: string): Promise<str
     }
   }
 
+  // Load today's study plan activities
+  let todayPlanActivities: Array<{ topicName: string; completed: boolean }> | undefined
+  const activePlan = await db.studyPlans
+    .where('examProfileId').equals(examProfileId)
+    .filter(p => p.isActive)
+    .first()
+  if (activePlan) {
+    const planDayId = `${activePlan.id}:${today}`
+    const planDay = await db.studyPlanDays.get(planDayId)
+    if (planDay) {
+      try {
+        const activities = JSON.parse(planDay.activities) as Array<{ topicName: string; completed?: boolean }>
+        todayPlanActivities = activities.map(a => ({ topicName: a.topicName, completed: a.completed ?? false }))
+      } catch { /* ignore */ }
+    }
+  }
+
+  // Load student model common mistakes
+  let commonMistakes: string[] | undefined
+  const studentModel = await db.studentModels.where('examProfileId').equals(examProfileId).first()
+  if (studentModel?.commonMistakes) {
+    try { commonMistakes = JSON.parse(studentModel.commonMistakes) } catch { /* ignore */ }
+  }
+
+  // Build prerequisite graph and mastery map
+  const prerequisiteGraph = new Map<string, string[]>()
+  const topicMasteryMap = new Map<string, number>()
+  for (const t of topics) {
+    topicMasteryMap.set(t.id, t.mastery)
+    if (t.prerequisiteTopicIds && t.prerequisiteTopicIds.length > 0) {
+      prerequisiteGraph.set(t.id, t.prerequisiteTopicIds)
+    }
+  }
+
   const recommendations = computeDailyRecommendations({
     topics,
     subjects,
     daysUntilExam: daysLeft,
     dueFlashcardsByTopic: dueByTopic,
+    todayPlanActivities,
+    commonMistakes,
+    prerequisiteGraph: prerequisiteGraph.size > 0 ? prerequisiteGraph : undefined,
+    topicMasteryMap,
   })
 
   return JSON.stringify({

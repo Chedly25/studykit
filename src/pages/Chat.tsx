@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
-import { Brain, Settings, PanelLeftClose, PanelLeft, Upload } from 'lucide-react'
+import { Brain, Settings, PanelLeftClose, PanelLeft, Upload, Lightbulb, GraduationCap } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useAgent } from '../hooks/useAgent'
@@ -30,7 +30,7 @@ export default function Chat() {
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
-  const { subjects, topics, dailyLogs, weakTopics, dueTopics } = useKnowledgeGraph(profileId)
+  const { subjects, topics, dailyLogs, weakTopics, strongTopics, dueTopics } = useKnowledgeGraph(profileId)
 
   const [sourcesEnabled, setSourcesEnabled] = useState(false)
   const { documents, documentCount } = useSources(profileId)
@@ -50,7 +50,9 @@ export default function Chat() {
   const {
     messages, isLoading, currentToolCall, streamingText, error,
     conversationId, quotaExceeded, messagesUsedToday,
+    isSocratic, isExplainBack, socraticTopic, explainBackTopic,
     sendMessage, cancel, loadConversation, newConversation,
+    startSocraticMode, startExplainBackMode,
   } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences, sessionInsights: recentInsights, studentModel, conversationSummaries })
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -68,6 +70,20 @@ export default function Chat() {
   }, [messages, streamingText])
 
   const handleSend = useCallback(async (message: string, sentAttachments?: ChatAttachment[]) => {
+    // Intercept Socratic/Explain-Back mode triggers
+    if (message.startsWith('__socratic__:')) {
+      const topicName = message.slice('__socratic__:'.length)
+      startSocraticMode(topicName)
+      await sendMessage(`I want to learn about ${topicName} through Socratic questioning.`)
+      return
+    }
+    if (message.startsWith('__explainback__:')) {
+      const topicName = message.slice('__explainback__:'.length)
+      startExplainBackMode(topicName)
+      await sendMessage(`I'll try to explain ${topicName} to you. Let me know if my understanding is correct.`)
+      return
+    }
+
     let attachmentContext: { chunks: Array<{ content: string; documentTitle: string; chunkIndex: number }> } | undefined
 
     if (sentAttachments && sentAttachments.length > 0) {
@@ -80,7 +96,7 @@ export default function Chat() {
     }
 
     await sendMessage(message, attachmentContext)
-  }, [sendMessage, getRelevantChunks, clearAttachments])
+  }, [sendMessage, getRelevantChunks, clearAttachments, startSocraticMode, startExplainBackMode])
 
   // Drag-and-drop handlers
   const dragCounter = useRef(0)
@@ -136,6 +152,28 @@ export default function Chat() {
       })
     }
 
+    // Socratic mode for weak topics
+    for (const topic of weakTopics.slice(0, 1)) {
+      if (chips.length >= 8) break
+      chips.push({
+        icon: <Lightbulb className="w-4 h-4" />,
+        label: `Socratic: ${topic.name}`,
+        subtitle: 'Learn through guided questions',
+        prompt: `__socratic__:${topic.name}`,
+      })
+    }
+
+    // Explain-back mode for strong topics
+    for (const topic of strongTopics.slice(0, 1)) {
+      if (chips.length >= 8) break
+      chips.push({
+        icon: <GraduationCap className="w-4 h-4" />,
+        label: `Explain Back: ${topic.name}`,
+        subtitle: 'Test your understanding',
+        prompt: `__explainback__:${topic.name}`,
+      })
+    }
+
     // Fill to 6 with general suggestions
     const general = [
       { icon: suggestionIcons.studyPlan, label: t('ai.suggestStudyPlan'), prompt: t('ai.suggestStudyPlan') },
@@ -143,12 +181,12 @@ export default function Chat() {
       { icon: suggestionIcons.quizWeak, label: t('ai.suggestQuizWeak'), prompt: t('ai.suggestQuizWeak') },
     ]
     for (const g of general) {
-      if (chips.length >= 6) break
+      if (chips.length >= 8) break
       chips.push(g)
     }
 
     return chips
-  }, [weakTopics, dueTopics, documents, t])
+  }, [weakTopics, strongTopics, dueTopics, documents, t])
 
   if (!activeProfile) {
     return (
@@ -198,6 +236,16 @@ export default function Chat() {
               {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
             </button>
             <span className="text-sm font-medium text-[var(--text-heading)]">{t('ai.chat')}</span>
+            {isSocratic && socraticTopic && (
+              <span className="text-xs font-medium text-purple-400 bg-purple-500/15 px-2 py-0.5 rounded-full">
+                Socratic: {socraticTopic}
+              </span>
+            )}
+            {isExplainBack && explainBackTopic && (
+              <span className="text-xs font-medium text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full">
+                Explain Back: {explainBackTopic}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <SourcesToggle enabled={sourcesEnabled} onToggle={setSourcesEnabled} documentCount={documentCount} />

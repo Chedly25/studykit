@@ -1,20 +1,40 @@
+import { useState, useCallback, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Play, Pause, RotateCcw, SkipForward } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useFocusMode } from '../hooks/useFocusMode'
+import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { db } from '../db'
 import type { Subject } from '../db/schema'
 import { formatTime } from '../lib/timerUtils'
+import { SessionCompletionOverlay, type SessionCompletionData } from '../components/SessionCompletionOverlay'
 
 export default function FocusMode() {
   const { t } = useTranslation()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
+  const { streak, weeklyHours } = useKnowledgeGraph(profileId)
+  const [completionData, setCompletionData] = useState<SessionCompletionData | null>(null)
+  const sessionStartRef = useRef<number>(Date.now())
+
+  const handleWorkComplete = useCallback(() => {
+    setCompletionData(prev => ({
+      activityType: 'focus',
+      timeSpentSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
+      streak,
+      weeklyHours,
+      weeklyTarget: activeProfile?.weeklyTargetHours ?? 10,
+      focusStats: {
+        sessionsCompleted: (prev?.focusStats?.sessionsCompleted ?? 0) + 1,
+      },
+    }))
+  }, [streak, weeklyHours, activeProfile?.weeklyTargetHours])
+
   const {
     phase, timeLeft, isRunning, sessionsCompleted,
     settings, start, pause, reset, skip, updateSettings,
-  } = useFocusMode(profileId)
+  } = useFocusMode(profileId, handleWorkComplete)
 
   const subjects = useLiveQuery(
     () => profileId
@@ -166,6 +186,14 @@ export default function FocusMode() {
           </div>
         </div>
       </div>
+
+      {/* Session completion overlay */}
+      {completionData && (
+        <SessionCompletionOverlay
+          data={completionData}
+          onDismiss={() => setCompletionData(null)}
+        />
+      )}
     </div>
   )
 }
