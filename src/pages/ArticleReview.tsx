@@ -2,8 +2,10 @@
  * Article Review page — phase-based rendering for the full review lifecycle.
  */
 import { useEffect } from 'react'
-import { FileSearch, Plus, Trash2, ArrowLeft, Loader2, Calendar, Target } from 'lucide-react'
+import { FileSearch, Plus, Trash2, ArrowLeft, Loader2, Calendar, Target, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useExamProfile } from '../hooks/useExamProfile'
+import { useSubscription } from '../hooks/useSubscription'
 import { useReviewProject } from '../hooks/useReviewProject'
 import { ReviewProjectSetup } from '../components/review/ReviewProjectSetup'
 import { ReviewArticleUploader } from '../components/review/ReviewArticleUploader'
@@ -13,12 +15,28 @@ import type { ReviewProject } from '../db/schema'
 
 export default function ArticleReview() {
   const { activeProfile } = useExamProfile()
+  const { isPro } = useSubscription()
   const rp = useReviewProject(activeProfile?.id)
 
   // Scroll to top on phase change
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [rp.phase])
+
+  if (!isPro) {
+    return (
+      <div className="text-center py-24 animate-fade-in">
+        <Sparkles size={48} className="mx-auto mb-4 text-[var(--accent-text)]" />
+        <h2 className="text-xl font-bold text-[var(--text-heading)] mb-2">Article Review</h2>
+        <p className="text-[var(--text-muted)] mb-4">
+          AI-powered article review is a Pro feature. Upgrade to access batch article analysis, relevance scoring, and curation dashboards.
+        </p>
+        <Link to="/pricing" className="btn-primary inline-block px-6 py-2.5 text-sm">
+          Upgrade to Pro
+        </Link>
+      </div>
+    )
+  }
 
   if (!activeProfile) {
     return (

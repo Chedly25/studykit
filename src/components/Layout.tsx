@@ -142,7 +142,7 @@ export function Layout() {
                     <SidebarLink to="/sources" icon={FileText} label={t('sources.title', 'Sources')} active={location.pathname === '/sources'} onClick={closeSidebar} />
                   </>
                 )}
-                <SidebarLink to="/article-review" icon={FileSearch} label="Article Review" active={location.pathname === '/article-review'} onClick={closeSidebar} />
+                <SidebarLink to="/article-review" icon={FileSearch} label="Article Review" active={location.pathname === '/article-review'} onClick={closeSidebar} pro />
               </SidebarSection>
 
               {/* AI Features */}

@@ -77,12 +77,22 @@ export function useReviewProject(examProfileId: string | undefined) {
   const selectProject = useCallback((projectId: string) => {
     setSelectedProjectId(projectId)
     // Determine phase from project status
-    db.reviewProjects.get(projectId).then(p => {
+    db.reviewProjects.get(projectId).then(async p => {
       if (!p) return
       if (p.status === 'reviewing' || p.status === 'completed') {
         setPhase('reviewing')
       } else if (p.status === 'processing') {
-        setPhase('processing')
+        // Check if processing actually finished (status wasn't updated)
+        const doneCount = await db.reviewArticles
+          .where('[projectId+processingStatus]')
+          .equals([projectId, 'done'])
+          .count()
+        if (doneCount > 0) {
+          await db.reviewProjects.update(projectId, { status: 'reviewing', updatedAt: new Date().toISOString() })
+          setPhase('reviewing')
+        } else {
+          setPhase('setup')
+        }
       } else {
         setPhase('setup')
       }
@@ -154,6 +164,7 @@ export function useReviewProject(examProfileId: string | undefined) {
       await synthesis.run(synthesisWorkflow, { examProfileId, authToken: token })
     }
 
+    await db.reviewProjects.update(selectedProjectId, { status: 'reviewing', updatedAt: new Date().toISOString() })
     setPhase('reviewing')
   }, [examProfileId, selectedProjectId, getToken, batch, synthesis])
 
