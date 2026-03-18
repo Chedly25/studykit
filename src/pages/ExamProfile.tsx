@@ -265,8 +265,8 @@ export default function ExamProfile() {
 
   if (showWizard) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
-        <div className="flex items-center justify-between mb-6">
+      <div className="mx-auto px-4 py-8 animate-fade-in">
+        <div className="max-w-4xl mx-auto flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-[var(--text-heading)]">{t('profile.create')}</h1>
           {profiles.length > 0 && (
             <button onClick={() => { setShowWizard(false); clearWizardDraft() }} className="text-sm text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors">

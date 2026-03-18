@@ -19,7 +19,7 @@ export function WizardProgressBar({ currentStep, onStepClick }: WizardProgressBa
   const { t } = useTranslation()
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2 mb-8">
+    <div className="flex items-center justify-center gap-1 sm:gap-2 mb-8 max-w-4xl mx-auto">
       {STEPS.map(({ step, labelKey }, i) => {
         const isActive = currentStep === step
         const isCompleted = currentStep > step
