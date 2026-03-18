@@ -1,43 +1,50 @@
 /**
- * Hook wrapping the source processing orchestrator workflow.
+ * Hook wrapping source processing via the background job queue.
+ * Processing survives navigation — progress is read from IndexedDB.
  */
-import { useCallback } from 'react'
-import { useAuth } from '@clerk/clerk-react'
-import { useOrchestrator } from './useOrchestrator'
+import { useState, useCallback } from 'react'
 import { useSubscription } from './useSubscription'
-import { createSourceProcessingWorkflow } from '../ai/workflows/sourceProcessing'
+import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
+import { useBackgroundJob } from './useBackgroundJob'
 
 export function useSourceProcessing(examProfileId: string | undefined) {
-  const { getToken } = useAuth()
   const { isPro } = useSubscription()
-  const { run, cancel, isRunning, progress, result, error } = useOrchestrator<{
-    summary: string
-    conceptsFound: string[]
-    mappingsApplied: number
-    flashcardDeckId?: string
-    flashcardCount?: number
-  }>()
+  const { enqueue, cancel } = useBackgroundJobs()
+  const [jobId, setJobId] = useState<string | null>(null)
+  const { job, isRunning, isCompleted, isFailed, progress, currentStepName, error } = useBackgroundJob(jobId)
 
   const processDocument = useCallback(async (documentId: string) => {
     if (!examProfileId) return null
 
-    const token = await getToken()
-    if (!token) return null
+    const id = await enqueue(
+      'source-processing',
+      examProfileId,
+      { documentId, isPro },
+      5, // 5 steps in source processing workflow
+    )
+    setJobId(id)
+    return id
+  }, [examProfileId, isPro, enqueue])
 
-    const workflow = createSourceProcessingWorkflow({
-      documentId,
-      isPro,
-    })
-
-    return run(workflow, { examProfileId, authToken: token })
-  }, [examProfileId, getToken, isPro, run])
+  const cancelProcessing = useCallback(() => {
+    if (jobId) cancel(jobId)
+  }, [jobId, cancel])
 
   return {
     processDocument,
-    cancel,
+    cancel: cancelProcessing,
     isRunning,
-    progress,
-    result,
+    progress: job ? {
+      workflowName: 'Processing document',
+      currentStepIndex: job.completedStepCount,
+      totalSteps: job.totalSteps,
+      currentStepName,
+      completedSteps: job.completedStepCount,
+      failedSteps: 0,
+      isStreaming: false,
+      streamedChars: 0,
+    } : null,
+    result: isCompleted ? { success: true } : isFailed ? { success: false } : null,
     error,
   }
 }

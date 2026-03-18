@@ -1,41 +1,46 @@
 /**
- * Hook wrapping the exam research orchestrator workflow.
+ * Hook wrapping exam research via the background job queue.
+ * Processing survives navigation.
  */
-import { useCallback } from 'react'
-import { useAuth } from '@clerk/clerk-react'
-import { useOrchestrator } from './useOrchestrator'
-import { createExamResearchWorkflow } from '../ai/workflows/examResearch'
+import { useState, useCallback } from 'react'
+import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
+import { useBackgroundJob } from './useBackgroundJob'
 
 export function useExamResearch() {
-  const { getToken } = useAuth()
-  const { run, cancel, isRunning, progress, result, error } = useOrchestrator<{
-    examIntelligence: string
-    sectionsCreated: number
-  }>()
+  const { enqueue, cancel } = useBackgroundJobs()
+  const [jobId, setJobId] = useState<string | null>(null)
+  const { job, isRunning, isCompleted, isFailed, currentStepName, error } = useBackgroundJob(jobId)
 
   const researchExam = useCallback(async (
     examProfileId: string,
     profileName: string,
     examType: string,
   ) => {
-    const token = await getToken()
-    if (!token) return null
-
-    const workflow = createExamResearchWorkflow({
+    const id = await enqueue(
+      'exam-research',
       examProfileId,
-      profileName,
-      examType,
-    })
-
-    return run(workflow, { examProfileId, authToken: token })
-  }, [getToken, run])
+      { examProfileId, profileName, examType },
+      4, // exam research workflow has ~4 steps
+    )
+    setJobId(id)
+    return id
+  }, [enqueue])
 
   return {
     researchExam,
-    cancel,
+    cancel: () => { if (jobId) cancel(jobId) },
     isRunning,
-    progress,
-    result,
+    progress: job ? {
+      workflowName: 'Researching exam format',
+      currentStepIndex: job.completedStepCount,
+      totalSteps: job.totalSteps,
+      currentStepName,
+      completedSteps: job.completedStepCount,
+      failedSteps: 0,
+      isStreaming: false,
+      streamedChars: 0,
+    } : null,
+    result: isCompleted ? { success: true } : isFailed ? { success: false } : null,
     error,
   }
 }

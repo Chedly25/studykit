@@ -1,15 +1,15 @@
 /**
  * State machine hook for the practice exam lifecycle.
  * Phases: setup → generating → taking → grading → results
+ * Uses background job queue so generation/grading survive navigation.
  */
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useAuth } from '@clerk/clerk-react'
 import { db } from '../db'
 import type { GeneratedQuestion, PracticeExamSession } from '../db/schema'
-import { useOrchestrator } from './useOrchestrator'
-import { createPracticeExamWorkflow } from '../ai/workflows/practiceExam'
-import { createGradingWorkflow } from '../ai/workflows/practiceExamGrading'
+import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
+import { useBackgroundJob } from './useBackgroundJob'
 import { createAdaptiveState, updateAdaptiveState, getNextQuestionIndex, type AdaptiveState } from '../lib/adaptiveDifficulty'
 import { recordStudyActivity } from '../lib/studyActivity'
 
@@ -27,6 +27,7 @@ export interface PracticeExamOptions {
 
 export function usePracticeExam(examProfileId: string | undefined) {
   const { getToken } = useAuth()
+  const { enqueue, cancel } = useBackgroundJobs()
   const [phase, setPhase] = useState<PracticePhase>('setup')
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -35,22 +36,13 @@ export function usePracticeExam(examProfileId: string | undefined) {
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [adaptiveState, setAdaptiveState] = useState<AdaptiveState>(createAdaptiveState)
+  const [timeLimitForSession, setTimeLimitForSession] = useState<number | undefined>()
 
-  // Destructure stable refs from orchestrator hooks to avoid re-render churn
-  const {
-    run: runGeneration,
-    cancel: cancelGeneration,
-    isRunning: isGenerating,
-    progress: generationProgress,
-    error: generationError,
-  } = useOrchestrator<GeneratedQuestion[]>()
-
-  const {
-    run: runGrading,
-    isRunning: isGrading,
-    progress: gradingProgress,
-    error: gradingError,
-  } = useOrchestrator<{ grades: Array<{ questionId: string; isCorrect: boolean; earnedPoints: number; feedback: string }>; totalScore: number; maxScore: number }>()
+  // Background job tracking
+  const [genJobId, setGenJobId] = useState<string | null>(null)
+  const [gradeJobId, setGradeJobId] = useState<string | null>(null)
+  const genJob = useBackgroundJob(genJobId)
+  const gradeJob = useBackgroundJob(gradeJobId)
 
   // Live query for questions
   const questions = useLiveQuery(
@@ -96,7 +88,6 @@ export function usePracticeExam(examProfileId: string | undefined) {
     }
   }, [timerActive])
 
-  // Use ref for submitExam to avoid stale closure in auto-submit effect
   const submitExamRef = useRef<() => void>(() => {})
 
   // Auto-submit when timer hits 0
@@ -106,11 +97,42 @@ export function usePracticeExam(examProfileId: string | undefined) {
     }
   }, [timeRemaining, phase])
 
+  // Transition to 'taking' when generation job completes
+  useEffect(() => {
+    if (genJob.isCompleted && phase === 'generating' && sessionId) {
+      setPhase('taking')
+      db.practiceExamSessions.update(sessionId, { phase: 'in-progress', startedAt: new Date().toISOString() })
+      if (timeLimitForSession) {
+        setTimeRemaining(timeLimitForSession)
+        setTimerActive(true)
+      }
+    }
+  }, [genJob.isCompleted, phase, sessionId, timeLimitForSession])
+
+  // Transition to 'results' when grading job completes
+  useEffect(() => {
+    if (gradeJob.isCompleted && phase === 'grading' && sessionId && examProfileId) {
+      setPhase('results')
+      // Record study activity
+      db.practiceExamSessions.get(sessionId).then(async completedSession => {
+        if (completedSession?.startedAt) {
+          const startedAt = new Date(completedSession.startedAt).getTime()
+          const completedAt = completedSession.completedAt
+            ? new Date(completedSession.completedAt).getTime()
+            : Date.now()
+          const durationSeconds = Math.round((completedAt - startedAt) / 1000)
+          await recordStudyActivity({
+            examProfileId: examProfileId!,
+            durationSeconds,
+            type: 'practice-exam',
+          })
+        }
+      })
+    }
+  }, [gradeJob.isCompleted, phase, sessionId, examProfileId])
+
   const startGeneration = useCallback(async (options: PracticeExamOptions) => {
     if (!examProfileId) return
-
-    const token = await getToken()
-    if (!token) return
 
     const id = crypto.randomUUID()
     const newSession: PracticeExamSession = {
@@ -130,28 +152,24 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setAnswers(new Map())
     setCurrentQuestionIndex(0)
     setAdaptiveState(createAdaptiveState())
+    setTimeLimitForSession(options.timeLimitSeconds)
 
-    const workflow = createPracticeExamWorkflow({
-      sessionId: id,
-      questionCount: options.questionCount,
-      focusSubject: options.focusSubject,
-      selectedTopics: options.selectedTopics,
-      customFocus: options.customFocus,
-      examSection: options.examSection,
-      sourcesEnabled: options.sourcesEnabled,
-    })
-
-    const result = await runGeneration(workflow, { examProfileId, authToken: token })
-
-    if (result?.success) {
-      setPhase('taking')
-      await db.practiceExamSessions.update(id, { phase: 'in-progress', startedAt: new Date().toISOString() })
-      if (options.timeLimitSeconds) {
-        setTimeRemaining(options.timeLimitSeconds)
-        setTimerActive(true)
-      }
-    }
-  }, [examProfileId, getToken, runGeneration])
+    const jobId = await enqueue(
+      'practice-exam-generation',
+      examProfileId,
+      {
+        sessionId: id,
+        questionCount: options.questionCount,
+        focusSubject: options.focusSubject,
+        selectedTopics: options.selectedTopics,
+        customFocus: options.customFocus,
+        examSection: options.examSection,
+        sourcesEnabled: options.sourcesEnabled,
+      },
+      5, // practice exam workflow has ~5 steps
+    )
+    setGenJobId(jobId)
+  }, [examProfileId, enqueue])
 
   const answerQuestion = useCallback((questionId: string, answer: string) => {
     setAnswers(prev => {
@@ -160,7 +178,6 @@ export function usePracticeExam(examProfileId: string | undefined) {
       return next
     })
 
-    // Update adaptive state for MCQ/T-F (client-side checkable)
     const question = questions.find(q => q.id === questionId)
     if (question && (question.format === 'multiple-choice' || question.format === 'true-false')) {
       const isCorrect = question.correctOptionIndex !== undefined
@@ -178,7 +195,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
   const goToNextAdaptive = useCallback(() => {
     if (questions.length === 0) return
     const nextIdx = getNextQuestionIndex(questions, adaptiveState, currentQuestionIndex)
-    if (nextIdx === -1) return // All answered — caller can check via answers.size
+    if (nextIdx === -1) return
     setCurrentQuestionIndex(nextIdx)
   }, [questions, adaptiveState, currentQuestionIndex])
 
@@ -195,33 +212,15 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setPhase('grading')
     await db.practiceExamSessions.update(sessionId, { phase: 'grading' })
 
-    const token = await getToken()
-    if (!token) return
+    const jobId = await enqueue(
+      'practice-exam-grading',
+      examProfileId,
+      { sessionId },
+      4, // grading workflow has ~4 steps
+    )
+    setGradeJobId(jobId)
+  }, [sessionId, examProfileId, answers, enqueue])
 
-    const workflow = createGradingWorkflow({ sessionId })
-    const result = await runGrading(workflow, { examProfileId, authToken: token })
-
-    if (result?.success) {
-      setPhase('results')
-
-      // Record study activity with actual exam duration
-      const completedSession = await db.practiceExamSessions.get(sessionId)
-      if (completedSession?.startedAt) {
-        const startedAt = new Date(completedSession.startedAt).getTime()
-        const completedAt = completedSession.completedAt
-          ? new Date(completedSession.completedAt).getTime()
-          : Date.now()
-        const durationSeconds = Math.round((completedAt - startedAt) / 1000)
-        await recordStudyActivity({
-          examProfileId,
-          durationSeconds,
-          type: 'practice-exam',
-        })
-      }
-    }
-  }, [sessionId, examProfileId, answers, getToken, runGrading])
-
-  // Keep ref in sync
   submitExamRef.current = submitExam
 
   const reviewSession = useCallback((reviewSessionId: string) => {
@@ -234,6 +233,8 @@ export function usePracticeExam(examProfileId: string | undefined) {
   const resetToSetup = useCallback(() => {
     setPhase('setup')
     setSessionId(null)
+    setGenJobId(null)
+    setGradeJobId(null)
     setCurrentQuestionIndex(0)
     setAnswers(new Map())
     setTimeRemaining(null)
@@ -249,19 +250,37 @@ export function usePracticeExam(examProfileId: string | undefined) {
     currentQuestionIndex,
     answers,
     timeRemaining,
-    generationProgress,
-    generationError,
-    isGenerating,
-    gradingProgress,
-    gradingError,
-    isGrading,
+    generationProgress: genJob.job ? {
+      workflowName: 'Generating exam',
+      currentStepIndex: genJob.job.completedStepCount,
+      totalSteps: genJob.job.totalSteps,
+      currentStepName: genJob.currentStepName,
+      completedSteps: genJob.job.completedStepCount,
+      failedSteps: 0,
+      isStreaming: false,
+      streamedChars: 0,
+    } : null,
+    generationError: genJob.error,
+    isGenerating: genJob.isRunning,
+    gradingProgress: gradeJob.job ? {
+      workflowName: 'Grading exam',
+      currentStepIndex: gradeJob.job.completedStepCount,
+      totalSteps: gradeJob.job.totalSteps,
+      currentStepName: gradeJob.currentStepName,
+      completedSteps: gradeJob.job.completedStepCount,
+      failedSteps: 0,
+      isStreaming: false,
+      streamedChars: 0,
+    } : null,
+    gradingError: gradeJob.error,
+    isGrading: gradeJob.isRunning,
     pastSessions,
     startGeneration,
     answerQuestion,
     goToQuestion,
     goToNextAdaptive,
     submitExam,
-    cancelGeneration,
+    cancelGeneration: () => { if (genJobId) cancel(genJobId) },
     resetToSetup,
     reviewSession,
     adaptiveState,

@@ -17,6 +17,7 @@ import { NotificationBell } from './NotificationBell'
 import { useSubscription } from '../hooks/useSubscription'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileMode } from '../hooks/useProfileMode'
+import { BackgroundJobsIndicator } from './BackgroundJobsIndicator'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
@@ -89,6 +90,7 @@ export function Layout() {
           <div className="flex items-center gap-2">
             <SignedIn>
               <ExamProfileSelector />
+              <BackgroundJobsIndicator />
               <NotificationBell examProfileId={activeProfile?.id} />
               <button
                 onClick={() => setChatOpen(!chatOpen)}

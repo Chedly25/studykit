@@ -1,0 +1,516 @@
+/**
+ * JobRunner — persistent background job queue processor.
+ *
+ * A plain TypeScript singleton (not a React component) that:
+ * - Stores jobs in IndexedDB (survives navigation + page refresh)
+ * - Checkpoints after each workflow step (resume from where it left off)
+ * - Refreshes auth tokens before each step
+ * - Processes batch jobs with bounded concurrency
+ */
+import { db } from '../../db'
+import type { BackgroundJob, JobType, JobStatus } from '../../db/schema'
+import type { WorkflowContext, WorkflowDefinition, StepResult } from './types'
+import { streamChat } from '../client'
+import { semanticSearch } from '../../lib/embeddings'
+import { searchWeb as searchWebClient } from '../tools/webSearchTool'
+import { reconstructWorkflow, reconstructArticleWorkflow } from './jobTypes'
+
+export class JobRunner {
+  private getToken: () => Promise<string | null>
+  private abortControllers = new Map<string, AbortController>()
+  private processing = false
+
+  constructor(getToken: () => Promise<string | null>) {
+    this.getToken = getToken
+  }
+
+  /** Call once on app startup. Resets interrupted jobs and starts processing. */
+  async start(): Promise<void> {
+    // Reset any jobs left in 'running' state (interrupted by page close)
+    const interrupted = await db.backgroundJobs
+      .where('status').equals('running')
+      .toArray()
+    for (const job of interrupted) {
+      await db.backgroundJobs.update(job.id, {
+        status: 'queued' as JobStatus,
+        updatedAt: new Date().toISOString(),
+      })
+    }
+    this.processQueue()
+  }
+
+  /** Enqueue a single workflow job. Returns the job ID. */
+  async enqueue(
+    type: JobType,
+    examProfileId: string,
+    config: Record<string, unknown>,
+    totalSteps: number,
+  ): Promise<string> {
+    const id = crypto.randomUUID()
+    const now = new Date().toISOString()
+    await db.backgroundJobs.put({
+      id,
+      examProfileId,
+      type,
+      status: 'queued',
+      config: JSON.stringify(config),
+      completedStepIds: '[]',
+      stepResults: '{}',
+      totalSteps,
+      completedStepCount: 0,
+      currentStepName: '',
+      createdAt: now,
+      updatedAt: now,
+    })
+    this.processQueue()
+    return id
+  }
+
+  /** Enqueue a batch job (e.g., article review with N items). Returns the job ID. */
+  async enqueueBatch(
+    type: JobType,
+    examProfileId: string,
+    config: Record<string, unknown>,
+    itemIds: string[],
+    concurrency: number,
+    totalStepsPerItem: number,
+  ): Promise<string> {
+    const id = crypto.randomUUID()
+    const now = new Date().toISOString()
+    await db.backgroundJobs.put({
+      id,
+      examProfileId,
+      type,
+      status: 'queued',
+      config: JSON.stringify(config),
+      completedStepIds: '[]',
+      stepResults: '{}',
+      totalSteps: itemIds.length * totalStepsPerItem,
+      completedStepCount: 0,
+      currentStepName: '',
+      batchItemIds: JSON.stringify(itemIds),
+      batchCompletedIds: '[]',
+      batchFailedIds: '[]',
+      batchConcurrency: concurrency,
+      createdAt: now,
+      updatedAt: now,
+    })
+    this.processQueue()
+    return id
+  }
+
+  /** Cancel a running or queued job. */
+  async cancel(jobId: string): Promise<void> {
+    const controller = this.abortControllers.get(jobId)
+    if (controller) controller.abort()
+    await db.backgroundJobs.update(jobId, {
+      status: 'cancelled' as JobStatus,
+      updatedAt: new Date().toISOString(),
+    })
+  }
+
+  // ─── Queue Processing ─────────────────────────────────────────
+
+  private async processQueue(): Promise<void> {
+    if (this.processing) return
+    this.processing = true
+
+    try {
+      while (true) {
+        // Pick oldest queued job
+        const job = await db.backgroundJobs
+          .where('status').equals('queued')
+          .sortBy('createdAt')
+          .then(jobs => jobs[0])
+
+        if (!job) break
+
+        // Optimistic lock: atomically set to 'running'
+        const modified = await db.backgroundJobs
+          .where('id').equals(job.id)
+          .and(j => j.status === 'queued')
+          .modify({ status: 'running', startedAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
+
+        if (modified === 0) continue // Another tab got it
+
+        try {
+          if (job.batchItemIds) {
+            await this.executeBatchJob(job)
+          } else {
+            await this.executeJob(job)
+          }
+        } catch (err) {
+          const error = err instanceof Error ? err.message : String(err)
+          await db.backgroundJobs.update(job.id, {
+            status: 'failed' as JobStatus,
+            error,
+            updatedAt: new Date().toISOString(),
+          })
+        } finally {
+          this.abortControllers.delete(job.id)
+        }
+      }
+    } finally {
+      this.processing = false
+    }
+  }
+
+  // ─── Single Job Execution ─────────────────────────────────────
+
+  private async executeJob(job: BackgroundJob): Promise<void> {
+    const config = JSON.parse(job.config) as Record<string, unknown>
+
+    // Special handling for non-workflow job types
+    if (job.type === 'study-plan' || job.type === 'session-insight') {
+      await this.executeStandaloneJob(job, config)
+      return
+    }
+
+    const workflow = reconstructWorkflow(job.type, config)
+    await this.runWorkflowWithCheckpoints(job, workflow)
+  }
+
+  private async runWorkflowWithCheckpoints(
+    job: BackgroundJob,
+    workflow: WorkflowDefinition<unknown>,
+  ): Promise<void> {
+    const controller = new AbortController()
+    this.abortControllers.set(job.id, controller)
+
+    // Restore checkpoint
+    const completedStepIds = new Set<string>(JSON.parse(job.completedStepIds) as string[])
+    const results: Record<string, StepResult> = JSON.parse(job.stepResults)
+
+    // Build context
+    let authToken = await this.getToken()
+    if (!authToken) {
+      await this.pauseJob(job.id, 'Auth token unavailable, will retry')
+      return
+    }
+
+    const ctx: WorkflowContext = {
+      examProfileId: job.examProfileId,
+      authToken,
+      signal: controller.signal,
+      results,
+
+      async llm(prompt: string, system?: string): Promise<string> {
+        const response = await streamChat({
+          messages: [{ role: 'user', content: prompt }],
+          system: system ?? 'You are a helpful assistant. Respond with the requested format only.',
+          tools: [],
+          maxTokens: 8192,
+          authToken: ctx.authToken,
+          signal: controller.signal,
+        })
+        const textBlock = response.content.find((b: { type: string }) => b.type === 'text')
+        return textBlock && 'text' in textBlock ? (textBlock as { text: string }).text : ''
+      },
+
+      async searchSources(query: string, topN = 5): Promise<string> {
+        const chunks = await semanticSearch(job.examProfileId, query, ctx.authToken, topN)
+        if (chunks.length === 0) return ''
+        return chunks.map((c: { documentTitle?: string; content: string }) =>
+          `[${c.documentTitle ?? 'Source'}]\n${c.content}`
+        ).join('\n\n---\n\n')
+      },
+
+      async searchWeb(query: string): Promise<string> {
+        return searchWebClient(query, ctx.authToken)
+      },
+    }
+
+    let completedStepCount = completedStepIds.size
+
+    for (let i = 0; i < workflow.steps.length; i++) {
+      const step = workflow.steps[i]
+
+      if (controller.signal.aborted) {
+        await db.backgroundJobs.update(job.id, {
+          status: 'cancelled' as JobStatus,
+          updatedAt: new Date().toISOString(),
+        })
+        return
+      }
+
+      // Skip already-completed steps (checkpoint resume)
+      if (completedStepIds.has(step.id)) continue
+
+      // Check shouldRun
+      if (step.shouldRun && !step.shouldRun(ctx)) {
+        results[step.id] = { status: 'skipped', durationMs: 0 }
+        completedStepIds.add(step.id)
+        await this.checkpoint(job.id, completedStepIds, results, ++completedStepCount, step.name)
+        continue
+      }
+
+      // Refresh token before each step
+      authToken = await this.getToken()
+      if (!authToken) {
+        await this.pauseJob(job.id, 'Auth token expired, will retry')
+        return
+      }
+      ctx.authToken = authToken
+
+      // Update current step name
+      await db.backgroundJobs.update(job.id, {
+        currentStepName: step.name,
+        updatedAt: new Date().toISOString(),
+      })
+
+      const stepStart = Date.now()
+      try {
+        const data = await step.execute(undefined, ctx)
+        results[step.id] = { status: 'completed', data, durationMs: Date.now() - stepStart }
+        completedStepIds.add(step.id)
+        completedStepCount++
+        await this.checkpoint(job.id, completedStepIds, results, completedStepCount, step.name)
+      } catch (err) {
+        const error = err instanceof Error ? err.message : String(err)
+        results[step.id] = { status: 'failed', error, durationMs: Date.now() - stepStart }
+
+        if (!step.optional) {
+          await db.backgroundJobs.update(job.id, {
+            status: 'failed' as JobStatus,
+            error: `Step "${step.name}" failed: ${error}`,
+            stepResults: JSON.stringify(results),
+            updatedAt: new Date().toISOString(),
+          })
+          return
+        }
+        // Optional step failed — checkpoint and continue
+        completedStepIds.add(step.id)
+        completedStepCount++
+        await this.checkpoint(job.id, completedStepIds, results, completedStepCount, step.name)
+      }
+    }
+
+    // Aggregate final result
+    try {
+      await workflow.aggregate(ctx)
+    } catch { /* aggregate failure is non-fatal */ }
+
+    await db.backgroundJobs.update(job.id, {
+      status: 'completed' as JobStatus,
+      completedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      completedStepCount: workflow.steps.length,
+      stepResults: JSON.stringify(results),
+      completedStepIds: JSON.stringify([...completedStepIds]),
+    })
+  }
+
+  // ─── Batch Job Execution ──────────────────────────────────────
+
+  private async executeBatchJob(job: BackgroundJob): Promise<void> {
+    const controller = new AbortController()
+    this.abortControllers.set(job.id, controller)
+
+    const config = JSON.parse(job.config) as Record<string, unknown>
+    const allItemIds: string[] = JSON.parse(job.batchItemIds!)
+    const completedIds = new Set<string>(JSON.parse(job.batchCompletedIds ?? '[]') as string[])
+    const failedIds = new Set<string>(JSON.parse(job.batchFailedIds ?? '[]') as string[])
+    const concurrency = job.batchConcurrency ?? 3
+
+    // Filter to remaining items
+    const remainingIds = allItemIds.filter(id => !completedIds.has(id) && !failedIds.has(id))
+    if (remainingIds.length === 0) {
+      await this.finalizeBatchJob(job, config, completedIds.size, failedIds.size)
+      return
+    }
+
+    // Worker pool (semaphore pattern)
+    const queue = [...remainingIds]
+
+    const worker = async () => {
+      while (queue.length > 0) {
+        if (controller.signal.aborted) return
+        const itemId = queue.shift()!
+
+        // Build per-item config
+        const itemConfig: Record<string, unknown> = {
+          ...config,
+          articleId: itemId,
+        }
+
+        try {
+          const workflow = reconstructArticleWorkflow(itemConfig)
+
+          // Create a mini-job context for this item (no checkpointing per step within items)
+          let authToken = await this.getToken()
+          if (!authToken) return
+
+          const results: Record<string, StepResult> = {}
+          const ctx: WorkflowContext = {
+            examProfileId: job.examProfileId,
+            authToken,
+            signal: controller.signal,
+            results,
+            async llm(prompt: string, system?: string): Promise<string> {
+              const response = await streamChat({
+                messages: [{ role: 'user', content: prompt }],
+                system: system ?? 'You are a helpful assistant. Respond with the requested format only.',
+                tools: [],
+                maxTokens: 8192,
+                authToken: ctx.authToken,
+                signal: controller.signal,
+              })
+              const textBlock = response.content.find((b: { type: string }) => b.type === 'text')
+              return textBlock && 'text' in textBlock ? (textBlock as { text: string }).text : ''
+            },
+            async searchSources(query: string, topN = 5): Promise<string> {
+              const chunks = await semanticSearch(job.examProfileId, query, ctx.authToken, topN)
+              if (chunks.length === 0) return ''
+              return chunks.map((c: { documentTitle?: string; content: string }) =>
+                `[${c.documentTitle ?? 'Source'}]\n${c.content}`
+              ).join('\n\n---\n\n')
+            },
+            async searchWeb(query: string): Promise<string> {
+              return searchWebClient(query, ctx.authToken)
+            },
+          }
+
+          for (const step of workflow.steps) {
+            if (controller.signal.aborted) return
+
+            if (step.shouldRun && !step.shouldRun(ctx)) {
+              results[step.id] = { status: 'skipped', durationMs: 0 }
+              continue
+            }
+
+            // Refresh token
+            authToken = await this.getToken()
+            if (!authToken) return
+            ctx.authToken = authToken
+
+            const stepStart = Date.now()
+            try {
+              const data = await step.execute(undefined, ctx)
+              results[step.id] = { status: 'completed', data, durationMs: Date.now() - stepStart }
+            } catch (err) {
+              const error = err instanceof Error ? err.message : String(err)
+              results[step.id] = { status: 'failed', error, durationMs: Date.now() - stepStart }
+              if (!step.optional) throw new Error(`Step "${step.name}" failed: ${error}`)
+            }
+          }
+
+          // Aggregate
+          try { await workflow.aggregate(ctx) } catch { /* non-fatal */ }
+
+          completedIds.add(itemId)
+        } catch {
+          failedIds.add(itemId)
+        }
+
+        // Checkpoint at item level
+        await db.backgroundJobs.update(job.id, {
+          batchCompletedIds: JSON.stringify([...completedIds]),
+          batchFailedIds: JSON.stringify([...failedIds]),
+          completedStepCount: completedIds.size + failedIds.size,
+          currentStepName: `${completedIds.size + failedIds.size}/${allItemIds.length} items`,
+          updatedAt: new Date().toISOString(),
+        })
+      }
+    }
+
+    const workerCount = Math.min(concurrency, remainingIds.length)
+    await Promise.all(Array.from({ length: workerCount }, () => worker()))
+
+    if (!controller.signal.aborted) {
+      await this.finalizeBatchJob(job, config, completedIds.size, failedIds.size)
+    }
+  }
+
+  private async finalizeBatchJob(
+    job: BackgroundJob,
+    config: Record<string, unknown>,
+    successCount: number,
+    failureCount: number,
+  ): Promise<void> {
+    await db.backgroundJobs.update(job.id, {
+      status: 'completed' as JobStatus,
+      completedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+
+    // Auto-enqueue synthesis if enough articles succeeded
+    if (job.type === 'article-review-batch' && successCount >= 2) {
+      const projectId = config.projectId as string
+      await this.enqueue(
+        'article-synthesis',
+        job.examProfileId,
+        { projectId },
+        4, // synthesis has ~4 steps
+      )
+    }
+  }
+
+  // ─── Standalone (non-workflow) Jobs ────────────────────────────
+
+  private async executeStandaloneJob(job: BackgroundJob, config: Record<string, unknown>): Promise<void> {
+    const authToken = await this.getToken()
+    if (!authToken) {
+      await this.pauseJob(job.id, 'Auth token unavailable')
+      return
+    }
+
+    try {
+      if (job.type === 'study-plan') {
+        const { generateStudyPlan } = await import('../studyPlanGenerator')
+        await generateStudyPlan(
+          job.examProfileId,
+          authToken,
+          config.daysAhead as number | undefined,
+        )
+      } else if (job.type === 'session-insight') {
+        const { generateSessionInsight } = await import('../insightGenerator')
+        await generateSessionInsight(
+          config.messages as Array<{ role: string; content: string }>,
+          job.examProfileId,
+          config.conversationId as string,
+          authToken,
+        )
+      }
+
+      await db.backgroundJobs.update(job.id, {
+        status: 'completed' as JobStatus,
+        completedStepCount: job.totalSteps,
+        completedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err)
+      await db.backgroundJobs.update(job.id, {
+        status: 'failed' as JobStatus,
+        error,
+        updatedAt: new Date().toISOString(),
+      })
+    }
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────
+
+  private async checkpoint(
+    jobId: string,
+    completedStepIds: Set<string>,
+    results: Record<string, StepResult>,
+    completedStepCount: number,
+    stepName: string,
+  ): Promise<void> {
+    await db.backgroundJobs.update(jobId, {
+      completedStepIds: JSON.stringify([...completedStepIds]),
+      stepResults: JSON.stringify(results),
+      completedStepCount,
+      currentStepName: stepName,
+      updatedAt: new Date().toISOString(),
+    })
+  }
+
+  private async pauseJob(jobId: string, reason: string): Promise<void> {
+    await db.backgroundJobs.update(jobId, {
+      status: 'queued' as JobStatus,
+      error: reason,
+      updatedAt: new Date().toISOString(),
+    })
+  }
+}

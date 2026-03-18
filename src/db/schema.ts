@@ -514,3 +514,42 @@ export interface ReviewArticle {
   createdAt: string
   updatedAt: string
 }
+
+// ─── Background Jobs ──────────────────────────────────────────
+export type JobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
+export type JobType =
+  | 'source-processing'
+  | 'article-review-batch'
+  | 'article-synthesis'
+  | 'practice-exam-generation'
+  | 'practice-exam-grading'
+  | 'study-plan'
+  | 'session-insight'
+  | 'exam-research'
+
+export interface BackgroundJob {
+  id: string
+  examProfileId: string
+  type: JobType
+  status: JobStatus
+
+  config: string             // JSON — workflow config to reconstruct on resume
+  completedStepIds: string   // JSON string[] — step IDs already done
+  stepResults: string        // JSON Record<string, StepResult> — checkpoint data
+
+  totalSteps: number
+  completedStepCount: number
+  currentStepName: string
+
+  // Batch support (article review)
+  batchItemIds?: string      // JSON string[]
+  batchCompletedIds?: string // JSON string[]
+  batchFailedIds?: string    // JSON string[]
+  batchConcurrency?: number
+
+  error?: string
+  createdAt: string
+  updatedAt: string
+  startedAt?: string
+  completedAt?: string
+}
