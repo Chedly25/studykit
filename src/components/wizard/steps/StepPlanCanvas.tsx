@@ -161,18 +161,6 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
     }
   }, [draft.profileId, draft.planDraft, draft.subjects, draft.assessments, seedTopicsForProfile, getToken, setActiveProfile, navigate])
 
-  if (!draft.planDraft) return null
-
-  const totalActivities = draft.planDraft.days.reduce((sum, d) => sum + d.activities.length, 0)
-  const totalMinutes = draft.planDraft.days.reduce(
-    (sum, d) => sum + d.activities.reduce((s, a) => s + a.durationMinutes, 0), 0
-  )
-
-  const handleSelectActivity = (dayIndex: number, actIndex: number) => {
-    const activity = draft.planDraft?.days[dayIndex]?.activities[actIndex]
-    if (activity) setDialogTarget({ dayIndex, activityId: activity.id })
-  }
-
   // Resolve dialog activity by stable ID (survives reorder/delete of other items)
   let dialogDayIndex: number | null = null
   let dialogActIndex: number | null = null
@@ -193,6 +181,18 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
   useEffect(() => {
     if (dialogTarget && !dialogActivity) setDialogTarget(null)
   }, [dialogTarget, dialogActivity])
+
+  if (!draft.planDraft) return null
+
+  const totalActivities = draft.planDraft.days.reduce((sum, d) => sum + d.activities.length, 0)
+  const totalMinutes = draft.planDraft.days.reduce(
+    (sum, d) => sum + d.activities.reduce((s, a) => s + a.durationMinutes, 0), 0
+  )
+
+  const handleSelectActivity = (dayIndex: number, actIndex: number) => {
+    const activity = draft.planDraft?.days[dayIndex]?.activities[actIndex]
+    if (activity) setDialogTarget({ dayIndex, activityId: activity.id })
+  }
 
   return (
     <div className="max-w-[1400px] mx-auto">
