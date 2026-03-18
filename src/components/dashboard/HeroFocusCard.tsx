@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { BookOpen, ClipboardCheck, RotateCcw, Lightbulb, Layers, ArrowRight, PartyPopper } from 'lucide-react'
+import { BookOpen, ClipboardCheck, RotateCcw, Lightbulb, Layers, ArrowRight, PartyPopper, MessageCircle } from 'lucide-react'
 import type { StudyRecommendation } from '../../lib/studyRecommender'
 
 interface HeroFocusCardProps {
@@ -8,6 +8,7 @@ interface HeroFocusCardProps {
   dueFlashcardCount: number
   isResearch: boolean
   allCaughtUp: boolean
+  hasTopics: boolean
 }
 
 const ACTION_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -26,11 +27,54 @@ const ACTION_COLORS: Record<string, string> = {
   'flashcards': 'bg-pink-500/15 text-pink-500',
 }
 
-export function HeroFocusCard({ recommendation, dueFlashcardCount, allCaughtUp }: HeroFocusCardProps) {
+export function HeroFocusCard({ recommendation, dueFlashcardCount, isResearch, allCaughtUp, hasTopics }: HeroFocusCardProps) {
   const { t } = useTranslation()
 
-  // All caught up state
-  if (allCaughtUp || !recommendation) {
+  // State 1: Has a recommendation → show it
+  if (recommendation) {
+    const Icon = ACTION_ICONS[recommendation.action] ?? BookOpen
+    const colorClass = ACTION_COLORS[recommendation.action] ?? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+
+    return (
+      <div className="glass-card p-6 md:p-8 mb-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">
+          {t('dashboard.yourFocus')}
+        </p>
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-full ${colorClass} flex items-center justify-center shrink-0`}>
+            <Icon size={24} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold text-[var(--text-heading)] truncate">
+              {recommendation.topicName}
+            </h2>
+            <p className="text-sm text-[var(--text-muted)]">{recommendation.subjectName}</p>
+            <p className="text-xs text-[var(--text-faint)] mt-0.5">{recommendation.reason}</p>
+          </div>
+          <Link
+            to={recommendation.linkTo}
+            className="btn-primary px-5 py-2.5 flex items-center gap-2 shrink-0"
+          >
+            {t('dashboard.startSession')} <ArrowRight size={16} />
+          </Link>
+        </div>
+
+        {/* Flashcard nudge */}
+        {recommendation.action !== 'flashcards' && dueFlashcardCount > 0 && (
+          <p className="text-xs text-[var(--text-muted)] mt-3 pl-16">
+            {t('dashboard.flashcardsDueAlso', { count: dueFlashcardCount })}
+            {' — '}
+            <Link to="/flashcard-maker" className="text-[var(--accent-text)] hover:underline">
+              {t('common.start')}
+            </Link>
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  // State 2: No recommendation, has topics, all caught up
+  if (allCaughtUp && hasTopics) {
     return (
       <div className="glass-card p-6 md:p-8 mb-4 border-emerald-500/20">
         <div className="flex items-center gap-4">
@@ -39,22 +83,22 @@ export function HeroFocusCard({ recommendation, dueFlashcardCount, allCaughtUp }
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-[var(--text-heading)]">
-              {t('dashboard.allCaughtUp', "You're all caught up!")}
+              {t('dashboard.allCaughtUp')}
             </h2>
             <p className="text-sm text-[var(--text-muted)] mt-1">
-              {t('dashboard.allCaughtUpDesc', 'Great work. Here are some things you can explore:')}
+              {t('dashboard.allCaughtUpDesc')}
             </p>
             <div className="flex flex-wrap gap-3 mt-3">
               {dueFlashcardCount > 0 && (
                 <Link to="/flashcard-maker" className="text-sm text-[var(--accent-text)] hover:underline">
-                  Review {dueFlashcardCount} flashcards
+                  {t('dashboard.reviewFlashcards', { count: dueFlashcardCount })}
                 </Link>
               )}
               <Link to="/sources" className="text-sm text-[var(--accent-text)] hover:underline">
-                Explore a topic
+                {t('dashboard.exploreTopic')}
               </Link>
               <Link to="/practice-exam" className="text-sm text-[var(--accent-text)] hover:underline">
-                Take practice exam
+                {t('dashboard.takePracticeExam')}
               </Link>
             </div>
           </div>
@@ -63,41 +107,28 @@ export function HeroFocusCard({ recommendation, dueFlashcardCount, allCaughtUp }
     )
   }
 
-  const Icon = ACTION_ICONS[recommendation.action] ?? BookOpen
-  const colorClass = ACTION_COLORS[recommendation.action] ?? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
-
+  // State 3: New user — no topics or no recommendations yet → invite to chat
   return (
     <div className="glass-card p-6 md:p-8 mb-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">
-        {t('dashboard.yourFocus', 'Your focus')}
-      </p>
       <div className="flex items-center gap-4">
-        <div className={`w-12 h-12 rounded-full ${colorClass} flex items-center justify-center shrink-0`}>
-          <Icon size={24} />
+        <div className="w-12 h-12 rounded-full bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
+          <MessageCircle size={24} className="text-[var(--accent-text)]" />
         </div>
         <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-bold text-[var(--text-heading)] truncate">
-            {recommendation.topicName}
+          <h2 className="text-xl font-bold text-[var(--text-heading)]">
+            {t('dashboard.heroGetStarted')}
           </h2>
-          <p className="text-sm text-[var(--text-muted)]">{recommendation.subjectName}</p>
-          <p className="text-xs text-[var(--text-faint)] mt-0.5">{recommendation.reason}</p>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            {t('dashboard.heroGetStartedDesc')}
+          </p>
         </div>
         <Link
-          to={recommendation.linkTo}
+          to="/chat"
           className="btn-primary px-5 py-2.5 flex items-center gap-2 shrink-0"
         >
-          {t('dashboard.startSession', 'Start')} <ArrowRight size={16} />
+          {t('dashboard.heroGetStartedCta')} <ArrowRight size={16} />
         </Link>
       </div>
-
-      {/* Flashcard nudge */}
-      {recommendation.action !== 'flashcards' && dueFlashcardCount > 0 && (
-        <p className="text-xs text-[var(--text-muted)] mt-3 pl-16">
-          {t('dashboard.flashcardsDueAlso', 'Also: {{count}} flashcards due', { count: dueFlashcardCount })}
-          {' — '}
-          <Link to="/flashcard-maker" className="text-[var(--accent-text)] hover:underline">Review</Link>
-        </p>
-      )}
     </div>
   )
 }

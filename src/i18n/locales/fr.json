@@ -135,6 +135,28 @@
     "misconceptions": "Malentendus",
     "openQuestions": "Questions ouvertes",
     "breakthroughs": "Progres",
+    "yourFocus": "Votre priorite",
+    "upNext": "A suivre",
+    "startSession": "Commencer",
+    "allCaughtUp": "Vous etes a jour !",
+    "allCaughtUpDesc": "Bravo. Voici quelques pistes a explorer :",
+    "flashcardsDueAlso": "Aussi : {{count}} cartes a reviser",
+    "reviewFlashcards": "Reviser {{count}} carte",
+    "reviewFlashcards_plural": "Reviser {{count}} cartes",
+    "exploreTopic": "Explorer un sujet",
+    "takePracticeExam": "Passer un examen pratique",
+    "heroGetStarted": "Sur quoi voulez-vous travailler ?",
+    "heroGetStartedDesc": "Votre conseiller IA est pret — parlez-lui de vos objectifs et il vous guidera.",
+    "heroGetStartedCta": "Demarrer une conversation",
+    "ready": "pret",
+    "streakDaysUnit": "jour",
+    "streakDaysUnit_plural": "jours",
+    "daysLeftUnit": "jour restant",
+    "daysLeftUnit_plural": "jours restants",
+    "perWeek": "semaine",
+    "quickAccess": {
+      "flashcards": "Cartes memoire"
+    },
     "quickActions": {
       "aiTutor": "Conseiller IA",
       "aiTutorDesc": "Posez des questions, explorez vos options",
@@ -424,7 +446,9 @@
     "totalHours": "Heures totales",
     "totalQuestions": "Total de questions",
     "averageAccuracy": "Precision moyenne",
-    "studySessions": "Sessions d'etude"
+    "studySessions": "Sessions d'etude",
+    "insights": "Analyses",
+    "knowledgeMap": "Carte des connaissances"
   },
   "focus": {
     "title": "Mode concentration",

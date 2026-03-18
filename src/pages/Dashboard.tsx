@@ -164,23 +164,27 @@ export default function Dashboard() {
         hasActivity={hasActivity}
       />
 
-      <StatusBar
-        streak={streak}
-        freezeUsed={freezeUsed}
-        readiness={readiness}
-        examDate={activeProfile.examDate}
-        weeklyHours={weeklyHours}
-        weeklyTarget={activeProfile.weeklyTargetHours}
-        daysUntilExam={daysUntilExam}
-        milestoneProgress={{ done: doneCount, total: milestones.length }}
-        isResearch={isResearch}
-      />
+      {/* StatusBar — only show once user has topics (metrics become meaningful) */}
+      {topics.length > 0 && (
+        <StatusBar
+          streak={streak}
+          freezeUsed={freezeUsed}
+          readiness={readiness}
+          examDate={activeProfile.examDate}
+          weeklyHours={weeklyHours}
+          weeklyTarget={activeProfile.weeklyTargetHours}
+          daysUntilExam={daysUntilExam}
+          milestoneProgress={{ done: doneCount, total: milestones.length }}
+          isResearch={isResearch}
+        />
+      )}
 
       <HeroFocusCard
         recommendation={recommendations[0] ?? null}
         dueFlashcardCount={dueFlashcards}
         isResearch={isResearch}
         allCaughtUp={recommendations.length === 0 && topics.length > 0}
+        hasTopics={topics.length > 0}
       />
 
       <UpNextList recommendations={recommendations.slice(1, 4)} />

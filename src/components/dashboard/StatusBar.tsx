@@ -30,7 +30,7 @@ export function StatusBar({
   chips.push({
     icon: <Flame size={16} className={streak > 0 ? 'text-orange-500' : 'text-[var(--text-faint)]'} />,
     value: `${streak}`,
-    label: t('dashboard.streakDays', { count: streak }),
+    label: t('dashboard.streakDaysUnit', { count: streak }),
     className: streak > 0 ? 'text-orange-500' : undefined,
   })
 
@@ -38,7 +38,7 @@ export function StatusBar({
   chips.push({
     icon: <Target size={16} className={readinessColor} />,
     value: `${readiness}%`,
-    label: t('dashboard.ready', 'ready'),
+    label: t('dashboard.ready'),
     className: readinessColor,
   })
 
@@ -47,13 +47,13 @@ export function StatusBar({
     chips.push({
       icon: <Calendar size={16} className="text-[var(--accent-text)]" />,
       value: `${daysUntilExam}`,
-      label: t('dashboard.daysLeft', { count: daysUntilExam }),
+      label: t('dashboard.daysLeftUnit', { count: daysUntilExam }),
     })
   } else if (milestoneProgress && milestoneProgress.total > 0) {
     chips.push({
       icon: <Calendar size={16} className="text-[var(--accent-text)]" />,
       value: `${milestoneProgress.done}/${milestoneProgress.total}`,
-      label: 'milestones',
+      label: t('research.milestones', 'milestones'),
     })
   }
 
@@ -61,7 +61,7 @@ export function StatusBar({
   chips.push({
     icon: <Clock size={16} className="text-[var(--text-muted)]" />,
     value: `${weeklyHours.toFixed(1)}h`,
-    label: `/ ${weeklyTarget}h ${t('dashboard.weeklyProgress', 'week')}`,
+    label: `/ ${weeklyTarget}h ${t('dashboard.perWeek')}`,
   })
 
   return (
