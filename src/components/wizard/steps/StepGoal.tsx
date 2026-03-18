@@ -4,11 +4,12 @@ import {
   GraduationCap, Briefcase, FlaskConical, Languages, Wrench,
   Calendar, Target, ChevronRight, Check, BookMarked, Microscope,
 } from 'lucide-react'
-import { examBlueprints, getAllExamTypes } from '../../../lib/examTopicMaps'
-import type { ExamType, ProfileMode } from '../../../db/schema'
+import { examBlueprints, getAllExamTypes, getExamBlueprint } from '../../../lib/examTopicMaps'
+import { db } from '../../../db'
+import type { ExamType, ProfileMode, ExamProfile } from '../../../db/schema'
 import type { WizardDraft, WizardAction } from '../../../hooks/useWizardDraft'
-import { useExamProfile } from '../../../hooks/useExamProfile'
 import { useExamResearch } from '../../../hooks/useExamResearch'
+import { useAuth } from '@clerk/clerk-react'
 
 const goalTypeIcons: Record<ExamType, typeof GraduationCap> = {
   'university-course': GraduationCap,
@@ -28,7 +29,7 @@ interface StepGoalProps {
 
 export function StepGoal({ draft, dispatch, onNext }: StepGoalProps) {
   const { t } = useTranslation()
-  const { createProfile } = useExamProfile()
+  const { userId } = useAuth()
   const { researchExam } = useExamResearch()
   const [subStep, setSubStep] = useState<SubStep>('mode')
   const [isCreating, setIsCreating] = useState(false)
@@ -41,17 +42,29 @@ export function StepGoal({ draft, dispatch, onNext }: StepGoalProps) {
     setIsCreating(true)
     setCreateError('')
     try {
-      const profileId = await createProfile(
-        draft.name,
-        draft.examType,
-        draft.noDeadline ? '' : draft.examDate,
-        draft.weeklyTargetHours,
-        draft.profileMode,
-      )
+      // Create an INACTIVE profile so it doesn't trigger app-wide live query updates.
+      // The profile will be activated in Step 5 ("Start learning").
+      // We need the profileId early so document uploads in Steps 2/4 can associate with it.
+      const profileId = crypto.randomUUID()
+      const blueprint = getExamBlueprint(draft.examType)
+      const profile: ExamProfile = {
+        id: profileId,
+        name: draft.name,
+        examType: draft.examType,
+        examDate: draft.noDeadline ? '' : draft.examDate,
+        isActive: false, // INACTIVE — won't disrupt the current active profile
+        passingThreshold: blueprint.defaultPassingThreshold,
+        weeklyTargetHours: draft.weeklyTargetHours,
+        userId: userId ?? 'local',
+        createdAt: new Date().toISOString(),
+        profileMode: draft.profileMode,
+      }
+      await db.examProfiles.put(profile)
+
       dispatch({ type: 'SET_PROFILE_ID', profileId })
 
       // Fire background research for non-custom types
-      if (draft.examType !== 'custom' && profileId) {
+      if (draft.examType !== 'custom') {
         researchExam(profileId, draft.name, draft.examType).catch(() => {})
       }
 
