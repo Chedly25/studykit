@@ -3,7 +3,7 @@
  * Nothing hits the DB until the user clicks "Start learning" at the end of Step 5.
  * A profile is created early (end of Step 1) so document uploads have an examProfileId.
  */
-import { useReducer, useCallback } from 'react'
+import { useReducer, useCallback, useEffect } from 'react'
 import type { ExamType, ProfileMode } from '../db/schema'
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -323,10 +323,46 @@ export function wizardReducer(state: WizardDraft, action: WizardAction): WizardD
   }
 }
 
+// ─── Session Persistence ─────────────────────────────────────────
+
+const WIZARD_STORAGE_KEY = 'wizardDraft'
+
+function loadSavedDraft(): WizardDraft | null {
+  try {
+    const saved = sessionStorage.getItem(WIZARD_STORAGE_KEY)
+    if (saved) return JSON.parse(saved) as WizardDraft
+  } catch { /* corrupt data — ignore */ }
+  return null
+}
+
+export function clearWizardDraft() {
+  sessionStorage.removeItem(WIZARD_STORAGE_KEY)
+}
+
+export function hasSavedWizardDraft(): boolean {
+  try {
+    const saved = sessionStorage.getItem(WIZARD_STORAGE_KEY)
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      return parsed.currentStep >= 1
+    }
+  } catch { /* ignore */ }
+  return false
+}
+
 // ─── Hook ───────────────────────────────────────────────────────
 
 export function useWizardDraft() {
-  const [draft, dispatch] = useReducer(wizardReducer, initialWizardDraft)
+  const [draft, dispatch] = useReducer(
+    wizardReducer,
+    initialWizardDraft,
+    () => loadSavedDraft() ?? initialWizardDraft,
+  )
+
+  // Persist to sessionStorage on every state change
+  useEffect(() => {
+    sessionStorage.setItem(WIZARD_STORAGE_KEY, JSON.stringify(draft))
+  }, [draft])
 
   const goToStep = useCallback((step: WizardStep) => {
     dispatch({ type: 'SET_STEP', step })

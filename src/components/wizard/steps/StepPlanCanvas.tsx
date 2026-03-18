@@ -10,6 +10,7 @@ import { ActivityDetailDialog } from '../ActivityDetailDialog'
 import { useExamProfile } from '../../../hooks/useExamProfile'
 import { usePlanCanvasAgent } from '../../../hooks/usePlanCanvasAgent'
 import { generateStudyPlanDraftStreaming, saveStudyPlan } from '../../../ai/studyPlanGenerator'
+import { clearWizardDraft } from '../../../hooks/useWizardDraft'
 import type { WizardDraft, WizardAction, PlanDraftData, PlanDraftDay, PlanDraftActivity } from '../../../hooks/useWizardDraft'
 import type { ExtractedSubject } from '../../../ai/topicExtractor'
 
@@ -150,7 +151,8 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
       // 3. Ensure profile is active
       await setActiveProfile(profileId)
 
-      // 4. Navigate to dashboard
+      // 4. Clear wizard session and navigate to dashboard
+      clearWizardDraft()
       navigate('/dashboard')
     } catch (err) {
       console.error('Failed to activate:', err)

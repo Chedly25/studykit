@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { Trash2, Link2, FileBarChart, ArrowRight, Pencil, X, Check, Calendar, Clock, Target } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
+import { hasSavedWizardDraft, clearWizardDraft } from '../hooks/useWizardDraft'
 import { ProjectBriefingWizard } from '../components/wizard/ProjectBriefingWizard'
 import { DependencyEditor } from '../components/knowledge/DependencyEditor'
 import { ExamFormatEditor } from '../components/knowledge/ExamFormatEditor'
 import { examBlueprints } from '../lib/examTopicMaps'
+import { db } from '../db'
 import type { ExamProfile as ExamProfileType, Topic } from '../db/schema'
 
 interface EditState {
@@ -20,12 +23,14 @@ interface EditState {
 function ProfileCard({
   profile,
   isActive,
+  hasPlan,
   onActivate,
   onUpdate,
   onDelete,
 }: {
   profile: ExamProfileType
   isActive: boolean
+  hasPlan: boolean
   onActivate: () => void
   onUpdate: (updates: Partial<EditState>) => Promise<void>
   onDelete: () => void
@@ -175,12 +180,22 @@ function ProfileCard({
 
         <div className="flex items-center gap-1.5 shrink-0 ml-3">
           {isActive ? (
-            <Link
-              to="/dashboard"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent-bg)] text-[var(--accent-text)] text-sm font-medium hover:bg-[var(--accent-text)] hover:text-white transition-colors"
-            >
-              {t('nav.dashboard')} <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            <>
+              {hasPlan && (
+                <Link
+                  to="/study-plan"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-[var(--text-muted)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-colors"
+                >
+                  <Calendar className="w-3.5 h-3.5" /> {t('ai.studyPlan', 'Plan')}
+                </Link>
+              )}
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent-bg)] text-[var(--accent-text)] text-sm font-medium hover:bg-[var(--accent-text)] hover:text-white transition-colors"
+              >
+                {t('nav.dashboard')} <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </>
           ) : (
             <button
               onClick={onActivate}
@@ -226,10 +241,18 @@ export default function ExamProfile() {
   const { t } = useTranslation()
   const { profiles, activeProfile, setActiveProfile, updateProfile, deleteProfile, profilesLoaded } = useExamProfile()
   const { topics } = useKnowledgeGraph(activeProfile?.id)
-  const [showWizard, setShowWizard] = useState(false)
+  const [showWizard, setShowWizard] = useState(() => hasSavedWizardDraft())
   const [showDependencyEditor, setShowDependencyEditor] = useState(false)
   const [dependencyTopic, setDependencyTopic] = useState<Topic | null>(null)
   const [showExamFormatEditor, setShowExamFormatEditor] = useState(false)
+
+  // Query which profiles have active study plans
+  const plansMap = useLiveQuery(async () => {
+    const plans = await db.studyPlans.filter(p => p.isActive).toArray()
+    const map: Record<string, boolean> = {}
+    for (const p of plans) map[p.examProfileId] = true
+    return map
+  }, [])
 
   // Auto-show wizard when there are no profiles (first-time user).
   // Once showWizard is latched true, it stays true until user cancels — this prevents
@@ -246,7 +269,7 @@ export default function ExamProfile() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-[var(--text-heading)]">{t('profile.create')}</h1>
           {profiles.length > 0 && (
-            <button onClick={() => setShowWizard(false)} className="text-sm text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors">
+            <button onClick={() => { setShowWizard(false); clearWizardDraft() }} className="text-sm text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors">
               {t('common.back')}
             </button>
           )}
@@ -282,6 +305,7 @@ export default function ExamProfile() {
             key={p.id}
             profile={p}
             isActive={p.id === activeProfile?.id}
+            hasPlan={!!plansMap?.[p.id]}
             onActivate={() => setActiveProfile(p.id)}
             onUpdate={async (updates) => updateProfile(p.id, updates)}
             onDelete={() => deleteProfile(p.id)}
