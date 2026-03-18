@@ -260,27 +260,51 @@ export class JobRunner {
       })
 
       const stepStart = Date.now()
-      try {
-        const data = await step.execute(undefined, ctx)
-        results[step.id] = { status: 'completed', data, durationMs: Date.now() - stepStart }
-        completedStepIds.add(step.id)
-        completedStepCount++
-      } catch (err) {
-        const error = err instanceof Error ? err.message : String(err)
-        console.error(`[JobRunner] Step "${step.name}" failed:`, error)
-        results[step.id] = { status: 'failed', error, durationMs: Date.now() - stepStart }
+      let stepSucceeded = false
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          // Refresh token before each attempt
+          if (attempt > 0) {
+            const freshToken = await this.getToken()
+            if (freshToken) ctx.authToken = freshToken
+          }
+          const data = await step.execute(undefined, ctx)
+          results[step.id] = { status: 'completed', data, durationMs: Date.now() - stepStart }
+          completedStepIds.add(step.id)
+          completedStepCount++
+          stepSucceeded = true
+          break
+        } catch (err) {
+          const error = err instanceof Error ? err.message : String(err)
+          const isRetryable = error.includes('429') || error.includes('overloaded') || error.includes('rate limit') || error.includes('ECONNRESET') || error.includes('fetch failed')
 
-        if (!step.optional) {
-          await db.backgroundJobs.update(job.id, {
-            status: 'failed' as JobStatus,
-            error: `Step "${step.name}" failed: ${error}`,
-            updatedAt: new Date().toISOString(),
-          })
-          return
+          if (isRetryable && attempt < 2) {
+            const delay = (attempt + 1) * 5000 // 5s, 10s
+            console.warn(`[JobRunner] Step "${step.name}" got retryable error, retry ${attempt + 1}/2 in ${delay / 1000}s:`, error)
+            await db.backgroundJobs.update(job.id, {
+              currentStepName: `${step.name} (retry ${attempt + 1}...)`,
+              updatedAt: new Date().toISOString(),
+            })
+            await new Promise(r => setTimeout(r, delay))
+            continue
+          }
+
+          console.error(`[JobRunner] Step "${step.name}" failed:`, error)
+          results[step.id] = { status: 'failed', error, durationMs: Date.now() - stepStart }
+
+          if (!step.optional) {
+            await db.backgroundJobs.update(job.id, {
+              status: 'failed' as JobStatus,
+              error: `Step "${step.name}" failed: ${error}`,
+              updatedAt: new Date().toISOString(),
+            })
+            return
+          }
+          // Optional step failed — continue
+          completedStepIds.add(step.id)
+          completedStepCount++
+          break
         }
-        // Optional step failed — continue
-        completedStepIds.add(step.id)
-        completedStepCount++
       }
 
       // Checkpoint AFTER step try-catch — never fails the step itself
