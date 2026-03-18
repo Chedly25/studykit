@@ -103,6 +103,8 @@ export type WizardAction =
   | { type: 'MOVE_PLAN_ACTIVITY'; fromDayIndex: number; fromActivityIndex: number; toDayIndex: number }
   | { type: 'REORDER_PLAN_ACTIVITY'; dayIndex: number; fromIndex: number; direction: 'up' | 'down' }
   | { type: 'CLEAR_PLAN_DAY'; dayIndex: number }
+  | { type: 'APPEND_SUBJECT'; subject: DraftSubject }
+  | { type: 'SET_PLAN_DAY_ACTIVITIES'; dayIndex: number; activities: PlanDraftActivity[] }
 
 // ─── Initial State ──────────────────────────────────────────────
 
@@ -301,6 +303,18 @@ export function wizardReducer(state: WizardDraft, action: WizardAction): WizardD
       if (!state.planDraft) return state
       const days = [...state.planDraft.days]
       days[action.dayIndex] = { ...days[action.dayIndex], activities: [] }
+      return { ...state, planDraft: { ...state.planDraft, days } }
+    }
+
+    case 'APPEND_SUBJECT':
+      return { ...state, subjects: normalizeWeights([...state.subjects, action.subject]) }
+
+    case 'SET_PLAN_DAY_ACTIVITIES': {
+      if (!state.planDraft) return state
+      const days = [...state.planDraft.days]
+      if (action.dayIndex < days.length) {
+        days[action.dayIndex] = { ...days[action.dayIndex], activities: action.activities }
+      }
       return { ...state, planDraft: { ...state.planDraft, days } }
     }
 

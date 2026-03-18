@@ -1,15 +1,19 @@
 import { useState, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
+import { toast } from 'sonner'
 import { Upload, FileText, Type, PenTool, Loader2, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react'
 import { useSources } from '../../../hooks/useSources'
-import { extractTopicStructure, type ExtractionResult } from '../../../ai/topicExtractor'
-import { extractLandscapeFromText } from '../../../ai/landscapeExtractor'
+import { extractTopicStructureStreaming } from '../../../ai/topicExtractor'
+import { extractLandscapeFromTextStreaming } from '../../../ai/landscapeExtractor'
+import { processFile } from '../../../lib/fileProcessor'
+import { createDocument, saveChunks } from '../../../lib/sources'
 import { TopicMapEditor } from '../TopicMapEditor'
 import type { WizardDraft, WizardAction, DraftSubject } from '../../../hooks/useWizardDraft'
+import type { ExtractedSubject } from '../../../ai/topicExtractor'
 
 type InputTab = 'upload' | 'paste' | 'freetext' | 'manual'
-type ProcessingState = 'idle' | 'uploading' | 'analyzing' | 'error'
+type ProcessingState = 'idle' | 'uploading' | 'analyzing' | 'streaming' | 'error'
 
 interface StepLandscapeProps {
   draft: WizardDraft
@@ -20,17 +24,17 @@ interface StepLandscapeProps {
 
 const COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4']
 
-function extractionToSubjects(result: ExtractionResult): DraftSubject[] {
-  return result.subjects.map((s, i) => ({
+function extractedToDraft(subject: ExtractedSubject, index: number): DraftSubject {
+  return {
     tempId: crypto.randomUUID(),
-    name: s.name,
-    weight: s.weight,
-    color: COLORS[i % COLORS.length],
-    topics: s.topics.map(t => ({
+    name: subject.name,
+    weight: subject.weight,
+    color: COLORS[index % COLORS.length],
+    topics: subject.topics.map(t => ({
       tempId: crypto.randomUUID(),
       name: t.name,
     })),
-  }))
+  }
 }
 
 export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscapeProps) {
@@ -50,7 +54,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
   const hasSubjects = draft.subjects.length > 0
   const canContinue = hasSubjects && draft.subjects.every(s => s.name.trim() && s.topics.length > 0)
 
-  // Upload handler
+  // Upload handler — parallel file save + streaming extraction
   const handleFiles = useCallback(async (files: File[]) => {
     const pdfFiles = files.filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'))
     if (pdfFiles.length === 0) return
@@ -58,49 +62,97 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
     setProcessingState('uploading')
     setError('')
 
+    let subjectCount = 0
+
     try {
-      await uploadMultiplePdfs(pdfFiles)
+      // Step 1: Process files in memory
+      const processed = await Promise.all(pdfFiles.map(f => processFile(f)))
+      const combinedText = processed.map(p => p.text).join('\n\n---\n\n')
 
       setProcessingState('analyzing')
+
       const token = await getToken()
       if (!token) throw new Error('Not authenticated')
 
-      const extraction = await extractTopicStructure(draft.profileId!, token)
-      dispatch({ type: 'SET_SUBJECTS', subjects: extractionToSubjects(extraction) })
-      dispatch({ type: 'SET_LANDSCAPE_SOURCE', source: 'upload' })
+      // Step 2: Parallel DB save + streaming extraction
+      const savePromise = Promise.all(processed.map(async (p) => {
+        const doc = await createDocument(draft.profileId!, p.title, 'pdf', p.text)
+        await saveChunks(doc.id, draft.profileId!, p.chunks)
+      })).catch(saveErr => {
+        // Surface save failures as a toast, don't block extraction
+        toast.error(`Document save failed: ${saveErr instanceof Error ? saveErr.message : 'Unknown error'}`)
+      })
+
+      const extractionPromise = extractTopicStructureStreaming(
+        draft.profileId!,
+        token,
+        (subject, index) => {
+          subjectCount++
+          dispatch({ type: 'APPEND_SUBJECT', subject: extractedToDraft(subject, index) })
+          if (index === 0) {
+            setProcessingState('streaming')
+            dispatch({ type: 'SET_LANDSCAPE_SOURCE', source: 'upload' })
+          }
+        },
+        undefined,
+        undefined,
+        combinedText,
+      )
+
+      // Save failure is handled above; only extraction failure propagates
+      const [extractionResult] = await Promise.allSettled([extractionPromise, savePromise])
+      if (extractionResult.status === 'rejected') throw extractionResult.reason
       setProcessingState('idle')
     } catch (err) {
-      setProcessingState('error')
-      setError(err instanceof Error ? err.message : 'Upload failed')
+      if (subjectCount > 0) {
+        setProcessingState('idle')
+        toast.error(err instanceof Error ? err.message : 'Analysis incomplete')
+      } else {
+        setProcessingState('error')
+        setError(err instanceof Error ? err.message : 'Upload failed')
+      }
     }
-  }, [draft.profileId, uploadMultiplePdfs, getToken, dispatch])
+  }, [draft.profileId, getToken, dispatch])
 
-  // Paste/Freetext extraction handler
+  // Paste/Freetext extraction handler — streaming
   const handleTextExtract = useCallback(async (text: string, source: 'paste' | 'freetext') => {
     if (!text.trim()) return
 
     setProcessingState('analyzing')
     setError('')
 
+    let subjectCount = 0
+
     try {
       const token = await getToken()
       if (!token) throw new Error('Not authenticated')
 
-      const extraction = await extractLandscapeFromText(
+      await extractLandscapeFromTextStreaming(
         text,
         draft.name,
         draft.examType || 'custom',
         token,
+        (subject, index) => {
+          subjectCount++
+          dispatch({ type: 'APPEND_SUBJECT', subject: extractedToDraft(subject, index) })
+          if (index === 0) {
+            setProcessingState('streaming')
+            dispatch({ type: 'SET_LANDSCAPE_SOURCE', source })
+          }
+        },
       )
-      dispatch({ type: 'SET_SUBJECTS', subjects: extractionToSubjects(extraction) })
-      dispatch({ type: 'SET_LANDSCAPE_SOURCE', source })
       if (source === 'freetext' && isResearch) {
         dispatch({ type: 'SET_RESEARCH_QUESTION', question: text })
       }
       setProcessingState('idle')
     } catch (err) {
-      setProcessingState('error')
-      setError(err instanceof Error ? err.message : 'Extraction failed')
+      if (subjectCount > 0) {
+        setProcessingState('idle')
+        toast.error(err instanceof Error ? err.message : 'Analysis incomplete')
+      } else {
+        setProcessingState('error')
+        setError(err instanceof Error ? err.message : 'Extraction failed')
+      }
     }
   }, [getToken, draft.name, draft.examType, isResearch, dispatch])
 
@@ -224,6 +276,12 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
 
         {hasSubjects && (
           <>
+            {processingState === 'streaming' && (
+              <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[var(--accent-bg)] text-sm text-[var(--accent-text)]">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {t('wizard.stillAnalyzing', `Found ${draft.subjects.length} subject${draft.subjects.length !== 1 ? 's' : ''} — still analyzing...`)}
+              </div>
+            )}
             <TopicMapEditor subjects={draft.subjects} dispatch={dispatch} />
             <div className="flex justify-between mt-6">
               <button onClick={onBack} className="btn-secondary px-4 py-2 flex items-center gap-2">
@@ -231,7 +289,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
               </button>
               <button
                 onClick={onNext}
-                disabled={!canContinue}
+                disabled={!canContinue || processingState === 'streaming'}
                 className="btn-primary px-6 py-2 flex items-center gap-2 disabled:opacity-40"
               >
                 {t('common.next')} <ChevronRight className="w-4 h-4" />
@@ -409,7 +467,15 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
 
       {/* TopicMapEditor: shown when subjects exist */}
       {hasSubjects && (
-        <TopicMapEditor subjects={draft.subjects} dispatch={dispatch} />
+        <>
+          {processingState === 'streaming' && (
+            <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[var(--accent-bg)] text-sm text-[var(--accent-text)]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {`Found ${draft.subjects.length} subject${draft.subjects.length !== 1 ? 's' : ''} — still analyzing...`}
+            </div>
+          )}
+          <TopicMapEditor subjects={draft.subjects} dispatch={dispatch} />
+        </>
       )}
 
       <div className="flex justify-between mt-6">
@@ -419,7 +485,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
         {hasSubjects ? (
           <button
             onClick={onNext}
-            disabled={!canContinue}
+            disabled={!canContinue || processingState === 'streaming'}
             className="btn-primary px-6 py-2 flex items-center gap-2 disabled:opacity-40"
           >
             {t('common.next')} <ChevronRight className="w-4 h-4" />

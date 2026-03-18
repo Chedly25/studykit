@@ -7,8 +7,8 @@ import { PlanWeekGrid } from '../PlanWeekGrid'
 import { PlanChatLane } from '../PlanChatLane'
 import { useExamProfile } from '../../../hooks/useExamProfile'
 import { usePlanCanvasAgent } from '../../../hooks/usePlanCanvasAgent'
-import { generateStudyPlanDraft, saveStudyPlan } from '../../../ai/studyPlanGenerator'
-import type { WizardDraft, WizardAction, PlanDraftData, PlanDraftDay } from '../../../hooks/useWizardDraft'
+import { generateStudyPlanDraftStreaming, saveStudyPlan } from '../../../ai/studyPlanGenerator'
+import type { WizardDraft, WizardAction, PlanDraftData, PlanDraftDay, PlanDraftActivity } from '../../../hooks/useWizardDraft'
 import type { ExtractedSubject } from '../../../ai/topicExtractor'
 
 interface StepPlanCanvasProps {
@@ -48,77 +48,66 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
   const { seedTopicsForProfile, setActiveProfile } = useExamProfile()
   const agent = usePlanCanvasAgent(draft, dispatch)
 
-  const [isGenerating, setIsGenerating] = useState(false)
   const [isActivating, setIsActivating] = useState(false)
   const [generateError, setGenerateError] = useState('')
+  const [streamingDayCount, setStreamingDayCount] = useState(0)
   const hasGenerated = useRef(false)
 
-  // Snapshot values at mount for initial generation — avoids stale closure issues
-  const profileId = draft.profileId
-  const topicNames = draft.subjects.flatMap(s => s.topics.map(t => t.name))
+  // -1 = generation pending (before first day), 0 = not started, 1–7 = days received
+  const isStreaming = streamingDayCount !== 0 && streamingDayCount < 7
 
-  // Generate initial plan on mount
+  // Snapshot values at mount via ref — avoids unstable deps in useEffect
+  const profileIdRef = useRef(draft.profileId)
+  const topicNamesRef = useRef(draft.subjects.flatMap(s => s.topics.map(t => t.name)))
+
+  // Generate initial plan on mount — progressive day fill
   useEffect(() => {
+    const profileId = profileIdRef.current
     if (hasGenerated.current || draft.planDraft || !profileId) return
     hasGenerated.current = true
 
     const monday = getNextMonday()
     const weekStart = monday.toISOString().slice(0, 10)
 
+    // Set empty shell immediately so grid is visible from the start
+    const emptyWeek = buildEmptyWeek(monday)
+    dispatch({ type: 'SET_PLAN_DRAFT', plan: emptyWeek })
+    setStreamingDayCount(-1) // pending — show indicator immediately
+
     const generateInitial = async () => {
-      setIsGenerating(true)
       setGenerateError('')
 
       try {
         const token = await getToken()
         if (!token) throw new Error('Not authenticated')
 
-        const parsed = await generateStudyPlanDraft(
+        await generateStudyPlanDraftStreaming(
           profileId,
           token,
           7,
-          { topicNames, weekStart },
-        )
-
-        // Convert ParsedPlanData → PlanDraftData with day labels and IDs
-        const planDraft: PlanDraftData = {
-          weekStart,
-          days: parsed.days.map((d, i) => ({
-            date: d.date,
-            dayLabel: DAY_LABELS[i] ?? new Date(d.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long' }),
-            activities: d.activities.map(a => ({
+          { topicNames: topicNamesRef.current, weekStart },
+          (day, index) => {
+            // Convert to PlanDraftActivity format with IDs
+            const activities: PlanDraftActivity[] = day.activities.map(a => ({
               id: crypto.randomUUID(),
               topicName: a.topicName,
               activityType: a.activityType,
               durationMinutes: a.durationMinutes,
-            })),
-          })),
-        }
-
-        // Pad to 7 days if needed
-        while (planDraft.days.length < 7) {
-          const dayDate = new Date(monday)
-          dayDate.setDate(monday.getDate() + planDraft.days.length)
-          planDraft.days.push({
-            date: dayDate.toISOString().slice(0, 10),
-            dayLabel: DAY_LABELS[planDraft.days.length] ?? 'Day',
-            activities: [],
-          })
-        }
-
-        dispatch({ type: 'SET_PLAN_DRAFT', plan: planDraft })
+            }))
+            dispatch({ type: 'SET_PLAN_DAY_ACTIVITIES', dayIndex: index, activities })
+            setStreamingDayCount(index + 1)
+          },
+        )
+        setStreamingDayCount(7)
       } catch (err) {
         console.error('Failed to generate plan:', err)
         setGenerateError(err instanceof Error ? err.message : 'Failed to generate plan')
-        // Set empty week as fallback
-        dispatch({ type: 'SET_PLAN_DRAFT', plan: buildEmptyWeek(monday) })
-      } finally {
-        setIsGenerating(false)
+        setStreamingDayCount(7) // Clear streaming indicator
       }
     }
 
     generateInitial()
-  }, [profileId, topicNames, draft.planDraft, getToken, dispatch])
+  }, [draft.planDraft, getToken, dispatch])
 
   // "Start learning" — activate everything
   const handleActivate = useCallback(async () => {
@@ -163,24 +152,6 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
     }
   }, [draft.profileId, draft.planDraft, draft.subjects, draft.assessments, seedTopicsForProfile, getToken, setActiveProfile, navigate])
 
-  // Loading state
-  if (isGenerating) {
-    return (
-      <div className="max-w-4xl mx-auto">
-        <div className="glass-card p-12 text-center">
-          <Sparkles className="w-10 h-10 text-[var(--accent-text)] mx-auto mb-4 animate-pulse" />
-          <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
-            {t('wizard.generatingPlan', 'Building your study plan...')}
-          </h3>
-          <p className="text-sm text-[var(--text-muted)]">
-            {t('wizard.generatingPlanSubtitle', 'Creating a personalized week based on your goals and assessment')}
-          </p>
-          <Loader2 className="w-6 h-6 text-[var(--accent-text)] mx-auto mt-4 animate-spin" />
-        </div>
-      </div>
-    )
-  }
-
   if (!draft.planDraft) return null
 
   const totalActivities = draft.planDraft.days.reduce((sum, d) => sum + d.activities.length, 0)
@@ -208,6 +179,17 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
         </div>
       </div>
 
+      {/* Streaming indicator */}
+      {isStreaming && (
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-[var(--accent-bg)] text-sm text-[var(--accent-text)]">
+          <Sparkles className="w-4 h-4 animate-pulse" />
+          {streamingDayCount > 0
+            ? `Building day ${streamingDayCount} of 7...`
+            : 'Preparing your study plan...'
+          }
+        </div>
+      )}
+
       {/* Week Grid */}
       <PlanWeekGrid plan={draft.planDraft} subjects={draft.subjects} dispatch={dispatch} />
 
@@ -229,7 +211,7 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
         </button>
         <button
           onClick={handleActivate}
-          disabled={isActivating || totalActivities === 0}
+          disabled={isActivating || isStreaming || totalActivities === 0}
           className="btn-primary px-8 py-3 text-base font-semibold flex items-center gap-2 disabled:opacity-40"
         >
           {isActivating ? (

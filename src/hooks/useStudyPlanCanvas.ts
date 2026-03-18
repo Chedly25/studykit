@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { Subject, Topic, DailyStudyLog, StudyPlanDay } from '../db/schema'
 import { computeReadiness, computeStreak, decayedMastery } from '../lib/knowledgeGraph'
-import { generateStudyPlanDraft, saveStudyPlan } from '../ai/studyPlanGenerator'
+import { generateStudyPlanDraftStreaming, saveStudyPlan } from '../ai/studyPlanGenerator'
 import type { ParsedPlanData } from '../ai/studyPlanGenerator'
 
 export type CanvasMode = 'builder' | 'generating' | 'result' | 'completed'
@@ -149,13 +149,24 @@ export function useStudyPlanCanvas(examProfileId: string | undefined) {
     if (!examProfileId) return
     setMode('generating')
     setError(null)
+
+    // Create empty shell immediately so UI can show the grid
+    const dates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart + 'T12:00:00')
+      d.setDate(d.getDate() + i)
+      return d.toISOString().slice(0, 10)
+    })
+    const emptyDraft: ParsedPlanData = {
+      days: dates.map(date => ({ date, activities: [] })),
+    }
+    setDraftData(emptyDraft)
+
     try {
-      // Resolve selected topic names
       const topicNames = topics
         .filter(t => effectiveSelectedTopicIds.has(t.id))
         .map(t => t.name)
 
-      const parsed = await generateStudyPlanDraft(
+      const parsed = await generateStudyPlanDraftStreaming(
         examProfileId,
         authToken,
         7,
@@ -165,12 +176,28 @@ export function useStudyPlanCanvas(examProfileId: string | undefined) {
           dailyMinutes: Math.round(effectiveDailyHours * 60),
           weekStart,
         },
+        (day, index) => {
+          setDraftData(prev => {
+            if (!prev) return prev
+            const days = [...prev.days]
+            if (index < days.length) {
+              days[index] = { ...days[index], date: day.date, activities: day.activities }
+            }
+            return { ...prev, days }
+          })
+        },
       )
       setDraftData(parsed)
       setMode('result')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate plan')
-      setMode('builder')
+      // Check partial results via ref-stable getter to decide mode
+      setDraftData(prev => {
+        // Schedule mode update outside the updater via microtask
+        const hasActivities = prev?.days.some(d => d.activities.length > 0) ?? false
+        queueMicrotask(() => setMode(hasActivities ? 'result' : 'builder'))
+        return prev
+      })
     }
   }, [examProfileId, topics, effectiveSelectedTopicIds, selectedActivityTypes, effectiveDailyHours, weekStart])
 

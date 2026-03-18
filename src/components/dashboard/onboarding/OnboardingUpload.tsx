@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Upload, FileText, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { useAuth } from '@clerk/clerk-react'
 import { useSources } from '../../../hooks/useSources'
-import { extractTopicStructure, type ExtractionResult } from '../../../ai/topicExtractor'
+import { extractTopicStructureStreaming, type ExtractionResult } from '../../../ai/topicExtractor'
 
 interface OnboardingUploadProps {
   examProfileId: string
@@ -19,6 +19,7 @@ export function OnboardingUpload({ examProfileId, onComplete }: OnboardingUpload
   const [state, setState] = useState<UploadState>('idle')
   const [error, setError] = useState('')
   const [isDragOver, setIsDragOver] = useState(false)
+  const [subjectCount, setSubjectCount] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFiles = useCallback(async (files: File[]) => {
@@ -27,6 +28,7 @@ export function OnboardingUpload({ examProfileId, onComplete }: OnboardingUpload
 
     setState('uploading')
     setError('')
+    setSubjectCount(0)
 
     try {
       await uploadMultiplePdfs(pdfFiles)
@@ -35,7 +37,11 @@ export function OnboardingUpload({ examProfileId, onComplete }: OnboardingUpload
       const token = await getToken()
       if (!token) throw new Error('Not authenticated')
 
-      const result = await extractTopicStructure(examProfileId, token)
+      const result = await extractTopicStructureStreaming(
+        examProfileId,
+        token,
+        (_subject, index) => { setSubjectCount(index + 1) },
+      )
       onComplete(result)
     } catch (err) {
       setState('error')
@@ -105,7 +111,10 @@ export function OnboardingUpload({ examProfileId, onComplete }: OnboardingUpload
           <FileText className="w-10 h-10 text-[var(--accent-text)] relative" />
         </div>
         <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
-          {t('dashboard.onboarding.analyzing')}
+          {subjectCount > 0
+            ? `Found ${subjectCount} subject${subjectCount !== 1 ? 's' : ''}...`
+            : t('dashboard.onboarding.analyzing')
+          }
         </h3>
         <p className="text-sm text-[var(--text-muted)]">
           {t('dashboard.onboarding.analyzingSubtitle')}

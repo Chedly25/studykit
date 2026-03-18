@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Loader2, AlertCircle, BookOpen, Brain, ClipboardCheck, RotateCcw, MessageCircle, RefreshCw } from 'lucide-react'
 import { useAuth } from '@clerk/clerk-react'
 import { useStudyPlan } from '../../../hooks/useStudyPlan'
+import { generateStudyPlanDraftStreaming, saveStudyPlan } from '../../../ai/studyPlanGenerator'
 
 interface OnboardingPlanProps {
   examProfileId: string
@@ -23,34 +24,47 @@ const ACTIVITY_ICONS: Record<string, typeof BookOpen> = {
 export function OnboardingPlan({ examProfileId, onComplete }: OnboardingPlanProps) {
   const { t } = useTranslation()
   const { getToken } = useAuth()
-  const { generatePlan, planDays, isGenerating } = useStudyPlan(examProfileId)
+  const { planDays } = useStudyPlan(examProfileId)
   const [state, setState] = useState<PlanState>('generating')
   const [error, setError] = useState('')
+  const [dayCount, setDayCount] = useState(0)
 
   const doGenerate = useCallback(async () => {
     setState('generating')
+    setDayCount(0)
     setError('')
     try {
       const token = await getToken()
       if (!token) throw new Error('Not authenticated')
-      await generatePlan(token)
+
+      const parsed = await generateStudyPlanDraftStreaming(
+        examProfileId,
+        token,
+        7,
+        undefined,
+        (_day, index) => { setDayCount(index + 1) },
+      )
+      await saveStudyPlan(examProfileId, parsed)
       setState('preview')
     } catch (err) {
       setState('error')
       setError(err instanceof Error ? err.message : 'Plan generation failed')
     }
-  }, [getToken, generatePlan])
+  }, [getToken, examProfileId])
 
   useEffect(() => {
     doGenerate()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (state === 'generating' || isGenerating) {
+  if (state === 'generating') {
     return (
       <div className="glass-card p-8 text-center">
         <Loader2 className="w-10 h-10 text-[var(--accent-text)] mx-auto mb-4 animate-spin" />
         <h3 className="text-lg font-semibold text-[var(--text-heading)]">
-          {t('dashboard.onboarding.planGenerating')}
+          {dayCount > 0
+            ? `Building day ${dayCount} of 7...`
+            : t('dashboard.onboarding.planGenerating')
+          }
         </h3>
       </div>
     )
