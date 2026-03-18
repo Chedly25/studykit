@@ -89,6 +89,7 @@ Rules:
     system: 'You are a curriculum analysis expert. Analyze study materials and extract their subject and topic structure. Return only valid JSON.',
     tools: [],
     authToken,
+    maxTokens: 16384,
   })
 
   const text = response.content

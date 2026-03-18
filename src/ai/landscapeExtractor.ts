@@ -44,7 +44,7 @@ Rules:
     system: 'You are a curriculum analysis expert. Extract structured subject/topic breakdowns from any content. Return only valid JSON.',
     tools: [],
     authToken,
-    maxTokens: 4096,
+    maxTokens: 16384,
     signal,
   })
 
