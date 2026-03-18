@@ -44,7 +44,7 @@ export function PlanChatLane({
   ]
 
   return (
-    <div className="glass-card p-3 mt-4">
+    <div className="glass-card p-3">
       {/* Suggestion bubbles */}
       {suggestions.length > 0 && (
         <div className="space-y-2 mb-3">
@@ -68,7 +68,7 @@ export function PlanChatLane({
 
       {/* Chat messages */}
       {messages.length > 0 && (
-        <div className="max-h-48 overflow-y-auto space-y-2 mb-3 scroll-smooth">
+        <div className="lg:max-h-[60vh] max-h-48 overflow-y-auto space-y-2 mb-3 scroll-smooth">
           {messages.map((msg, i) => (
             <div
               key={i}

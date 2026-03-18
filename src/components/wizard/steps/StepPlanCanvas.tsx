@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
-import { Loader2, ChevronLeft, Sparkles, Rocket } from 'lucide-react'
+import { Loader2, ChevronLeft, Sparkles, Rocket, CalendarDays, List } from 'lucide-react'
 import { PlanWeekGrid } from '../PlanWeekGrid'
+import { PlanDayView } from '../PlanDayView'
 import { PlanChatLane } from '../PlanChatLane'
+import { ActivityDetailDialog } from '../ActivityDetailDialog'
 import { useExamProfile } from '../../../hooks/useExamProfile'
 import { usePlanCanvasAgent } from '../../../hooks/usePlanCanvasAgent'
 import { generateStudyPlanDraftStreaming, saveStudyPlan } from '../../../ai/studyPlanGenerator'
@@ -52,6 +54,11 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
   const [generateError, setGenerateError] = useState('')
   const [streamingDayCount, setStreamingDayCount] = useState(0)
   const hasGenerated = useRef(false)
+
+  // View toggle + dialog state
+  const [viewMode, setViewMode] = useState<'week' | 'day'>('week')
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0)
+  const [dialogTarget, setDialogTarget] = useState<{ dayIndex: number; activityId: string } | null>(null)
 
   // -1 = generation pending (before first day), 0 = not started, 1–7 = days received
   const isStreaming = streamingDayCount !== 0 && streamingDayCount < 7
@@ -159,74 +166,176 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
     (sum, d) => sum + d.activities.reduce((s, a) => s + a.durationMinutes, 0), 0
   )
 
+  const handleSelectActivity = (dayIndex: number, actIndex: number) => {
+    const activity = draft.planDraft?.days[dayIndex]?.activities[actIndex]
+    if (activity) setDialogTarget({ dayIndex, activityId: activity.id })
+  }
+
+  // Resolve dialog activity by stable ID (survives reorder/delete of other items)
+  let dialogDayIndex: number | null = null
+  let dialogActIndex: number | null = null
+  let dialogActivity: PlanDraftActivity | null = null
+  if (dialogTarget && draft.planDraft) {
+    const day = draft.planDraft.days[dialogTarget.dayIndex]
+    if (day) {
+      const idx = day.activities.findIndex(a => a.id === dialogTarget.activityId)
+      if (idx !== -1) {
+        dialogDayIndex = dialogTarget.dayIndex
+        dialogActIndex = idx
+        dialogActivity = day.activities[idx]
+      }
+    }
+  }
+
+  // Auto-close dialog when the activity disappears (e.g. deleted by AI agent)
+  useEffect(() => {
+    if (dialogTarget && !dialogActivity) setDialogTarget(null)
+  }, [dialogTarget, dialogActivity])
+
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--text-heading)]">
-            {t('wizard.planTitle', 'Your study plan')}
-          </h2>
-          <p className="text-sm text-[var(--text-muted)]">
-            {generateError
-              ? t('wizard.planEmptyHint', 'Add activities manually or use the chat to build your plan')
-              : t('wizard.planSubtitle', 'Here\'s a starting point based on what you told us. Edit directly or use the chat below.')
-            }
-          </p>
-        </div>
-        <div className="text-right text-xs text-[var(--text-muted)]">
-          <div>{totalActivities} {totalActivities === 1 ? 'activity' : 'activities'}</div>
-          <div>{Math.round(totalMinutes / 60 * 10) / 10}h total</div>
-        </div>
-      </div>
+    <div className="max-w-[1400px] mx-auto">
+      <div className="flex flex-col lg:flex-row lg:gap-6">
+        {/* Left panel — plan view */}
+        <div className="flex-1 min-w-0">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-[var(--text-heading)]">
+                {t('wizard.planTitle', 'Your study plan')}
+              </h2>
+              <p className="text-sm text-[var(--text-muted)]">
+                {generateError
+                  ? t('wizard.planEmptyHint', 'Add activities manually or use the chat to build your plan')
+                  : t('wizard.planSubtitle', 'Here\'s a starting point based on what you told us. Edit directly or use the chat.')
+                }
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Stats */}
+              <div className="text-right text-xs text-[var(--text-muted)] hidden sm:block">
+                <div>{totalActivities} {totalActivities === 1 ? 'activity' : 'activities'}</div>
+                <div>{Math.round(totalMinutes / 60 * 10) / 10}h total</div>
+              </div>
+              {/* View toggle */}
+              <div className="flex rounded-lg overflow-hidden border border-[var(--border-card)]">
+                <button
+                  onClick={() => setViewMode('week')}
+                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                    viewMode === 'week'
+                      ? 'bg-[var(--accent-text)] text-white'
+                      : 'bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--text-body)]'
+                  }`}
+                >
+                  <CalendarDays className="w-3.5 h-3.5" /> Week
+                </button>
+                <button
+                  onClick={() => setViewMode('day')}
+                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                    viewMode === 'day'
+                      ? 'bg-[var(--accent-text)] text-white'
+                      : 'bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--text-body)]'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" /> Day
+                </button>
+              </div>
+            </div>
+          </div>
 
-      {/* Streaming indicator */}
-      {isStreaming && (
-        <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-[var(--accent-bg)] text-sm text-[var(--accent-text)]">
-          <Sparkles className="w-4 h-4 animate-pulse" />
-          {streamingDayCount > 0
-            ? `Building day ${streamingDayCount} of 7...`
-            : 'Preparing your study plan...'
-          }
-        </div>
-      )}
-
-      {/* Week Grid */}
-      <PlanWeekGrid plan={draft.planDraft} subjects={draft.subjects} dispatch={dispatch} />
-
-      {/* AI Chat Lane */}
-      <PlanChatLane
-        messages={agent.chatMessages}
-        isLoading={agent.isLoading}
-        streamingText={agent.streamingText}
-        currentToolCall={agent.currentToolCall}
-        suggestions={agent.suggestions}
-        onSend={agent.sendMessage}
-        onDismissSuggestion={agent.dismissSuggestion}
-      />
-
-      {/* Navigation */}
-      <div className="flex justify-between mt-6">
-        <button onClick={onBack} className="btn-secondary px-4 py-2 flex items-center gap-2">
-          <ChevronLeft className="w-4 h-4" /> {t('common.back')}
-        </button>
-        <button
-          onClick={handleActivate}
-          disabled={isActivating || isStreaming || totalActivities === 0}
-          className="btn-primary px-8 py-3 text-base font-semibold flex items-center gap-2 disabled:opacity-40"
-        >
-          {isActivating ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              {t('wizard.activating', 'Setting up...')}
-            </>
-          ) : (
-            <>
-              <Rocket className="w-5 h-5" />
-              {t('wizard.startLearning', 'Start learning')}
-            </>
+          {/* Streaming indicator */}
+          {isStreaming && (
+            <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-[var(--accent-bg)] text-sm text-[var(--accent-text)]">
+              <Sparkles className="w-4 h-4 animate-pulse" />
+              {streamingDayCount > 0
+                ? `Building day ${streamingDayCount} of 7...`
+                : 'Preparing your study plan...'
+              }
+            </div>
           )}
-        </button>
+
+          {/* Plan view */}
+          {viewMode === 'week' ? (
+            <PlanWeekGrid
+              plan={draft.planDraft}
+              subjects={draft.subjects}
+              dispatch={dispatch}
+              onSelectActivity={handleSelectActivity}
+            />
+          ) : (
+            <PlanDayView
+              plan={draft.planDraft}
+              subjects={draft.subjects}
+              selectedDayIndex={selectedDayIndex}
+              onSelectDay={setSelectedDayIndex}
+              onSelectActivity={handleSelectActivity}
+              dispatch={dispatch}
+            />
+          )}
+
+          {/* Mobile chat — visible below lg */}
+          <div className="lg:hidden mt-4">
+            <PlanChatLane
+              messages={agent.chatMessages}
+              isLoading={agent.isLoading}
+              streamingText={agent.streamingText}
+              currentToolCall={agent.currentToolCall}
+              suggestions={agent.suggestions}
+              onSend={agent.sendMessage}
+              onDismissSuggestion={agent.dismissSuggestion}
+            />
+          </div>
+
+          {/* Navigation */}
+          <div className="flex justify-between mt-6">
+            <button onClick={onBack} className="btn-secondary px-4 py-2 flex items-center gap-2">
+              <ChevronLeft className="w-4 h-4" /> {t('common.back')}
+            </button>
+            <button
+              onClick={handleActivate}
+              disabled={isActivating || isStreaming || totalActivities === 0}
+              className="btn-primary px-8 py-3 text-base font-semibold flex items-center gap-2 disabled:opacity-40"
+            >
+              {isActivating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {t('wizard.activating', 'Setting up...')}
+                </>
+              ) : (
+                <>
+                  <Rocket className="w-5 h-5" />
+                  {t('wizard.startLearning', 'Start learning')}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Right panel — chat (desktop only) */}
+        <div className="hidden lg:block lg:w-[340px] lg:flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
+          <PlanChatLane
+            messages={agent.chatMessages}
+            isLoading={agent.isLoading}
+            streamingText={agent.streamingText}
+            currentToolCall={agent.currentToolCall}
+            suggestions={agent.suggestions}
+            onSend={agent.sendMessage}
+            onDismissSuggestion={agent.dismissSuggestion}
+          />
+        </div>
       </div>
+
+      {/* Activity Detail Dialog */}
+      {dialogTarget && dialogActivity && dialogDayIndex !== null && dialogActIndex !== null && draft.planDraft && (
+        <ActivityDetailDialog
+          activity={dialogActivity}
+          dayIndex={dialogDayIndex}
+          activityIndex={dialogActIndex}
+          plan={draft.planDraft}
+          subjects={draft.subjects}
+          dispatch={dispatch}
+          onClose={() => setDialogTarget(null)}
+        />
+      )}
     </div>
   )
 }

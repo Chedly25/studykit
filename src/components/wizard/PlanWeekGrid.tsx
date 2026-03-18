@@ -10,16 +10,17 @@ interface PlanWeekGridProps {
   plan: PlanDraftData
   subjects: DraftSubject[]
   dispatch: React.Dispatch<WizardAction>
+  onSelectActivity: (dayIndex: number, actIndex: number) => void
 }
 
-export function PlanWeekGrid({ plan, subjects, dispatch }: PlanWeekGridProps) {
+export function PlanWeekGrid({ plan, subjects, dispatch, onSelectActivity }: PlanWeekGridProps) {
   const { t } = useTranslation()
   const [addingDay, setAddingDay] = useState<number | null>(null)
   const [newTopic, setNewTopic] = useState('')
   const [newType, setNewType] = useState('read')
   const [newDuration, setNewDuration] = useState(30)
 
-  const allTopics = subjects.flatMap(s => s.topics.map(t => t.name))
+  const allTopics = subjects.flatMap(s => s.topics.map(tp => tp.name))
 
   const handleAddActivity = (dayIndex: number) => {
     if (!newTopic) return
@@ -37,13 +38,13 @@ export function PlanWeekGrid({ plan, subjects, dispatch }: PlanWeekGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
       {plan.days.map((day, dayIndex) => {
         const totalMin = day.activities.reduce((sum, a) => sum + a.durationMinutes, 0)
         const isAdding = addingDay === dayIndex
 
         return (
-          <div key={day.date} className="glass-card p-2 min-h-[120px] flex flex-col">
+          <div key={day.date} className="glass-card p-3 min-h-[120px] flex flex-col">
             {/* Day header */}
             <div className="flex items-center justify-between mb-2 px-1">
               <div>
@@ -65,32 +66,7 @@ export function PlanWeekGrid({ plan, subjects, dispatch }: PlanWeekGridProps) {
                 <ActivityBlock
                   key={activity.id}
                   activity={activity}
-                  subjects={subjects}
-                  canMoveUp={actIndex > 0}
-                  canMoveDown={actIndex < day.activities.length - 1}
-                  onUpdate={updates => dispatch({
-                    type: 'UPDATE_PLAN_ACTIVITY',
-                    dayIndex,
-                    activityIndex: actIndex,
-                    updates,
-                  })}
-                  onDelete={() => dispatch({
-                    type: 'REMOVE_PLAN_ACTIVITY',
-                    dayIndex,
-                    activityIndex: actIndex,
-                  })}
-                  onMoveUp={() => dispatch({
-                    type: 'REORDER_PLAN_ACTIVITY',
-                    dayIndex,
-                    fromIndex: actIndex,
-                    direction: 'up',
-                  })}
-                  onMoveDown={() => dispatch({
-                    type: 'REORDER_PLAN_ACTIVITY',
-                    dayIndex,
-                    fromIndex: actIndex,
-                    direction: 'down',
-                  })}
+                  onSelect={() => onSelectActivity(dayIndex, actIndex)}
                 />
               ))}
 
@@ -147,8 +123,10 @@ export function PlanWeekGrid({ plan, subjects, dispatch }: PlanWeekGridProps) {
               ) : (
                 <button
                   onClick={() => {
+                    setNewTopic(allTopics[0] ?? '')
+                    setNewType('read')
+                    setNewDuration(30)
                     setAddingDay(dayIndex)
-                    if (allTopics.length > 0 && !newTopic) setNewTopic(allTopics[0])
                   }}
                   className="w-full py-1.5 rounded-lg border border-dashed border-[var(--border-card)] text-[10px] text-[var(--text-muted)] hover:border-[var(--accent-text)]/50 hover:text-[var(--accent-text)] transition-colors flex items-center justify-center gap-1"
                 >

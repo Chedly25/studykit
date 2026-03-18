@@ -102,7 +102,9 @@ export async function runCanvasAgentLoop(options: CanvasAgentOptions): Promise<C
         if (block.type === 'text') assistantContent.push({ type: 'text', text: block.text })
         else if (block.type === 'tool_use') assistantContent.push(block)
       }
-      messages.push({ role: 'assistant', content: assistantContent })
+      const assistantMsg: Message = { role: 'assistant', content: assistantContent }
+      if (response.reasoningContent) assistantMsg.reasoning_content = response.reasoningContent
+      messages.push(assistantMsg)
 
       // Execute tools
       const resultBlocks: ContentBlock[] = []
