@@ -141,6 +141,7 @@ export class JobRunner {
           }
         } catch (err) {
           const error = err instanceof Error ? err.message : String(err)
+          console.error(`[JobRunner] Job ${job.type} (${job.id}) failed:`, error)
           await db.backgroundJobs.update(job.id, {
             status: 'failed' as JobStatus,
             error,
@@ -264,25 +265,26 @@ export class JobRunner {
         results[step.id] = { status: 'completed', data, durationMs: Date.now() - stepStart }
         completedStepIds.add(step.id)
         completedStepCount++
-        await this.checkpoint(job.id, completedStepIds, results, completedStepCount, step.name)
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err)
+        console.error(`[JobRunner] Step "${step.name}" failed:`, error)
         results[step.id] = { status: 'failed', error, durationMs: Date.now() - stepStart }
 
         if (!step.optional) {
           await db.backgroundJobs.update(job.id, {
             status: 'failed' as JobStatus,
             error: `Step "${step.name}" failed: ${error}`,
-            stepResults: JSON.stringify(results),
             updatedAt: new Date().toISOString(),
           })
           return
         }
-        // Optional step failed — checkpoint and continue
+        // Optional step failed — continue
         completedStepIds.add(step.id)
         completedStepCount++
-        await this.checkpoint(job.id, completedStepIds, results, completedStepCount, step.name)
       }
+
+      // Checkpoint AFTER step try-catch — never fails the step itself
+      await this.checkpoint(job.id, completedStepIds, results, completedStepCount, step.name)
     }
 
     // Aggregate final result
@@ -497,13 +499,32 @@ export class JobRunner {
     completedStepCount: number,
     stepName: string,
   ): Promise<void> {
-    await db.backgroundJobs.update(jobId, {
-      completedStepIds: JSON.stringify([...completedStepIds]),
-      stepResults: JSON.stringify(results),
-      completedStepCount,
-      currentStepName: stepName,
-      updatedAt: new Date().toISOString(),
-    })
+    // Serialize step results safely — strip non-serializable data gracefully
+    let serializedResults = '{}'
+    try {
+      serializedResults = JSON.stringify(results)
+    } catch {
+      // If full results can't be serialized (e.g., large/complex step data),
+      // save only status + durationMs for each step (enough for resume logic)
+      const safeResults: Record<string, { status: string; durationMs: number; error?: string }> = {}
+      for (const [key, val] of Object.entries(results)) {
+        safeResults[key] = { status: val.status, durationMs: val.durationMs, error: val.error }
+      }
+      serializedResults = JSON.stringify(safeResults)
+    }
+
+    try {
+      await db.backgroundJobs.update(jobId, {
+        completedStepIds: JSON.stringify([...completedStepIds]),
+        stepResults: serializedResults,
+        completedStepCount,
+        currentStepName: stepName,
+        updatedAt: new Date().toISOString(),
+      })
+    } catch (err) {
+      // Checkpoint failure is non-fatal — step data is still in memory
+      console.warn('[JobRunner] Checkpoint write failed:', err)
+    }
   }
 
   private async pauseJob(jobId: string, reason: string): Promise<void> {
