@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Trash2, Link2, FileBarChart, ArrowRight, Pencil, X, Check, Calendar, Clock, Target } from 'lucide-react'
@@ -231,8 +231,16 @@ export default function ExamProfile() {
   const [dependencyTopic, setDependencyTopic] = useState<Topic | null>(null)
   const [showExamFormatEditor, setShowExamFormatEditor] = useState(false)
 
-  // Show wizard only after profiles have loaded and there are truly none
-  if (showWizard || (profilesLoaded && profiles.length === 0)) {
+  // Auto-show wizard when there are no profiles (first-time user).
+  // Once showWizard is latched true, it stays true until user cancels — this prevents
+  // the wizard from unmounting when createProfile() in Step 1 adds a profile to the DB.
+  useEffect(() => {
+    if (profilesLoaded && profiles.length === 0) {
+      setShowWizard(true)
+    }
+  }, [profilesLoaded, profiles.length])
+
+  if (showWizard) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
         <div className="flex items-center justify-between mb-6">
