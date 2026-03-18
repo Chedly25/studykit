@@ -79,28 +79,30 @@ export function computeDailyRecommendations(input: RecommenderInput): StudyRecom
     let reason: string
     let linkTo: string
 
+    const sessionLink = `/session?topic=${encodeURIComponent(topic.name)}`
+
     if (dueCards > 0) {
       action = 'flashcards'
       reason = `${dueCards} flashcard${dueCards > 1 ? 's' : ''} due for review`
-      linkTo = '/flashcard-maker'
+      linkTo = sessionLink
     } else if (dm < 0.3) {
       action = 'read'
       reason = dm < topic.mastery
         ? `Mastery decayed to ${Math.round(dm * 100)}% — needs refreshing`
         : 'Low mastery — build foundation first'
-      linkTo = '/sources'
+      linkTo = sessionLink
     } else if (dm < 0.6) {
       action = 'practice'
       reason = 'Moderate mastery — reinforce with practice questions'
-      linkTo = '/practice-exam'
+      linkTo = sessionLink
     } else if (dm > 0.7 && topic.questionsAttempted < 5) {
       action = 'explain-back'
       reason = 'Good mastery — test deep understanding'
-      linkTo = `/chat?mode=explain-back&topic=${encodeURIComponent(topic.name)}`
+      linkTo = sessionLink
     } else {
       action = 'review'
       reason = 'Due for spaced review'
-      linkTo = '/chat'
+      linkTo = sessionLink
     }
 
     recommendations.push({
@@ -138,7 +140,7 @@ export function computeDailyRecommendations(input: RecommenderInput): StudyRecom
             subjectName: prereqSubject?.name ?? top[i].subjectName,
             reason: `Master this prerequisite first (for ${top[i].topicName})`,
             action: 'read',
-            linkTo: '/sources',
+            linkTo: `/session?topic=${encodeURIComponent(prereqTopic.name)}`,
             decayedMastery: decayedMastery(prereqTopic),
           }
         }

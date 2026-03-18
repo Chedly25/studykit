@@ -2,7 +2,8 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { runAgentLoop } from '../ai/agentLoop'
-import { buildSystemPrompt, buildSocraticPrompt, buildExplainBackPrompt } from '../ai/systemPrompt'
+import { buildSystemPrompt, buildSocraticPrompt, buildExplainBackPrompt, buildSessionPrompt } from '../ai/systemPrompt'
+import type { SessionContext } from '../ai/systemPrompt'
 import { createConversation, loadMessages, saveMessages } from '../ai/messageStore'
 import { QuotaExceededError } from '../ai/client'
 import { generateSessionInsight } from '../ai/insightGenerator'
@@ -47,6 +48,7 @@ interface UseAgentOptions {
   sessionInsights?: SessionInsight[]
   studentModel?: StudentModel
   conversationSummaries?: ConversationSummary[]
+  sessionContext?: SessionContext
 }
 
 export function useAgent(options: UseAgentOptions) {
@@ -198,7 +200,9 @@ export function useAgent(options: UseAgentOptions) {
         examFormats: examFormats.length > 0 ? examFormats : undefined,
       }
 
-      const systemPrompt = isExplainBack && explainBackTopic
+      const systemPrompt = options.sessionContext
+        ? buildSessionPrompt(ctx, options.sessionContext)
+        : isExplainBack && explainBackTopic
         ? buildExplainBackPrompt(ctx, explainBackTopic)
         : isSocratic && socraticTopic
         ? buildSocraticPrompt(ctx, socraticTopic)

@@ -31,7 +31,7 @@ export function Layout() {
   const { isResearch } = useProfileMode()
   const { t } = useTranslation()
   const location = useLocation()
-  const isChatPage = location.pathname === '/chat'
+  const isChatPage = location.pathname === '/chat' || location.pathname === '/session'
 
   const sidebarExpanded = sidebarPinned || sidebarHovered
   const collapsed = !sidebarExpanded

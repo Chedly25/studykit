@@ -47,9 +47,12 @@ export function StudyPlanCard({ todaysPlan, onToggleActivity, replanSuggestion, 
             >
               {act.completed && <Check className="w-2.5 h-2.5 text-white" />}
             </button>
-            <span className={`text-sm flex-1 ${act.completed ? 'line-through text-[var(--text-faint)]' : 'text-[var(--text-body)]'}`}>
+            <Link
+              to={`/session?topic=${encodeURIComponent(act.topicName)}`}
+              className={`text-sm flex-1 hover:text-[var(--accent-text)] transition-colors ${act.completed ? 'line-through text-[var(--text-faint)]' : 'text-[var(--text-body)]'}`}
+            >
               {act.topicName}
-            </span>
+            </Link>
             <span className="text-xs text-[var(--text-faint)]">
               {act.activityType}
             </span>
