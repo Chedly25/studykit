@@ -1,0 +1,450 @@
+import { useState, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useAuth } from '@clerk/clerk-react'
+import { Upload, FileText, Type, PenTool, Loader2, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react'
+import { useSources } from '../../../hooks/useSources'
+import { extractTopicStructure, type ExtractionResult } from '../../../ai/topicExtractor'
+import { extractLandscapeFromText } from '../../../ai/landscapeExtractor'
+import { TopicMapEditor } from '../TopicMapEditor'
+import type { WizardDraft, WizardAction, DraftSubject } from '../../../hooks/useWizardDraft'
+
+type InputTab = 'upload' | 'paste' | 'freetext' | 'manual'
+type ProcessingState = 'idle' | 'uploading' | 'analyzing' | 'error'
+
+interface StepLandscapeProps {
+  draft: WizardDraft
+  dispatch: React.Dispatch<WizardAction>
+  onNext: () => void
+  onBack: () => void
+}
+
+const COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4']
+
+function extractionToSubjects(result: ExtractionResult): DraftSubject[] {
+  return result.subjects.map((s, i) => ({
+    tempId: crypto.randomUUID(),
+    name: s.name,
+    weight: s.weight,
+    color: COLORS[i % COLORS.length],
+    topics: s.topics.map(t => ({
+      tempId: crypto.randomUUID(),
+      name: t.name,
+    })),
+  }))
+}
+
+export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscapeProps) {
+  const { t } = useTranslation()
+  const { getToken } = useAuth()
+  const { uploadMultiplePdfs, batchProgress } = useSources(draft.profileId!)
+
+  const isResearch = draft.profileMode === 'research'
+  const [activeTab, setActiveTab] = useState<InputTab>(isResearch ? 'freetext' : 'upload')
+  const [processingState, setProcessingState] = useState<ProcessingState>('idle')
+  const [error, setError] = useState('')
+  const [pasteContent, setPasteContent] = useState('')
+  const [freetextContent, setFreetextContent] = useState(draft.researchQuestion || '')
+  const [isDragOver, setIsDragOver] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const hasSubjects = draft.subjects.length > 0
+  const canContinue = hasSubjects && draft.subjects.every(s => s.name.trim() && s.topics.length > 0)
+
+  // Upload handler
+  const handleFiles = useCallback(async (files: File[]) => {
+    const pdfFiles = files.filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'))
+    if (pdfFiles.length === 0) return
+
+    setProcessingState('uploading')
+    setError('')
+
+    try {
+      await uploadMultiplePdfs(pdfFiles)
+
+      setProcessingState('analyzing')
+      const token = await getToken()
+      if (!token) throw new Error('Not authenticated')
+
+      const extraction = await extractTopicStructure(draft.profileId!, token)
+      dispatch({ type: 'SET_SUBJECTS', subjects: extractionToSubjects(extraction) })
+      dispatch({ type: 'SET_LANDSCAPE_SOURCE', source: 'upload' })
+      setProcessingState('idle')
+    } catch (err) {
+      setProcessingState('error')
+      setError(err instanceof Error ? err.message : 'Upload failed')
+    }
+  }, [draft.profileId, uploadMultiplePdfs, getToken, dispatch])
+
+  // Paste/Freetext extraction handler
+  const handleTextExtract = useCallback(async (text: string, source: 'paste' | 'freetext') => {
+    if (!text.trim()) return
+
+    setProcessingState('analyzing')
+    setError('')
+
+    try {
+      const token = await getToken()
+      if (!token) throw new Error('Not authenticated')
+
+      const extraction = await extractLandscapeFromText(
+        text,
+        draft.name,
+        draft.examType || 'custom',
+        token,
+      )
+      dispatch({ type: 'SET_SUBJECTS', subjects: extractionToSubjects(extraction) })
+      dispatch({ type: 'SET_LANDSCAPE_SOURCE', source })
+      if (source === 'freetext' && isResearch) {
+        dispatch({ type: 'SET_RESEARCH_QUESTION', question: text })
+      }
+      setProcessingState('idle')
+    } catch (err) {
+      setProcessingState('error')
+      setError(err instanceof Error ? err.message : 'Extraction failed')
+    }
+  }, [getToken, draft.name, draft.examType, isResearch, dispatch])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    handleFiles(Array.from(e.dataTransfer.files))
+  }, [handleFiles])
+
+  // Loading states
+  if (processingState === 'uploading') {
+    return (
+      <div className="max-w-2xl mx-auto glass-card p-8 text-center">
+        <Loader2 className="w-10 h-10 text-[var(--accent-text)] mx-auto mb-4 animate-spin" />
+        <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
+          {t('dashboard.onboarding.uploading')}
+        </h3>
+        {batchProgress && batchProgress.results.length > 0 && (
+          <div className="mt-4 space-y-1 max-w-sm mx-auto">
+            {batchProgress.results.map((r, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm text-[var(--text-body)]">
+                <FileText className="w-3.5 h-3.5 text-[var(--accent-text)]" />
+                <span className="truncate">{r.fileName}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (processingState === 'analyzing') {
+    return (
+      <div className="max-w-2xl mx-auto glass-card p-8 text-center">
+        <div className="w-10 h-10 mx-auto mb-4 relative">
+          <div className="absolute inset-0 rounded-full bg-[var(--accent-text)]/20 animate-ping" />
+          <FileText className="w-10 h-10 text-[var(--accent-text)] relative" />
+        </div>
+        <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
+          {t('dashboard.onboarding.analyzing')}
+        </h3>
+        <p className="text-sm text-[var(--text-muted)]">
+          {t('dashboard.onboarding.analyzingSubtitle')}
+        </p>
+      </div>
+    )
+  }
+
+  if (processingState === 'error') {
+    return (
+      <div className="max-w-2xl mx-auto glass-card p-8 text-center">
+        <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
+          {t('dashboard.onboarding.extractionError')}
+        </h3>
+        <p className="text-sm text-[var(--text-muted)] mb-4">{error}</p>
+        <button onClick={() => setProcessingState('idle')} className="btn-primary px-6 py-2">
+          {t('dashboard.onboarding.retry')}
+        </button>
+      </div>
+    )
+  }
+
+  // Research mode: different layout
+  if (isResearch) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">
+          {t('wizard.landscapeTitle', 'Define your research landscape')}
+        </h2>
+        <p className="text-[var(--text-muted)] mb-6">
+          {t('wizard.landscapeSubtitleResearch', 'Tell us about your research and we\'ll structure it for you')}
+        </p>
+
+        {!hasSubjects && (
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-body)] mb-1">
+                {t('wizard.researchQuestion', 'What\'s your research question?')}
+              </label>
+              <textarea
+                value={freetextContent}
+                onChange={e => setFreetextContent(e.target.value)}
+                placeholder={t('wizard.researchQuestionPlaceholder', 'Describe your research focus, question, or thesis topic...')}
+                rows={4}
+                className="input-field w-full resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--text-body)] mb-1">
+                {t('wizard.researchStage', 'What stage are you at?')}
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {['Literature Review', 'Data Collection', 'Writing', 'Defending'].map(stage => (
+                  <button
+                    key={stage}
+                    onClick={() => dispatch({ type: 'SET_RESEARCH_STAGE', stage })}
+                    className={`glass-card p-3 text-sm text-left transition-all ${
+                      draft.researchStage === stage
+                        ? 'bg-[var(--accent-bg)] ring-1 ring-[var(--accent-text)]/30'
+                        : 'hover:border-[var(--text-muted)]/30'
+                    }`}
+                    style={draft.researchStage === stage ? { borderColor: 'var(--accent-text)' } : undefined}
+                  >
+                    {stage}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleTextExtract(freetextContent, 'freetext')}
+              disabled={!freetextContent.trim()}
+              className="btn-primary w-full py-2.5 disabled:opacity-40"
+            >
+              {t('wizard.analyzeResearch', 'Analyze & structure')}
+            </button>
+          </div>
+        )}
+
+        {hasSubjects && (
+          <>
+            <TopicMapEditor subjects={draft.subjects} dispatch={dispatch} />
+            <div className="flex justify-between mt-6">
+              <button onClick={onBack} className="btn-secondary px-4 py-2 flex items-center gap-2">
+                <ChevronLeft className="w-4 h-4" /> {t('common.back')}
+              </button>
+              <button
+                onClick={onNext}
+                disabled={!canContinue}
+                className="btn-primary px-6 py-2 flex items-center gap-2 disabled:opacity-40"
+              >
+                {t('common.next')} <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </>
+        )}
+
+        {!hasSubjects && (
+          <div className="flex justify-between mt-6">
+            <button onClick={onBack} className="btn-secondary px-4 py-2 flex items-center gap-2">
+              <ChevronLeft className="w-4 h-4" /> {t('common.back')}
+            </button>
+            <button
+              onClick={() => {
+                dispatch({ type: 'SET_LANDSCAPE_SOURCE', source: 'manual' })
+                dispatch({
+                  type: 'ADD_SUBJECT',
+                  subject: {
+                    tempId: crypto.randomUUID(),
+                    name: '',
+                    weight: 100,
+                    color: COLORS[0],
+                    topics: [{ tempId: crypto.randomUUID(), name: '' }],
+                  },
+                })
+              }}
+              className="text-sm text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
+            >
+              {t('wizard.buildManually', 'Build manually instead')}
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Study mode: tabbed interface
+  const tabs: { id: InputTab; label: string; icon: typeof Upload }[] = [
+    { id: 'upload', label: t('wizard.tabUpload', 'Upload'), icon: Upload },
+    { id: 'paste', label: t('wizard.tabPaste', 'Paste'), icon: FileText },
+    { id: 'freetext', label: t('wizard.tabDescribe', 'Describe'), icon: Type },
+    { id: 'manual', label: t('wizard.tabManual', 'Manual'), icon: PenTool },
+  ]
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">
+        {t('wizard.landscapeTitle', 'Define the landscape')}
+      </h2>
+      <p className="text-[var(--text-muted)] mb-6">
+        {t('wizard.landscapeSubtitle', 'Tell us what you\'re studying — upload materials, describe it, or build from scratch')}
+      </p>
+
+      {/* Show tabs only when no subjects extracted yet */}
+      {!hasSubjects && (
+        <>
+          <div className="flex gap-1 p-1 bg-[var(--bg-input)] rounded-xl mb-6">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-[var(--bg-card)] text-[var(--text-heading)] shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-body)]'
+                }`}
+              >
+                <tab.icon className="w-3.5 h-3.5" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Upload tab */}
+          {activeTab === 'upload' && (
+            <div
+              onDrop={handleDrop}
+              onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
+              onDragLeave={e => { e.preventDefault(); setIsDragOver(false) }}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
+                isDragOver
+                  ? 'border-[var(--accent-text)] bg-[var(--accent-bg)]'
+                  : 'border-[var(--border-card)] hover:border-[var(--accent-text)]/50 hover:bg-[var(--accent-bg)]/50'
+              }`}
+            >
+              <Upload className={`w-10 h-10 mx-auto mb-4 ${isDragOver ? 'text-[var(--accent-text)]' : 'text-[var(--text-muted)]'}`} />
+              <p className="font-medium text-[var(--text-heading)] mb-1">
+                {t('dashboard.onboarding.dropHere')}
+              </p>
+              <p className="text-sm text-[var(--text-muted)]">
+                {t('wizard.uploadHint', 'Upload your syllabus, outline, or course materials (PDF)')}
+              </p>
+            </div>
+          )}
+
+          {/* Paste tab */}
+          {activeTab === 'paste' && (
+            <div className="space-y-4">
+              <textarea
+                value={pasteContent}
+                onChange={e => setPasteContent(e.target.value)}
+                placeholder={t('wizard.pasteHint', 'Paste your syllabus, course description, or topic list here...')}
+                rows={8}
+                className="input-field w-full resize-none"
+              />
+              <button
+                onClick={() => handleTextExtract(pasteContent, 'paste')}
+                disabled={!pasteContent.trim()}
+                className="btn-primary w-full py-2.5 disabled:opacity-40"
+              >
+                {t('wizard.analyzeContent', 'Analyze content')}
+              </button>
+            </div>
+          )}
+
+          {/* Freetext tab */}
+          {activeTab === 'freetext' && (
+            <div className="space-y-4">
+              <textarea
+                value={freetextContent}
+                onChange={e => setFreetextContent(e.target.value)}
+                placeholder={t('wizard.freetextHint', 'Describe what you\'re studying in your own words. For example: "Constitutional law course covering separation of powers, federalism, individual rights..."')}
+                rows={6}
+                className="input-field w-full resize-none"
+              />
+              <button
+                onClick={() => handleTextExtract(freetextContent, 'freetext')}
+                disabled={!freetextContent.trim()}
+                className="btn-primary w-full py-2.5 disabled:opacity-40"
+              >
+                {t('wizard.analyzeContent', 'Analyze content')}
+              </button>
+            </div>
+          )}
+
+          {/* Manual tab */}
+          {activeTab === 'manual' && (
+            <div>
+              <p className="text-sm text-[var(--text-muted)] mb-4">
+                {t('wizard.manualHint', 'Build your own subject and topic structure from scratch')}
+              </p>
+              <button
+                onClick={() => {
+                  dispatch({ type: 'SET_LANDSCAPE_SOURCE', source: 'manual' })
+                  dispatch({
+                    type: 'ADD_SUBJECT',
+                    subject: {
+                      tempId: crypto.randomUUID(),
+                      name: '',
+                      weight: 100,
+                      color: COLORS[0],
+                      topics: [{ tempId: crypto.randomUUID(), name: '' }],
+                    },
+                  })
+                }}
+                className="btn-primary w-full py-2.5"
+              >
+                {t('wizard.startManual', 'Start building')}
+              </button>
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf"
+            multiple
+            onChange={e => handleFiles(Array.from(e.target.files ?? []))}
+            className="hidden"
+          />
+        </>
+      )}
+
+      {/* TopicMapEditor: shown when subjects exist */}
+      {hasSubjects && (
+        <TopicMapEditor subjects={draft.subjects} dispatch={dispatch} />
+      )}
+
+      <div className="flex justify-between mt-6">
+        <button onClick={onBack} className="btn-secondary px-4 py-2 flex items-center gap-2">
+          <ChevronLeft className="w-4 h-4" /> {t('common.back')}
+        </button>
+        {hasSubjects ? (
+          <button
+            onClick={onNext}
+            disabled={!canContinue}
+            className="btn-primary px-6 py-2 flex items-center gap-2 disabled:opacity-40"
+          >
+            {t('common.next')} <ChevronRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={() => {
+              dispatch({ type: 'SET_LANDSCAPE_SOURCE', source: 'manual' })
+              dispatch({
+                type: 'ADD_SUBJECT',
+                subject: {
+                  tempId: crypto.randomUUID(),
+                  name: '',
+                  weight: 100,
+                  color: COLORS[0],
+                  topics: [{ tempId: crypto.randomUUID(), name: '' }],
+                },
+              })
+            }}
+            className="text-sm text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
+          >
+            {t('wizard.buildManually', 'Build manually instead')}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}

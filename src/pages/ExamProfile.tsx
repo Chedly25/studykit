@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { Trash2, Link2, FileBarChart, ArrowRight, Pencil, X, Check, Calendar, Clock, Target } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
-import { ExamProfileWizard } from '../components/knowledge/ExamProfileWizard'
+import { ProjectBriefingWizard } from '../components/wizard/ProjectBriefingWizard'
 import { DependencyEditor } from '../components/knowledge/DependencyEditor'
 import { ExamFormatEditor } from '../components/knowledge/ExamFormatEditor'
 import { examBlueprints } from '../lib/examTopicMaps'
@@ -243,7 +243,7 @@ export default function ExamProfile() {
             </button>
           )}
         </div>
-        <ExamProfileWizard />
+        <ProjectBriefingWizard />
       </div>
     )
   }

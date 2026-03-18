@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
@@ -13,7 +13,6 @@ import { useStudentModel } from '../hooks/useStudentModel'
 import { MilestoneTrackerCard } from '../components/dashboard/MilestoneTrackerCard'
 import { HabitGoalsCard } from '../components/dashboard/HabitGoalsCard'
 import { GettingStartedCard } from '../components/dashboard/GettingStartedCard'
-import { WelcomeHero } from '../components/dashboard/WelcomeHero'
 import { StudyPlanCard } from '../components/dashboard/StudyPlanCard'
 import { StatusBar } from '../components/dashboard/StatusBar'
 import { HeroFocusCard } from '../components/dashboard/HeroFocusCard'
@@ -120,11 +119,6 @@ export default function Dashboard() {
   ) ?? 0
 
   const hasActivity = sessions.length > 0 || topics.some(t => t.questionsAttempted > 0)
-  const isBrandNew = documentsCount === 0 && !hasActivity
-
-  const [welcomeDismissed, setWelcomeDismissed] = useState(() => {
-    try { return sessionStorage.getItem('welcomeHeroDismissed') === '1' } catch { return false }
-  })
 
   const daysUntilExam = activeProfile?.examDate
     ? Math.max(0, Math.ceil((new Date(activeProfile.examDate).getTime() - Date.now()) / 86400000))
@@ -137,21 +131,6 @@ export default function Dashboard() {
         <p className="text-[var(--text-muted)] mb-6">{t('dashboard.setupPrompt')}</p>
         <a href="/exam-profile" className="btn-primary px-6 py-2.5 inline-block">{t('dashboard.createProfile')}</a>
       </div>
-    )
-  }
-
-  if (isBrandNew && !welcomeDismissed) {
-    return (
-      <WelcomeHero
-        profileName={activeProfile.name}
-        isResearch={isResearch}
-        topics={topics}
-        subjects={subjects}
-        onSkip={() => {
-          setWelcomeDismissed(true)
-          try { sessionStorage.setItem('welcomeHeroDismissed', '1') } catch { /* noop */ }
-        }}
-      />
     )
   }
 
