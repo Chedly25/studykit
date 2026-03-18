@@ -58,7 +58,15 @@ export default function StudySession() {
     }
     // Fallback: use first recommendation
     if (topics.length > 0 && subjects.length > 0 && activeProfile) {
-      const recs = computeDailyRecommendations(subjects, topics, dailyLogs, activeProfile, [])
+      const daysUntilExam = activeProfile.examDate
+        ? Math.max(0, Math.ceil((new Date(activeProfile.examDate).getTime() - Date.now()) / 86400000))
+        : 90
+      const recs = computeDailyRecommendations({
+        topics,
+        subjects,
+        daysUntilExam,
+        dueFlashcardsByTopic: new Map(),
+      })
       if (recs.length > 0) {
         const recTopic = topics.find(t => t.name === recs[0].topicName)
         if (recTopic) return recTopic
@@ -81,7 +89,9 @@ export default function StudySession() {
       subjectName: subject.name,
       mastery: topic.mastery,
       decayedMastery: decayedMastery(topic),
-      lastStudied: topic.lastReviewDate ?? null,
+      lastStudied: topic.interval > 0 && topic.nextReviewDate
+        ? new Date(new Date(topic.nextReviewDate).getTime() - topic.interval * 86400000).toISOString().slice(0, 10)
+        : null,
       questionsAttempted: topic.questionsAttempted,
       questionsCorrect: topic.questionsCorrect,
       dueFlashcards: 0, // TODO: compute from flashcard decks
