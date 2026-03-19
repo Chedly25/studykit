@@ -51,7 +51,8 @@ export default function StudySession() {
   const { recentInsights } = useSessionInsights(profileId)
   const { studentModel, conversationSummaries } = useStudentModel(profileId)
   const { todaysPlan, markActivityCompleted } = useStudyPlan(profileId)
-  const { getExerciseStatsForTopic } = useExerciseBank(profileId)
+  const { getExerciseStatsForTopic, getExerciseStatsByTopic: getExerciseStatsMap } = useExerciseBank(profileId)
+  const exerciseStatsByTopic = useMemo(() => getExerciseStatsMap(), [getExerciseStatsMap])
 
   const [isDragging, setIsDragging] = useState(false)
   const [activeView, setActiveView] = useState<SessionView>('chat')
@@ -413,7 +414,13 @@ export default function StudySession() {
         )}
 
         {activeView === 'map' && profileId && topic && (
-          <KnowledgeMap examProfileId={profileId} topicId={topic.id} />
+          <KnowledgeMap
+            subject={subject}
+            chapters={topic.subjectId ? chapters.filter(ch => ch.subjectId === topic.subjectId) : []}
+            topics={topics.filter(t => t.subjectId === topic.subjectId)}
+            currentTopicId={topic.id}
+            exerciseStatsByTopic={exerciseStatsByTopic}
+          />
         )}
 
         {activeView === 'review' && profileId && topic && (

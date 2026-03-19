@@ -1,4 +1,5 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   ReactFlow,
   Background,
@@ -10,68 +11,156 @@ import {
   Position,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useConceptCards } from '../../hooks/useConceptCards'
+import type { Subject, Topic } from '../../db/schema'
+import type { Chapter } from '../../db/schema'
 
 interface KnowledgeMapProps {
-  examProfileId: string
-  topicId: string
-  onSelectCard?: (cardId: string) => void
+  subject: Subject | undefined
+  chapters: Chapter[]
+  topics: Topic[]
+  currentTopicId?: string
+  exerciseStatsByTopic?: Map<string, { total: number; completed: number }>
 }
 
-function ConceptNode({ data }: { data: { label: string; mastery: number; cardId: string; onSelect?: (id: string) => void } }) {
-  const masteryPct = Math.round(data.mastery * 100)
-  const color = data.mastery >= 0.8 ? '#22c55e' : data.mastery >= 0.3 ? '#eab308' : '#ef4444'
+function masteryColor(m: number): string {
+  if (m >= 0.7) return '#22c55e'
+  if (m >= 0.3) return '#eab308'
+  return '#ef4444'
+}
+
+// Chapter header node
+function ChapterNode({ data }: { data: { label: string; color: string } }) {
+  return (
+    <div className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider" style={{ backgroundColor: data.color + '15', color: data.color, borderLeft: `3px solid ${data.color}` }}>
+      {data.label}
+    </div>
+  )
+}
+
+// Topic node
+function TopicNode({ data }: { data: { label: string; mastery: number; exercises: string; isCurrent: boolean; topicName: string } }) {
+  const navigate = useNavigate()
+  const pct = Math.round(data.mastery * 100)
+  const color = masteryColor(data.mastery)
+  const ringClass = data.isCurrent ? 'ring-2 ring-[var(--accent-text)]' : ''
 
   return (
     <div
-      className="glass-card px-3 py-2 min-w-[120px] cursor-pointer hover:ring-1 hover:ring-[var(--accent-text)]/30 transition-all"
-      onClick={() => data.onSelect?.(data.cardId)}
+      className={`glass-card px-3 py-2 min-w-[140px] max-w-[200px] cursor-pointer hover:ring-1 hover:ring-[var(--accent-text)]/30 transition-all ${ringClass}`}
+      onClick={() => navigate(`/session?topic=${encodeURIComponent(data.topicName)}`)}
     >
-      <Handle type="target" position={Position.Top} className="!bg-[var(--accent-text)] !w-2 !h-2" />
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-        <span className="text-xs font-medium text-[var(--text-heading)] truncate">{data.label}</span>
+      <Handle type="target" position={Position.Left} className="!bg-[var(--accent-text)] !w-2 !h-2" />
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+        <span className="text-xs font-medium text-[var(--text-heading)] leading-tight">{data.label}</span>
       </div>
-      <div className="text-[10px] text-[var(--text-muted)] mt-0.5">{masteryPct}%</div>
-      <Handle type="source" position={Position.Bottom} className="!bg-[var(--accent-text)] !w-2 !h-2" />
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-semibold" style={{ color }}>{pct}%</span>
+        {data.exercises && (
+          <span className="text-[10px] text-[var(--text-muted)]">{data.exercises}</span>
+        )}
+      </div>
+      <Handle type="source" position={Position.Right} className="!bg-[var(--accent-text)] !w-2 !h-2" />
     </div>
   )
 }
 
 const nodeTypes: NodeTypes = {
-  concept: ConceptNode,
+  chapter: ChapterNode,
+  topic: TopicNode,
 }
 
-export function KnowledgeMap({ examProfileId, topicId, onSelectCard }: KnowledgeMapProps) {
-  const { cards, connections } = useConceptCards(examProfileId, topicId)
+export function KnowledgeMap({ subject, chapters, topics, currentTopicId, exerciseStatsByTopic }: KnowledgeMapProps) {
+  const navigate = useNavigate()
 
   const { nodes, edges } = useMemo(() => {
-    const cols = Math.ceil(Math.sqrt(cards.length))
-    const nodes: Node[] = cards.map((card, i) => ({
-      id: card.id,
-      type: 'concept',
-      position: { x: (i % cols) * 200, y: Math.floor(i / cols) * 100 },
-      data: { label: card.title, mastery: card.mastery, cardId: card.id, onSelect: onSelectCard },
-    }))
+    if (!subject || chapters.length === 0) return { nodes: [], edges: [] }
 
-    const edges: Edge[] = connections.map(conn => ({
-      id: conn.id,
-      source: conn.fromCardId,
-      target: conn.toCardId,
-      label: conn.label,
-      style: { stroke: 'var(--accent-text)', strokeWidth: 1.5 },
-      labelStyle: { fontSize: 10, fill: 'var(--text-muted)' },
-    }))
+    const nodes: Node[] = []
+    const edges: Edge[] = []
+
+    const CHAPTER_GAP_Y = 40
+    const TOPIC_GAP_Y = 70
+    const TOPIC_START_X = 200
+    const TOPIC_GAP_X = 230
+    let currentY = 0
+
+    for (const chapter of chapters) {
+      const chapterTopics = topics.filter(t => t.chapterId === chapter.id)
+
+      // Chapter label node
+      nodes.push({
+        id: `ch-${chapter.id}`,
+        type: 'chapter',
+        position: { x: 0, y: currentY },
+        data: { label: chapter.name, color: subject.color },
+        draggable: false,
+        selectable: false,
+      })
+
+      // Topic nodes in a column to the right
+      for (let ti = 0; ti < chapterTopics.length; ti++) {
+        const topic = chapterTopics[ti]
+        const stats = exerciseStatsByTopic?.get(topic.id)
+        const exerciseLabel = stats && stats.total > 0 ? `${stats.completed}/${stats.total} ex.` : ''
+
+        nodes.push({
+          id: topic.id,
+          type: 'topic',
+          position: { x: TOPIC_START_X + (ti % 3) * TOPIC_GAP_X, y: currentY + Math.floor(ti / 3) * TOPIC_GAP_Y },
+          data: {
+            label: topic.name,
+            mastery: topic.mastery,
+            exercises: exerciseLabel,
+            isCurrent: topic.id === currentTopicId,
+            topicName: topic.name,
+          },
+        })
+
+        // Edge from chapter to first topic in each row
+        if (ti % 3 === 0) {
+          edges.push({
+            id: `ch-${chapter.id}-to-${topic.id}`,
+            source: `ch-${chapter.id}`,
+            target: topic.id,
+            style: { stroke: subject.color + '40', strokeWidth: 1 },
+            type: 'straight',
+          })
+        }
+      }
+
+      // Prerequisite edges between topics
+      for (const topic of chapterTopics) {
+        if (topic.prerequisiteTopicIds && topic.prerequisiteTopicIds.length > 0) {
+          for (const prereqId of topic.prerequisiteTopicIds) {
+            // Only show edges for topics that are in the current view
+            if (topics.some(t => t.id === prereqId)) {
+              edges.push({
+                id: `prereq-${prereqId}-${topic.id}`,
+                source: prereqId,
+                target: topic.id,
+                animated: true,
+                style: { stroke: '#6366f1', strokeWidth: 2 },
+                label: 'requires',
+                labelStyle: { fontSize: 9, fill: '#6366f1' },
+              })
+            }
+          }
+        }
+      }
+
+      const topicRows = Math.max(1, Math.ceil(chapterTopics.length / 3))
+      currentY += topicRows * TOPIC_GAP_Y + CHAPTER_GAP_Y
+    }
 
     return { nodes, edges }
-  }, [cards, connections, onSelectCard])
+  }, [subject, chapters, topics, currentTopicId, exerciseStatsByTopic])
 
-  if (cards.length === 0) {
+  if (!subject || topics.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
-          <p className="text-sm text-[var(--text-muted)]">No concept cards yet.</p>
-          <p className="text-xs text-[var(--text-muted)] mt-1">Build cards in the chat, then view them here as a knowledge map.</p>
+          <p className="text-sm text-[var(--text-muted)]">No topics yet. Set up your subjects to see the knowledge map.</p>
         </div>
       </div>
     )
@@ -84,9 +173,12 @@ export function KnowledgeMap({ examProfileId, topicId, onSelectCard }: Knowledge
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
+        minZoom={0.3}
+        maxZoom={2}
       >
-        <Background gap={16} size={1} />
+        <Background gap={20} size={1} />
         <Controls />
       </ReactFlow>
     </div>
