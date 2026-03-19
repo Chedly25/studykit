@@ -181,6 +181,7 @@ export function Layout() {
                   </>
                 )}
                 <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} collapsed={collapsed} pro />
+                <SidebarLink to="/exercises" icon={ClipboardCheck} label={t('exercises.title', 'Exercises')} active={location.pathname === '/exercises'} collapsed={collapsed} />
               </SidebarSection>
             </nav>
 
@@ -259,6 +260,7 @@ export function Layout() {
                     </>
                   )}
                   <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} onClick={closeSidebar} collapsed={false} pro />
+                  <SidebarLink to="/exercises" icon={ClipboardCheck} label={t('exercises.title', 'Exercises')} active={location.pathname === '/exercises'} onClick={closeSidebar} collapsed={false} />
                 </SidebarSection>
               </nav>
 

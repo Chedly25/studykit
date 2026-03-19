@@ -27,6 +27,7 @@ const PracticeExam = lazy(() => import('./pages/PracticeExam'))
 const ExplainBack = lazy(() => import('./pages/ExplainBack'))
 const StudyPlan = lazy(() => import('./pages/StudyPlan'))
 const StudySession = lazy(() => import('./pages/StudySession'))
+const Exercises = lazy(() => import('./pages/Exercises'))
 const MockExam = lazy(() => import('./pages/MockExam'))
 
 // Admin
@@ -127,6 +128,7 @@ export default function App() {
           <Route path="explain-back" element={<ProtectedRoute><ExplainBack /></ProtectedRoute>} />
           <Route path="study-plan" element={<ProtectedRoute><StudyPlan /></ProtectedRoute>} />
           <Route path="session" element={<ProtectedRoute><StudySession /></ProtectedRoute>} />
+          <Route path="exercises" element={<ProtectedRoute><Exercises /></ProtectedRoute>} />
           <Route path="mock-exam" element={<ProtectedRoute><MockExam /></ProtectedRoute>} />
           <Route path="sources" element={<ProtectedRoute><Sources /></ProtectedRoute>} />
           <Route path="writing" element={<ProtectedRoute><Writing /></ProtectedRoute>} />

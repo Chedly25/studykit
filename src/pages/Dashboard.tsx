@@ -11,8 +11,10 @@ import { useProfileMode } from '../hooks/useProfileMode'
 import { useMilestones } from '../hooks/useMilestones'
 import { useHabitGoals } from '../hooks/useHabitGoals'
 import { useStudentModel } from '../hooks/useStudentModel'
+import { useExerciseBank } from '../hooks/useExerciseBank'
 import { MilestoneTrackerCard } from '../components/dashboard/MilestoneTrackerCard'
 import { HabitGoalsCard } from '../components/dashboard/HabitGoalsCard'
+import { LevelsView } from '../components/dashboard/LevelsView'
 import { GettingStartedCard } from '../components/dashboard/GettingStartedCard'
 import { StatusBar } from '../components/dashboard/StatusBar'
 import { HeroFocusCard } from '../components/dashboard/HeroFocusCard'
@@ -27,8 +29,10 @@ export default function Dashboard() {
   const profileId = activeProfile?.id
   const { milestones, doneCount, daysUntilNext, addMilestone, updateMilestone } = useMilestones(profileId)
   const { goals: habitGoals, getTodayProgress, addGoal: addHabitGoal, logProgress: logHabitProgress, deleteGoal: deleteHabitGoal } = useHabitGoals(profileId)
-  const { subjects, topics, readiness, weakTopics, streak, freezeUsed, weeklyHours, getTopicsForSubject, dailyLogs } = useKnowledgeGraph(profileId)
+  const { subjects, chapters, topics, readiness, weakTopics, streak, freezeUsed, weeklyHours, getTopicsForSubject, getChaptersForSubject, getTopicsForChapter, dailyLogs } = useKnowledgeGraph(profileId)
   const { studentModel } = useStudentModel(profileId)
+  const { getExerciseStatsByTopic: getExerciseStatsMap } = useExerciseBank(profileId)
+  const exerciseStatsByTopic = useMemo(() => getExerciseStatsMap(), [getExerciseStatsMap])
 
   const sessions = useLiveQuery(
     () => profileId
@@ -178,15 +182,15 @@ export default function Dashboard() {
         />
       )}
 
-      <HeroFocusCard
-        recommendation={recommendations[0] ?? null}
-        dueFlashcardCount={dueFlashcards}
-        isResearch={isResearch}
-        allCaughtUp={recommendations.length === 0 && topics.length > 0}
-        hasTopics={topics.length > 0}
+      {/* Levels View — Subject > Chapter > Topic with mastery */}
+      <LevelsView
+        subjects={subjects}
+        chapters={chapters}
+        topics={topics}
+        exerciseStatsByTopic={exerciseStatsByTopic}
+        getChaptersForSubject={getChaptersForSubject}
+        getTopicsForChapter={getTopicsForChapter}
       />
-
-      <UpNextList recommendations={recommendations.slice(1, 4)} />
 
       <QuickAccessRow isResearch={isResearch} dueFlashcardCount={dueFlashcards} />
 

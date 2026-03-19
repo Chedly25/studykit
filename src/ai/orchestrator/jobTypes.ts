@@ -10,6 +10,7 @@ import { createArticleSynthesisWorkflow } from '../workflows/articleSynthesis'
 import { createPracticeExamWorkflow } from '../workflows/practiceExam'
 import { createGradingWorkflow } from '../workflows/practiceExamGrading'
 import { createExamResearchWorkflow } from '../workflows/examResearch'
+import { createExamExerciseProcessingWorkflow } from '../workflows/examExerciseProcessing'
 
 /**
  * Reconstruct a WorkflowDefinition from a job type and its serialized config.
@@ -63,6 +64,12 @@ export function reconstructWorkflow(type: JobType, config: Record<string, unknow
       // These use standalone async functions, not the workflow engine.
       // They are handled specially in JobRunner.executeJob.
       throw new Error(`${type} uses a standalone function, not a workflow definition`)
+
+    case 'exam-exercise-processing':
+      return createExamExerciseProcessingWorkflow({
+        documentId: config.documentId as string,
+        isPro: config.isPro as boolean,
+      })
 
     default:
       throw new Error(`Unknown job type: ${type}`)

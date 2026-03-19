@@ -2,7 +2,7 @@
  * Sources library — CRUD, chunking, keyword extraction, TF-IDF search.
  */
 import { db } from '../db'
-import type { Document, DocumentChunk, DocumentSourceType } from '../db/schema'
+import type { Document, DocumentChunk, DocumentSourceType, DocumentCategory } from '../db/schema'
 
 // ─── Stopwords ──────────────────────────────────────────────────
 const STOPWORDS = new Set([
@@ -83,12 +83,14 @@ export async function createDocument(
   sourceType: DocumentSourceType,
   content: string,
   sourceUrl?: string,
+  category?: DocumentCategory,
 ): Promise<Document> {
   const doc: Document = {
     id: generateId(),
     examProfileId,
     title,
     sourceType,
+    category: category ?? 'course',
     originalContent: content,
     chunkCount: 0,
     wordCount: content.split(/\s+/).length,
