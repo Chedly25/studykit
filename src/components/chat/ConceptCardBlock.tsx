@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BookOpen, Check, HelpCircle } from 'lucide-react'
 import { db } from '../../db'
+import { MathText } from '../MathText'
 import type { ConceptCard } from '../../db/schema'
 
 interface ConceptCardBlockProps {
@@ -66,7 +67,7 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
           {keyPoints.map((point, i) => (
             <li key={i} className="flex items-start gap-2 text-sm text-[var(--text-body)]">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-text)] mt-1.5 flex-shrink-0" />
-              {point}
+              <MathText>{point}</MathText>
             </li>
           ))}
         </ul>
@@ -74,7 +75,7 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
         {/* Example */}
         {card.example && (
           <div className="rounded-lg bg-[var(--accent-bg)]/50 border border-[var(--accent-text)]/10 px-3 py-2 mb-3">
-            <p className="text-xs text-[var(--text-body)]">{card.example}</p>
+            <p className="text-xs text-[var(--text-body)]"><MathText>{card.example}</MathText></p>
           </div>
         )}
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle, XCircle, Trophy } from 'lucide-react'
 import { getTransient } from '../../lib/transientStore'
+import { MathText } from '../MathText'
 
 interface QuizQuestion {
   question: string
@@ -100,7 +101,7 @@ export function InlineQuiz({ quizId }: InlineQuizProps) {
         </div>
 
         {/* Question */}
-        <p className="text-sm font-medium text-[var(--text-heading)] mb-3">{q.question}</p>
+        <p className="text-sm font-medium text-[var(--text-heading)] mb-3"><MathText>{q.question}</MathText></p>
 
         {/* Options */}
         <div className="space-y-2">
@@ -128,7 +129,7 @@ export function InlineQuiz({ quizId }: InlineQuizProps) {
                    answered && i === selectedOption && !isCorrect ? <XCircle className="w-4 h-4 text-red-500" /> :
                    String.fromCharCode(65 + i)}
                 </span>
-                {option}
+                <MathText>{option}</MathText>
               </button>
             )
           })}
@@ -138,7 +139,7 @@ export function InlineQuiz({ quizId }: InlineQuizProps) {
         {answered && (
           <div className="mt-3">
             <div className={`rounded-lg px-3 py-2 text-xs ${isCorrect ? 'bg-green-500/10 text-green-700' : 'bg-amber-500/10 text-amber-700'}`}>
-              {q.explanation}
+              <MathText>{q.explanation}</MathText>
             </div>
             <button
               onClick={handleNext}
