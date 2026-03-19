@@ -25,15 +25,27 @@ interface StepLandscapeProps {
 const COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4']
 
 function extractedToDraft(subject: ExtractedSubject, index: number): DraftSubject {
+  // Build chapters if the AI returned 3-level data
+  const chapters = subject.chapters && subject.chapters.length > 0
+    ? subject.chapters.map(ch => ({
+        tempId: crypto.randomUUID(),
+        name: ch.name,
+        topics: ch.topics.map(t => ({ tempId: crypto.randomUUID(), name: t.name })),
+      }))
+    : undefined
+
+  // Flat topics list (always populated for backward compat)
+  const flatTopics = chapters
+    ? chapters.flatMap(ch => ch.topics)
+    : subject.topics.map(t => ({ tempId: crypto.randomUUID(), name: t.name }))
+
   return {
     tempId: crypto.randomUUID(),
     name: subject.name,
     weight: subject.weight,
     color: COLORS[index % COLORS.length],
-    topics: subject.topics.map(t => ({
-      tempId: crypto.randomUUID(),
-      name: t.name,
-    })),
+    topics: flatTopics,
+    chapters,
   }
 }
 

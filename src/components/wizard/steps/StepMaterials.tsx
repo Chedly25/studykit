@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Upload, CheckCircle, Loader2, AlertCircle, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react'
+import { Upload, CheckCircle, Loader2, AlertCircle, ChevronRight, ChevronLeft, Sparkles, BookOpen, FileText } from 'lucide-react'
 import { useSources } from '../../../hooks/useSources'
 import { useSourceProcessing } from '../../../hooks/useSourceProcessing'
+import { useExamProcessing } from '../../../hooks/useExamProcessing'
 import type { WizardDraft, WizardAction } from '../../../hooks/useWizardDraft'
 
 interface StepMaterialsProps {
@@ -15,33 +16,47 @@ interface StepMaterialsProps {
 export function StepMaterials({ draft, dispatch, onNext, onBack }: StepMaterialsProps) {
   const { t } = useTranslation()
   const { uploadMultiplePdfs, batchProgress, documents } = useSources(draft.profileId!)
-  const { processDocument, isRunning: isProcessing } = useSourceProcessing(draft.profileId!)
+  const { processDocument, isRunning: isCourseProcessing } = useSourceProcessing(draft.profileId!)
+  const { processExamDocument, isRunning: isExamProcessing } = useExamProcessing(draft.profileId!)
   const [isUploading, setIsUploading] = useState(false)
-  const [isDragOver, setIsDragOver] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadCategory, setUploadCategory] = useState<'course' | 'exam'>('course')
+  const courseInputRef = useRef<HTMLInputElement>(null)
+  const examInputRef = useRef<HTMLInputElement>(null)
 
   const existingDocs = documents ?? []
-  const hasDocuments = existingDocs.length > 0 || draft.uploadedDocumentIds.length > 0
+  const courseDocs = existingDocs.filter(d => d.category !== 'exam')
+  const examDocs = existingDocs.filter(d => d.category === 'exam')
+  const hasDocuments = existingDocs.length > 0
   const processedRef = useRef(new Set<string>())
 
-  // Auto-trigger background processing for unprocessed documents
+  // Auto-trigger processing for unprocessed course documents
   useEffect(() => {
     for (const doc of existingDocs) {
-      if (!doc.summary && !processedRef.current.has(doc.id)) {
+      if (!doc.summary && !processedRef.current.has(doc.id) && doc.category !== 'exam') {
         processedRef.current.add(doc.id)
         processDocument(doc.id)
       }
     }
   }, [existingDocs, processDocument])
 
-  const handleFiles = useCallback(async (files: File[]) => {
+  // Auto-trigger exam processing for unprocessed exam documents
+  useEffect(() => {
+    for (const doc of existingDocs) {
+      if (doc.category === 'exam' && !processedRef.current.has(doc.id)) {
+        // Check if already has an ExamSource (processed)
+        processedRef.current.add(doc.id)
+        processExamDocument(doc.id)
+      }
+    }
+  }, [existingDocs, processExamDocument])
+
+  const handleCourseFiles = useCallback(async (files: File[]) => {
     const pdfFiles = files.filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'))
     if (pdfFiles.length === 0) return
-
     setIsUploading(true)
+    setUploadCategory('course')
     try {
-      await uploadMultiplePdfs(pdfFiles)
-      // Documents are tracked via live query — processing triggered below
+      await uploadMultiplePdfs(pdfFiles, 'course')
     } catch (err) {
       console.error('Upload failed:', err)
     } finally {
@@ -49,109 +64,153 @@ export function StepMaterials({ draft, dispatch, onNext, onBack }: StepMaterials
     }
   }, [uploadMultiplePdfs])
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    handleFiles(Array.from(e.dataTransfer.files))
-  }, [handleFiles])
+  const handleExamFiles = useCallback(async (files: File[]) => {
+    const pdfFiles = files.filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'))
+    if (pdfFiles.length === 0) return
+    setIsUploading(true)
+    setUploadCategory('exam')
+    try {
+      await uploadMultiplePdfs(pdfFiles, 'exam')
+    } catch (err) {
+      console.error('Upload failed:', err)
+    } finally {
+      setIsUploading(false)
+    }
+  }, [uploadMultiplePdfs])
+
+  const isProcessing = isCourseProcessing || isExamProcessing
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-3xl mx-auto">
       <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">
         {t('wizard.materialsTitle', 'Upload your materials')}
       </h2>
       <p className="text-[var(--text-muted)] mb-6">
-        {t('wizard.materialsSubtitle', 'Add your study materials — PDFs, textbooks, notes. You can always add more later.')}
+        {t('wizard.materialsSubtitleV2', 'Add your course materials and past exams separately — the AI handles them differently.')}
       </p>
 
-      {/* Existing documents */}
-      {existingDocs.length > 0 && (
-        <div className="glass-card p-4 mb-4">
-          <h3 className="text-sm font-semibold text-[var(--text-heading)] mb-2">
-            {t('wizard.uploadedDocs', 'Uploaded documents')}
+      {/* Processing indicator */}
+      {isProcessing && (
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[var(--accent-bg)] text-sm text-[var(--accent-text)]">
+          <Sparkles className="w-4 h-4 animate-pulse" />
+          {isCourseProcessing
+            ? t('wizard.processingCourses', 'Processing course materials — extracting topics and concept cards...')
+            : t('wizard.processingExams', 'Parsing exam exercises — tagging by topic...')}
+        </div>
+      )}
+
+      {/* Upload loading state */}
+      {isUploading && batchProgress ? (
+        <div className="glass-card p-8 text-center mb-4">
+          <Loader2 className="w-10 h-10 text-[var(--accent-text)] mx-auto mb-4 animate-spin" />
+          <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
+            {uploadCategory === 'course' ? 'Uploading courses...' : 'Uploading exams...'}
           </h3>
-          <div className="space-y-1.5">
-            {existingDocs.map(doc => (
-              <div key={doc.id} className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                <span className="text-[var(--text-body)] truncate">{doc.title}</span>
+          <div className="mt-4 space-y-1.5 max-w-sm mx-auto">
+            {batchProgress.results.map((r, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm">
+                {r.status === 'done' ? (
+                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                ) : r.status === 'error' ? (
+                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                ) : (
+                  <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin flex-shrink-0" />
+                )}
+                <span className="text-[var(--text-body)] truncate">{r.fileName}</span>
               </div>
             ))}
           </div>
         </div>
-      )}
-
-      {/* Background processing indicator */}
-      {isProcessing && (
-        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[var(--accent-bg)] text-sm text-[var(--accent-text)]">
-          <Sparkles className="w-4 h-4 animate-pulse" />
-          {t('wizard.processingMaterials', 'Processing your materials in background — concept cards will be ready soon.')}
-        </div>
-      )}
-
-      {/* Upload zone */}
-      {isUploading ? (
-        <div className="glass-card p-8 text-center">
-          <Loader2 className="w-10 h-10 text-[var(--accent-text)] mx-auto mb-4 animate-spin" />
-          <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
-            {t('dashboard.onboarding.uploading')}
-          </h3>
-          {batchProgress && (
-            <div className="mt-4 space-y-1.5 max-w-sm mx-auto">
-              {batchProgress.results.map((r, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm">
-                  {r.status === 'done' ? (
-                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                  ) : r.status === 'error' ? (
-                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                  ) : (
-                    <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin flex-shrink-0" />
-                  )}
-                  <span className="text-[var(--text-body)] truncate">{r.fileName}</span>
-                </div>
-              ))}
-              {batchProgress.currentFile && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin flex-shrink-0" />
-                  <span className="text-[var(--text-muted)] truncate">{batchProgress.currentFile}</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       ) : (
-        <div
-          onDrop={handleDrop}
-          onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
-          onDragLeave={e => { e.preventDefault(); setIsDragOver(false) }}
-          onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
-            isDragOver
-              ? 'border-[var(--accent-text)] bg-[var(--accent-bg)]'
-              : 'border-[var(--border-card)] hover:border-[var(--accent-text)]/50 hover:bg-[var(--accent-bg)]/50'
-          }`}
-        >
-          <Upload className={`w-10 h-10 mx-auto mb-4 ${isDragOver ? 'text-[var(--accent-text)]' : 'text-[var(--text-muted)]'}`} />
-          <p className="font-medium text-[var(--text-heading)] mb-1">
-            {hasDocuments
-              ? t('wizard.addMoreDocs', 'Add more documents')
-              : t('dashboard.onboarding.dropHere')
-            }
-          </p>
-          <p className="text-sm text-[var(--text-muted)]">
-            {t('dashboard.onboarding.orBrowse')}
-          </p>
+        /* Two-box upload */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          {/* Courses box */}
+          <div className="glass-card p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <BookOpen className="w-5 h-5 text-[var(--accent-text)]" />
+              <h3 className="text-sm font-semibold text-[var(--text-heading)]">
+                {t('wizard.courseMaterials', 'Course Materials')}
+              </h3>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] mb-3">
+              {t('wizard.courseDesc', 'Textbooks, lecture notes, slides — the theory you need to learn.')}
+            </p>
+
+            {/* Existing course docs */}
+            {courseDocs.length > 0 && (
+              <div className="space-y-1 mb-3">
+                {courseDocs.map(doc => (
+                  <div key={doc.id} className="flex items-center gap-1.5 text-xs">
+                    <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+                    <span className="text-[var(--text-body)] truncate">{doc.title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={() => courseInputRef.current?.click()}
+              className="w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors border-[var(--border-card)] hover:border-[var(--accent-text)]/50 hover:bg-[var(--accent-bg)]/50"
+            >
+              <Upload className="w-6 h-6 mx-auto mb-2 text-[var(--text-muted)]" />
+              <p className="text-xs text-[var(--text-muted)]">
+                {courseDocs.length > 0 ? 'Add more courses' : 'Drop PDFs here or click'}
+              </p>
+            </button>
+            <input
+              ref={courseInputRef}
+              type="file"
+              accept=".pdf"
+              multiple
+              onChange={e => handleCourseFiles(Array.from(e.target.files ?? []))}
+              className="hidden"
+            />
+          </div>
+
+          {/* Exams box */}
+          <div className="glass-card p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-5 h-5 text-amber-500" />
+              <h3 className="text-sm font-semibold text-[var(--text-heading)]">
+                {t('wizard.examMaterials', 'Exams & Exercises')}
+              </h3>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] mb-3">
+              {t('wizard.examDesc', 'Past exams, exercise sheets, problem sets — the AI will parse individual exercises.')}
+            </p>
+
+            {/* Existing exam docs */}
+            {examDocs.length > 0 && (
+              <div className="space-y-1 mb-3">
+                {examDocs.map(doc => (
+                  <div key={doc.id} className="flex items-center gap-1.5 text-xs">
+                    <CheckCircle className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                    <span className="text-[var(--text-body)] truncate">{doc.title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={() => examInputRef.current?.click()}
+              className="w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors border-[var(--border-card)] hover:border-amber-500/50 hover:bg-amber-500/5"
+            >
+              <Upload className="w-6 h-6 mx-auto mb-2 text-[var(--text-muted)]" />
+              <p className="text-xs text-[var(--text-muted)]">
+                {examDocs.length > 0 ? 'Add more exams' : 'Drop exam PDFs here or click'}
+              </p>
+            </button>
+            <input
+              ref={examInputRef}
+              type="file"
+              accept=".pdf"
+              multiple
+              onChange={e => handleExamFiles(Array.from(e.target.files ?? []))}
+              className="hidden"
+            />
+          </div>
         </div>
       )}
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".pdf"
-        multiple
-        onChange={e => handleFiles(Array.from(e.target.files ?? []))}
-        className="hidden"
-      />
 
       <div className="flex justify-between mt-6">
         <button onClick={onBack} className="btn-secondary px-4 py-2 flex items-center gap-2">

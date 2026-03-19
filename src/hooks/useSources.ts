@@ -67,7 +67,7 @@ export function useSources(examProfileId: string | undefined) {
     }
   }, [examProfileId])
 
-  const uploadMultiplePdfs = useCallback(async (files: File[]) => {
+  const uploadMultiplePdfs = useCallback(async (files: File[], category?: 'course' | 'exam' | 'other') => {
     if (!examProfileId || files.length === 0) return
 
     const progress: BatchUploadProgressState = {
@@ -85,7 +85,7 @@ export function useSources(examProfileId: string | undefined) {
 
       try {
         const processed = await processFile(file)
-        const doc = await createDocument(examProfileId, processed.title, 'pdf', processed.text)
+        const doc = await createDocument(examProfileId, processed.title, 'pdf', processed.text, undefined, category)
         await saveChunks(doc.id, examProfileId, processed.chunks)
         progress.results.push({ fileName: file.name, status: 'done' })
       } catch (err) {

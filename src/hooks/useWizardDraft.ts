@@ -8,17 +8,24 @@ import type { ExamType, ProfileMode } from '../db/schema'
 
 // ─── Types ──────────────────────────────────────────────────────
 
+export interface DraftTopic {
+  tempId: string
+  name: string
+}
+
+export interface DraftChapter {
+  tempId: string
+  name: string
+  topics: DraftTopic[]
+}
+
 export interface DraftSubject {
   tempId: string
   name: string
   weight: number
   color: string
-  topics: DraftTopic[]
-}
-
-export interface DraftTopic {
-  tempId: string
-  name: string
+  topics: DraftTopic[]          // flat list (backward compat + always populated)
+  chapters?: DraftChapter[]     // 3-level structure when available
 }
 
 export interface PlanDraftActivity {

@@ -10,6 +10,8 @@ import { useAgent } from '../hooks/useAgent'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useSourceCoverage } from '../hooks/useSourceCoverage'
 import { useSourceProcessing } from '../hooks/useSourceProcessing'
+import { useExamProcessing } from '../hooks/useExamProcessing'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { SourceUploadBar } from '../components/sources/SourceUploadBar'
 import { SourceList } from '../components/sources/SourceList'
 import { SourceCoverageChart } from '../components/sources/SourceCoverageChart'
@@ -36,6 +38,17 @@ export default function Sources() {
 
   const { coverage } = useSourceCoverage(profileId)
   const { processDocument, cancel: cancelProcessing, isRunning: isProcessingDoc, progress: processingProgress, error: processingError } = useSourceProcessing(profileId)
+  const { processExamDocument, isRunning: isExamProcessing } = useExamProcessing(profileId)
+  const [categoryFilter, setCategoryFilter] = useState<'' | 'course' | 'exam'>('')
+
+  // Count exercises per exam source
+  const examSourceCounts = useLiveQuery(async () => {
+    if (!profileId) return new Map<string, number>()
+    const sources = await db.examSources.where('examProfileId').equals(profileId).toArray()
+    const map = new Map<string, number>()
+    for (const s of sources) map.set(s.documentId, s.totalExercises)
+    return map
+  }, [profileId]) ?? new Map<string, number>()
   const agent = useAgent({ profile: activeProfile, subjects, topics, dailyLogs })
   const navigate = useNavigate()
   const { getToken } = useAuth()
@@ -183,6 +196,27 @@ export default function Sources() {
         </div>
       </div>
 
+      {/* Category filter tabs */}
+      <div className="flex gap-1 mb-4">
+        {([
+          { key: '' as const, label: t('sources.all', 'All') },
+          { key: 'course' as const, label: t('sources.courses', 'Courses') },
+          { key: 'exam' as const, label: t('sources.exams', 'Exams') },
+        ]).map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setCategoryFilter(key)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              categoryFilter === key
+                ? 'bg-[var(--accent-text)] text-white'
+                : 'bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--text-body)]'
+            }`}
+          >
+            {label} ({key === '' ? documents.length : documents.filter(d => key === 'course' ? d.category !== 'exam' : d.category === 'exam').length})
+          </button>
+        ))}
+      </div>
+
       {isProcessing && !batchProgress && (
         <div className="glass-card p-4 mb-4 flex items-center gap-3">
           <Loader2 className="w-5 h-5 text-[var(--accent-text)] animate-spin" />
@@ -277,8 +311,34 @@ export default function Sources() {
         </div>
       )}
 
+      {/* Exam extraction banner */}
+      {categoryFilter === 'exam' && documents.filter(d => d.category === 'exam').some(d => !examSourceCounts.has(d.id)) && !isExamProcessing && (
+        <div className="glass-card p-3 mb-4 flex items-center justify-between">
+          <span className="text-sm text-[var(--text-body)]">
+            {documents.filter(d => d.category === 'exam' && !examSourceCounts.has(d.id)).length} exam(s) ready for exercise extraction
+          </span>
+          <button
+            onClick={async () => {
+              for (const doc of documents.filter(d => d.category === 'exam' && !examSourceCounts.has(d.id))) {
+                await processExamDocument(doc.id)
+              }
+            }}
+            className="btn-primary text-sm px-4 py-1.5"
+          >
+            Extract Exercises
+          </button>
+        </div>
+      )}
+
+      {isExamProcessing && (
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-amber-500/10 text-sm text-amber-600">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Parsing exam exercises...
+        </div>
+      )}
+
       <SourceList
-        documents={documents}
+        documents={categoryFilter === '' ? documents : documents.filter(d => categoryFilter === 'course' ? d.category !== 'exam' : d.category === 'exam')}
         onView={setViewDoc}
         onDelete={handleDelete}
         onSummarize={handleSummarize}
