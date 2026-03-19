@@ -20,7 +20,7 @@ export function useKnowledgeGraph(examProfileId: string | undefined) {
   const chapters = useLiveQuery(
     () => examProfileId
       ? db.chapters.where('examProfileId').equals(examProfileId).toArray()
-      : [],
+      : Promise.resolve([] as import('../db/schema').Chapter[]),
     [examProfileId]
   ) ?? []
 

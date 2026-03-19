@@ -6,7 +6,9 @@ import type { Chapter } from '../../db/schema'
 
 interface ExerciseStats {
   total: number
+  attempted: number
   completed: number
+  avgScore: number
 }
 
 interface LevelsViewProps {

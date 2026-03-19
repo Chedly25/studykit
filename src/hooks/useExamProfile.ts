@@ -56,9 +56,12 @@ export function useExamProfile() {
     const subtopics: Subtopic[] = []
     const today = new Date().toISOString().slice(0, 10)
 
+    const chapters: import('../db/schema').Chapter[] = []
+
     for (let si = 0; si < blueprint.subjects.length; si++) {
       const seedSubj = blueprint.subjects[si]
       const subjectId = crypto.randomUUID()
+      const chapterId = crypto.randomUUID()
 
       subjects.push({
         id: subjectId,
@@ -70,12 +73,22 @@ export function useExamProfile() {
         order: si,
       })
 
+      // Create default chapter for this subject
+      chapters.push({
+        id: chapterId,
+        subjectId,
+        examProfileId: profileId,
+        name: 'General',
+        order: 0,
+      })
+
       for (const seedTopic of seedSubj.topics) {
         const topicId = crypto.randomUUID()
 
         topics.push({
           id: topicId,
           subjectId,
+          chapterId,
           examProfileId: profileId,
           name: seedTopic.name,
           mastery: 0,
@@ -100,6 +113,7 @@ export function useExamProfile() {
     }
 
     await db.subjects.bulkPut(subjects)
+    await db.chapters.bulkPut(chapters)
     await db.topics.bulkPut(topics)
     await db.subtopics.bulkPut(subtopics)
 
@@ -241,6 +255,8 @@ export function useExamProfile() {
       db.tutorPreferences, db.sessionInsights, db.studyPlans, db.studyPlanDays,
       db.milestones, db.researchNotes, db.annotations, db.habitGoals, db.habitLogs,
       db.writingSessions, db.advisorMeetings,
+      db.chapters, db.examSources, db.exercises, db.exerciseAttempts,
+      db.conceptCards, db.conceptCardConnections,
     ], async () => {
       await db.subtopics.where('examProfileId').equals(profileId).delete()
       await db.topics.where('examProfileId').equals(profileId).delete()
@@ -280,6 +296,13 @@ export function useExamProfile() {
       await db.habitGoals.where('examProfileId').equals(profileId).delete()
       await db.writingSessions.where('examProfileId').equals(profileId).delete()
       await db.advisorMeetings.where('examProfileId').equals(profileId).delete()
+      // v16 tables
+      await db.chapters.where('examProfileId').equals(profileId).delete()
+      await db.exerciseAttempts.where('examProfileId').equals(profileId).delete()
+      await db.exercises.where('examProfileId').equals(profileId).delete()
+      await db.examSources.where('examProfileId').equals(profileId).delete()
+      await db.conceptCardConnections.where('examProfileId').equals(profileId).delete()
+      await db.conceptCards.where('examProfileId').equals(profileId).delete()
       await db.examProfiles.delete(profileId)
     })
   }, [])

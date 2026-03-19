@@ -112,6 +112,10 @@ Respond ONLY with valid JSON.`
             return { taggedExercises: [] }
           }
 
+          if (!context?.subjects || !context?.topics) {
+            return { taggedExercises: parsedData.exercises.map(e => ({ ...e, topicIds: [] as string[] })) }
+          }
+
           // Build hierarchy description for the LLM
           const hierarchyDesc = context.subjects.map(s => {
             const subChapters = context.chapters.filter(ch => ch.subjectId === s.id)

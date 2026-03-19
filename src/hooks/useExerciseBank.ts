@@ -50,19 +50,32 @@ export function useExerciseBank(examProfileId: string | undefined) {
   }, [getExercisesByTopic])
 
   const getExerciseStatsByTopic = useCallback((): Map<string, ExerciseStats> => {
-    const map = new Map<string, ExerciseStats>()
+    // Single-pass aggregation to avoid O(N²)
+    const accum = new Map<string, { total: number; attempted: number; completed: number; scores: number[] }>()
     for (const ex of exercises) {
       try {
         const ids: string[] = JSON.parse(ex.topicIds)
         for (const topicId of ids) {
-          if (!map.has(topicId)) {
-            map.set(topicId, getExerciseStatsForTopic(topicId))
-          }
+          let entry = accum.get(topicId)
+          if (!entry) { entry = { total: 0, attempted: 0, completed: 0, scores: [] }; accum.set(topicId, entry) }
+          entry.total++
+          if (ex.status !== 'not_attempted') entry.attempted++
+          if (ex.status === 'completed') entry.completed++
+          if (ex.lastAttemptScore != null) entry.scores.push(ex.lastAttemptScore)
         }
       } catch { /* skip */ }
     }
-    return map
-  }, [exercises, getExerciseStatsForTopic])
+    const result = new Map<string, ExerciseStats>()
+    for (const [topicId, entry] of accum) {
+      result.set(topicId, {
+        total: entry.total,
+        attempted: entry.attempted,
+        completed: entry.completed,
+        avgScore: entry.scores.length > 0 ? entry.scores.reduce((a, b) => a + b, 0) / entry.scores.length : 0,
+      })
+    }
+    return result
+  }, [exercises])
 
   const recordAttempt = useCallback(async (exerciseId: string, score: number, feedback?: string) => {
     if (!examProfileId) return
