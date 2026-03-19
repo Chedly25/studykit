@@ -520,6 +520,7 @@ Adapt your responses to the student's emotional state:
 export interface SessionContext {
   topicName: string
   subjectName: string
+  chapterName?: string
   mastery: number
   decayedMastery: number
   lastStudied: string | null
@@ -527,6 +528,8 @@ export interface SessionContext {
   questionsCorrect: number
   dueFlashcards: number
   existingCardTitles?: string[]
+  exerciseStats?: { total: number; completed: number; avgScore: number }
+  siblingTopics?: string[]
 }
 
 export function buildSessionPrompt(ctx: PromptContext, session: SessionContext): string {
@@ -544,6 +547,9 @@ You are in a focused study session for "${session.topicName}" under the subject 
 ${session.lastStudied ? `- Last studied: ${session.lastStudied}` : '- This topic has not been studied before'}
 - Questions: ${session.questionsAttempted} attempted (${accuracy})
 ${session.dueFlashcards > 0 ? `- ${session.dueFlashcards} flashcards due for this topic` : ''}
+${session.chapterName ? `- Chapter: ${session.chapterName}` : ''}
+${session.exerciseStats ? `- Exercise bank: ${session.exerciseStats.completed}/${session.exerciseStats.total} exercises completed${session.exerciseStats.avgScore > 0 ? ` (avg score: ${Math.round(session.exerciseStats.avgScore * 100)}%)` : ''}` : ''}
+${session.siblingTopics && session.siblingTopics.length > 0 ? `- Related topics in this chapter: ${session.siblingTopics.join(', ')}` : ''}
 ${session.existingCardTitles && session.existingCardTitles.length > 0 ? `- Existing concept cards (${session.existingCardTitles.length}): ${session.existingCardTitles.join(', ')}\n  Do NOT re-teach concepts the student already has cards for. Instead, quiz them or go deeper.` : ''}
 
 SESSION RULES:

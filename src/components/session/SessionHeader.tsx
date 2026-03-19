@@ -6,11 +6,12 @@ import type { Topic, Subject } from '../../db/schema'
 interface SessionHeaderProps {
   topic: Topic
   subject: Subject | undefined
+  chapterName?: string
   onToggleMaterials: () => void
   materialsOpen: boolean
 }
 
-export function SessionHeader({ topic, subject, onToggleMaterials, materialsOpen }: SessionHeaderProps) {
+export function SessionHeader({ topic, subject, chapterName, onToggleMaterials, materialsOpen }: SessionHeaderProps) {
   const { t } = useTranslation()
   const masteryPct = Math.round(topic.mastery * 100)
 
@@ -28,9 +29,9 @@ export function SessionHeader({ topic, subject, onToggleMaterials, materialsOpen
 
       <div className="flex-1 min-w-0">
         <h1 className="text-sm font-semibold text-[var(--text-heading)] truncate">{topic.name}</h1>
-        {subject && (
-          <p className="text-xs text-[var(--text-muted)] truncate">{subject.name}</p>
-        )}
+        <p className="text-xs text-[var(--text-muted)] truncate">
+          {[subject?.name, chapterName].filter(Boolean).join(' › ')}
+        </p>
       </div>
 
       {/* Mastery bar */}

@@ -12,6 +12,7 @@ import { useStudentModel } from '../hooks/useStudentModel'
 import { useAttachments } from '../hooks/useAttachments'
 import { useSources } from '../hooks/useSources'
 import { useStudyPlan } from '../hooks/useStudyPlan'
+import { useExerciseBank } from '../hooks/useExerciseBank'
 import { useConceptCards } from '../hooks/useConceptCards'
 import { computeDailyRecommendations } from '../lib/studyRecommender'
 import { decayedMastery } from '../lib/knowledgeGraph'
@@ -44,12 +45,13 @@ export default function StudySession() {
 
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
-  const { subjects, topics, dailyLogs } = useKnowledgeGraph(profileId)
+  const { subjects, chapters, topics, dailyLogs, getTopicsForChapter } = useKnowledgeGraph(profileId)
   const { documents } = useSources(profileId)
   const { preferences } = useTutorPreferences(profileId)
   const { recentInsights } = useSessionInsights(profileId)
   const { studentModel, conversationSummaries } = useStudentModel(profileId)
   const { todaysPlan, markActivityCompleted } = useStudyPlan(profileId)
+  const { getExerciseStatsForTopic } = useExerciseBank(profileId)
 
   const [isDragging, setIsDragging] = useState(false)
   const [activeView, setActiveView] = useState<SessionView>('chat')
@@ -116,11 +118,33 @@ export default function StudySession() {
   const cardTitles = useMemo(() => conceptCards.map(c => c.title), [conceptCards])
 
   // Build session context for the AI
+  // Resolve chapter for current topic
+  const chapter = useMemo(() => {
+    if (!topic?.chapterId) return undefined
+    return chapters.find(ch => ch.id === topic.chapterId)
+  }, [topic, chapters])
+
+  // Sibling topics in the same chapter
+  const siblingTopics = useMemo(() => {
+    if (!topic?.chapterId) return []
+    return getTopicsForChapter(topic.chapterId)
+      .filter(t => t.id !== topic.id)
+      .map(t => t.name)
+      .slice(0, 5)
+  }, [topic, getTopicsForChapter])
+
+  // Exercise stats for current topic
+  const exerciseStats = useMemo(() => {
+    if (!topic) return undefined
+    return getExerciseStatsForTopic(topic.id)
+  }, [topic, getExerciseStatsForTopic])
+
   const sessionContext: SessionContext | undefined = useMemo(() => {
     if (!topic || !subject) return undefined
     return {
       topicName: topic.name,
       subjectName: subject.name,
+      chapterName: chapter?.name,
       mastery: topic.mastery,
       decayedMastery: decayedMastery(topic),
       lastStudied: topic.interval > 0 && topic.nextReviewDate
@@ -130,8 +154,10 @@ export default function StudySession() {
       questionsCorrect: topic.questionsCorrect,
       dueFlashcards: 0,
       existingCardTitles: cardTitles,
+      exerciseStats: exerciseStats && exerciseStats.total > 0 ? exerciseStats : undefined,
+      siblingTopics,
     }
-  }, [topic, subject, cardTitles])
+  }, [topic, subject, chapter, cardTitles, exerciseStats, siblingTopics])
 
   // Due flashcards count for suggestions
   const dueFlashcards = useMemo(() => {
@@ -251,6 +277,7 @@ export default function StudySession() {
       <SessionHeader
         topic={topic}
         subject={subject}
+        chapterName={chapter?.name}
         onToggleMaterials={() => setMaterialsOpen(!materialsOpen)}
         materialsOpen={materialsOpen}
       />
