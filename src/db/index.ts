@@ -40,6 +40,10 @@ import type {
   BackgroundJob,
   ConceptCard,
   ConceptCardConnection,
+  Chapter,
+  ExamSource,
+  Exercise,
+  ExerciseAttempt,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -83,6 +87,10 @@ export class StudiesKitDB extends Dexie {
   backgroundJobs!: Table<BackgroundJob>
   conceptCards!: Table<ConceptCard>
   conceptCardConnections!: Table<ConceptCardConnection>
+  chapters!: Table<Chapter>
+  examSources!: Table<ExamSource>
+  exercises!: Table<Exercise>
+  exerciseAttempts!: Table<ExerciseAttempt>
 
   constructor() {
     super('studieskit')
@@ -199,6 +207,35 @@ export class StudiesKitDB extends Dexie {
     this.version(15).stores({
       conceptCards: 'id, examProfileId, topicId, [examProfileId+topicId]',
       conceptCardConnections: 'id, fromCardId, examProfileId',
+    })
+
+    this.version(16).stores({
+      chapters: 'id, subjectId, examProfileId',
+      examSources: 'id, examProfileId, documentId',
+      exercises: 'id, examSourceId, examProfileId, status, difficulty',
+      exerciseAttempts: 'id, exerciseId, examProfileId',
+    }).upgrade(async tx => {
+      // Set default category on existing documents
+      await tx.table('documents').toCollection().modify(doc => {
+        if (doc.category === undefined) doc.category = 'course'
+      })
+
+      // Create a default chapter for each subject and assign existing topics
+      const subjects = await tx.table('subjects').toArray()
+      for (const subject of subjects) {
+        const chapterId = crypto.randomUUID()
+        await tx.table('chapters').add({
+          id: chapterId,
+          subjectId: subject.id,
+          examProfileId: subject.examProfileId,
+          name: 'General',
+          order: 0,
+        })
+        // Assign all topics of this subject to the default chapter
+        await tx.table('topics')
+          .where('subjectId').equals(subject.id)
+          .modify({ chapterId })
+      }
     })
   }
 }

@@ -35,10 +35,19 @@ export interface Subject {
 
 export type TopicStatus = 'exploring' | 'active' | 'blocked' | 'resolved'
 
+export interface Chapter {
+  id: string
+  subjectId: string
+  examProfileId: string
+  name: string
+  order: number
+}
+
 export interface Topic {
   id: string
   subjectId: string
   examProfileId: string
+  chapterId?: string
   name: string
   mastery: number // computed 0-1
   confidence: number // self-reported 0-1
@@ -98,11 +107,14 @@ export interface QuestionResult {
 // ─── Documents ──────────────────────────────────────────────────
 export type DocumentSourceType = 'pdf' | 'text' | 'image' | 'paste' | 'url'
 
+export type DocumentCategory = 'course' | 'exam' | 'other'
+
 export interface Document {
   id: string
   examProfileId: string
   title: string
   sourceType: DocumentSourceType
+  category?: DocumentCategory
   originalContent: string
   summary?: string
   chunkCount: number
@@ -542,6 +554,48 @@ export interface ReviewArticle {
 
 // ─── Background Jobs ──────────────────────────────────────────
 export type JobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
+// ─── Exercise Bank ──────────────────────────────────────────────
+
+export type ExerciseStatus = 'not_attempted' | 'attempted' | 'completed'
+
+export interface ExamSource {
+  id: string
+  examProfileId: string
+  documentId: string
+  name: string
+  year?: number
+  institution?: string
+  totalExercises: number
+  parsedAt: string
+}
+
+export interface Exercise {
+  id: string
+  examSourceId: string
+  examProfileId: string
+  exerciseNumber: number
+  text: string
+  solutionText?: string
+  difficulty: number // 1-5
+  points?: number
+  topicIds: string // JSON string[]
+  status: ExerciseStatus
+  lastAttemptScore?: number
+  attemptCount: number
+  createdAt: string
+}
+
+export interface ExerciseAttempt {
+  id: string
+  exerciseId: string
+  examProfileId: string
+  score: number // 0-1
+  feedback?: string
+  createdAt: string
+}
+
+// ─── Background Jobs ────────────────────────────────────────────
+
 export type JobType =
   | 'source-processing'
   | 'article-review-batch'
@@ -551,6 +605,7 @@ export type JobType =
   | 'study-plan'
   | 'session-insight'
   | 'exam-research'
+  | 'exam-exercise-processing'
 
 export interface BackgroundJob {
   id: string

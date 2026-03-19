@@ -17,6 +17,13 @@ export function useKnowledgeGraph(examProfileId: string | undefined) {
     [examProfileId]
   ) ?? []
 
+  const chapters = useLiveQuery(
+    () => examProfileId
+      ? db.chapters.where('examProfileId').equals(examProfileId).toArray()
+      : [],
+    [examProfileId]
+  ) ?? []
+
   const topics = useLiveQuery(
     () => examProfileId
       ? db.topics.where('examProfileId').equals(examProfileId).toArray()
@@ -70,8 +77,15 @@ export function useKnowledgeGraph(examProfileId: string | undefined) {
   const getTopicsForSubject = (subjectId: string): Topic[] =>
     topics.filter(t => t.subjectId === subjectId)
 
+  const getChaptersForSubject = (subjectId: string) =>
+    chapters.filter(ch => ch.subjectId === subjectId).sort((a, b) => a.order - b.order)
+
+  const getTopicsForChapter = (chapterId: string): Topic[] =>
+    topics.filter(t => t.chapterId === chapterId)
+
   return {
     subjects,
+    chapters,
     topics,
     topicsWithDecay,
     dailyLogs,
@@ -83,5 +97,7 @@ export function useKnowledgeGraph(examProfileId: string | undefined) {
     freezeUsed,
     weeklyHours,
     getTopicsForSubject,
+    getChaptersForSubject,
+    getTopicsForChapter,
   }
 }
