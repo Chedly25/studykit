@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
-import { Upload, MessageCircle, Layers, RotateCcw } from 'lucide-react'
+import { Upload, MessageCircle, Layers, RotateCcw, GitBranch } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useAgent } from '../hooks/useAgent'
@@ -28,10 +28,11 @@ import { MaterialsPanel } from '../components/session/MaterialsPanel'
 import { ConceptCardStrip } from '../components/session/ConceptCardStrip'
 import { CardsView } from '../components/session/CardsView'
 import { ReviewView } from '../components/session/ReviewView'
+import { KnowledgeMap } from '../components/session/KnowledgeMap'
 import type { SessionContext } from '../ai/systemPrompt'
 import type { ChatAttachment } from '../hooks/useAttachments'
 
-type SessionView = 'chat' | 'cards' | 'review'
+type SessionView = 'chat' | 'cards' | 'map' | 'review'
 
 export default function StudySession() {
   const { t } = useTranslation()
@@ -244,6 +245,7 @@ export default function StudySession() {
         {([
           { key: 'chat' as const, icon: MessageCircle, label: 'Chat' },
           { key: 'cards' as const, icon: Layers, label: `Cards${conceptCards.length > 0 ? ` (${conceptCards.length})` : ''}` },
+          { key: 'map' as const, icon: GitBranch, label: 'Map' },
           { key: 'review' as const, icon: RotateCcw, label: 'Review' },
         ]).map(({ key, icon: Icon, label }) => (
           <button
@@ -333,6 +335,10 @@ export default function StudySession() {
               handleSend(`Quiz me on ${title}`)
             }}
           />
+        )}
+
+        {activeView === 'map' && profileId && topic && (
+          <KnowledgeMap examProfileId={profileId} topicId={topic.id} />
         )}
 
         {activeView === 'review' && profileId && topic && (
