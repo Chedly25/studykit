@@ -8,8 +8,11 @@ import type { WorkflowStep, WorkflowContext } from './types'
  * Returns the parsed object or throws if repair fails.
  */
 function parseJsonWithRepair<T>(text: string): T {
+  // Strip markdown code blocks
+  const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '')
+
   // First try: extract and parse as-is
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
   if (jsonMatch) {
     try {
       return JSON.parse(jsonMatch[0]) as T
@@ -17,7 +20,7 @@ function parseJsonWithRepair<T>(text: string): T {
   }
 
   // Try array match
-  const arrayMatch = text.match(/\[[\s\S]*\]/)
+  const arrayMatch = cleaned.match(/\[[\s\S]*\]/)
   if (arrayMatch) {
     try {
       return JSON.parse(arrayMatch[0]) as T
@@ -25,10 +28,10 @@ function parseJsonWithRepair<T>(text: string): T {
   }
 
   // Repair: find the start of JSON and try to close it
-  const jsonStart = text.indexOf('{')
+  const jsonStart = cleaned.indexOf('{')
   if (jsonStart === -1) throw new Error('No JSON found in response')
 
-  let candidate = text.slice(jsonStart)
+  let candidate = cleaned.slice(jsonStart)
 
   // Remove trailing incomplete strings (cut at last complete property)
   // Strategy: progressively trim from the end and try to close brackets

@@ -42,7 +42,7 @@ Rules:
 
   const response = await streamChat({
     messages: [{ role: 'user', content: prompt }],
-    system: 'You are a curriculum analysis expert. Extract structured subject/topic breakdowns from any content. Return only valid JSON.',
+    system: 'You are a curriculum analysis expert. Extract structured subject/topic breakdowns from any content. IMPORTANT: Return only valid JSON with English key names (subjects, topics, name, weight) even if the content is in another language. Topic and subject names can be in the original language.',
     tools: [],
     authToken,
     maxTokens: 16384,
@@ -59,13 +59,27 @@ Rules:
   const jsonMatch = responseText.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('Failed to parse extraction response')
 
-  const parsed = JSON.parse(jsonMatch[0]) as ExtractionResult
+  const parsed = JSON.parse(jsonMatch[0])
 
-  if (!parsed.subjects || !Array.isArray(parsed.subjects) || parsed.subjects.length === 0) {
+  // Handle French key names
+  const subjects: ExtractionResult['subjects'] =
+    parsed.subjects ?? parsed.matières ?? parsed.matieres ?? parsed.sujets ?? []
+
+  if (!Array.isArray(subjects) || subjects.length === 0) {
     throw new Error('Invalid extraction result: no subjects found')
   }
 
-  return parsed
+  // Normalize topic keys
+  for (const s of subjects) {
+    if (!s.topics && (s as Record<string, unknown>).chapitres) {
+      s.topics = (s as Record<string, unknown>).chapitres as typeof s.topics
+    }
+    if (!s.topics && (s as Record<string, unknown>).sujets) {
+      s.topics = (s as Record<string, unknown>).sujets as typeof s.topics
+    }
+  }
+
+  return { ...parsed, subjects } as ExtractionResult
 }
 
 /** Streaming variant — emits subjects one-by-one via onSubject callback. */
@@ -111,7 +125,7 @@ Rules:
 
   const response = await streamChat({
     messages: [{ role: 'user', content: prompt }],
-    system: 'You are a curriculum analysis expert. Extract structured subject/topic breakdowns from any content. Return only valid JSON.',
+    system: 'You are a curriculum analysis expert. Extract structured subject/topic breakdowns from any content. IMPORTANT: Return only valid JSON with English key names (subjects, topics, name, weight) even if the content is in another language. Topic and subject names can be in the original language.',
     tools: [],
     authToken,
     maxTokens: 16384,
