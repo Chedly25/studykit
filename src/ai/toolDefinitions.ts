@@ -486,4 +486,52 @@ export const agentTools: ToolDefinition[] = [
     description: 'List all uploaded documents with metadata (title, type, word count).',
     input_schema: { type: 'object', properties: {} },
   },
+  // ─── Rich UI Rendering ─────────────────────────────────────
+  {
+    name: 'renderConceptCard',
+    description: 'Render a structured concept card inline. Use this INSTEAD of long text explanations when teaching a concept. The card will be saved to the student\'s knowledge board.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Concept name/title' },
+        keyPoints: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '3-5 key bullet points about this concept',
+        },
+        example: { type: 'string', description: 'A concrete example illustrating the concept' },
+        connections: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Names of related concepts',
+        },
+        sourceReference: { type: 'string', description: 'Citation from student materials (e.g., "Ch.3 p.12")' },
+      },
+      required: ['title', 'keyPoints'],
+    },
+  },
+  {
+    name: 'renderQuiz',
+    description: 'Render an interactive quiz inline for knowledge checks. Use after teaching a concept to verify understanding.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        questions: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              question: { type: 'string', description: 'The question text' },
+              options: { type: 'array', items: { type: 'string' }, description: '2-4 answer options' },
+              correctIndex: { type: 'number', description: 'Index of the correct option (0-based)' },
+              explanation: { type: 'string', description: 'Explanation shown after answering' },
+            },
+            required: ['question', 'options', 'correctIndex', 'explanation'],
+          },
+          description: '1-5 quiz questions',
+        },
+      },
+      required: ['questions'],
+    },
+  },
 ]

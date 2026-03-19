@@ -5,9 +5,15 @@ import { Bot, Loader2 } from 'lucide-react'
 import type { Message } from '../../ai/types'
 import { parseCitations, CitationBadge, type Citation } from './SourceCitation'
 import { StudyPlanCanvas } from './StudyPlanCanvas'
+import { ConceptCardBlock } from './ConceptCardBlock'
+import { InlineQuiz } from './InlineQuiz'
 
 const CANVAS_MARKER = '[canvas:study-plan]'
 const CANVAS_PARTIAL = '[canvas:'
+const CARD_RE = /\[card:([a-f0-9-]+)\]/g
+const QUIZ_RE = /\[quiz:([a-f0-9-]+)\]/g
+const ANY_MARKER_RE = /\[(?:card|quiz):([a-f0-9-]+)\]|\[canvas:study-plan\]/g
+const PARTIAL_MARKER_RE = /\[(?:card|quiz|canvas)(?::[^\]]*)?$/
 
 interface Props {
   message: Message
@@ -55,22 +61,51 @@ export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Pro
     )
   }
 
-  // Detect canvas markers in assistant messages
-  const hasCanvasMarker = textWithoutCitations.includes(CANVAS_MARKER)
-  const hasPartialCanvas = !hasCanvasMarker && textWithoutCitations.includes(CANVAS_PARTIAL)
+  // Parse text into segments: text + rich markers (canvas, card, quiz)
+  type Segment = { type: 'text'; content: string } | { type: 'canvas' } | { type: 'card'; id: string } | { type: 'quiz'; id: string }
 
-  // During streaming: show placeholder for partial marker
-  const renderContent = useMemo(() => {
-    if (hasCanvasMarker) {
-      const segments = textWithoutCitations.split(CANVAS_MARKER)
-      return { textBefore: null, showPlaceholder: false, segments }
+  const segments = useMemo((): Segment[] => {
+    const src = textWithoutCitations
+    // Check for partial marker during streaming — show text before it + placeholder
+    if (isStreaming && PARTIAL_MARKER_RE.test(src)) {
+      const match = src.match(PARTIAL_MARKER_RE)
+      if (match && match.index !== undefined) {
+        return [{ type: 'text', content: src.slice(0, match.index) }]
+      }
     }
-    if (isStreaming && hasPartialCanvas) {
-      const idx = textWithoutCitations.indexOf(CANVAS_PARTIAL)
-      return { textBefore: textWithoutCitations.slice(0, idx), showPlaceholder: true, segments: null }
+
+    const result: Segment[] = []
+    let lastIndex = 0
+    // Reset regex state
+    ANY_MARKER_RE.lastIndex = 0
+
+    let m: RegExpExecArray | null
+    while ((m = ANY_MARKER_RE.exec(src)) !== null) {
+      // Text before this marker
+      if (m.index > lastIndex) {
+        result.push({ type: 'text', content: src.slice(lastIndex, m.index) })
+      }
+      const full = m[0]
+      if (full === CANVAS_MARKER) {
+        result.push({ type: 'canvas' })
+      } else if (full.startsWith('[card:')) {
+        const id = full.match(CARD_RE.source)?.[0]?.slice(6, -1) ?? m[1]
+        result.push({ type: 'card', id })
+      } else if (full.startsWith('[quiz:')) {
+        const id = full.match(QUIZ_RE.source)?.[0]?.slice(6, -1) ?? m[1]
+        result.push({ type: 'quiz', id })
+      }
+      lastIndex = m.index + full.length
     }
-    return { textBefore: null, showPlaceholder: false, segments: null }
-  }, [textWithoutCitations, isStreaming, hasCanvasMarker, hasPartialCanvas])
+    // Remaining text
+    if (lastIndex < src.length) {
+      result.push({ type: 'text', content: src.slice(lastIndex) })
+    }
+    return result.length > 0 ? result : [{ type: 'text', content: src }]
+  }, [textWithoutCitations, isStreaming])
+
+  const hasRichContent = segments.some(s => s.type !== 'text')
+  const showStreamingPlaceholder = isStreaming && PARTIAL_MARKER_RE.test(textWithoutCitations)
 
   const proseClass = `text-base prose prose-base max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-3 prose-code:text-[var(--accent-text)] prose-code:bg-[var(--accent-bg)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded ${isStreaming ? 'streaming-cursor' : ''}`
 
@@ -80,39 +115,27 @@ export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Pro
         <Bot className="w-4 h-4 text-[var(--accent-text)]" />
       </div>
       <div className="max-w-none py-1 text-[var(--text-body)] min-w-0 flex-1">
-        {renderContent.segments ? (
-          // Non-streaming with canvas markers: interleave text and canvas components
-          <div>
-            {renderContent.segments.map((segment, i) => (
-              <div key={i}>
-                {segment.trim() && (
-                  <div className={proseClass}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{segment}</ReactMarkdown>
-                  </div>
-                )}
-                {i < renderContent.segments!.length - 1 && <StudyPlanCanvas />}
-              </div>
-            ))}
-          </div>
-        ) : renderContent.showPlaceholder ? (
-          // Streaming with partial canvas marker: show text before + placeholder
-          <div>
-            {renderContent.textBefore && renderContent.textBefore.trim() && (
-              <div className={proseClass}>
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{renderContent.textBefore}</ReactMarkdown>
-              </div>
-            )}
+        <div>
+          {segments.map((seg, i) => {
+            if (seg.type === 'text' && seg.content.trim()) {
+              return (
+                <div key={i} className={proseClass}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.content}</ReactMarkdown>
+                </div>
+              )
+            }
+            if (seg.type === 'canvas') return <StudyPlanCanvas key={i} />
+            if (seg.type === 'card') return <ConceptCardBlock key={i} cardId={seg.id} />
+            if (seg.type === 'quiz') return <InlineQuiz key={i} quizId={seg.id} />
+            return null
+          })}
+          {showStreamingPlaceholder && (
             <div className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--accent-bg)] my-2">
               <Loader2 className="w-4 h-4 animate-spin text-[var(--accent-text)]" />
-              <span className="text-sm text-[var(--accent-text)]">Setting up plan builder...</span>
+              <span className="text-sm text-[var(--accent-text)]">Preparing...</span>
             </div>
-          </div>
-        ) : (
-          // Normal message rendering
-          <div className={proseClass}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{textWithoutCitations}</ReactMarkdown>
-          </div>
-        )}
+          )}
+        </div>
         {citations.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-[var(--border-card)]">
             {citations.map((citation, i) => (

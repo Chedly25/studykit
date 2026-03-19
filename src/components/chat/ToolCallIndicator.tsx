@@ -23,6 +23,8 @@ const toolLabels: Record<string, string> = {
   getErrorPatterns: 'Analyzing error patterns...',
   generateStudyPlan: 'Generating your study plan...',
   getStudyPlan: 'Loading your study plan...',
+  renderConceptCard: 'Creating concept card...',
+  renderQuiz: 'Building quiz...',
 }
 
 interface Props {

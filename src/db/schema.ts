@@ -230,6 +230,31 @@ export interface StudyPlanDay {
   isCompleted: boolean
 }
 
+// ─── Concept Cards ─────────────────────────────────────────────
+
+export interface ConceptCard {
+  id: string
+  examProfileId: string
+  topicId: string
+  title: string
+  keyPoints: string       // JSON string[]
+  example: string
+  sourceChunkIds: string  // JSON string[]
+  sourceReference: string
+  relatedCardIds: string  // JSON string[]
+  mastery: number         // 0-1
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ConceptCardConnection {
+  id: string
+  fromCardId: string
+  toCardId: string
+  examProfileId: string
+  label: string           // e.g. "requires", "extends", "contrasts"
+}
+
 // ─── Error Types ────────────────────────────────────────────────
 export type ErrorType = 'recall' | 'conceptual' | 'application' | 'distractor'
 

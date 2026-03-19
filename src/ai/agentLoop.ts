@@ -54,6 +54,8 @@ import {
   getArticleComparison,
   getReviewProjectSummary,
 } from './tools/reviewTools'
+import { saveConceptCard, prepareQuiz } from './tools/conceptCardTools'
+import { db } from '../db'
 
 const MAX_ITERATIONS = 10
 const TIMEOUT_MS = 120000
@@ -180,6 +182,15 @@ async function executeToolLocally(
       return getArticleComparison(examProfileId, input as { articleIds: string[] })
     case 'getReviewProjectSummary':
       return getReviewProjectSummary(examProfileId, input as { projectId: string })
+    case 'renderConceptCard': {
+      // Find the session topic from the current conversation context
+      const topicName = (input.title as string) ?? ''
+      const topic = await db.topics.where('examProfileId').equals(examProfileId).filter(t => t.name.toLowerCase().includes(topicName.toLowerCase().split(' ')[0])).first()
+      const topicId = topic?.id ?? ''
+      return saveConceptCard(examProfileId, topicId, input as Parameters<typeof saveConceptCard>[2])
+    }
+    case 'renderQuiz':
+      return prepareQuiz(input as Parameters<typeof prepareQuiz>[0])
     default:
       return JSON.stringify({ error: `Unknown tool: ${toolName}` })
   }

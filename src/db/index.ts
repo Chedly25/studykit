@@ -38,6 +38,8 @@ import type {
   ReviewProject,
   ReviewArticle,
   BackgroundJob,
+  ConceptCard,
+  ConceptCardConnection,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -79,6 +81,8 @@ export class StudiesKitDB extends Dexie {
   reviewProjects!: Table<ReviewProject>
   reviewArticles!: Table<ReviewArticle>
   backgroundJobs!: Table<BackgroundJob>
+  conceptCards!: Table<ConceptCard>
+  conceptCardConnections!: Table<ConceptCardConnection>
 
   constructor() {
     super('studieskit')
@@ -190,6 +194,11 @@ export class StudiesKitDB extends Dexie {
 
     this.version(14).stores({
       backgroundJobs: 'id, examProfileId, type, status, createdAt, [examProfileId+status]',
+    })
+
+    this.version(15).stores({
+      conceptCards: 'id, examProfileId, topicId, [examProfileId+topicId]',
+      conceptCardConnections: 'id, fromCardId, examProfileId',
     })
   }
 }
