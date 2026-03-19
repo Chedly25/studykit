@@ -4,7 +4,7 @@
  */
 import { streamChat } from './client'
 import { createStreamExtractor } from './streamJsonExtractor'
-import type { ExtractionResult, ExtractedSubject } from './topicExtractor'
+import type { ExtractionResult, ExtractedSubject, ExtractedChapter } from './topicExtractor'
 
 export async function extractLandscapeFromText(
   text: string,
@@ -18,15 +18,20 @@ export async function extractLandscapeFromText(
 Content:
 ${text.slice(0, 8000)}
 
-Return ONLY valid JSON matching this exact schema:
+Return ONLY valid JSON matching this exact schema (3-level hierarchy: Subject > Chapter > Topic):
 {
   "examName": "${profileName}",
   "subjects": [
     {
       "name": "Subject Name",
       "weight": 30,
-      "topics": [
-        { "name": "Topic Name" }
+      "chapters": [
+        {
+          "name": "Chapter Name",
+          "topics": [
+            { "name": "Topic Name" }
+          ]
+        }
       ]
     }
   ]
@@ -34,15 +39,16 @@ Return ONLY valid JSON matching this exact schema:
 
 Rules:
 - 2-6 subjects
-- 3-10 topics per subject
+- 2-8 chapters per subject (major sections/units)
+- 2-10 topics per chapter (specific concepts/skills)
 - Topics should be specific enough to study independently
 - Weights should estimate relative importance and sum to 100
-- Use clear, concise topic names
+- Use clear, concise names
 - If the content is vague, infer reasonable structure from domain knowledge`
 
   const response = await streamChat({
     messages: [{ role: 'user', content: prompt }],
-    system: 'You are a curriculum analysis expert. Extract structured subject/topic breakdowns from any content. IMPORTANT: Return only valid JSON with English key names (subjects, topics, name, weight) even if the content is in another language. Topic and subject names can be in the original language.',
+    system: 'You are a curriculum analysis expert. Extract a 3-level hierarchy: subjects > chapters > topics. IMPORTANT: Return only valid JSON with English key names (subjects, chapters, topics, name, weight) even if the content is in another language. Names can be in the original language.',
     tools: [],
     authToken,
     maxTokens: 16384,
@@ -69,14 +75,20 @@ Rules:
     throw new Error('Invalid extraction result: no subjects found')
   }
 
-  // Normalize topic keys
+  // Normalize keys and handle 3-level hierarchy
   for (const s of subjects) {
-    if (!s.topics && (s as Record<string, unknown>).chapitres) {
-      s.topics = (s as Record<string, unknown>).chapitres as typeof s.topics
+    const raw = s as Record<string, unknown>
+    if (!s.chapters && raw.chapitres) s.chapters = raw.chapitres as ExtractedSubject['chapters']
+    if (s.chapters && Array.isArray(s.chapters) && s.chapters.length > 0) {
+      s.topics = s.chapters.flatMap(ch => ch.topics ?? [])
     }
-    if (!s.topics && (s as Record<string, unknown>).sujets) {
-      s.topics = (s as Record<string, unknown>).sujets as typeof s.topics
+    if (!s.chapters || s.chapters.length === 0) {
+      if (!s.topics && raw.sujets) s.topics = raw.sujets as ExtractedSubject['topics']
+      if (s.topics && s.topics.length > 0) {
+        s.chapters = [{ name: 'General', topics: s.topics }]
+      }
     }
+    if (!s.topics) s.topics = []
   }
 
   return { ...parsed, subjects } as ExtractionResult
@@ -99,15 +111,20 @@ export async function extractLandscapeFromTextStreaming(
 Content:
 ${text.slice(0, 8000)}
 
-Return ONLY valid JSON matching this exact schema:
+Return ONLY valid JSON matching this exact schema (3-level hierarchy: Subject > Chapter > Topic):
 {
   "examName": "${profileName}",
   "subjects": [
     {
       "name": "Subject Name",
       "weight": 30,
-      "topics": [
-        { "name": "Topic Name" }
+      "chapters": [
+        {
+          "name": "Chapter Name",
+          "topics": [
+            { "name": "Topic Name" }
+          ]
+        }
       ]
     }
   ]
@@ -115,17 +132,18 @@ Return ONLY valid JSON matching this exact schema:
 
 Rules:
 - 2-6 subjects
-- 3-10 topics per subject
+- 2-8 chapters per subject (major sections/units)
+- 2-10 topics per chapter (specific concepts/skills)
 - Topics should be specific enough to study independently
 - Weights should estimate relative importance and sum to 100
-- Use clear, concise topic names
+- Use clear, concise names
 - If the content is vague, infer reasonable structure from domain knowledge`
 
   const extractor = createStreamExtractor<ExtractedSubject>('subjects', { onItem: onSubject })
 
   const response = await streamChat({
     messages: [{ role: 'user', content: prompt }],
-    system: 'You are a curriculum analysis expert. Extract structured subject/topic breakdowns from any content. IMPORTANT: Return only valid JSON with English key names (subjects, topics, name, weight) even if the content is in another language. Topic and subject names can be in the original language.',
+    system: 'You are a curriculum analysis expert. Extract a 3-level hierarchy: subjects > chapters > topics. IMPORTANT: Return only valid JSON with English key names (subjects, chapters, topics, name, weight) even if the content is in another language. Names can be in the original language.',
     tools: [],
     authToken,
     maxTokens: 16384,

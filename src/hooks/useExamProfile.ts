@@ -129,12 +129,14 @@ export function useExamProfile() {
     const totalWeight = effectiveWeights.reduce((sum, w) => sum + w, 0)
     const weightScale = 100 / totalWeight
 
-    // Clear any existing blueprint-seeded subjects/topics
+    // Clear any existing blueprint-seeded subjects/topics/chapters
     await db.subtopics.where('examProfileId').equals(profileId).delete()
     await db.topics.where('examProfileId').equals(profileId).delete()
+    await db.chapters.where('examProfileId').equals(profileId).delete()
     await db.subjects.where('examProfileId').equals(profileId).delete()
 
     const subjects: Subject[] = []
+    const allChapters: import('../db/schema').Chapter[] = []
     const topics: Topic[] = []
     const subtopics: Subtopic[] = []
     const today = new Date().toISOString().slice(0, 10)
@@ -146,37 +148,58 @@ export function useExamProfile() {
 
       const subjectTopics: Topic[] = []
 
-      for (let ti = 0; ti < extracted.topics.length; ti++) {
-        const extractedTopic = extracted.topics[ti]
-        const topicId = crypto.randomUUID()
-        const key = `${si}-${ti}`
-        const level = assessments[key] ?? 'new'
-        const { confidence, mastery } = FAMILIARITY_MAP[level]
+      // Use chapters if available, otherwise wrap flat topics in a default chapter
+      const chapters = extracted.chapters && extracted.chapters.length > 0
+        ? extracted.chapters
+        : [{ name: 'General', topics: extracted.topics }]
 
-        const topic: Topic = {
-          id: topicId,
+      let topicCounter = 0
+      for (let ci = 0; ci < chapters.length; ci++) {
+        const chapter = chapters[ci]
+        const chapterId = crypto.randomUUID()
+
+        allChapters.push({
+          id: chapterId,
           subjectId,
           examProfileId: profileId,
-          name: extractedTopic.name,
-          mastery,
-          confidence,
-          questionsAttempted: 0,
-          questionsCorrect: 0,
-          easeFactor: 2.5,
-          interval: 0,
-          repetitions: 0,
-          nextReviewDate: today,
-        }
-        topics.push(topic)
-        subjectTopics.push(topic)
+          name: chapter.name,
+          order: ci,
+        })
 
-        for (const stName of extractedTopic.subtopics ?? []) {
-          subtopics.push({
-            id: crypto.randomUUID(),
-            topicId,
+        for (let ti = 0; ti < chapter.topics.length; ti++) {
+          const extractedTopic = chapter.topics[ti]
+          const topicId = crypto.randomUUID()
+          const key = `${si}-${topicCounter}`
+          topicCounter++
+          const level = assessments[key] ?? 'new'
+          const { confidence, mastery } = FAMILIARITY_MAP[level]
+
+          const topic: Topic = {
+            id: topicId,
+            subjectId,
+            chapterId,
             examProfileId: profileId,
-            name: stName,
-          })
+            name: extractedTopic.name,
+            mastery,
+            confidence,
+            questionsAttempted: 0,
+            questionsCorrect: 0,
+            easeFactor: 2.5,
+            interval: 0,
+            repetitions: 0,
+            nextReviewDate: today,
+          }
+          topics.push(topic)
+          subjectTopics.push(topic)
+
+          for (const stName of extractedTopic.subtopics ?? []) {
+            subtopics.push({
+              id: crypto.randomUUID(),
+              topicId,
+              examProfileId: profileId,
+              name: stName,
+            })
+          }
         }
       }
 
@@ -197,6 +220,7 @@ export function useExamProfile() {
     }
 
     await db.subjects.bulkPut(subjects)
+    await db.chapters.bulkPut(allChapters)
     await db.topics.bulkPut(topics)
     if (subtopics.length > 0) await db.subtopics.bulkPut(subtopics)
   }, [])

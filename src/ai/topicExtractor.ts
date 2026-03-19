@@ -10,10 +10,16 @@ export interface ExtractedTopic {
   subtopics?: string[]
 }
 
+export interface ExtractedChapter {
+  name: string
+  topics: ExtractedTopic[]
+}
+
 export interface ExtractedSubject {
   name: string
   weight: number
   topics: ExtractedTopic[]
+  chapters?: ExtractedChapter[]
 }
 
 export interface ExtractionResult {
@@ -64,15 +70,20 @@ Document titles: ${titles.join(', ')}
 Content samples:
 ${sampleContent}
 
-Return ONLY valid JSON matching this exact schema:
+Return ONLY valid JSON matching this exact schema (3-level hierarchy: Subject > Chapter > Topic):
 {
   "examName": "${profile.name}",
   "subjects": [
     {
       "name": "Subject Name",
       "weight": 30,
-      "topics": [
-        { "name": "Topic Name" }
+      "chapters": [
+        {
+          "name": "Chapter Name",
+          "topics": [
+            { "name": "Topic Name" }
+          ]
+        }
       ]
     }
   ]
@@ -80,14 +91,15 @@ Return ONLY valid JSON matching this exact schema:
 
 Rules:
 - 2-6 subjects
-- 3-10 topics per subject
+- 2-8 chapters per subject (major sections/units of the course)
+- 2-10 topics per chapter (specific concepts/skills within each chapter)
 - Topics should be specific enough to study independently
 - Weights should estimate relative exam importance and sum to 100
 - Use clear, concise topic names`
 
   const response = await streamChat({
     messages: [{ role: 'user', content: prompt }],
-    system: 'You are a curriculum analysis expert. Analyze study materials and extract their subject and topic structure. IMPORTANT: Return only valid JSON with English key names (subjects, topics, name, weight) even if the content is in another language. Topic and subject names can be in the original language.',
+    system: 'You are a curriculum analysis expert. Analyze study materials and extract a 3-level hierarchy: subjects > chapters > topics. IMPORTANT: Return only valid JSON with English key names (subjects, chapters, topics, name, weight) even if the content is in another language. Subject, chapter, and topic names can be in the original language.',
     tools: [],
     authToken,
     maxTokens: 16384,
@@ -113,14 +125,26 @@ Rules:
     throw new Error('Invalid extraction result: no subjects found')
   }
 
-  // Normalize topic keys (LLM may use French names)
+  // Normalize keys and handle 3-level hierarchy
   for (const s of subjects) {
-    if (!s.topics && (s as Record<string, unknown>).chapitres) {
-      s.topics = (s as Record<string, unknown>).chapitres as typeof s.topics
+    const raw = s as Record<string, unknown>
+    // Handle French chapter key
+    if (!s.chapters && raw.chapitres) {
+      s.chapters = raw.chapitres as ExtractedChapter[]
     }
-    if (!s.topics && (s as Record<string, unknown>).sujets) {
-      s.topics = (s as Record<string, unknown>).sujets as typeof s.topics
+    // If chapters exist, derive flat topics for backward compat
+    if (s.chapters && Array.isArray(s.chapters) && s.chapters.length > 0) {
+      s.topics = s.chapters.flatMap(ch => ch.topics ?? [])
     }
+    // If no chapters but has flat topics, wrap in a default chapter
+    if (!s.chapters || s.chapters.length === 0) {
+      if (!s.topics && raw.sujets) s.topics = raw.sujets as ExtractedTopic[]
+      if (s.topics && s.topics.length > 0) {
+        s.chapters = [{ name: 'General', topics: s.topics }]
+      }
+    }
+    // Ensure topics always exists for backward compat
+    if (!s.topics) s.topics = []
   }
 
   return { ...parsed, subjects } as ExtractionResult
@@ -186,15 +210,20 @@ Document titles: ${titles.join(', ')}
 Content samples:
 ${sampleContent}
 
-Return ONLY valid JSON matching this exact schema:
+Return ONLY valid JSON matching this exact schema (3-level hierarchy: Subject > Chapter > Topic):
 {
   "examName": "${profile.name}",
   "subjects": [
     {
       "name": "Subject Name",
       "weight": 30,
-      "topics": [
-        { "name": "Topic Name" }
+      "chapters": [
+        {
+          "name": "Chapter Name",
+          "topics": [
+            { "name": "Topic Name" }
+          ]
+        }
       ]
     }
   ]
@@ -202,7 +231,8 @@ Return ONLY valid JSON matching this exact schema:
 
 Rules:
 - 2-6 subjects
-- 3-10 topics per subject
+- 2-8 chapters per subject (major sections/units of the course)
+- 2-10 topics per chapter (specific concepts/skills within each chapter)
 - Topics should be specific enough to study independently
 - Weights should estimate relative exam importance and sum to 100
 - Use clear, concise topic names`
@@ -211,7 +241,7 @@ Rules:
 
   const response = await streamChat({
     messages: [{ role: 'user', content: prompt }],
-    system: 'You are a curriculum analysis expert. Analyze study materials and extract their subject and topic structure. IMPORTANT: Return only valid JSON with English key names (subjects, topics, name, weight) even if the content is in another language. Topic and subject names can be in the original language.',
+    system: 'You are a curriculum analysis expert. Analyze study materials and extract a 3-level hierarchy: subjects > chapters > topics. IMPORTANT: Return only valid JSON with English key names (subjects, chapters, topics, name, weight) even if the content is in another language. Subject, chapter, and topic names can be in the original language.',
     tools: [],
     authToken,
     maxTokens: 16384,
