@@ -25,6 +25,7 @@ const toolLabels: Record<string, string> = {
   getStudyPlan: 'Loading your study plan...',
   renderConceptCard: 'Creating concept card...',
   renderQuiz: 'Building quiz...',
+  renderCodePlayground: 'Setting up code editor...',
 }
 
 interface Props {

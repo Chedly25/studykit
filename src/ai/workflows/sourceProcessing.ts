@@ -217,6 +217,97 @@ Generate 10-20 high-quality flashcards covering the key concepts. Focus on under
 
         return { summary: conceptData?.summary ?? '', conceptsFound, mappingsApplied, flashcardDeckId, flashcardCount }
       }),
+
+      // Step 6: Generate concept cards (Pro only)
+      {
+        id: 'generate-concept-cards',
+        name: 'Generating concept cards',
+        shouldRun: () => config.isPro,
+        optional: true,
+        async execute(_input: unknown, ctx: WorkflowContext) {
+          const conceptData = ctx.results['extract-concepts']?.data as {
+            concepts: Array<{ name: string; chunkIndices: number[] }>
+          } | undefined
+
+          const context = ctx.results['gather-context']?.data as {
+            chunks: Array<{ id: string; chunkIndex: number; content: string }>
+            topics: Array<{ id: string; name: string }>
+          }
+
+          if (!conceptData?.concepts || conceptData.concepts.length === 0) {
+            return { cardsGenerated: 0 }
+          }
+
+          const topicMap = new Map(context.topics.map(t => [t.name.toLowerCase(), t.id]))
+          let cardsGenerated = 0
+
+          for (const concept of conceptData.concepts.slice(0, 10)) {
+            // Find matching topic
+            let topicId = topicMap.get(concept.name.toLowerCase())
+            if (!topicId) {
+              // Try partial match
+              for (const [name, id] of topicMap) {
+                if (concept.name.toLowerCase().includes(name) || name.includes(concept.name.toLowerCase())) {
+                  topicId = id
+                  break
+                }
+              }
+            }
+            if (!topicId) continue
+
+            // Get relevant chunk content
+            const relevantContent = concept.chunkIndices
+              .map(i => context.chunks.find(c => c.chunkIndex === i))
+              .filter(Boolean)
+              .slice(0, 3)
+              .map(c => c!.content)
+              .join('\n---\n')
+
+            if (!relevantContent) continue
+
+            try {
+              const cardJson = await ctx.llm(
+                `Generate a concept card for "${concept.name}".
+
+Source material:
+${relevantContent.slice(0, 4000)}
+
+Return JSON: { "title": "concept name", "keyPoints": ["point 1", "point 2", "point 3"], "example": "a concrete example", "sourceReference": "source reference like Ch.3 p.12" }
+
+Respond ONLY with valid JSON.`,
+                'You are an expert at creating concise study concept cards.',
+              )
+
+              const jsonMatch = cardJson.match(/\{[\s\S]*\}/)
+              if (!jsonMatch) continue
+
+              const parsed = JSON.parse(jsonMatch[0])
+              const now = new Date().toISOString()
+
+              await db.conceptCards.put({
+                id: crypto.randomUUID(),
+                examProfileId: ctx.examProfileId,
+                topicId,
+                title: parsed.title ?? concept.name,
+                keyPoints: JSON.stringify(parsed.keyPoints ?? []),
+                example: parsed.example ?? '',
+                sourceChunkIds: JSON.stringify(concept.chunkIndices.map(i => context.chunks.find(c => c.chunkIndex === i)?.id).filter(Boolean)),
+                sourceReference: parsed.sourceReference ?? '',
+                relatedCardIds: '[]',
+                mastery: 0,
+                createdAt: now,
+                updatedAt: now,
+              })
+              cardsGenerated++
+            } catch {
+              // Skip individual card failures
+              continue
+            }
+          }
+
+          return { cardsGenerated }
+        },
+      },
     ],
 
     aggregate(ctx) {

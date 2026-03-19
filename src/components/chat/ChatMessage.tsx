@@ -7,13 +7,14 @@ import { parseCitations, CitationBadge, type Citation } from './SourceCitation'
 import { StudyPlanCanvas } from './StudyPlanCanvas'
 import { ConceptCardBlock } from './ConceptCardBlock'
 import { InlineQuiz } from './InlineQuiz'
+import { CodePlaygroundBlock } from './CodePlaygroundBlock'
 
 const CANVAS_MARKER = '[canvas:study-plan]'
 const CANVAS_PARTIAL = '[canvas:'
 const CARD_RE = /\[card:([a-f0-9-]+)\]/g
 const QUIZ_RE = /\[quiz:([a-f0-9-]+)\]/g
-const ANY_MARKER_RE = /\[(?:card|quiz):([a-f0-9-]+)\]|\[canvas:study-plan\]/g
-const PARTIAL_MARKER_RE = /\[(?:card|quiz|canvas)(?::[^\]]*)?$/
+const ANY_MARKER_RE = /\[(?:card|quiz|code):([a-f0-9-]+)\]|\[canvas:study-plan\]/g
+const PARTIAL_MARKER_RE = /\[(?:card|quiz|code|canvas)(?::[^\]]*)?$/
 
 interface Props {
   message: Message
@@ -62,7 +63,7 @@ export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Pro
   }
 
   // Parse text into segments: text + rich markers (canvas, card, quiz)
-  type Segment = { type: 'text'; content: string } | { type: 'canvas' } | { type: 'card'; id: string } | { type: 'quiz'; id: string }
+  type Segment = { type: 'text'; content: string } | { type: 'canvas' } | { type: 'card'; id: string } | { type: 'quiz'; id: string } | { type: 'code'; id: string }
 
   const segments = useMemo((): Segment[] => {
     const src = textWithoutCitations
@@ -94,6 +95,8 @@ export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Pro
       } else if (full.startsWith('[quiz:')) {
         const id = full.match(QUIZ_RE.source)?.[0]?.slice(6, -1) ?? m[1]
         result.push({ type: 'quiz', id })
+      } else if (full.startsWith('[code:')) {
+        result.push({ type: 'code', id: m[1] })
       }
       lastIndex = m.index + full.length
     }
@@ -127,6 +130,7 @@ export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Pro
             if (seg.type === 'canvas') return <StudyPlanCanvas key={i} />
             if (seg.type === 'card') return <ConceptCardBlock key={i} cardId={seg.id} />
             if (seg.type === 'quiz') return <InlineQuiz key={i} quizId={seg.id} />
+            if (seg.type === 'code') return <CodePlaygroundBlock key={i} codeId={seg.id} />
             return null
           })}
           {showStreamingPlaceholder && (

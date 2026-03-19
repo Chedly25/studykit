@@ -74,3 +74,26 @@ export function prepareQuiz(input: RenderQuizInput): string {
     instruction: 'The quiz has been rendered inline. Wait for the student to complete it before continuing.',
   })
 }
+
+interface RenderCodePlaygroundInput {
+  code: string
+  language: string
+  instructions: string
+}
+
+export function prepareCodePlayground(input: RenderCodePlaygroundInput): string {
+  const codeId = crypto.randomUUID()
+
+  setTransient(codeId, {
+    code: input.code ?? '',
+    language: input.language ?? 'python',
+    instructions: input.instructions ?? '',
+  })
+
+  return JSON.stringify({
+    success: true,
+    codeId,
+    marker: `[code:${codeId}]`,
+    instruction: 'The code playground has been rendered inline. The student can edit and run the code. Wait for them to try before continuing.',
+  })
+}

@@ -534,4 +534,17 @@ export const agentTools: ToolDefinition[] = [
       required: ['questions'],
     },
   },
+  {
+    name: 'renderCodePlayground',
+    description: 'Render an interactive code editor inline. Use this for coding exercises and challenges. The student can edit and run the code.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', description: 'Initial code to populate the editor with' },
+        language: { type: 'string', description: 'Programming language (python, javascript)', enum: ['python', 'javascript'] },
+        instructions: { type: 'string', description: 'Instructions/challenge for the student' },
+      },
+      required: ['code', 'language', 'instructions'],
+    },
+  },
 ]

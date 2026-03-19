@@ -1,7 +1,8 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Upload, CheckCircle, Loader2, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Upload, CheckCircle, Loader2, AlertCircle, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react'
 import { useSources } from '../../../hooks/useSources'
+import { useSourceProcessing } from '../../../hooks/useSourceProcessing'
 import type { WizardDraft, WizardAction } from '../../../hooks/useWizardDraft'
 
 interface StepMaterialsProps {
@@ -14,12 +15,24 @@ interface StepMaterialsProps {
 export function StepMaterials({ draft, dispatch, onNext, onBack }: StepMaterialsProps) {
   const { t } = useTranslation()
   const { uploadMultiplePdfs, batchProgress, documents } = useSources(draft.profileId!)
+  const { processDocument, isRunning: isProcessing } = useSourceProcessing(draft.profileId!)
   const [isUploading, setIsUploading] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const existingDocs = documents ?? []
   const hasDocuments = existingDocs.length > 0 || draft.uploadedDocumentIds.length > 0
+  const processedRef = useRef(new Set<string>())
+
+  // Auto-trigger background processing for unprocessed documents
+  useEffect(() => {
+    for (const doc of existingDocs) {
+      if (!doc.summary && !processedRef.current.has(doc.id)) {
+        processedRef.current.add(doc.id)
+        processDocument(doc.id)
+      }
+    }
+  }, [existingDocs, processDocument])
 
   const handleFiles = useCallback(async (files: File[]) => {
     const pdfFiles = files.filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'))
@@ -28,7 +41,7 @@ export function StepMaterials({ draft, dispatch, onNext, onBack }: StepMaterials
     setIsUploading(true)
     try {
       await uploadMultiplePdfs(pdfFiles)
-      // Documents are tracked via useSources live query — no need to manually track IDs
+      // Documents are tracked via live query — processing triggered below
     } catch (err) {
       console.error('Upload failed:', err)
     } finally {
@@ -65,6 +78,14 @@ export function StepMaterials({ draft, dispatch, onNext, onBack }: StepMaterials
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Background processing indicator */}
+      {isProcessing && (
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[var(--accent-bg)] text-sm text-[var(--accent-text)]">
+          <Sparkles className="w-4 h-4 animate-pulse" />
+          {t('wizard.processingMaterials', 'Processing your materials in background — concept cards will be ready soon.')}
         </div>
       )}
 

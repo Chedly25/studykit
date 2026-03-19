@@ -54,7 +54,7 @@ import {
   getArticleComparison,
   getReviewProjectSummary,
 } from './tools/reviewTools'
-import { saveConceptCard, prepareQuiz } from './tools/conceptCardTools'
+import { saveConceptCard, prepareQuiz, prepareCodePlayground } from './tools/conceptCardTools'
 import { db } from '../db'
 
 const MAX_ITERATIONS = 10
@@ -191,6 +191,8 @@ async function executeToolLocally(
     }
     case 'renderQuiz':
       return prepareQuiz(input as Parameters<typeof prepareQuiz>[0])
+    case 'renderCodePlayground':
+      return prepareCodePlayground(input as Parameters<typeof prepareCodePlayground>[0])
     default:
       return JSON.stringify({ error: `Unknown tool: ${toolName}` })
   }

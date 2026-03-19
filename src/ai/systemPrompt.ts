@@ -19,7 +19,7 @@ function getFormatGuidance(examType: ExamType): string {
 function getExamTypeGuidance(examType: ExamType): string {
   switch (examType) {
     case 'university-course':
-      return '\nEXAM-TYPE GUIDANCE: This is a university course. Focus on exam-relevant concepts. Tie everything back to the exam format. Include practical examples and exercises from their course materials.'
+      return '\nEXAM-TYPE GUIDANCE: This is a university course. Focus on exam-relevant concepts. Tie everything back to the exam format. Include practical examples and exercises from their course materials. If the subject involves coding/programming, use renderCodePlayground to provide interactive coding exercises with starter code and clear instructions.'
     case 'professional-exam':
       return '\nEXAM-TYPE GUIDANCE: This is a professional exam. Drill with scenario-based questions. Fast-paced recall is key. Use case studies and vignettes. Focus on rule memorization and application.'
     case 'graduate-research':

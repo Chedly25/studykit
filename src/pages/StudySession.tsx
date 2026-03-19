@@ -29,6 +29,7 @@ import { ConceptCardStrip } from '../components/session/ConceptCardStrip'
 import { CardsView } from '../components/session/CardsView'
 import { ReviewView } from '../components/session/ReviewView'
 import { KnowledgeMap } from '../components/session/KnowledgeMap'
+import { CodePlayground } from '../components/session/CodePlayground'
 import type { SessionContext } from '../ai/systemPrompt'
 import type { ChatAttachment } from '../hooks/useAttachments'
 
@@ -50,9 +51,30 @@ export default function StudySession() {
   const { studentModel, conversationSummaries } = useStudentModel(profileId)
   const { todaysPlan, markActivityCompleted } = useStudyPlan(profileId)
 
-  const [materialsOpen, setMaterialsOpen] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [activeView, setActiveView] = useState<SessionView>('chat')
+
+  // Determine layout variant based on exam type
+  const CODING_KEYWORDS = ['python', 'java', 'javascript', 'c++', 'programming', 'code', 'coding', 'algorithm', 'data structure', 'web dev', 'react', 'sql']
+  const layoutVariant = useMemo(() => {
+    if (!activeProfile) return 'default' as const
+    const examType = activeProfile.examType
+    if (examType === 'graduate-research') return 'research' as const
+    if (examType === 'professional-exam') return 'drill' as const
+    if (examType === 'university-course') {
+      const hasCoding = subjects.some(s =>
+        CODING_KEYWORDS.some(kw => s.name.toLowerCase().includes(kw))
+      )
+      return hasCoding ? 'coding' as const : 'default' as const
+    }
+    return 'default' as const
+  }, [activeProfile, subjects])
+
+  // Research layout: materials panel auto-opens
+  const [materialsOpen, setMaterialsOpen] = useState(false)
+  useEffect(() => {
+    if (layoutVariant === 'research') setMaterialsOpen(true)
+  }, [layoutVariant])
 
   const {
     attachments, addFiles, removeAttachment, clearAttachments, isParsing, getRelevantChunks,
@@ -262,10 +284,28 @@ export default function StudySession() {
         ))}
       </div>
 
+      {/* Drill mode progress bar */}
+      {layoutVariant === 'drill' && activeView === 'chat' && (
+        <div className="px-4 py-2 border-b border-[var(--border-card)]">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-[var(--text-muted)]">Mastery</span>
+            <div className="flex-1 h-2 rounded-full bg-[var(--bg-input)] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[var(--accent-text)] transition-all"
+                style={{ width: `${Math.round(topic.mastery * 100)}%` }}
+              />
+            </div>
+            <span className="text-xs font-semibold text-[var(--accent-text)]">{Math.round(topic.mastery * 100)}%</span>
+          </div>
+        </div>
+      )}
+
       {/* Main content area */}
       <div className="flex-1 flex relative min-h-0">
         {activeView === 'chat' && (
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className={`flex-1 flex ${layoutVariant === 'coding' ? 'flex-row' : 'flex-col'} min-w-0`}>
+            {/* Chat column */}
+            <div className={`flex flex-col min-w-0 ${layoutVariant === 'coding' ? 'flex-1' : 'flex-1'}`}>
             {/* Concept card strip */}
             {topic && profileId && (
               <ConceptCardStrip examProfileId={profileId} topicId={topic.id} />
@@ -274,7 +314,7 @@ export default function StudySession() {
             {/* Messages */}
             <ChatContextProvider value={{ examProfileId: profileId, getToken }}>
               <div ref={scrollRef} className="flex-1 overflow-y-auto">
-                <div className="max-w-[740px] mx-auto w-full px-6 py-6">
+                <div className={`mx-auto w-full px-6 py-6 ${layoutVariant === 'coding' ? 'max-w-full' : 'max-w-[740px]'}`}>
                   {messages.length === 0 && !streamingText ? (
                     <SessionSuggestions
                       topic={topic}
@@ -309,7 +349,7 @@ export default function StudySession() {
             </ChatContextProvider>
 
             {/* Input */}
-            <div className="max-w-[740px] mx-auto w-full px-4 pb-4 pt-2">
+            <div className={`mx-auto w-full px-4 pb-4 pt-2 ${layoutVariant === 'coding' ? 'max-w-full' : 'max-w-[740px]'}`}>
               <div className="flex items-center gap-2 mb-1 justify-end">
                 <QuotaIndicator messagesUsedToday={messagesUsedToday} />
               </div>
@@ -323,6 +363,14 @@ export default function StudySession() {
                 isParsing={isParsing}
               />
             </div>
+            </div>{/* end chat column */}
+
+            {/* Code editor pane (coding layout only) */}
+            {layoutVariant === 'coding' && (
+              <div className="w-[45%] border-l border-[var(--border-card)] flex-shrink-0 flex flex-col">
+                <CodePlayground language="python" />
+              </div>
+            )}
           </div>
         )}
 
