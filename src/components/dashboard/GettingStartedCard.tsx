@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { Compass, Upload, Layers, MessageCircle, X } from 'lucide-react'
+import { Compass, Upload, Layers, ListChecks, X } from 'lucide-react'
 
 interface Props {
   hasDocuments: boolean
@@ -31,7 +31,7 @@ export function GettingStartedCard({ hasDocuments, hasTopics, hasActivity }: Pro
     hints.push({ icon: Layers, text: t('dashboard.hintExtract'), to: '/sources' })
   }
   if (hasTopics && !hasActivity) {
-    hints.push({ icon: MessageCircle, text: t('dashboard.hintExplore'), to: '/chat' })
+    hints.push({ icon: ListChecks, text: t('dashboard.hintExplore'), to: '/exercises' })
   }
 
   if (hints.length === 0) return null

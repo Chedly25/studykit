@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { FileText, FileType, ClipboardPaste, Trash2, Eye, Sparkles, BookOpen, ClipboardCheck, Loader2 } from 'lucide-react'
+import { FileText, FileType, ClipboardPaste, Trash2, Eye, Sparkles, BookOpen, ClipboardCheck, Loader2, FileSearch2 } from 'lucide-react'
 import type { Document } from '../../db/schema'
 
 const typeIcons: Record<string, typeof FileText> = {
@@ -13,6 +13,7 @@ const typeIcons: Record<string, typeof FileText> = {
 interface Props {
   document: Document
   onView: () => void
+  onViewPdf?: () => void
   onDelete: () => void
   onSummarize: () => void
   onGenerateFlashcards: () => void
@@ -20,6 +21,7 @@ interface Props {
   isSummarizing?: boolean
   isGeneratingFlashcards?: boolean
   deleteConfirm?: boolean
+  hasPdfFile?: boolean
 }
 
 export function SourceCard({
@@ -32,6 +34,8 @@ export function SourceCard({
   isSummarizing,
   isGeneratingFlashcards,
   deleteConfirm,
+  onViewPdf,
+  hasPdfFile,
 }: Props) {
   const { t } = useTranslation()
   const Icon = typeIcons[doc.sourceType] ?? FileText
@@ -72,6 +76,14 @@ export function SourceCard({
         >
           <Eye size={12} /> View
         </button>
+        {hasPdfFile && onViewPdf && (
+          <button
+            onClick={onViewPdf}
+            className="btn-action text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--accent-text)] flex items-center gap-1"
+          >
+            <FileSearch2 size={12} /> PDF
+          </button>
+        )}
         <button
           onClick={onSummarize}
           disabled={isSummarizing}

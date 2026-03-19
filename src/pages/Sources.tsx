@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { toast } from 'sonner'
-import { FileText, Loader2, ClipboardCheck, BookOpen, MessageCircle, Sparkles } from 'lucide-react'
+import { FileText, Loader2, ClipboardCheck, BookOpen, ListChecks, Sparkles } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useSources } from '../hooks/useSources'
@@ -18,6 +18,7 @@ import { SourceCoverageChart } from '../components/sources/SourceCoverageChart'
 import { PasteTextModal } from '../components/sources/PasteTextModal'
 import { NotesEditor } from '../components/sources/NotesEditor'
 import { SourceDetailModal } from '../components/sources/SourceDetailModal'
+import { PdfViewer } from '../components/sources/PdfViewer'
 import { SourceProcessingBanner } from '../components/sources/SourceProcessingBanner'
 import { BatchUploadProgress } from '../components/sources/BatchUploadProgress'
 import { buildSummaryPrompt, buildFlashcardPrompt } from '../lib/sourceActions'
@@ -40,6 +41,14 @@ export default function Sources() {
   const { processDocument, cancel: cancelProcessing, isRunning: isProcessingDoc, progress: processingProgress, error: processingError } = useSourceProcessing(profileId)
   const { processExamDocument, isRunning: isExamProcessing } = useExamProcessing(profileId)
   const [categoryFilter, setCategoryFilter] = useState<'' | 'course' | 'exam'>('')
+  const [pdfViewDoc, setPdfViewDoc] = useState<Document | null>(null)
+
+  // Track which documents have stored PDF files
+  const pdfDocIds = useLiveQuery(async () => {
+    if (!profileId) return new Set<string>()
+    const files = await db.documentFiles.where('examProfileId').equals(profileId).toArray()
+    return new Set(files.map(f => f.documentId))
+  }, [profileId]) ?? new Set<string>()
 
   // Count exercises per exam source
   const examSourceCounts = useLiveQuery(async () => {
@@ -268,11 +277,11 @@ export default function Sources() {
       </div>
 
       {documents.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           {([
             { icon: ClipboardCheck, label: t('sources.discovery.practiceExam'), desc: t('sources.discovery.practiceExamDesc'), to: '/practice-exam' },
             { icon: BookOpen, label: t('sources.discovery.flashcards'), desc: t('sources.discovery.flashcardsDesc'), to: '/flashcard-maker' },
-            { icon: MessageCircle, label: t('sources.discovery.chat'), desc: t('sources.discovery.chatDesc'), to: '/chat' },
+            { icon: ListChecks, label: t('exercises.title', 'Exercises'), desc: t('sources.discovery.chatDesc'), to: '/exercises' },
           ] as const).map(({ icon: Icon, label, desc, to }) => (
             <Link key={to} to={to} className="glass-card glass-card-hover p-3 flex items-start gap-3 group">
               <div className="w-9 h-9 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center flex-shrink-0">
@@ -340,6 +349,7 @@ export default function Sources() {
       <SourceList
         documents={categoryFilter === '' ? documents : documents.filter(d => categoryFilter === 'course' ? d.category !== 'exam' : d.category === 'exam')}
         onView={setViewDoc}
+        onViewPdf={setPdfViewDoc}
         onDelete={handleDelete}
         onSummarize={handleSummarize}
         onGenerateFlashcards={handleGenerateFlashcards}
@@ -347,6 +357,7 @@ export default function Sources() {
         summarizingId={summarizing}
         generatingFlashcardsId={generatingFlashcards}
         deleteConfirmId={deleteConfirm}
+        pdfDocIds={pdfDocIds}
       />
 
       <PasteTextModal
@@ -366,6 +377,14 @@ export default function Sources() {
         onClose={() => setViewDoc(null)}
         isSummarizing={!!summarizing && summarizing === viewDoc?.id}
       />
+
+      {pdfViewDoc && (
+        <PdfViewer
+          documentId={pdfViewDoc.id}
+          title={pdfViewDoc.title}
+          onClose={() => setPdfViewDoc(null)}
+        />
+      )}
     </div>
   )
 }

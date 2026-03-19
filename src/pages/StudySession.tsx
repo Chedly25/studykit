@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
-import { Upload, MessageCircle, Layers, RotateCcw, GitBranch } from 'lucide-react'
+import { Upload, MessageCircle, Layers, RotateCcw, GitBranch, ListChecks } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useAgent } from '../hooks/useAgent'
@@ -31,10 +31,11 @@ import { CardsView } from '../components/session/CardsView'
 import { ReviewView } from '../components/session/ReviewView'
 import { KnowledgeMap } from '../components/session/KnowledgeMap'
 import { CodePlayground } from '../components/session/CodePlayground'
+import { ExerciseDrill } from '../components/session/ExerciseDrill'
 import type { SessionContext } from '../ai/systemPrompt'
 import type { ChatAttachment } from '../hooks/useAttachments'
 
-type SessionView = 'chat' | 'cards' | 'map' | 'review'
+type SessionView = 'chat' | 'cards' | 'map' | 'review' | 'exercises'
 
 export default function StudySession() {
   const { t } = useTranslation()
@@ -55,7 +56,7 @@ export default function StudySession() {
   const exerciseStatsByTopic = useMemo(() => getExerciseStatsMap(), [getExerciseStatsMap])
 
   const [isDragging, setIsDragging] = useState(false)
-  const [activeView, setActiveView] = useState<SessionView>('chat')
+  const [activeView, setActiveView] = useState<SessionView>('cards')
 
   // Determine layout variant based on exam type
   const CODING_KEYWORDS = ['python', 'java', 'javascript', 'c++', 'programming', 'code', 'coding', 'algorithm', 'data structure', 'web dev', 'react', 'sql']
@@ -293,10 +294,11 @@ export default function StudySession() {
       {/* View toggle */}
       <div className="flex items-center gap-1 px-4 py-1.5 border-b border-[var(--border-card)] bg-[var(--bg-card)]/30">
         {([
-          { key: 'chat' as const, icon: MessageCircle, label: 'Chat' },
           { key: 'cards' as const, icon: Layers, label: `Cards${conceptCards.length > 0 ? ` (${conceptCards.length})` : ''}` },
-          { key: 'map' as const, icon: GitBranch, label: 'Map' },
+          { key: 'exercises' as const, icon: ListChecks, label: 'Exercises' },
           { key: 'review' as const, icon: RotateCcw, label: 'Review' },
+          { key: 'map' as const, icon: GitBranch, label: 'Map' },
+          { key: 'chat' as const, icon: MessageCircle, label: 'Chat' },
         ]).map(({ key, icon: Icon, label }) => (
           <button
             key={key}
@@ -410,6 +412,14 @@ export default function StudySession() {
               setActiveView('chat')
               handleSend(`Quiz me on ${title}`)
             }}
+          />
+        )}
+
+        {activeView === 'exercises' && profileId && topic && (
+          <ExerciseDrill
+            examProfileId={profileId}
+            topicId={topic.id}
+            topicName={topic.name}
           />
         )}
 

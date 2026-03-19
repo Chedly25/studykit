@@ -59,7 +59,7 @@ export function DecisionConsoleCard({ recommendations, dueFlashcardCount, hasTop
           ? 'Highest impact but may be dense material'
           : 'Good balance of depth-building and reinforcement',
       actions: isShortSession
-        ? [{ label: 'Quick Review', to: '/chat' }]
+        ? [{ label: 'Quick Review', to: '/flashcard-maker' }]
         : [
             { label: 'Start Reading', to: '/sources' },
             { label: 'Practice Questions', to: '/practice-exam' },

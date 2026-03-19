@@ -1,9 +1,11 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ListChecks, Filter, Star, Check, Clock, Send, Bot } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { ListChecks, Filter, Star, Check, Clock, Send, Bot, RotateCcw, Loader2 } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useExerciseBank } from '../hooks/useExerciseBank'
+import { useExerciseAI } from '../hooks/useExerciseAI'
 import type { Exercise } from '../db/schema'
 
 function DifficultyStars({ level }: { level: number }) {
@@ -13,6 +15,15 @@ function DifficultyStars({ level }: { level: number }) {
         <Star key={i} className={`w-3 h-3 ${i <= level ? 'fill-amber-400 text-amber-400' : 'text-[var(--border-card)]'}`} />
       ))}
     </div>
+  )
+}
+
+function ScoreBadge({ score }: { score: number }) {
+  const color = score >= 70 ? 'bg-green-500/15 text-green-600' : score >= 40 ? 'bg-amber-500/15 text-amber-600' : 'bg-red-500/15 text-red-600'
+  return (
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${color}`}>
+      {score}/100
+    </span>
   )
 }
 
@@ -60,10 +71,12 @@ function ExerciseCard({ exercise, examSourceName, topicNames, onClick }: {
 
 export default function Exercises() {
   const { t } = useTranslation()
+  const [searchParams] = useSearchParams()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { subjects, chapters, topics, getChaptersForSubject, getTopicsForChapter } = useKnowledgeGraph(profileId)
   const { exercises, examSources } = useExerciseBank(profileId)
+  const exerciseAI = useExerciseAI(profileId)
 
   const [filterSubject, setFilterSubject] = useState('')
   const [filterChapter, setFilterChapter] = useState('')
@@ -72,6 +85,17 @@ export default function Exercises() {
   const [filterDifficulty, setFilterDifficulty] = useState(0)
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null)
   const [userAnswer, setUserAnswer] = useState('')
+
+  // URL param: ?topic=TopicName → auto-filter
+  useEffect(() => {
+    const topicParam = searchParams.get('topic')
+    if (topicParam && topics.length > 0) {
+      const matchedTopic = topics.find(t => t.name.toLowerCase() === topicParam.toLowerCase())
+      if (matchedTopic) {
+        setFilterTopic(matchedTopic.id)
+      }
+    }
+  }, [searchParams, topics])
 
   const topicMap = useMemo(() => new Map(topics.map(t => [t.id, t.name])), [topics])
   const examSourceMap = useMemo(() => new Map(examSources.map(s => [s.id, s.name])), [examSources])
@@ -117,6 +141,23 @@ export default function Exercises() {
       const ids: string[] = JSON.parse(ex.topicIds)
       return ids.map(id => topicMap.get(id) ?? 'Unknown').slice(0, 3)
     } catch { return [] }
+  }
+
+  const handleCheckWithAI = () => {
+    if (!selectedExercise || !userAnswer.trim()) return
+    const topicNames = getTopicNames(selectedExercise)
+    exerciseAI.checkAnswer(selectedExercise, userAnswer, topicNames)
+  }
+
+  const handleTryAgain = () => {
+    setUserAnswer('')
+    exerciseAI.reset()
+  }
+
+  const handleBack = () => {
+    setSelectedExercise(null)
+    setUserAnswer('')
+    exerciseAI.reset()
   }
 
   if (!activeProfile) {
@@ -196,7 +237,7 @@ export default function Exercises() {
               <DifficultyStars level={selectedExercise.difficulty} />
             </div>
             <button
-              onClick={() => { setSelectedExercise(null); setUserAnswer('') }}
+              onClick={handleBack}
               className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)]"
             >
               {t('common.back', 'Back')}
@@ -216,14 +257,62 @@ export default function Exercises() {
               onChange={e => setUserAnswer(e.target.value)}
               placeholder={t('exercises.answerPlaceholder', 'Describe your approach or write your answer here...')}
               className="w-full bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-3 py-2 text-sm text-[var(--text-body)] placeholder:text-[var(--text-muted)]/50 min-h-[120px] focus:outline-none focus:ring-1 focus:ring-[var(--accent-text)]"
+              disabled={exerciseAI.isStreaming}
             />
-            <button
-              disabled={!userAnswer.trim()}
-              className="mt-3 btn-primary px-4 py-2 text-sm flex items-center gap-2 disabled:opacity-40"
-            >
-              <Send className="w-4 h-4" /> {t('exercises.checkWithAI', 'Check with AI')}
-            </button>
+
+            {/* Action buttons */}
+            {!exerciseAI.feedback && !exerciseAI.isStreaming && (
+              <button
+                onClick={handleCheckWithAI}
+                disabled={!userAnswer.trim() || exerciseAI.isStreaming}
+                className="mt-3 btn-primary px-4 py-2 text-sm flex items-center gap-2 disabled:opacity-40"
+              >
+                <Send className="w-4 h-4" /> {t('exercises.checkWithAI', 'Check with AI')}
+              </button>
+            )}
           </div>
+
+          {/* AI Feedback */}
+          {(exerciseAI.isStreaming || exerciseAI.feedback) && (
+            <div className="mt-4 border-t border-[var(--border-card)] pt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Bot className="w-4 h-4 text-[var(--accent-text)]" />
+                <span className="text-xs font-semibold text-[var(--text-muted)] uppercase">AI Feedback</span>
+                {exerciseAI.isStreaming && <Loader2 className="w-3 h-3 text-[var(--accent-text)] animate-spin" />}
+              </div>
+
+              {exerciseAI.score !== null && (
+                <div className="flex items-center gap-3 mb-3">
+                  <ScoreBadge score={exerciseAI.score} />
+                  {exerciseAI.errorType && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bg-input)] text-[var(--text-muted)]">
+                      {exerciseAI.errorType} error
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="prose prose-sm max-w-none text-[var(--text-body)]">
+                <p className="whitespace-pre-wrap">{exerciseAI.feedback}</p>
+              </div>
+
+              {!exerciseAI.isStreaming && (
+                <button
+                  onClick={handleTryAgain}
+                  className="mt-3 px-4 py-2 text-sm flex items-center gap-2 rounded-lg border border-[var(--border-card)] text-[var(--text-muted)] hover:text-[var(--text-body)] hover:bg-[var(--bg-input)] transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" /> Try again
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Error */}
+          {exerciseAI.error && (
+            <div className="mt-3 text-sm text-red-500 bg-red-500/10 rounded-lg p-3">
+              {exerciseAI.error}
+            </div>
+          )}
 
           {selectedExercise.solutionText && (
             <details className="mt-4 border-t border-[var(--border-card)] pt-4">

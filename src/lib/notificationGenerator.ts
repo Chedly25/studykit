@@ -74,7 +74,7 @@ export async function generateNotifications(examProfileId: string): Promise<void
   // Check milestones
   if (!prefs || prefs.milestones) {
     const profile = await db.examProfiles.get(examProfileId)
-    if (profile) {
+    if (profile && profile.examDate) {
       const daysLeft = Math.ceil((new Date(profile.examDate).getTime() - Date.now()) / 86400000)
       if ([30, 14, 7, 3, 1].includes(daysLeft)) {
         notifications.push(createNotification(examProfileId, 'milestone',
@@ -108,7 +108,7 @@ export async function generateNotifications(examProfileId: string): Promise<void
       notifications.push(createNotification(examProfileId, 'weak-topic',
         `${weakDueTopics.length} weak topic${weakDueTopics.length === 1 ? '' : 's'} need review`,
         `${names}${weakDueTopics.length > 3 ? ` and ${weakDueTopics.length - 3} more` : ''} — these topics are below 40% mastery and due for review.`,
-        '/chat'
+        '/exercises'
       ))
     }
   }

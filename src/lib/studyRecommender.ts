@@ -84,7 +84,7 @@ export function computeDailyRecommendations(input: RecommenderInput): StudyRecom
     if (dueCards > 0) {
       action = 'flashcards'
       reason = `${dueCards} flashcard${dueCards > 1 ? 's' : ''} due for review`
-      linkTo = sessionLink
+      linkTo = '/flashcard-maker'
     } else if (dm < 0.3) {
       action = 'read'
       reason = dm < topic.mastery
@@ -94,11 +94,11 @@ export function computeDailyRecommendations(input: RecommenderInput): StudyRecom
     } else if (dm < 0.6) {
       action = 'practice'
       reason = 'Moderate mastery — reinforce with practice questions'
-      linkTo = sessionLink
+      linkTo = `/exercises?topic=${encodeURIComponent(topic.name)}`
     } else if (dm > 0.7 && topic.questionsAttempted < 5) {
       action = 'explain-back'
       reason = 'Good mastery — test deep understanding'
-      linkTo = sessionLink
+      linkTo = '/explain-back'
     } else {
       action = 'review'
       reason = 'Due for spaced review'

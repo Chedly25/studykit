@@ -52,6 +52,13 @@ export function useSources(examProfileId: string | undefined) {
       const title = file.name.replace(/\.pdf$/i, '')
       setProcessingStatus('Creating document...')
       const doc = await createDocument(examProfileId, title, 'pdf', text)
+      // Store original PDF file for in-app viewing
+      await db.documentFiles.put({
+        id: crypto.randomUUID(),
+        documentId: doc.id,
+        examProfileId,
+        file: file,
+      })
       setProcessingStatus(`Chunking ${pageCount} pages...`)
       const chunks = chunkText(text)
       await saveChunks(doc.id, examProfileId, chunks)
@@ -87,6 +94,13 @@ export function useSources(examProfileId: string | undefined) {
         const processed = await processFile(file)
         const doc = await createDocument(examProfileId, processed.title, 'pdf', processed.text, undefined, category)
         await saveChunks(doc.id, examProfileId, processed.chunks)
+        // Store original PDF for in-app viewing
+        await db.documentFiles.put({
+          id: crypto.randomUUID(),
+          documentId: doc.id,
+          examProfileId,
+          file: file,
+        })
         progress.results.push({ fileName: file.name, status: 'done' })
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Upload failed'

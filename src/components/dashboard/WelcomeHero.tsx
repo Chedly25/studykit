@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { Upload, MessageCircle, ClipboardCheck, PenTool, BookOpen } from 'lucide-react'
+import { Upload, ListChecks, ClipboardCheck, PenTool, BookOpen } from 'lucide-react'
 import type { Topic, Subject } from '../../db/schema'
 import { LandscapeCard } from './LandscapeCard'
 
@@ -17,13 +17,13 @@ export function WelcomeHero({ profileName, isResearch, topics, subjects, onSkip 
 
   const actions = isResearch
     ? [
-        { icon: MessageCircle, title: t('dashboard.welcomeHero.researchPartnerTitle'), desc: t('dashboard.welcomeHero.researchPartnerDesc'), to: '/chat' },
-        { icon: PenTool, title: t('dashboard.welcomeHero.writingTitle'), desc: t('dashboard.welcomeHero.writingDesc'), to: '/writing' },
         { icon: BookOpen, title: t('dashboard.welcomeHero.uploadPapersTitle'), desc: t('dashboard.welcomeHero.uploadPapersDesc'), to: '/sources' },
+        { icon: PenTool, title: t('dashboard.welcomeHero.writingTitle'), desc: t('dashboard.welcomeHero.writingDesc'), to: '/writing' },
+        { icon: ListChecks, title: t('dashboard.welcomeHero.practiceTitle'), desc: t('dashboard.welcomeHero.practiceDesc'), to: '/exercises' },
       ]
     : [
         { icon: Upload, title: t('dashboard.welcomeHero.uploadTitle'), desc: t('dashboard.welcomeHero.uploadDesc'), to: '/sources' },
-        { icon: MessageCircle, title: t('dashboard.welcomeHero.chatTitle'), desc: t('dashboard.welcomeHero.chatDesc'), to: '/chat' },
+        { icon: ListChecks, title: t('dashboard.welcomeHero.chatTitle'), desc: t('dashboard.welcomeHero.chatDesc'), to: '/exercises' },
         { icon: ClipboardCheck, title: t('dashboard.welcomeHero.practiceTitle'), desc: t('dashboard.welcomeHero.practiceDesc'), to: '/practice-exam' },
       ]
 

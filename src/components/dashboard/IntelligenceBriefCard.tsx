@@ -24,7 +24,7 @@ export function IntelligenceBriefCard({ recommendations, insights, dueFlashcardC
   if (staleTopics.length > 0) {
     bullets.push({
       text: `${staleTopics.length} topic${staleTopics.length > 1 ? 's' : ''} may need refreshing — depth has decayed`,
-      to: '/chat',
+      to: '/exercises',
     })
   }
 
@@ -59,7 +59,7 @@ export function IntelligenceBriefCard({ recommendations, insights, dueFlashcardC
     if (!bullets.some(b => b.text.includes(insight.message.slice(0, 20)))) {
       bullets.push({
         text: insight.message,
-        to: insight.type === 'warning' ? '/analytics' : '/chat',
+        to: insight.type === 'warning' ? '/analytics' : '/exercises',
       })
     }
   }

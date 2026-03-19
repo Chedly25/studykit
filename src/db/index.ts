@@ -44,6 +44,7 @@ import type {
   ExamSource,
   Exercise,
   ExerciseAttempt,
+  DocumentFile,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -91,6 +92,7 @@ export class StudiesKitDB extends Dexie {
   examSources!: Table<ExamSource>
   exercises!: Table<Exercise>
   exerciseAttempts!: Table<ExerciseAttempt>
+  documentFiles!: Table<DocumentFile>
 
   constructor() {
     super('studieskit')
@@ -236,6 +238,10 @@ export class StudiesKitDB extends Dexie {
           .where('subjectId').equals(subject.id)
           .modify({ chapterId })
       }
+    })
+
+    this.version(17).stores({
+      documentFiles: 'id, documentId, examProfileId',
     })
   }
 }

@@ -7,6 +7,7 @@ import type { Document } from '../../db/schema'
 interface Props {
   documents: Document[]
   onView: (doc: Document) => void
+  onViewPdf?: (doc: Document) => void
   onDelete: (docId: string) => void
   onSummarize: (doc: Document) => void
   onGenerateFlashcards: (doc: Document) => void
@@ -14,11 +15,13 @@ interface Props {
   summarizingId: string | null
   generatingFlashcardsId: string | null
   deleteConfirmId: string | null
+  pdfDocIds?: Set<string>
 }
 
 export function SourceList({
   documents,
   onView,
+  onViewPdf,
   onDelete,
   onSummarize,
   onGenerateFlashcards,
@@ -26,6 +29,7 @@ export function SourceList({
   summarizingId,
   generatingFlashcardsId,
   deleteConfirmId,
+  pdfDocIds,
 }: Props) {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
@@ -67,6 +71,7 @@ export function SourceList({
             key={doc.id}
             document={doc}
             onView={() => onView(doc)}
+            onViewPdf={onViewPdf ? () => onViewPdf(doc) : undefined}
             onDelete={() => onDelete(doc.id)}
             onSummarize={() => onSummarize(doc)}
             onGenerateFlashcards={() => onGenerateFlashcards(doc)}
@@ -74,6 +79,7 @@ export function SourceList({
             isSummarizing={summarizingId === doc.id}
             isGeneratingFlashcards={generatingFlashcardsId === doc.id}
             deleteConfirm={deleteConfirmId === doc.id}
+            hasPdfFile={pdfDocIds?.has(doc.id)}
           />
         ))}
       </div>

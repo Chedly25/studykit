@@ -133,6 +133,13 @@ export interface DocumentChunk {
   keywords: string // comma-separated lowercase terms for search
 }
 
+export interface DocumentFile {
+  id: string
+  documentId: string
+  examProfileId: string
+  file: Blob
+}
+
 // ─── Flashcards ─────────────────────────────────────────────────
 export type FlashcardSource = 'manual' | 'ai-generated' | 'imported'
 

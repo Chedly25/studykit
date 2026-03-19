@@ -21,6 +21,8 @@ import { HeroFocusCard } from '../components/dashboard/HeroFocusCard'
 import { UpNextList } from '../components/dashboard/UpNextList'
 import { QuickAccessRow } from '../components/dashboard/QuickAccessRow'
 import { computeDailyRecommendations } from '../lib/studyRecommender'
+import { useIntelligence } from '../hooks/useIntelligence'
+import { AttentionCard } from '../components/dashboard/AttentionCard'
 
 export default function Dashboard() {
   const { t } = useTranslation()
@@ -33,6 +35,7 @@ export default function Dashboard() {
   const { studentModel } = useStudentModel(profileId)
   const { getExerciseStatsByTopic: getExerciseStatsMap } = useExerciseBank(profileId)
   const exerciseStatsByTopic = useMemo(() => getExerciseStatsMap(), [getExerciseStatsMap])
+  const { signals } = useIntelligence(topics, subjects, profileId)
 
   const sessions = useLiveQuery(
     () => profileId
@@ -181,6 +184,12 @@ export default function Dashboard() {
           isResearch={isResearch}
         />
       )}
+
+      {/* Up Next — top 3 recommendations with action-specific links */}
+      <UpNextList recommendations={recommendations} />
+
+      {/* Attention — proactive intelligence signals */}
+      <AttentionCard signals={signals} />
 
       {/* Levels View — Subject > Chapter > Topic with mastery */}
       <LevelsView

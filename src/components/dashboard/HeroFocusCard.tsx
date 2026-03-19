@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { BookOpen, ClipboardCheck, RotateCcw, Lightbulb, Layers, ArrowRight, PartyPopper, MessageCircle } from 'lucide-react'
+import { BookOpen, ClipboardCheck, RotateCcw, Lightbulb, Layers, ArrowRight, PartyPopper, Upload } from 'lucide-react'
 import type { StudyRecommendation } from '../../lib/studyRecommender'
 
 interface HeroFocusCardProps {
@@ -107,12 +107,12 @@ export function HeroFocusCard({ recommendation, dueFlashcardCount, isResearch, a
     )
   }
 
-  // State 3: New user — no topics or no recommendations yet → invite to chat
+  // State 3: New user — no topics or no recommendations yet → invite to upload materials
   return (
     <div className="glass-card p-6 md:p-8 mb-4">
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-full bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
-          <MessageCircle size={24} className="text-[var(--accent-text)]" />
+          <Upload size={24} className="text-[var(--accent-text)]" />
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="text-xl font-bold text-[var(--text-heading)]">
@@ -123,7 +123,7 @@ export function HeroFocusCard({ recommendation, dueFlashcardCount, isResearch, a
           </p>
         </div>
         <Link
-          to="/chat"
+          to="/sources"
           className="btn-primary px-5 py-2.5 flex items-center gap-2 shrink-0"
         >
           {t('dashboard.heroGetStartedCta')} <ArrowRight size={16} />

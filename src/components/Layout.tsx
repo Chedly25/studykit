@@ -6,12 +6,13 @@ import {
   Menu, X, LayoutDashboard, BarChart3, Focus, MessageCircle,
   FileText, PenTool, BookOpen, Users, Shield, FileSearch,
   Brain, ClipboardCheck, Lightbulb, Calendar, StickyNote, GraduationCap,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, ListChecks, Search,
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
 import { ExamProfileSelector } from './knowledge/ExamProfileSelector'
 import { ChatPanel } from './chat/ChatPanel'
+import { SearchModal } from './SearchModal'
 import { ProBadge } from './subscription/ProBadge'
 import { NotificationBell } from './NotificationBell'
 import { useSubscription } from '../hooks/useSubscription'
@@ -21,6 +22,7 @@ import { BackgroundJobsIndicator } from './BackgroundJobsIndicator'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false) // mobile drawer
   const [sidebarPinned, setSidebarPinned] = useState(false) // desktop pin
   const [sidebarHovered, setSidebarHovered] = useState(false) // desktop hover
@@ -37,6 +39,18 @@ export function Layout() {
   const collapsed = !sidebarExpanded
 
   const closeSidebar = () => setSidebarOpen(false)
+
+  // Cmd+K search shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(prev => !prev)
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
 
   // Auto-collapse on route change
   useEffect(() => {
@@ -90,6 +104,13 @@ export function Layout() {
           <div className="flex items-center gap-2">
             <SignedIn>
               <ExamProfileSelector />
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
+                title={`${t('search.title', 'Search')} (⌘K)`}
+              >
+                <Search size={18} />
+              </button>
               <BackgroundJobsIndicator />
               <NotificationBell examProfileId={activeProfile?.id} />
               <button
@@ -171,17 +192,17 @@ export function Layout() {
                 <SidebarLink to="/article-review" icon={FileSearch} label="Article Review" active={location.pathname === '/article-review'} collapsed={collapsed} pro />
               </SidebarSection>
 
-              <SidebarSection label={t('nav.aiFeatures', 'AI Features')} collapsed={collapsed}>
-                <SidebarLink to="/chat" icon={MessageCircle} label={isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')} active={location.pathname === '/chat'} collapsed={collapsed} pro />
+              <SidebarSection label={t('nav.studyTools', 'Study Tools')} collapsed={collapsed}>
+                <SidebarLink to="/exercises" icon={ListChecks} label={t('exercises.title', 'Exercises')} active={location.pathname === '/exercises'} collapsed={collapsed} />
                 {!isResearch && (
                   <>
-                    <SidebarLink to="/socratic" icon={Brain} label={t('ai.socratic', 'Socratic Mode')} active={location.pathname === '/socratic'} collapsed={collapsed} pro />
                     <SidebarLink to="/practice-exam" icon={ClipboardCheck} label={t('ai.practiceSession', 'Practice Exam')} active={location.pathname === '/practice-exam'} collapsed={collapsed} pro />
+                    <SidebarLink to="/socratic" icon={Brain} label={t('ai.socratic', 'Socratic Mode')} active={location.pathname === '/socratic'} collapsed={collapsed} pro />
                     <SidebarLink to="/explain-back" icon={Lightbulb} label={t('ai.explainBack', 'Explain Back')} active={location.pathname === '/explain-back'} collapsed={collapsed} pro />
                   </>
                 )}
                 <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} collapsed={collapsed} pro />
-                <SidebarLink to="/exercises" icon={ClipboardCheck} label={t('exercises.title', 'Exercises')} active={location.pathname === '/exercises'} collapsed={collapsed} />
+                <SidebarLink to="/chat" icon={MessageCircle} label={isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')} active={location.pathname === '/chat'} collapsed={collapsed} pro />
               </SidebarSection>
             </nav>
 
@@ -250,17 +271,17 @@ export function Layout() {
                   <SidebarLink to="/article-review" icon={FileSearch} label="Article Review" active={location.pathname === '/article-review'} onClick={closeSidebar} collapsed={false} pro />
                 </SidebarSection>
 
-                <SidebarSection label={t('nav.aiFeatures', 'AI Features')} collapsed={false}>
-                  <SidebarLink to="/chat" icon={MessageCircle} label={isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')} active={location.pathname === '/chat'} onClick={closeSidebar} collapsed={false} pro />
+                <SidebarSection label={t('nav.studyTools', 'Study Tools')} collapsed={false}>
+                  <SidebarLink to="/exercises" icon={ListChecks} label={t('exercises.title', 'Exercises')} active={location.pathname === '/exercises'} onClick={closeSidebar} collapsed={false} />
                   {!isResearch && (
                     <>
-                      <SidebarLink to="/socratic" icon={Brain} label={t('ai.socratic', 'Socratic Mode')} active={location.pathname === '/socratic'} onClick={closeSidebar} collapsed={false} pro />
                       <SidebarLink to="/practice-exam" icon={ClipboardCheck} label={t('ai.practiceSession', 'Practice Exam')} active={location.pathname === '/practice-exam'} onClick={closeSidebar} collapsed={false} pro />
+                      <SidebarLink to="/socratic" icon={Brain} label={t('ai.socratic', 'Socratic Mode')} active={location.pathname === '/socratic'} onClick={closeSidebar} collapsed={false} pro />
                       <SidebarLink to="/explain-back" icon={Lightbulb} label={t('ai.explainBack', 'Explain Back')} active={location.pathname === '/explain-back'} onClick={closeSidebar} collapsed={false} pro />
                     </>
                   )}
                   <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} onClick={closeSidebar} collapsed={false} pro />
-                  <SidebarLink to="/exercises" icon={ClipboardCheck} label={t('exercises.title', 'Exercises')} active={location.pathname === '/exercises'} onClick={closeSidebar} collapsed={false} />
+                  <SidebarLink to="/chat" icon={MessageCircle} label={isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')} active={location.pathname === '/chat'} onClick={closeSidebar} collapsed={false} pro />
                 </SidebarSection>
               </nav>
 
@@ -310,6 +331,9 @@ export function Layout() {
 
       {/* Chat Panel */}
       <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
+
+      {/* Search Modal */}
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   )
 }

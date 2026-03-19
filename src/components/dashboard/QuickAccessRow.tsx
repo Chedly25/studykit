@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { MessageCircle, ClipboardCheck, Layers, Focus, PenTool, BookOpen, StickyNote } from 'lucide-react'
+import { ListChecks, ClipboardCheck, Layers, Focus, PenTool, BookOpen, StickyNote } from 'lucide-react'
 
 interface QuickAccessRowProps {
   isResearch: boolean
@@ -12,13 +12,13 @@ export function QuickAccessRow({ isResearch, dueFlashcardCount }: QuickAccessRow
 
   const items = isResearch
     ? [
-        { icon: MessageCircle, label: t('research.partner', 'Chat'), to: '/chat' },
-        { icon: PenTool, label: t('research.writingSession', 'Writing'), to: '/writing' },
         { icon: BookOpen, label: t('research.literature', 'Sources'), to: '/sources' },
+        { icon: PenTool, label: t('research.writingSession', 'Writing'), to: '/writing' },
         { icon: StickyNote, label: t('research.notes', 'Notes'), to: '/notes' },
+        { icon: Focus, label: t('focus.title', 'Focus'), to: '/focus' },
       ]
     : [
-        { icon: MessageCircle, label: t('ai.chat', 'Chat'), to: '/chat' },
+        { icon: ListChecks, label: t('exercises.title', 'Exercises'), to: '/exercises' },
         { icon: ClipboardCheck, label: t('ai.practiceSession', 'Practice'), to: '/practice-exam' },
         { icon: Layers, label: t('dashboard.quickAccess.flashcards', 'Flashcards'), to: '/flashcard-maker', badge: dueFlashcardCount > 0 ? dueFlashcardCount : undefined },
         { icon: Focus, label: t('focus.title', 'Focus'), to: '/focus' },
