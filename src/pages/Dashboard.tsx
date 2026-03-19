@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '@clerk/clerk-react'
+import { Link } from 'react-router-dom'
+import { ArrowRight, Rocket } from 'lucide-react'
 import { db } from '../db'
 import type { StudySession } from '../db/schema'
 import { useExamProfile } from '../hooks/useExamProfile'
@@ -13,24 +14,20 @@ import { useStudentModel } from '../hooks/useStudentModel'
 import { MilestoneTrackerCard } from '../components/dashboard/MilestoneTrackerCard'
 import { HabitGoalsCard } from '../components/dashboard/HabitGoalsCard'
 import { GettingStartedCard } from '../components/dashboard/GettingStartedCard'
-import { StudyPlanCard } from '../components/dashboard/StudyPlanCard'
 import { StatusBar } from '../components/dashboard/StatusBar'
 import { HeroFocusCard } from '../components/dashboard/HeroFocusCard'
 import { UpNextList } from '../components/dashboard/UpNextList'
 import { QuickAccessRow } from '../components/dashboard/QuickAccessRow'
 import { computeDailyRecommendations } from '../lib/studyRecommender'
-import { useStudyPlan } from '../hooks/useStudyPlan'
 
 export default function Dashboard() {
   const { t } = useTranslation()
-  const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const { isResearch } = useProfileMode()
   const profileId = activeProfile?.id
   const { milestones, doneCount, daysUntilNext, addMilestone, updateMilestone } = useMilestones(profileId)
   const { goals: habitGoals, getTodayProgress, addGoal: addHabitGoal, logProgress: logHabitProgress, deleteGoal: deleteHabitGoal } = useHabitGoals(profileId)
   const { subjects, topics, readiness, weakTopics, streak, freezeUsed, weeklyHours, getTopicsForSubject, dailyLogs } = useKnowledgeGraph(profileId)
-  const { todaysPlan, markActivityCompleted, replanSuggestion, replanPlan } = useStudyPlan(profileId)
   const { studentModel } = useStudentModel(profileId)
 
   const sessions = useLiveQuery(
@@ -143,6 +140,29 @@ export default function Dashboard() {
         hasActivity={hasActivity}
       />
 
+      {/* Hero CTA — always visible when there's a recommendation */}
+      {recommendations.length > 0 && (
+        <Link
+          to={recommendations[0].linkTo}
+          className="flex items-center justify-between w-full px-6 py-4 mb-4 rounded-xl bg-[var(--accent-text)] text-white font-semibold text-base hover:opacity-90 transition-opacity"
+        >
+          <div className="flex items-center gap-3">
+            {!hasActivity ? (
+              <Rocket className="w-5 h-5" />
+            ) : (
+              <ArrowRight className="w-5 h-5" />
+            )}
+            <span>
+              {!hasActivity
+                ? t('dashboard.startFirstSession', 'Start your first session')
+                : `${t('dashboard.continueStudying', 'Continue studying')}: ${recommendations[0].topicName}`
+              }
+            </span>
+          </div>
+          <ArrowRight className="w-5 h-5" />
+        </Link>
+      )}
+
       {/* StatusBar — only show once user has topics (metrics become meaningful) */}
       {topics.length > 0 && (
         <StatusBar
@@ -167,18 +187,6 @@ export default function Dashboard() {
       />
 
       <UpNextList recommendations={recommendations.slice(1, 4)} />
-
-      {/* Today's Study Plan */}
-      {todaysPlan && !isResearch && (
-        <div className="mb-4">
-          <StudyPlanCard
-            todaysPlan={todaysPlan}
-            onToggleActivity={markActivityCompleted}
-            replanSuggestion={replanSuggestion}
-            onReplan={async () => { const token = await getToken(); if (token) replanPlan(token, 'Dashboard replan') }}
-          />
-        </div>
-      )}
 
       <QuickAccessRow isResearch={isResearch} dueFlashcardCount={dueFlashcards} />
 

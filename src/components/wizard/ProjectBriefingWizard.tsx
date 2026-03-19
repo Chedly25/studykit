@@ -4,7 +4,7 @@ import { StepGoal } from './steps/StepGoal'
 import { StepLandscape } from './steps/StepLandscape'
 import { StepAssessment } from './steps/StepAssessment'
 import { StepMaterials } from './steps/StepMaterials'
-import { StepPlanCanvas } from './steps/StepPlanCanvas'
+import { StepPriorities } from './steps/StepPriorities'
 import { useWizardDraft, type WizardStep } from '../../hooks/useWizardDraft'
 
 export function ProjectBriefingWizard() {
@@ -58,7 +58,7 @@ export function ProjectBriefingWizard() {
       )}
 
       {draft.currentStep === 5 && (
-        <StepPlanCanvas
+        <StepPriorities
           draft={draft}
           dispatch={dispatch}
           onBack={() => goToStep(4)}

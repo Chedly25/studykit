@@ -526,6 +526,7 @@ export interface SessionContext {
   questionsAttempted: number
   questionsCorrect: number
   dueFlashcards: number
+  existingCardTitles?: string[]
 }
 
 export function buildSessionPrompt(ctx: PromptContext, session: SessionContext): string {
@@ -543,6 +544,7 @@ You are in a focused study session for "${session.topicName}" under the subject 
 ${session.lastStudied ? `- Last studied: ${session.lastStudied}` : '- This topic has not been studied before'}
 - Questions: ${session.questionsAttempted} attempted (${accuracy})
 ${session.dueFlashcards > 0 ? `- ${session.dueFlashcards} flashcards due for this topic` : ''}
+${session.existingCardTitles && session.existingCardTitles.length > 0 ? `- Existing concept cards (${session.existingCardTitles.length}): ${session.existingCardTitles.join(', ')}\n  Do NOT re-teach concepts the student already has cards for. Instead, quiz them or go deeper.` : ''}
 
 SESSION RULES:
 1. Keep all responses focused on this topic and its related concepts. Stay on-topic unless the student explicitly asks about something else.

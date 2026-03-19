@@ -7,7 +7,7 @@ const STEPS: { step: WizardStep; labelKey: string }[] = [
   { step: 2, labelKey: 'wizard.stepLandscape' },
   { step: 3, labelKey: 'wizard.stepAssessment' },
   { step: 4, labelKey: 'wizard.stepMaterials' },
-  { step: 5, labelKey: 'wizard.stepPlan' },
+  { step: 5, labelKey: 'wizard.stepPriorities' },
 ]
 
 interface WizardProgressBarProps {
