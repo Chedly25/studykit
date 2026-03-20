@@ -582,6 +582,14 @@ export interface PdfHighlight {
   createdAt: string
 }
 
+// ─── Achievements ─────────────────────────────────────────────
+export interface AchievementRecord {
+  id: string
+  examProfileId: string
+  achievementId: string
+  unlockedAt: string
+}
+
 // ─── Background Jobs ──────────────────────────────────────────
 export type JobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
 // ─── Exercise Bank ──────────────────────────────────────────────

@@ -6,17 +6,19 @@ import { db } from '../db'
 import type { Notification, NotificationType } from '../db/schema'
 import { decayedMastery } from './knowledgeGraph'
 
-export async function generateNotifications(examProfileId: string): Promise<void> {
+export async function generateNotifications(examProfileId: string, forceRefresh = false): Promise<void> {
   const today = new Date().toISOString().slice(0, 10)
 
-  // Check if we already generated today
-  const existingToday = await db.notifications
-    .where('examProfileId')
-    .equals(examProfileId)
-    .filter(n => n.createdAt.startsWith(today))
-    .count()
+  // Check if we already generated today (bypass with forceRefresh)
+  if (!forceRefresh) {
+    const existingToday = await db.notifications
+      .where('examProfileId')
+      .equals(examProfileId)
+      .filter(n => n.createdAt.startsWith(today))
+      .count()
 
-  if (existingToday > 0) return
+    if (existingToday > 0) return
+  }
 
   // Load preferences
   const prefs = await db.notificationPreferences.get(examProfileId)

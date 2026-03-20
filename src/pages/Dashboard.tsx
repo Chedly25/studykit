@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -24,6 +24,7 @@ import { QuickAccessRow } from '../components/dashboard/QuickAccessRow'
 import { computeDailyRecommendations } from '../lib/studyRecommender'
 import { useIntelligence } from '../hooks/useIntelligence'
 import { AttentionCard } from '../components/dashboard/AttentionCard'
+import { AchievementsCard } from '../components/dashboard/AchievementsCard'
 
 export default function Dashboard() {
   const { t } = useTranslation()
@@ -133,20 +134,35 @@ export default function Dashboard() {
     ? isCramModeActive(activeProfile.examDate)
     : false
 
-  const cramActive = activeProfile?.id
-    ? localStorage.getItem(`cramMode_${activeProfile.id}`) === 'true'
-    : false
+  const [cramActive, setCramActive] = useState(() =>
+    activeProfile?.id ? localStorage.getItem(`cramMode_${activeProfile.id}`) === 'true' : false
+  )
 
   const toggleCramMode = () => {
     if (!activeProfile?.id) return
     const key = `cramMode_${activeProfile.id}`
     if (cramActive) {
       localStorage.removeItem(key)
+      setCramActive(false)
     } else {
       localStorage.setItem(key, 'true')
+      setCramActive(true)
     }
-    window.location.reload() // Simple way to re-render with new state
   }
+
+  // Block 2B: Check for mid-progress queue
+  const queueInProgress = useMemo(() => {
+    if (!profileId) return false
+    const today = new Date().toISOString().slice(0, 10)
+    try {
+      const saved = localStorage.getItem(`queue_progress_${profileId}_${today}`)
+      if (!saved) return false
+      const progress = JSON.parse(saved)
+      return progress.completedIds?.length > 0
+    } catch {
+      return false
+    }
+  }, [profileId])
 
   if (!activeProfile) {
     return (
@@ -187,6 +203,17 @@ export default function Dashboard() {
             {cramActive ? 'Deactivate' : 'Activate Cram Mode'}
           </button>
         </div>
+      )}
+
+      {/* Block 2B: Resume queue banner */}
+      {queueInProgress && (
+        <Link
+          to="/queue"
+          className="flex items-center justify-between w-full px-6 py-3 mb-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 font-semibold text-sm hover:bg-amber-500/15 transition-colors"
+        >
+          <span>You have items left in today's queue</span>
+          <span className="text-xs font-bold px-3 py-1 rounded-lg bg-amber-500/20">Resume</span>
+        </Link>
       )}
 
       {/* Queue CTA */}
@@ -240,6 +267,9 @@ export default function Dashboard() {
           isResearch={isResearch}
         />
       )}
+
+      {/* Block 4D: Achievements */}
+      {profileId && <AchievementsCard examProfileId={profileId} />}
 
       {/* Up Next — top 3 recommendations with action-specific links */}
       <UpNextList recommendations={recommendations} />

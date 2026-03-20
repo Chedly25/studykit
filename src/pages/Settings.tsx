@@ -3,7 +3,8 @@
  * Route: /settings
  */
 import { useState, useRef } from 'react'
-import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell } from 'lucide-react'
+import { requestPermission, getNotificationStatus, registerServiceWorker } from '../lib/pushNotifications'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { exportProfileData, importProfileData, generateProgressReport, downloadBlob } from '../lib/dataExport'
 
@@ -14,6 +15,7 @@ export default function Settings() {
   const [importing, setImporting] = useState(false)
   const [generatingReport, setGeneratingReport] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [notifStatus, setNotifStatus] = useState(() => getNotificationStatus())
 
   const profileId = activeProfile?.id
 
@@ -151,6 +153,46 @@ export default function Settings() {
               <p className="text-xs text-[var(--text-muted)]">Get a markdown summary of your study progress</p>
             </div>
           </button>
+        </div>
+      </div>
+
+      {/* Notifications */}
+      <div className="glass-card p-5 space-y-4 mt-4">
+        <h2 className="text-lg font-semibold text-[var(--text-heading)]">Notifications</h2>
+        <p className="text-sm text-[var(--text-muted)]">
+          Get browser notifications for study reminders and queue updates.
+        </p>
+
+        <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-card)]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+              <Bell className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--text-heading)]">Browser Notifications</p>
+              <p className="text-xs text-[var(--text-muted)]">
+                Status: {notifStatus === 'granted' ? 'Enabled' : notifStatus === 'denied' ? 'Blocked' : notifStatus === 'unsupported' ? 'Not supported' : 'Not requested'}
+              </p>
+            </div>
+          </div>
+          {notifStatus !== 'granted' && notifStatus !== 'denied' && notifStatus !== 'unsupported' && (
+            <button
+              onClick={async () => {
+                const granted = await requestPermission()
+                if (granted) await registerServiceWorker()
+                setNotifStatus(getNotificationStatus())
+              }}
+              className="btn-primary px-4 py-1.5 text-sm"
+            >
+              Enable
+            </button>
+          )}
+          {notifStatus === 'denied' && (
+            <span className="text-xs text-red-500">Blocked in browser settings</span>
+          )}
+          {notifStatus === 'granted' && (
+            <span className="text-xs text-emerald-500 font-medium">Active</span>
+          )}
         </div>
       </div>
     </div>

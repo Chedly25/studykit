@@ -19,6 +19,8 @@ import { useSubscription } from '../hooks/useSubscription'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileMode } from '../hooks/useProfileMode'
 import { BackgroundJobsIndicator } from './BackgroundJobsIndicator'
+import { ErrorBoundary } from './ErrorBoundary'
+import { useOnlineStatus } from '../hooks/useOnlineStatus'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
@@ -33,6 +35,7 @@ export function Layout() {
   const { isResearch } = useProfileMode()
   const { t } = useTranslation()
   const location = useLocation()
+  const isOnline = useOnlineStatus()
   const isChatPage = location.pathname === '/chat' || location.pathname === '/session'
 
   const sidebarExpanded = sidebarPinned || sidebarHovered
@@ -305,7 +308,14 @@ export function Layout() {
 
         {/* ─── Main content ───────────────────────────────────── */}
         <main className={isChatPage ? 'flex-1 w-full min-w-0' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0'}>
-          <Outlet />
+          {!isOnline && (
+            <div className="mb-4 px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-600 text-center">
+              You're offline. Some features may not work.
+            </div>
+          )}
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 

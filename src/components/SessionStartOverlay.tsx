@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { Flame, Clock, BookOpen, AlertTriangle, ArrowRight } from 'lucide-react'
 import type { DailyStudyLog } from '../db/schema'
+import { requestPermission, registerServiceWorker } from '../lib/pushNotifications'
 
 interface Props {
   streak: number
@@ -25,6 +26,10 @@ export function SessionStartOverlay({
 
   const handleStart = (minutes: number) => {
     onStart(minutes)
+    // Non-blockingly request notification permission
+    requestPermission().then(granted => {
+      if (granted) registerServiceWorker().catch(() => {})
+    }).catch(() => {})
   }
 
   return (

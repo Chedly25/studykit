@@ -58,7 +58,7 @@ export function StepAssessment({ draft, dispatch, onNext, onBack }: StepAssessme
           : t('dashboard.onboarding.assessSubtitle')
         }
       </p>
-      <p className="text-xs text-[var(--text-muted)] mb-6">
+      <p className="text-xs text-[var(--text-muted)] mb-3">
         {t('dashboard.onboarding.assessHint')}
         {totalTopics > 0 && (
           <span className="ml-2 text-[var(--accent-text)]">
@@ -66,6 +66,34 @@ export function StepAssessment({ draft, dispatch, onNext, onBack }: StepAssessme
           </span>
         )}
       </p>
+
+      {/* Bulk action buttons */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => {
+            draft.subjects.forEach((subject, si) => {
+              subject.topics.forEach((_, ti) => {
+                setFamiliarity(`${si}-${ti}`, 'new')
+              })
+            })
+          }}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+        >
+          Mark All as New
+        </button>
+        <button
+          onClick={() => {
+            draft.subjects.forEach((subject, si) => {
+              subject.topics.forEach((_, ti) => {
+                setFamiliarity(`${si}-${ti}`, 'some')
+              })
+            })
+          }}
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20 transition-colors"
+        >
+          Mark All as Some Knowledge
+        </button>
+      </div>
 
       <div className="space-y-3 mb-6">
         {draft.subjects.map((subject, si) => {

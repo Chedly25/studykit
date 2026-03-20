@@ -5,7 +5,9 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ListChecks, Star, Check, Clock, Send, Bot, RotateCcw, Loader2, ArrowRight, Upload } from 'lucide-react'
+import { ListChecks, Star, Check, Clock, Send, Bot, RotateCcw, Loader2, ArrowRight, Upload, Lightbulb } from 'lucide-react'
+import { useAuth } from '@clerk/clerk-react'
+import { streamChat } from '../../ai/client'
 import { useExerciseBank } from '../../hooks/useExerciseBank'
 import { useExerciseAI } from '../../hooks/useExerciseAI'
 import type { Exercise } from '../../db/schema'
@@ -40,8 +42,12 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
   const { exercises } = useExerciseBank(examProfileId)
   const exerciseAI = useExerciseAI(examProfileId)
 
+  const { getToken } = useAuth()
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [userAnswer, setUserAnswer] = useState('')
+  // Block 5A: Progressive hints
+  const [hints, setHints] = useState<string[]>([])
+  const [hintLoading, setHintLoading] = useState(false)
 
   const topicExercises = useMemo(() => {
     return exercises
@@ -72,6 +78,38 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
     setSelectedIndex(index)
     setUserAnswer('')
     exerciseAI.reset()
+    setHints([])
+  }
+
+  // Block 5A: Get progressive hint
+  const handleHint = async () => {
+    if (!currentExercise || hintLoading || hints.length >= 3) return
+    setHintLoading(true)
+    try {
+      const token = await getToken()
+      if (!token) return
+
+      const hintNumber = hints.length + 1
+      const priorHintsText = hints.length > 0 ? `Prior hints:\n${hints.map((h, i) => `${i + 1}. ${h}`).join('\n')}` : ''
+
+      let hintText = ''
+      await streamChat({
+        messages: [{
+          role: 'user',
+          content: `Give a progressive hint #${hintNumber} for this exercise without revealing the answer. Be concise (2-3 sentences). ${priorHintsText}\n\nExercise: ${currentExercise.text}`,
+        }],
+        system: 'You are a study assistant giving progressive hints. Each hint should be more specific than the last but never reveal the full answer.',
+        tools: [],
+        authToken: token,
+        onToken: (t) => { hintText += t },
+      })
+
+      setHints(prev => [...prev, hintText.trim()])
+    } catch {
+      // Silently fail
+    } finally {
+      setHintLoading(false)
+    }
   }
 
   if (topicExercises.length === 0) {
@@ -158,13 +196,39 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
               />
 
               {!exerciseAI.feedback && !exerciseAI.isStreaming && (
-                <button
-                  onClick={handleCheck}
-                  disabled={!userAnswer.trim()}
-                  className="mt-3 btn-primary px-4 py-2 text-sm flex items-center gap-2 disabled:opacity-40"
-                >
-                  <Send className="w-4 h-4" /> Check with AI
-                </button>
+                <div className="flex items-center gap-2 mt-3">
+                  <button
+                    onClick={handleCheck}
+                    disabled={!userAnswer.trim()}
+                    className="btn-primary px-4 py-2 text-sm flex items-center gap-2 disabled:opacity-40"
+                  >
+                    <Send className="w-4 h-4" /> Check with AI
+                  </button>
+                  {hints.length < 3 ? (
+                    <button
+                      onClick={handleHint}
+                      disabled={hintLoading}
+                      className="px-3 py-2 text-sm flex items-center gap-1.5 rounded-lg border border-[var(--border-card)] text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:border-[var(--accent-text)] transition-colors disabled:opacity-50"
+                    >
+                      {hintLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lightbulb className="w-3.5 h-3.5" />}
+                      Hint ({3 - hints.length} left)
+                    </button>
+                  ) : (
+                    <span className="text-xs text-[var(--text-muted)]">All hints used. Check with AI for the full solution.</span>
+                  )}
+                </div>
+              )}
+
+              {/* Progressive hints */}
+              {hints.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {hints.map((hint, i) => (
+                    <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                      <p className="text-xs text-[var(--text-body)]">{hint}</p>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 

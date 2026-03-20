@@ -8,6 +8,7 @@ import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { hasSavedWizardDraft, clearWizardDraft } from '../hooks/useWizardDraft'
 import { ProjectBriefingWizard } from '../components/wizard/ProjectBriefingWizard'
 import { DependencyEditor } from '../components/knowledge/DependencyEditor'
+import { QuickStartModal } from '../components/QuickStartModal'
 import { ExamFormatEditor } from '../components/knowledge/ExamFormatEditor'
 import { examBlueprints } from '../lib/examTopicMaps'
 import { db } from '../db'
@@ -245,6 +246,7 @@ export default function ExamProfile() {
   const [showDependencyEditor, setShowDependencyEditor] = useState(false)
   const [dependencyTopic, setDependencyTopic] = useState<Topic | null>(null)
   const [showExamFormatEditor, setShowExamFormatEditor] = useState(false)
+  const [showQuickStart, setShowQuickStart] = useState(false)
 
   // Query which profiles have active study plans
   const plansMap = useLiveQuery(async () => {
@@ -294,9 +296,14 @@ export default function ExamProfile() {
           <h1 className="text-2xl font-bold text-[var(--text-heading)]">{t('nav.projects')}</h1>
           <p className="text-sm text-[var(--text-muted)]">{t('profile.projectsSubtitle')}</p>
         </div>
-        <button onClick={() => setShowWizard(true)} className="btn-primary px-4 py-2 text-sm">
-          {t('profile.create')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowQuickStart(true)} className="btn-secondary px-4 py-2 text-sm">
+            Quick Start
+          </button>
+          <button onClick={() => setShowWizard(true)} className="btn-primary px-4 py-2 text-sm">
+            {t('profile.create')}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -362,6 +369,9 @@ export default function ExamProfile() {
           />
         </>
       )}
+
+      {/* Quick Start Modal */}
+      <QuickStartModal open={showQuickStart} onClose={() => setShowQuickStart(false)} />
     </div>
   )
 }

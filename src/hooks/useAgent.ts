@@ -68,6 +68,8 @@ export function useAgent(options: UseAgentOptions) {
   const [explainBackTopic, setExplainBackTopic] = useState<string>('')
   const [quotaExceeded, setQuotaExceeded] = useState(false)
   const [messagesUsedToday, setMessagesUsedToday] = useState(getMessagesUsedToday)
+  // Block 5C: Socratic attempt counter — use ref to avoid stale closure
+  const socraticAttemptsRef = useRef(0)
   const abortRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -200,13 +202,24 @@ export function useAgent(options: UseAgentOptions) {
         examFormats: examFormats.length > 0 ? examFormats : undefined,
       }
 
-      const systemPrompt = options.sessionContext
-        ? buildSessionPrompt(ctx, options.sessionContext)
-        : isExplainBack && explainBackTopic
-        ? buildExplainBackPrompt(ctx, explainBackTopic)
-        : isSocratic && socraticTopic
-        ? buildSocraticPrompt(ctx, socraticTopic)
-        : buildSystemPrompt(ctx)
+      // Block 5C: Inject Socratic attempt counter into system prompt
+      let systemPrompt: string
+      if (options.sessionContext) {
+        systemPrompt = buildSessionPrompt(ctx, options.sessionContext)
+      } else if (isExplainBack && explainBackTopic) {
+        systemPrompt = buildExplainBackPrompt(ctx, explainBackTopic)
+      } else if (isSocratic && socraticTopic) {
+        systemPrompt = buildSocraticPrompt(ctx, socraticTopic)
+        socraticAttemptsRef.current += 1
+        const attemptNum = socraticAttemptsRef.current
+        if (attemptNum >= 3) {
+          systemPrompt += `\n\nStudent attempt #${attemptNum}. Reveal the answer now and explain thoroughly.`
+        } else {
+          systemPrompt += `\n\nStudent attempt #${attemptNum}. Continue guiding with questions, do not reveal the answer yet.`
+        }
+      } else {
+        systemPrompt = buildSystemPrompt(ctx)
+      }
 
       // Run agent loop
       const result = await runAgentLoop({
@@ -234,6 +247,28 @@ export function useAgent(options: UseAgentOptions) {
       setStreamingText('')
       setCurrentToolCall(null)
       await saveMessages(convId, result.messages)
+
+      // Block 5D: Explain-Back scoring — parse scores from assistant response
+      if (isExplainBack && explainBackTopic) {
+        const lastAssistant = result.messages.filter(m => m.role === 'assistant').pop()
+        if (lastAssistant && typeof lastAssistant.content === 'string') {
+          const scoreRegex = /(?:Completeness|Accuracy|Clarity)\s*[:=]\s*(\d(?:\.\d)?)\s*\/\s*5/gi
+          const scores: number[] = []
+          let match
+          while ((match = scoreRegex.exec(lastAssistant.content)) !== null) {
+            scores.push(parseFloat(match[1]))
+          }
+          if (scores.length >= 2) {
+            const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length
+            const confidence = Math.min(1, avgScore / 5)
+            // Find topic by name and update confidence
+            const matchingTopic = topics.find(t => t.name.toLowerCase() === explainBackTopic.toLowerCase())
+            if (matchingTopic) {
+              db.topics.update(matchingTopic.id, { confidence }).catch(() => {})
+            }
+          }
+        }
+      }
 
       // Track usage for free users
       if (!isPro) {
@@ -323,6 +358,7 @@ export function useAgent(options: UseAgentOptions) {
   const startSocraticMode = useCallback((topicName: string) => {
     setIsSocratic(true)
     setSocraticTopic(topicName)
+    socraticAttemptsRef.current = 0
     setMessages([])
     setConversationId(null)
     setStreamingText('')
