@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Rocket } from 'lucide-react'
+import { ArrowRight, Rocket, Zap, ListTodo } from 'lucide-react'
+import { isCramModeActive } from '../lib/cramModeEngine'
 import { db } from '../db'
 import type { StudySession } from '../db/schema'
 import { useExamProfile } from '../hooks/useExamProfile'
@@ -128,6 +129,25 @@ export default function Dashboard() {
     ? Math.max(0, Math.ceil((new Date(activeProfile.examDate).getTime() - Date.now()) / 86400000))
     : undefined
 
+  const showCramBanner = activeProfile?.examDate
+    ? isCramModeActive(activeProfile.examDate)
+    : false
+
+  const cramActive = activeProfile?.id
+    ? localStorage.getItem(`cramMode_${activeProfile.id}`) === 'true'
+    : false
+
+  const toggleCramMode = () => {
+    if (!activeProfile?.id) return
+    const key = `cramMode_${activeProfile.id}`
+    if (cramActive) {
+      localStorage.removeItem(key)
+    } else {
+      localStorage.setItem(key, 'true')
+    }
+    window.location.reload() // Simple way to re-render with new state
+  }
+
   if (!activeProfile) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
@@ -147,11 +167,47 @@ export default function Dashboard() {
         hasActivity={hasActivity}
       />
 
-      {/* Hero CTA — always visible when there's a recommendation */}
+      {/* Cram Mode Banner */}
+      {showCramBanner && daysUntilExam !== undefined && (
+        <div className={`flex items-center justify-between w-full px-4 py-3 mb-3 rounded-xl ${cramActive ? 'bg-red-500/15 border border-red-500/30' : 'bg-orange-500/10 border border-orange-500/20'}`}>
+          <div className="flex items-center gap-2">
+            <Zap className={`w-4 h-4 ${cramActive ? 'text-red-500' : 'text-orange-500'}`} />
+            <span className="text-sm font-medium text-[var(--text-heading)]">
+              {cramActive ? 'Cram Mode Active' : `Exam in ${daysUntilExam} day${daysUntilExam !== 1 ? 's' : ''}`}
+            </span>
+          </div>
+          <button
+            onClick={toggleCramMode}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+              cramActive
+                ? 'bg-red-500/20 text-red-600 hover:bg-red-500/30'
+                : 'bg-orange-500/20 text-orange-600 hover:bg-orange-500/30'
+            }`}
+          >
+            {cramActive ? 'Deactivate' : 'Activate Cram Mode'}
+          </button>
+        </div>
+      )}
+
+      {/* Queue CTA */}
+      {topics.length > 0 && (
+        <Link
+          to="/queue"
+          className="flex items-center justify-between w-full px-6 py-4 mb-3 rounded-xl bg-[var(--accent-text)] text-white font-semibold text-base hover:opacity-90 transition-opacity"
+        >
+          <div className="flex items-center gap-3">
+            <ListTodo className="w-5 h-5" />
+            <span>Start Today's Queue</span>
+          </div>
+          <ArrowRight className="w-5 h-5" />
+        </Link>
+      )}
+
+      {/* Hero CTA — secondary when queue exists */}
       {recommendations.length > 0 && (
         <Link
           to={recommendations[0].linkTo}
-          className="flex items-center justify-between w-full px-6 py-4 mb-4 rounded-xl bg-[var(--accent-text)] text-white font-semibold text-base hover:opacity-90 transition-opacity"
+          className="flex items-center justify-between w-full px-6 py-4 mb-4 rounded-xl bg-[var(--bg-input)] text-[var(--text-heading)] font-semibold text-sm hover:bg-[var(--bg-card)] transition-colors border border-[var(--border-card)]"
         >
           <div className="flex items-center gap-3">
             {!hasActivity ? (
@@ -166,7 +222,7 @@ export default function Dashboard() {
               }
             </span>
           </div>
-          <ArrowRight className="w-5 h-5" />
+          <ArrowRight className="w-5 h-5 text-[var(--text-muted)]" />
         </Link>
       )}
 

@@ -45,6 +45,8 @@ import type {
   Exercise,
   ExerciseAttempt,
   DocumentFile,
+  MasterySnapshot,
+  PdfHighlight,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -93,6 +95,8 @@ export class StudiesKitDB extends Dexie {
   exercises!: Table<Exercise>
   exerciseAttempts!: Table<ExerciseAttempt>
   documentFiles!: Table<DocumentFile>
+  masterySnapshots!: Table<MasterySnapshot>
+  pdfHighlights!: Table<PdfHighlight>
 
   constructor() {
     super('studieskit')
@@ -242,6 +246,11 @@ export class StudiesKitDB extends Dexie {
 
     this.version(17).stores({
       documentFiles: 'id, documentId, examProfileId',
+    })
+
+    this.version(18).stores({
+      masterySnapshots: 'id, topicId, examProfileId, date',
+      pdfHighlights: 'id, documentId, examProfileId, [documentId+pageNumber]',
     })
   }
 }

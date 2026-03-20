@@ -134,9 +134,100 @@ export async function generateNotifications(examProfileId: string): Promise<void
     }
   }
 
+  // Activity milestones (questions, exercises)
+  if (!prefs || prefs.milestones) {
+    const activityMilestones = await checkActivityMilestones(examProfileId)
+    notifications.push(...activityMilestones)
+  }
+
   if (notifications.length > 0) {
     await db.notifications.bulkPut(notifications)
   }
+}
+
+/**
+ * Check if mastery crossed a milestone threshold (0.3, 0.6, 0.8).
+ * Called from recomputeTopicMastery() after each mastery update.
+ */
+export async function checkMasteryMilestone(
+  _topicId: string,
+  topicName: string,
+  examProfileId: string,
+  oldMastery: number,
+  newMastery: number,
+): Promise<void> {
+  const thresholds = [
+    { value: 0.8, title: `You mastered ${topicName}!`, msg: `Your mastery of ${topicName} reached ${Math.round(newMastery * 100)}%. Outstanding work!` },
+    { value: 0.6, title: `${topicName} is getting solid`, msg: `Your mastery of ${topicName} crossed 60%. Keep going!` },
+    { value: 0.3, title: `${topicName} is taking shape`, msg: `Your mastery of ${topicName} crossed 30%. You're building momentum.` },
+  ]
+
+  for (const { value, title, msg } of thresholds) {
+    if (oldMastery < value && newMastery >= value) {
+      // Deduplicate by checking existing notifications with matching title
+      const existing = await db.notifications
+        .where('examProfileId').equals(examProfileId)
+        .filter(n => n.title === title)
+        .count()
+      if (existing === 0) {
+        await db.notifications.put(createNotification(examProfileId, 'milestone', title, msg, '/analytics'))
+      }
+      break // Only fire the highest crossed threshold
+    }
+  }
+}
+
+/**
+ * Check activity milestones (total questions answered, exercises attempted).
+ */
+async function checkActivityMilestones(examProfileId: string): Promise<Notification[]> {
+  const notifications: Notification[] = []
+
+  // Question milestones
+  const questionCount = await db.questionResults
+    .where('examProfileId').equals(examProfileId)
+    .count()
+  const questionMilestones = [25, 50, 100, 250, 500]
+  for (const m of questionMilestones) {
+    if (questionCount >= m) {
+      const tag = `[M:Q${m}]`
+      const existing = await db.notifications
+        .where('examProfileId').equals(examProfileId)
+        .filter(n => n.title.includes(tag))
+        .count()
+      if (existing === 0) {
+        notifications.push(createNotification(examProfileId, 'milestone',
+          `${tag} ${m} questions answered!`,
+          `You've answered ${m} questions. That's serious practice!`,
+          '/analytics'
+        ))
+      }
+    }
+  }
+
+  // Exercise milestones
+  const exerciseCount = await db.exerciseAttempts
+    .where('examProfileId').equals(examProfileId)
+    .count()
+  const exerciseMilestones = [10, 25, 50, 100]
+  for (const m of exerciseMilestones) {
+    if (exerciseCount >= m) {
+      const tag = `[M:E${m}]`
+      const existing = await db.notifications
+        .where('examProfileId').equals(examProfileId)
+        .filter(n => n.title.includes(tag))
+        .count()
+      if (existing === 0) {
+        notifications.push(createNotification(examProfileId, 'milestone',
+          `${tag} ${m} exercises completed!`,
+          `You've completed ${m} exercises. Great consistency!`,
+          '/exercises'
+        ))
+      }
+    }
+  }
+
+  return notifications
 }
 
 function createNotification(

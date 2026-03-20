@@ -5,6 +5,9 @@ import { db } from '../../db'
 import type { FlashcardDeck, Flashcard, Assignment, QuestionResult, DailyStudyLog, Topic } from '../../db/schema'
 import { computeDailyRecommendations } from '../../lib/studyRecommender'
 import { recomputeTopicMastery, advanceTopicSRS } from '../../lib/topicMastery'
+import { computeFeedbackActions } from '../../lib/feedbackLoopEngine'
+import { computeErrorPatterns } from '../../lib/errorPatterns'
+import { getMiscalibratedTopicsFromRaw } from '../../lib/calibration'
 
 export async function logQuestionResult(
   examProfileId: string,
@@ -55,6 +58,46 @@ export async function logQuestionResult(
   await recomputeTopicMastery(topic.id)
   // Advance topic SRS: quality 4 for correct, 1 for incorrect
   await advanceTopicSRS(topic.id, input.isCorrect ? 4 : 1)
+
+  // Feedback loop: check for patterns that trigger review actions
+  try {
+    const last10 = await db.questionResults
+      .where('topicId').equals(topic.id)
+      .reverse().limit(10).toArray()
+    const allTopics = await db.topics.where('examProfileId').equals(examProfileId).toArray()
+    const allSubjects = await db.subjects.where('examProfileId').equals(examProfileId).toArray()
+    const allResults = await db.questionResults.where('examProfileId').equals(examProfileId).toArray()
+    const errorPatterns = computeErrorPatterns(allResults, allTopics)
+    const calibrationData = getMiscalibratedTopicsFromRaw(allTopics, allSubjects)
+    const feedbackActions = computeFeedbackActions({
+      recentResults: last10,
+      errorPatterns,
+      calibrationData,
+      topics: allTopics,
+      subjects: allSubjects,
+    })
+    // Create notifications for high-priority actions
+    for (const action of feedbackActions.filter(a => a.priority >= 4)) {
+      const existingNotif = await db.notifications
+        .where('examProfileId').equals(examProfileId)
+        .filter(n => n.title.includes(action.topicName) && n.createdAt.startsWith(new Date().toISOString().slice(0, 10)))
+        .count()
+      if (existingNotif === 0) {
+        await db.notifications.put({
+          id: crypto.randomUUID(),
+          examProfileId,
+          type: 'performance-alert',
+          title: `Review needed: ${action.topicName}`,
+          message: action.reason,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+          actionUrl: action.type === 'queue-flashcards' ? '/flashcard-maker'
+            : action.type === 'queue-exercises' ? '/exercises'
+            : '/session',
+        })
+      }
+    }
+  } catch { /* feedback loop errors are non-critical */ }
 
   // Update daily log
   const today = new Date().toISOString().slice(0, 10)

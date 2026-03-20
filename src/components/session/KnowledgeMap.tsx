@@ -11,8 +11,8 @@ import {
   Position,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import type { Subject, Topic } from '../../db/schema'
-import type { Chapter } from '../../db/schema'
+import type { Subject, Topic, Chapter } from '../../db/schema'
+import { isTopicLocked } from '../../lib/knowledgeGraph'
 
 interface KnowledgeMapProps {
   subject: Subject | undefined
@@ -38,20 +38,22 @@ function ChapterNode({ data }: { data: { label: string; color: string } }) {
 }
 
 // Topic node
-function TopicNode({ data }: { data: { label: string; mastery: number; exercises: string; isCurrent: boolean; topicName: string } }) {
+function TopicNode({ data }: { data: { label: string; mastery: number; exercises: string; isCurrent: boolean; topicName: string; locked?: boolean } }) {
   const navigate = useNavigate()
   const pct = Math.round(data.mastery * 100)
-  const color = masteryColor(data.mastery)
+  const color = data.locked ? '#9ca3af' : masteryColor(data.mastery)
   const ringClass = data.isCurrent ? 'ring-2 ring-[var(--accent-text)]' : ''
 
   return (
     <div
-      className={`glass-card px-3 py-2 min-w-[140px] max-w-[200px] cursor-pointer hover:ring-1 hover:ring-[var(--accent-text)]/30 transition-all ${ringClass}`}
+      className={`glass-card px-3 py-2 min-w-[140px] max-w-[200px] cursor-pointer hover:ring-1 hover:ring-[var(--accent-text)]/30 transition-all ${ringClass} ${data.locked ? 'opacity-60' : ''}`}
       onClick={() => navigate(`/session?topic=${encodeURIComponent(data.topicName)}`)}
     >
       <Handle type="target" position={Position.Left} className="!bg-[var(--accent-text)] !w-2 !h-2" />
       <div className="flex items-center gap-2 mb-1">
-        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }}>
+          {data.locked && <span className="text-[6px] flex items-center justify-center h-full text-white">🔒</span>}
+        </div>
         <span className="text-xs font-medium text-[var(--text-heading)] leading-tight">{data.label}</span>
       </div>
       <div className="flex items-center justify-between">
@@ -72,6 +74,8 @@ const nodeTypes: NodeTypes = {
 
 export function KnowledgeMap({ subject, chapters, topics, currentTopicId, exerciseStatsByTopic }: KnowledgeMapProps) {
   const navigate = useNavigate()
+
+  const topicMasteryMap = useMemo(() => new Map(topics.map(t => [t.id, t.mastery])), [topics])
 
   const { nodes, edges } = useMemo(() => {
     if (!subject || chapters.length === 0) return { nodes: [], edges: [] }
@@ -104,6 +108,8 @@ export function KnowledgeMap({ subject, chapters, topics, currentTopicId, exerci
         const stats = exerciseStatsByTopic?.get(topic.id)
         const exerciseLabel = stats && stats.total > 0 ? `${stats.completed}/${stats.total} ex.` : ''
 
+        const lockInfo = isTopicLocked(topic, topicMasteryMap)
+
         nodes.push({
           id: topic.id,
           type: 'topic',
@@ -114,6 +120,7 @@ export function KnowledgeMap({ subject, chapters, topics, currentTopicId, exerci
             exercises: exerciseLabel,
             isCurrent: topic.id === currentTopicId,
             topicName: topic.name,
+            locked: lockInfo.locked,
           },
         })
 
@@ -154,7 +161,7 @@ export function KnowledgeMap({ subject, chapters, topics, currentTopicId, exerci
     }
 
     return { nodes, edges }
-  }, [subject, chapters, topics, currentTopicId, exerciseStatsByTopic])
+  }, [subject, chapters, topics, currentTopicId, exerciseStatsByTopic, topicMasteryMap])
 
   if (!subject || topics.length === 0) {
     return (

@@ -5,6 +5,7 @@
 import { db } from '../db'
 import { computeTopicMastery, computeSubjectMastery } from './knowledgeGraph'
 import { calculateSM2 } from './spacedRepetition'
+import { checkMasteryMilestone } from './notificationGenerator'
 
 /**
  * Recompute topic mastery using the full 4-factor formula:
@@ -31,6 +32,19 @@ export async function recomputeTopicMastery(topicId: string): Promise<number> {
   const mastery = computeTopicMastery({ topic, flashcards, questionResults })
 
   await db.topics.update(topicId, { mastery })
+
+  // Check for mastery milestones (threshold crossings)
+  checkMasteryMilestone(topicId, topic.name, topic.examProfileId, topic.mastery, mastery).catch(() => {})
+
+  // Upsert daily mastery snapshot for trend tracking
+  const today = new Date().toISOString().slice(0, 10)
+  db.masterySnapshots.put({
+    id: `${topicId}:${today}`,
+    topicId,
+    examProfileId: topic.examProfileId,
+    date: today,
+    mastery,
+  }).catch(() => {})
 
   // Recompute subject mastery as average of all subject topics
   const subjectTopics = await db.topics

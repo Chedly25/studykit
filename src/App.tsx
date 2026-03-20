@@ -29,6 +29,8 @@ const StudyPlan = lazy(() => import('./pages/StudyPlan'))
 const StudySession = lazy(() => import('./pages/StudySession'))
 const Exercises = lazy(() => import('./pages/Exercises'))
 const MockExam = lazy(() => import('./pages/MockExam'))
+const DailyQueue = lazy(() => import('./pages/DailyQueue'))
+const Settings = lazy(() => import('./pages/Settings'))
 
 // Admin
 const AdminLayout = lazy(() => import('./components/admin/AdminLayout'))
@@ -130,6 +132,8 @@ export default function App() {
           <Route path="session" element={<ProtectedRoute><StudySession /></ProtectedRoute>} />
           <Route path="exercises" element={<ProtectedRoute><Exercises /></ProtectedRoute>} />
           <Route path="mock-exam" element={<ProtectedRoute><MockExam /></ProtectedRoute>} />
+          <Route path="queue" element={<ProtectedRoute><DailyQueue /></ProtectedRoute>} />
+          <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="sources" element={<ProtectedRoute><Sources /></ProtectedRoute>} />
           <Route path="writing" element={<ProtectedRoute><Writing /></ProtectedRoute>} />
           <Route path="meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />

@@ -559,6 +559,29 @@ export interface ReviewArticle {
   updatedAt: string
 }
 
+// ─── Mastery Snapshots ─────────────────────────────────────────
+export interface MasterySnapshot {
+  id: string        // topicId:YYYY-MM-DD
+  topicId: string
+  examProfileId: string
+  date: string
+  mastery: number
+}
+
+// ─── PDF Highlights ────────────────────────────────────────────
+export interface PdfHighlight {
+  id: string
+  documentId: string
+  examProfileId: string
+  pageNumber: number
+  text: string
+  rects: string       // JSON: Array<{x, y, width, height}> in PDF coords
+  color: string       // hex color
+  note?: string
+  flashcardId?: string
+  createdAt: string
+}
+
 // ─── Background Jobs ──────────────────────────────────────────
 export type JobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
 // ─── Exercise Bank ──────────────────────────────────────────────

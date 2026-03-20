@@ -1,7 +1,7 @@
 /**
  * Pure functions for study analytics computations.
  */
-import type { StudySession, DailyStudyLog, QuestionResult } from '../db/schema'
+import type { StudySession, DailyStudyLog, QuestionResult, MasterySnapshot } from '../db/schema'
 
 export interface WeeklyHoursData {
   date: string
@@ -144,4 +144,68 @@ export function computeScoreTrend(
   }
 
   return result
+}
+
+// ─── Mastery Snapshot History & Trajectory ─────────────────────
+
+export interface MasteryHistoryPoint {
+  date: string
+  mastery: number
+}
+
+/**
+ * Extract mastery history for a specific topic over the last N days.
+ */
+export function computeMasteryHistory(
+  snapshots: MasterySnapshot[],
+  topicId: string,
+  days: number,
+): MasteryHistoryPoint[] {
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - days)
+  const cutoffStr = cutoff.toISOString().slice(0, 10)
+
+  return snapshots
+    .filter(s => s.topicId === topicId && s.date >= cutoffStr)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(s => ({ date: s.date, mastery: s.mastery }))
+}
+
+/**
+ * Simple linear regression on mastery history to predict when mastery will reach 1.0.
+ * Uses the last 14 data points (days with data).
+ */
+export function predictTrajectory(
+  history: MasteryHistoryPoint[],
+): { targetDate: string; currentSlope: number } | null {
+  const recent = history.slice(-14)
+  if (recent.length < 3) return null
+
+  const firstDate = new Date(recent[0].date).getTime()
+  const points = recent.map(p => ({
+    x: (new Date(p.date).getTime() - firstDate) / (24 * 60 * 60 * 1000),
+    y: p.mastery,
+  }))
+
+  const n = points.length
+  const sumX = points.reduce((s, p) => s + p.x, 0)
+  const sumY = points.reduce((s, p) => s + p.y, 0)
+  const sumXY = points.reduce((s, p) => s + p.x * p.y, 0)
+  const sumXX = points.reduce((s, p) => s + p.x * p.x, 0)
+
+  const denom = n * sumXX - sumX * sumX
+  if (Math.abs(denom) < 0.0001) return null
+
+  const slope = (n * sumXY - sumX * sumY) / denom
+  const intercept = (sumY - slope * sumX) / n
+
+  if (slope <= 0) return { targetDate: '', currentSlope: slope }
+
+  const lastX = points[points.length - 1].x
+  const daysToFull = (1.0 - (slope * lastX + intercept)) / slope
+
+  const targetDate = new Date(new Date(recent[recent.length - 1].date).getTime() + daysToFull * 86400000)
+    .toISOString().slice(0, 10)
+
+  return { targetDate, currentSlope: slope }
 }

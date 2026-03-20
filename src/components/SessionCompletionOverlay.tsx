@@ -13,6 +13,10 @@ export interface SessionCompletionData {
   examStats?: { score: number; maxScore: number; percentage: number; passed: boolean }
   focusStats?: { sessionsCompleted: number; subjectName?: string }
   nextRecommendation?: { topicName: string; action: string; reason: string; linkTo: string }
+  // Extended fields for queue sessions
+  questionsAnswered?: number
+  questionsCorrect?: number
+  feedbackSummary?: string
 }
 
 interface Props {
@@ -105,6 +109,31 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction }: Props) {
             </div>
           )}
         </div>
+
+        {/* Queue session stats */}
+        {data.questionsAnswered !== undefined && data.questionsAnswered > 0 && (
+          <div className="flex justify-center gap-6 text-center">
+            <div>
+              <div className="text-lg font-bold text-[var(--text-heading)]">{data.questionsAnswered}</div>
+              <span className="text-xs text-[var(--text-muted)]">Questions</span>
+            </div>
+            {data.questionsCorrect !== undefined && (
+              <div>
+                <div className={`text-lg font-bold ${data.questionsCorrect / data.questionsAnswered >= 0.7 ? 'text-emerald-500' : 'text-orange-500'}`}>
+                  {Math.round((data.questionsCorrect / data.questionsAnswered) * 100)}%
+                </div>
+                <span className="text-xs text-[var(--text-muted)]">Accuracy</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Feedback summary */}
+        {data.feedbackSummary && (
+          <div className="text-sm text-[var(--text-muted)] bg-[var(--bg-input)] p-3 rounded-lg">
+            {data.feedbackSummary}
+          </div>
+        )}
 
         {/* Mastery deltas */}
         {data.masteryDeltas && data.masteryDeltas.length > 0 && (

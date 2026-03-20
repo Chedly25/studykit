@@ -21,7 +21,7 @@ export interface SM2Result {
  * Quality ratings: 0 = complete blackout, 1 = wrong but remembered after seeing,
  * 2 = wrong but easy to recall, 3 = correct with difficulty, 4 = correct, 5 = perfect
  */
-export function calculateSM2(quality: number, card: SM2Card): SM2Result {
+export function calculateSM2(quality: number, card: SM2Card, cramMode?: boolean): SM2Result {
   const q = Math.max(0, Math.min(5, Math.round(quality)))
 
   let { easeFactor, interval, repetitions } = card
@@ -45,6 +45,11 @@ export function calculateSM2(quality: number, card: SM2Card): SM2Result {
   // Update ease factor
   easeFactor = easeFactor + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02))
   if (easeFactor < 1.3) easeFactor = 1.3
+
+  // Cram mode: cap interval at 2 days
+  if (cramMode) {
+    interval = Math.min(interval, 2)
+  }
 
   // Calculate next review date
   const now = new Date()

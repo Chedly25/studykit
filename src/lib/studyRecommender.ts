@@ -5,6 +5,7 @@
  */
 import type { Topic, Subject } from '../db/schema'
 import { decayedMastery } from './knowledgeGraph'
+import type { FeedbackAction } from './feedbackLoopEngine'
 
 export type RecommendationAction = 'read' | 'practice' | 'review' | 'explain-back' | 'flashcards'
 
@@ -29,10 +30,11 @@ export interface RecommenderInput {
   commonMistakes?: string[]
   prerequisiteGraph?: Map<string, string[]>  // topicId → prerequisite topicIds
   topicMasteryMap?: Map<string, number>      // topicId → mastery (for prereq check)
+  feedbackActions?: FeedbackAction[]
 }
 
 export function computeDailyRecommendations(input: RecommenderInput): StudyRecommendation[] {
-  const { topics, subjects, daysUntilExam, dueFlashcardsByTopic, todayPlanActivities, commonMistakes, prerequisiteGraph, topicMasteryMap } = input
+  const { topics, subjects, daysUntilExam, dueFlashcardsByTopic, todayPlanActivities, commonMistakes, prerequisiteGraph, topicMasteryMap, feedbackActions } = input
   const subjectMap = new Map(subjects.map(s => [s.id, s]))
 
   // Build plan lookup for quick access
@@ -65,6 +67,15 @@ export function computeDailyRecommendations(input: RecommenderInput): StudyRecom
     const planEntry = planLookup.get(topic.name.toLowerCase())
     if (planEntry !== undefined) {
       score *= planEntry ? 0.3 : 0.5 // completed → strong de-prioritize, pending → moderate
+    }
+
+    // Feedback action boost: topics with pending feedback actions get boosted
+    if (feedbackActions) {
+      const topicActions = feedbackActions.filter(a => a.topicId === topic.id)
+      if (topicActions.length > 0) {
+        const maxPriority = Math.max(...topicActions.map(a => a.priority))
+        score += maxPriority * 0.3
+      }
     }
 
     // Student model boost: topics matching common mistakes get a priority bump

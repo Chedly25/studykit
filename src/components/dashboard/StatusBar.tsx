@@ -58,10 +58,13 @@ export function StatusBar({
   }
 
   // Weekly hours
+  const hoursLeft = Math.max(0, weeklyTarget - weeklyHours)
   chips.push({
     icon: <Clock size={16} className="text-[var(--text-muted)]" />,
     value: `${weeklyHours.toFixed(1)}h`,
-    label: `/ ${weeklyTarget}h ${t('dashboard.perWeek')}`,
+    label: hoursLeft > 0
+      ? `/ ${weeklyTarget}h (${hoursLeft.toFixed(1)}h left)`
+      : `/ ${weeklyTarget}h ${t('dashboard.perWeek')}`,
   })
 
   return (

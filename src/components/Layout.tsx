@@ -6,7 +6,7 @@ import {
   Menu, X, LayoutDashboard, BarChart3, Focus, MessageCircle,
   FileText, PenTool, BookOpen, Users, Shield, FileSearch,
   Brain, ClipboardCheck, Lightbulb, Calendar, StickyNote, GraduationCap,
-  PanelLeftClose, PanelLeftOpen, ListChecks, Search,
+  PanelLeftClose, PanelLeftOpen, ListChecks, Search, Settings,
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
@@ -190,6 +190,7 @@ export function Layout() {
                   </>
                 )}
                 <SidebarLink to="/article-review" icon={FileSearch} label="Article Review" active={location.pathname === '/article-review'} collapsed={collapsed} pro />
+                <SidebarLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} collapsed={collapsed} />
               </SidebarSection>
 
               <SidebarSection label={t('nav.studyTools', 'Study Tools')} collapsed={collapsed}>
@@ -269,6 +270,7 @@ export function Layout() {
                     </>
                   )}
                   <SidebarLink to="/article-review" icon={FileSearch} label="Article Review" active={location.pathname === '/article-review'} onClick={closeSidebar} collapsed={false} pro />
+                  <SidebarLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} onClick={closeSidebar} collapsed={false} />
                 </SidebarSection>
 
                 <SidebarSection label={t('nav.studyTools', 'Study Tools')} collapsed={false}>

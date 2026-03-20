@@ -154,6 +154,62 @@ export function getStrongTopics(topics: Topic[], limit = 5): Topic[] {
     .slice(0, limit)
 }
 
+// ─── Prerequisite Enforcement ────────────────────────────────────
+
+/**
+ * Check if a topic is locked because its prerequisites aren't mastered.
+ */
+export function isTopicLocked(
+  topic: Topic,
+  topicMasteryMap: Map<string, number>,
+  threshold = 0.5,
+): { locked: boolean; blockingPrereqs: string[] } {
+  if (!topic.prerequisiteTopicIds || topic.prerequisiteTopicIds.length === 0) {
+    return { locked: false, blockingPrereqs: [] }
+  }
+
+  const blockingPrereqs = topic.prerequisiteTopicIds.filter(
+    pid => (topicMasteryMap.get(pid) ?? 0) < threshold
+  )
+
+  return { locked: blockingPrereqs.length > 0, blockingPrereqs }
+}
+
+/**
+ * Topological sort of prerequisite subgraph, filtered to unmastered topics.
+ * Returns the path a student should follow to unlock a given topic.
+ */
+export function getUnlockPath(
+  topicId: string,
+  topics: Topic[],
+  threshold = 0.5,
+): Topic[] {
+  const topicMap = new Map(topics.map(t => [t.id, t]))
+  const visited = new Set<string>()
+  const path: Topic[] = []
+
+  function visit(id: string) {
+    if (visited.has(id)) return
+    visited.add(id)
+    const t = topicMap.get(id)
+    if (!t) return
+    if (t.prerequisiteTopicIds) {
+      for (const prereqId of t.prerequisiteTopicIds) {
+        const prereq = topicMap.get(prereqId)
+        if (prereq && prereq.mastery < threshold) {
+          visit(prereqId)
+        }
+      }
+    }
+    if (t.mastery < threshold && t.id !== topicId) {
+      path.push(t)
+    }
+  }
+
+  visit(topicId)
+  return path
+}
+
 // ─── Due Topics (SRS) ───────────────────────────────────────────
 
 export function getDueTopics(topics: Topic[]): Topic[] {

@@ -2,6 +2,7 @@ import type { ErrorPatternSummary } from '../../lib/errorPatterns'
 
 interface Props {
   data: ErrorPatternSummary[]
+  onDrillDown?: (topicName: string, errorType: string) => void
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -20,7 +21,7 @@ const TYPE_LABELS: Record<string, string> = {
   unclassified: 'Unclassified',
 }
 
-export function ErrorPatternChart({ data }: Props) {
+export function ErrorPatternChart({ data, onDrillDown }: Props) {
   if (data.length === 0) {
     return (
       <p className="text-sm text-[var(--text-muted)]">
@@ -57,12 +58,13 @@ export function ErrorPatternChart({ data }: Props) {
                   return (
                     <div
                       key={seg.type}
-                      className="h-full transition-all"
+                      className={`h-full transition-all ${onDrillDown ? 'cursor-pointer hover:opacity-80' : ''}`}
                       style={{
                         width: `${segPct}%`,
                         backgroundColor: TYPE_COLORS[seg.type],
                       }}
                       title={`${TYPE_LABELS[seg.type]}: ${seg.count}`}
+                      onClick={() => onDrillDown?.(d.topicName, seg.type)}
                     />
                   )
                 })}

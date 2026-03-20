@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useAnalytics } from '../hooks/useAnalytics'
@@ -12,11 +12,14 @@ import { BarChart3 } from 'lucide-react'
 import { useTranslation, Trans } from 'react-i18next'
 import { CalibrationChart } from '../components/analytics/CalibrationChart'
 import { ErrorPatternChart } from '../components/analytics/ErrorPatternChart'
+import { MasteryTrendChart } from '../components/analytics/MasteryTrendChart'
+import { ErrorDrillDown } from '../components/analytics/ErrorDrillDown'
 import { computeCalibrationData } from '../lib/calibration'
 import { computeErrorPatterns } from '../lib/errorPatterns'
+import { computeMasteryHistory } from '../lib/analyticsEngine'
 import { computeDailyRecommendations } from '../lib/studyRecommender'
 import { db } from '../db'
-import type { StudySession } from '../db/schema'
+import type { StudySession, MasterySnapshot } from '../db/schema'
 
 // Relocated dashboard cards
 import { StudyStreakCard } from '../components/dashboard/StudyStreakCard'
@@ -43,6 +46,16 @@ export default function Analytics() {
   const { recentInsights: sessionInsights } = useSessionInsights(profileId)
   const { coverage: sourceCoverage } = useSourceCoverage(profileId)
   const { studentModel } = useStudentModel(profileId)
+  const [selectedTrendTopic, setSelectedTrendTopic] = useState<string>('')
+  const [drillDownTopic, setDrillDownTopic] = useState<string | null>(null)
+  const [drillDownType, setDrillDownType] = useState<string | null>(null)
+
+  const masterySnapshots = useLiveQuery(
+    () => profileId
+      ? db.masterySnapshots.where('examProfileId').equals(profileId).toArray()
+      : Promise.resolve([] as MasterySnapshot[]),
+    [profileId]
+  ) ?? []
 
   const sessions = useLiveQuery(
     () => profileId
@@ -215,6 +228,27 @@ export default function Analytics() {
           )}
         </div>
 
+        {/* Mastery Trend */}
+        <div className="glass-card p-4 md:col-span-2">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-[var(--text-heading)]">Mastery Trend</h2>
+            <select
+              value={selectedTrendTopic}
+              onChange={e => setSelectedTrendTopic(e.target.value)}
+              className="text-sm bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-2 py-1 text-[var(--text-body)]"
+            >
+              <option value="">Select topic...</option>
+              {topics.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+          <MasteryTrendChart
+            data={selectedTrendTopic ? computeMasteryHistory(masterySnapshots, selectedTrendTopic, 30) : []}
+            topicName={topics.find(t => t.id === selectedTrendTopic)?.name ?? 'Select a topic'}
+          />
+        </div>
+
         {/* Confidence Calibration */}
         <div className="glass-card p-4 md:col-span-2">
           <h2 className="font-semibold text-[var(--text-heading)] mb-3">Confidence Calibration</h2>
@@ -224,8 +258,24 @@ export default function Analytics() {
         {/* Error Patterns */}
         <div className="glass-card p-4 md:col-span-2">
           <h2 className="font-semibold text-[var(--text-heading)] mb-3">Error Patterns</h2>
-          <ErrorPatternChart data={errorPatterns} />
+          <ErrorPatternChart
+            data={errorPatterns}
+            onDrillDown={(topicName, errorType) => {
+              setDrillDownTopic(topicName)
+              setDrillDownType(errorType)
+            }}
+          />
         </div>
+
+        {/* Error Drill-Down Modal */}
+        {drillDownTopic && drillDownType && (
+          <ErrorDrillDown
+            topicName={drillDownTopic}
+            errorType={drillDownType}
+            examProfileId={profileId ?? ''}
+            onClose={() => { setDrillDownTopic(null); setDrillDownType(null) }}
+          />
+        )}
       </div>
 
       {/* ─── Insights ─── */}
