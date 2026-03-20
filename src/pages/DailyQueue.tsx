@@ -24,8 +24,8 @@ import { generateNotifications } from '../lib/notificationGenerator'
 import { scheduleDailyReminder } from '../lib/pushNotifications'
 import { checkAchievements } from '../lib/achievements'
 import { showAchievementToast } from '../components/AchievementToast'
+import { MathText } from '../components/MathText'
 import type { QueueItem } from '../lib/dailyQueueEngine'
-import type { Flashcard } from '../db/schema'
 
 const SESSION_START_KEY = (profileId: string, date: string) => `session_start_${profileId}_${date}`
 const CRAM_KEY = (profileId: string) => `cramMode_${profileId}`
@@ -41,7 +41,6 @@ export default function DailyQueue() {
   const [showStartOverlay, setShowStartOverlay] = useState(false)
   const [timeAvailable, setTimeAvailable] = useState<number | undefined>(undefined)
   const [showCompletion, setShowCompletion] = useState(false)
-  const [flippedCard, setFlippedCard] = useState<string | null>(null)
   const [conceptRevealed, setConceptRevealed] = useState(false)
 
   // Block 1B: Single session tracking
@@ -136,13 +135,11 @@ export default function DailyQueue() {
   }, [profileId, today, startSession])
 
   const handleComplete = useCallback((itemId: string) => {
-    setFlippedCard(null)
     setConceptRevealed(false)
     completeItem(itemId)
   }, [completeItem])
 
   const handleSkip = useCallback((itemId: string) => {
-    setFlippedCard(null)
     setConceptRevealed(false)
     skipItem(itemId)
   }, [skipItem])
@@ -234,8 +231,6 @@ export default function DailyQueue() {
             <FlashcardReviewInline
               item={currentItem}
               profileId={profileId}
-              flippedCard={flippedCard}
-              onFlip={(id) => setFlippedCard(flippedCard === id ? null : id)}
               onComplete={handleComplete}
             />
           )}
@@ -357,20 +352,16 @@ const RATING_BUTTONS = [
 ]
 
 function FlashcardReviewInline({
-  item, profileId, flippedCard, onFlip, onComplete,
+  item, profileId, onComplete,
 }: {
   item: QueueItem
   profileId: string | undefined
-  flippedCard: string | null
-  onFlip: (id: string) => void
   onComplete: (itemId: string) => void
 }) {
-  const [ratings, setRatings] = useState<Map<string, number>>(new Map())
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [flipped, setFlipped] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  // Block 5B: AI explain for struggling cards
-  const [aiExplainCardId, setAiExplainCardId] = useState<string | null>(null)
-  const [aiExplainText, setAiExplainText] = useState('')
-  const [aiExplainLoading, setAiExplainLoading] = useState(false)
+  const [reviewedCount, setReviewedCount] = useState(0)
 
   const cards = useLiveQuery(async () => {
     if (!item.flashcardIds?.length) return []
@@ -379,132 +370,124 @@ function FlashcardReviewInline({
 
   if (cards.length === 0) return <p className="text-sm text-[var(--text-muted)]">Loading cards...</p>
 
-  const allRated = cards.length > 0 && cards.every(c => ratings.has(c.id))
-
-  const handleRate = (cardId: string, quality: number) => {
-    setRatings(prev => new Map(prev).set(cardId, quality))
+  const currentCard = cards[currentIndex]
+  if (!currentCard) {
+    // All cards done
+    return (
+      <div className="text-center py-4">
+        <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+        <p className="text-sm font-medium text-[var(--text-heading)]">All {reviewedCount} cards reviewed!</p>
+      </div>
+    )
   }
 
-  const handleFinish = async () => {
-    if (!profileId) return
+  const handleRate = async (quality: number) => {
+    if (!profileId || isSubmitting) return
     setIsSubmitting(true)
     try {
-      // Import rateCard logic inline to avoid hook rules
-      for (const card of cards) {
-        const quality = ratings.get(card.id)
-        if (quality === undefined) continue
-
-        const { calculateSM2 } = await import('../lib/spacedRepetition')
-        const result = calculateSM2(quality, {
-          id: card.id, front: card.front, back: card.back,
-          easeFactor: card.easeFactor, interval: card.interval,
-          repetitions: card.repetitions, nextReviewDate: card.nextReviewDate,
-          lastRating: card.lastRating,
-        })
-        await db.flashcards.update(card.id, {
-          easeFactor: result.easeFactor,
-          interval: result.interval,
-          repetitions: result.repetitions,
-          nextReviewDate: result.nextReviewDate,
-          lastRating: quality,
-        })
-        if (card.topicId) {
-          await recomputeTopicMastery(card.topicId)
-          await advanceTopicSRS(card.topicId, quality)
-        }
+      const card = currentCard
+      const { calculateSM2 } = await import('../lib/spacedRepetition')
+      const result = calculateSM2(quality, {
+        id: card.id, front: card.front, back: card.back,
+        easeFactor: card.easeFactor, interval: card.interval,
+        repetitions: card.repetitions, nextReviewDate: card.nextReviewDate,
+        lastRating: card.lastRating,
+      })
+      await db.flashcards.update(card.id, {
+        easeFactor: result.easeFactor,
+        interval: result.interval,
+        repetitions: result.repetitions,
+        nextReviewDate: result.nextReviewDate,
+        lastRating: quality,
+      })
+      if (card.topicId) {
+        await recomputeTopicMastery(card.topicId)
+        await advanceTopicSRS(card.topicId, quality)
       }
-      onComplete(item.id)
+
+      const newReviewed = reviewedCount + 1
+      setReviewedCount(newReviewed)
+
+      // Move to next card or complete
+      if (currentIndex + 1 >= cards.length) {
+        onComplete(item.id)
+      } else {
+        setCurrentIndex(prev => prev + 1)
+        setFlipped(false)
+      }
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Block 5B: Check if card is struggling — use in-session rating or stored history
-  const isStruggling = (card: Flashcard) => {
-    const sessionRating = ratings.get(card.id)
-    if (sessionRating !== undefined) return sessionRating <= 2
-    return card.repetitions === 0
-  }
+  // Check if card is struggling
+  const struggling = currentCard.repetitions === 0 && currentCard.lastRating <= 2
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-[var(--text-muted)]">{cards.length} cards to review</p>
-      {cards.slice(0, 5).map(card => (
-        <div key={card.id} className="glass-card p-4">
-          <div
-            onClick={() => onFlip(card.id)}
-            className="cursor-pointer hover:ring-1 hover:ring-[var(--accent-text)]/30 rounded-lg transition-all"
-          >
-            <p className="text-sm font-medium text-[var(--text-heading)]">{card.front}</p>
-            {flippedCard === card.id ? (
-              <p className="text-sm text-[var(--text-body)] mt-2 pt-2 border-t border-[var(--border-card)]">{card.back}</p>
-            ) : (
-              <p className="text-xs text-[var(--text-faint)] mt-1">Tap to reveal</p>
-            )}
-          </div>
+      {/* Progress */}
+      <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+        <span>Card {currentIndex + 1} of {cards.length}</span>
+        <span>{reviewedCount} reviewed</span>
+      </div>
+      <div className="w-full h-1 rounded-full bg-[var(--bg-input)] overflow-hidden">
+        <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${((currentIndex) / cards.length) * 100}%` }} />
+      </div>
 
-          {/* Rating buttons — show after flip */}
-          {flippedCard === card.id && (
-            <div className="flex gap-1.5 mt-3 pt-3 border-t border-[var(--border-card)]">
-              {RATING_BUTTONS.map(btn => (
-                <button
-                  key={btn.quality}
-                  onClick={() => handleRate(card.id, btn.quality)}
-                  className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                    ratings.get(card.id) === btn.quality
-                      ? btn.color + ' ring-1 ring-current'
-                      : 'bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--text-body)]'
-                  }`}
-                >
-                  {btn.label}
-                </button>
-              ))}
+      {/* Current card */}
+      <div className="glass-card p-5">
+        <div
+          onClick={() => setFlipped(!flipped)}
+          className="cursor-pointer min-h-[80px]"
+        >
+          <p className="text-sm font-medium text-[var(--text-heading)]">
+            <MathText>{currentCard.front}</MathText>
+          </p>
+          {flipped ? (
+            <div className="mt-3 pt-3 border-t border-[var(--border-card)]">
+              <p className="text-sm text-[var(--text-body)]">
+                <MathText>{currentCard.back}</MathText>
+              </p>
             </div>
-          )}
-
-          {/* Block 5B: AI explain for struggling cards */}
-          {flippedCard === card.id && isStruggling(card) && aiExplainCardId !== card.id && (
-            <button
-              onClick={() => setAiExplainCardId(card.id)}
-              className="mt-2 text-xs text-[var(--accent-text)] hover:underline flex items-center gap-1"
-            >
-              <Sparkles className="w-3 h-3" /> Struggling? Let AI explain
-            </button>
-          )}
-
-          {aiExplainCardId === card.id && (
-            <div className="mt-2 p-3 rounded-lg bg-[var(--bg-input)] text-sm">
-              {aiExplainLoading ? (
-                <div className="flex items-center gap-2 text-[var(--text-muted)]">
-                  <Loader2 className="w-3 h-3 animate-spin" /> Getting explanation...
-                </div>
-              ) : aiExplainText ? (
-                <p className="text-[var(--text-body)] whitespace-pre-wrap">{aiExplainText}</p>
-              ) : (
-                <p className="text-[var(--text-muted)]">
-                  Explain: <strong>{card.front}</strong> → {card.back}
-                </p>
-              )}
-            </div>
+          ) : (
+            <p className="text-xs text-[var(--text-faint)] mt-3">Tap to reveal answer</p>
           )}
         </div>
-      ))}
-      {cards.length > 5 && (
-        <p className="text-xs text-[var(--text-muted)]">+{cards.length - 5} more cards</p>
-      )}
 
-      {/* Finish Review button */}
-      <button
-        onClick={handleFinish}
-        disabled={!allRated || isSubmitting}
-        className="w-full btn-primary py-2.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 mt-2"
-      >
-        {isSubmitting ? (
-          <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-        ) : (
-          <><CheckCircle2 className="w-4 h-4" /> Finish Review {allRated ? '' : `(${ratings.size}/${cards.length} rated)`}</>
+        {/* Rating buttons — show after flip */}
+        {flipped && (
+          <div className="flex gap-1.5 mt-4 pt-3 border-t border-[var(--border-card)]">
+            {RATING_BUTTONS.map(btn => (
+              <button
+                key={btn.quality}
+                onClick={() => handleRate(btn.quality)}
+                disabled={isSubmitting}
+                className={`flex-1 px-2 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
         )}
-      </button>
+
+        {/* AI explain for struggling cards */}
+        {flipped && struggling && (
+          <p className="mt-2 text-xs text-[var(--text-muted)] flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-[var(--accent-text)]" />
+            Tip: Rate "Again" and revisit this card later
+          </p>
+        )}
+      </div>
+
+      {/* Finish early */}
+      {reviewedCount > 0 && (
+        <button
+          onClick={() => onComplete(item.id)}
+          className="w-full text-xs text-[var(--text-muted)] hover:text-[var(--text-body)] py-2 transition-colors"
+        >
+          Finish early ({reviewedCount}/{cards.length} reviewed)
+        </button>
+      )}
     </div>
   )
 }
@@ -567,7 +550,9 @@ function ExerciseInline({
         <span className="text-xs font-medium text-[var(--text-muted)]">Exercise #{exercise.exerciseNumber}</span>
         <span className="text-xs text-[var(--text-faint)]">· Difficulty: {'★'.repeat(exercise.difficulty)}{'☆'.repeat(5 - exercise.difficulty)}</span>
       </div>
-      <div className="glass-card p-4 text-sm text-[var(--text-body)] whitespace-pre-wrap mb-4">{exercise.text}</div>
+      <div className="glass-card p-4 text-sm text-[var(--text-body)] whitespace-pre-wrap mb-4">
+        <MathText>{exercise.text}</MathText>
+      </div>
 
       {/* Self-assessment buttons */}
       <div className="space-y-2">
@@ -632,7 +617,7 @@ function ConceptQuizInline({
 
   return (
     <div>
-      <h3 className="font-medium text-[var(--text-heading)] mb-2">{card.title}</h3>
+      <h3 className="font-medium text-[var(--text-heading)] mb-2"><MathText>{card.title}</MathText></h3>
       <p className="text-sm text-[var(--text-muted)] mb-3">Can you explain this concept?</p>
       {!revealed ? (
         <button onClick={onReveal} className="btn-secondary text-sm px-4 py-2">
@@ -642,11 +627,11 @@ function ConceptQuizInline({
         <>
           <div className="glass-card p-4 space-y-1 mb-4">
             {keyPoints.map((point, i) => (
-              <p key={i} className="text-sm text-[var(--text-body)]">• {point}</p>
+              <p key={i} className="text-sm text-[var(--text-body)]">• <MathText>{point}</MathText></p>
             ))}
             {card.example && (
               <p className="text-sm text-[var(--text-muted)] mt-2 pt-2 border-t border-[var(--border-card)]">
-                Example: {card.example}
+                Example: <MathText>{card.example}</MathText>
               </p>
             )}
           </div>
