@@ -120,7 +120,7 @@ function getActionsForErrorType(errorType: string, topicName: string) {
     case 'conceptual':
       return [
         { label: 'Study Theory', description: 'Deep-dive into core concepts', linkTo: `/session?topic=${encoded}`, icon: <Brain className="w-4 h-4 text-[var(--accent-text)]" /> },
-        { label: 'Explain Back', description: 'Test your understanding', linkTo: '/explain-back', icon: <ClipboardCheck className="w-4 h-4 text-[var(--accent-text)]" /> },
+        { label: 'Explain Back', description: 'Test your understanding', linkTo: '/chat', icon: <ClipboardCheck className="w-4 h-4 text-[var(--accent-text)]" /> },
       ]
     case 'application':
       return [

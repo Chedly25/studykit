@@ -6,7 +6,7 @@ import type { Flashcard, Exercise, ConceptCard } from '../db/schema'
 import type { StudyRecommendation } from './studyRecommender'
 import type { FeedbackAction } from './feedbackLoopEngine'
 
-export type QueueItemType = 'flashcard-review' | 'exercise' | 'concept-quiz' | 'reading'
+export type QueueItemType = 'flashcard-review' | 'exercise' | 'concept-quiz'
 
 export interface QueueItem {
   id: string
@@ -21,7 +21,6 @@ export interface QueueItem {
   exerciseId?: string
   conceptCardId?: string
   conceptCardTitle?: string
-  readingContent?: string
 }
 
 interface BuildQueueInput {

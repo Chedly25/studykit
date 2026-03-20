@@ -5,7 +5,7 @@ import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react'
 import {
   Menu, X, LayoutDashboard, BarChart3, Focus, MessageCircle,
   FileText, PenTool, BookOpen, Users, Shield, FileSearch,
-  Brain, ClipboardCheck, Lightbulb, Calendar, StickyNote, GraduationCap,
+  ClipboardCheck, Calendar, StickyNote, GraduationCap,
   PanelLeftClose, PanelLeftOpen, ListChecks, Search, Settings,
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
@@ -201,8 +201,6 @@ export function Layout() {
                 {!isResearch && (
                   <>
                     <SidebarLink to="/practice-exam" icon={ClipboardCheck} label={t('ai.practiceSession', 'Practice Exam')} active={location.pathname === '/practice-exam'} collapsed={collapsed} pro />
-                    <SidebarLink to="/socratic" icon={Brain} label={t('ai.socratic', 'Socratic Mode')} active={location.pathname === '/socratic'} collapsed={collapsed} pro />
-                    <SidebarLink to="/explain-back" icon={Lightbulb} label={t('ai.explainBack', 'Explain Back')} active={location.pathname === '/explain-back'} collapsed={collapsed} pro />
                   </>
                 )}
                 <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} collapsed={collapsed} pro />
@@ -281,8 +279,6 @@ export function Layout() {
                   {!isResearch && (
                     <>
                       <SidebarLink to="/practice-exam" icon={ClipboardCheck} label={t('ai.practiceSession', 'Practice Exam')} active={location.pathname === '/practice-exam'} onClick={closeSidebar} collapsed={false} pro />
-                      <SidebarLink to="/socratic" icon={Brain} label={t('ai.socratic', 'Socratic Mode')} active={location.pathname === '/socratic'} onClick={closeSidebar} collapsed={false} pro />
-                      <SidebarLink to="/explain-back" icon={Lightbulb} label={t('ai.explainBack', 'Explain Back')} active={location.pathname === '/explain-back'} onClick={closeSidebar} collapsed={false} pro />
                     </>
                   )}
                   <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} onClick={closeSidebar} collapsed={false} pro />

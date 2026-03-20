@@ -14,8 +14,8 @@ interface StudyActivity {
 
 const ACTIVITY_ROUTES: Record<string, string> = {
   practice: '/practice-exam',
-  socratic: '/socratic',
-  'explain-back': '/explain-back',
+  socratic: '/chat',
+  'explain-back': '/chat',
   flashcards: '/flashcard-maker',
   review: '/chat',
   read: '/sources',

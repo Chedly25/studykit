@@ -50,9 +50,7 @@ export function MegaMenu() {
               ]),
               { to: '/chat', icon: MessageCircle, label: isResearch ? t('research.partner') : t('ai.chat'), pro: true },
               ...(!isResearch ? [
-                { to: '/socratic', icon: Brain, label: t('ai.socratic'), pro: true },
                 { to: '/practice-exam', icon: ClipboardCheck, label: t('ai.practiceSession'), pro: true },
-                { to: '/explain-back', icon: Lightbulb, label: t('ai.explainBack'), pro: true },
               ] : []),
               { to: '/study-plan', icon: Calendar, label: t('ai.studyPlan'), pro: true },
               { to: '/sources', icon: FileText, label: isResearch ? t('research.literature') : t('sources.title'), pro: true },

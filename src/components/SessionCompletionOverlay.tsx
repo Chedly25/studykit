@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle2, Flame, Clock, ArrowRight, RotateCcw, Home, BookOpen, ClipboardCheck, Target } from 'lucide-react'
+import { CheckCircle2, Flame, Clock, ArrowRight, RotateCcw, Home, BookOpen, ClipboardCheck, Target, Sparkles, Loader2 } from 'lucide-react'
+import { MathText } from './MathText'
 
 export interface SessionCompletionData {
   activityType: 'flashcards' | 'practice-exam' | 'focus'
@@ -23,6 +24,8 @@ interface Props {
   data: SessionCompletionData
   onDismiss: () => void
   onAction?: (linkTo: string) => void
+  aiDebrief?: string
+  isDebriefStreaming?: boolean
 }
 
 const MILESTONES = [7, 14, 30, 60, 100]
@@ -49,7 +52,7 @@ function formatDuration(seconds: number): string {
   return remainMins > 0 ? `${hrs}h ${remainMins}m` : `${hrs}h`
 }
 
-export function SessionCompletionOverlay({ data, onDismiss, onAction }: Props) {
+export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief, isDebriefStreaming }: Props) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const milestone = MILESTONES.includes(data.streak) ? data.streak : null
@@ -158,6 +161,22 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction }: Props) {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* AI Debrief */}
+        {(aiDebrief || isDebriefStreaming) && (
+          <div className="text-sm bg-[var(--bg-input)] p-3 rounded-lg">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-[var(--accent-text)]" />
+              <span className="text-xs font-medium text-[var(--text-muted)]">AI Summary</span>
+              {isDebriefStreaming && <Loader2 className="w-3 h-3 text-[var(--accent-text)] animate-spin" />}
+            </div>
+            {aiDebrief ? (
+              <p className="text-[var(--text-body)] leading-relaxed"><MathText>{aiDebrief}</MathText></p>
+            ) : (
+              <p className="text-[var(--text-muted)]">Generating debrief...</p>
+            )}
           </div>
         )}
 

@@ -2,15 +2,16 @@
  * Unified Daily Queue — one queue, one "Next" button.
  * Route: /queue
  *
- * Block 1: Rating UI per item type, single session tracking, notification trigger
- * Block 2: Schedule daily reminder on completion
- * Block 4: Achievement checking on completion
- * Block 5: AI explain for struggling flashcards
+ * Block A: Fixed session time tracking
+ * Block B: Inline AI explanations after bad ratings
+ * Block C: Post-queue AI debrief
+ * Block E: Local nudges between items
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, SkipForward, CheckCircle2, BookOpen, ListChecks, Brain, RotateCw, Zap, Sparkles, Loader2 } from 'lucide-react'
+import { useAuth } from '@clerk/clerk-react'
+import { ArrowRight, SkipForward, CheckCircle2, BookOpen, ListChecks, Brain, Zap, Loader2, X } from 'lucide-react'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
@@ -18,12 +19,15 @@ import { useDailyQueue } from '../hooks/useDailyQueue'
 import { useStudySession } from '../hooks/useStudySession'
 import { SessionStartOverlay } from '../components/SessionStartOverlay'
 import { SessionCompletionOverlay, type SessionCompletionData } from '../components/SessionCompletionOverlay'
+import { InlineAIExplanation } from '../components/queue/InlineAIExplanation'
 import { decayedMastery } from '../lib/knowledgeGraph'
 import { recomputeTopicMastery, advanceTopicSRS } from '../lib/topicMastery'
 import { generateNotifications } from '../lib/notificationGenerator'
 import { scheduleDailyReminder } from '../lib/pushNotifications'
 import { checkAchievements } from '../lib/achievements'
 import { showAchievementToast } from '../components/AchievementToast'
+import { computeNudge, type SessionResult, type Nudge } from '../lib/queueNudges'
+import { streamChat } from '../ai/client'
 import { MathText } from '../components/MathText'
 import type { QueueItem } from '../lib/dailyQueueEngine'
 
@@ -32,6 +36,7 @@ const CRAM_KEY = (profileId: string) => `cramMode_${profileId}`
 
 export default function DailyQueue() {
   const navigate = useNavigate()
+  const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { topics, streak, weeklyHours } = useKnowledgeGraph(profileId)
@@ -43,11 +48,19 @@ export default function DailyQueue() {
   const [showCompletion, setShowCompletion] = useState(false)
   const [conceptRevealed, setConceptRevealed] = useState(false)
 
-  // Block 1B: Single session tracking
+  // Block A: Session tracking — refs ensure session starts regardless of overlay
   const sessionStartRef = useRef<number>(0)
   const sessionStartedRef = useRef(false)
+  const [finalTimeSpent, setFinalTimeSpent] = useState(0)
 
-  // Check for cram mode
+  // Block C: AI debrief
+  const [aiDebrief, setAiDebrief] = useState('')
+  const [isDebriefStreaming, setIsDebriefStreaming] = useState(false)
+
+  // Block E: Session results tracking + nudges
+  const sessionResults = useRef<SessionResult[]>([])
+  const [currentNudge, setCurrentNudge] = useState<Nudge | null>(null)
+
   const cramMode = profileId ? localStorage.getItem(CRAM_KEY(profileId)) === 'true' : false
 
   const {
@@ -55,7 +68,7 @@ export default function DailyQueue() {
     remainingMinutes, completeItem, skipItem, isQueueEmpty,
   } = useDailyQueue(profileId, timeAvailable, cramMode)
 
-  // Check if we should show start overlay
+  // Show start overlay on first visit today
   useEffect(() => {
     if (!profileId) return
     const key = SESSION_START_KEY(profileId, today)
@@ -64,7 +77,16 @@ export default function DailyQueue() {
     }
   }, [profileId, today])
 
-  // Block 1B: End session on unmount or queue completion
+  // Block A: Start session when first item appears (regardless of overlay)
+  useEffect(() => {
+    if (currentItem && !sessionStartedRef.current && profileId) {
+      sessionStartRef.current = Date.now()
+      sessionStartedRef.current = true
+      startSession('review').catch(() => {})
+    }
+  }, [currentItem, profileId, startSession])
+
+  // End session on unmount
   useEffect(() => {
     return () => {
       if (sessionStartedRef.current) {
@@ -74,35 +96,62 @@ export default function DailyQueue() {
     }
   }, [endSession])
 
-  // Show completion when queue empty
+  // Queue completion — end session, trigger debrief, achievements, notifications
   useEffect(() => {
     if (isQueueEmpty && completedCount > 0) {
-      // End the single session
+      // Block A: Capture time before ending session
       if (sessionStartedRef.current) {
+        setFinalTimeSpent(Math.round((Date.now() - sessionStartRef.current) / 1000))
         endSession().catch(() => {})
         sessionStartedRef.current = false
       }
 
-      // Block 1C: Trigger notifications after completion (idempotent — won't duplicate)
       if (profileId) {
         generateNotifications(profileId).catch(() => {})
-      }
-
-      // Block 2: Schedule daily reminder
-      if (profileId) {
         scheduleDailyReminder(profileId).catch(() => {})
-      }
-
-      // Block 4: Check achievements
-      if (profileId) {
         checkAchievements(profileId).then(newlyUnlocked => {
           for (const a of newlyUnlocked) showAchievementToast(a)
         }).catch(() => {})
       }
 
+      // Block C: Generate AI debrief
+      if (sessionResults.current.length > 0) {
+        setIsDebriefStreaming(true)
+        ;(async () => {
+          try {
+            const token = await getToken()
+            if (!token) return
+            const results = sessionResults.current
+            const struggled = results.filter(r => r.rating === 'struggled').map(r => r.topicName)
+            const good = results.filter(r => r.rating === 'good').map(r => r.topicName)
+            const prompt = `Student just completed ${results.length} study items.\n` +
+              (struggled.length > 0 ? `Struggled with: ${[...new Set(struggled)].join(', ')}.\n` : '') +
+              (good.length > 0 ? `Did well on: ${[...new Set(good)].join(', ')}.\n` : '') +
+              `Give a 3-5 sentence coaching debrief. Be specific, encouraging, and actionable. If they struggled, explain the key insight briefly.`
+
+            let text = ''
+            await streamChat({
+              messages: [{ role: 'user', content: prompt }],
+              system: 'You are a study coach giving a brief post-session debrief. Be warm, specific, and actionable. Use LaTeX $...$ for math if relevant.',
+              tools: [],
+              authToken: token,
+              onToken: (t) => { text += t; setAiDebrief(text) },
+            })
+          } catch { /* non-critical */ }
+          finally { setIsDebriefStreaming(false) }
+        })()
+      }
+
       setShowCompletion(true)
     }
-  }, [isQueueEmpty, completedCount, profileId, endSession])
+  }, [isQueueEmpty, completedCount, profileId, endSession, getToken])
+
+  // Block E: Auto-dismiss nudge after 5 seconds
+  useEffect(() => {
+    if (!currentNudge) return
+    const timer = setTimeout(() => setCurrentNudge(null), 5000)
+    return () => clearTimeout(timer)
+  }, [currentNudge])
 
   const dueFlashcardCount = useLiveQuery(async () => {
     if (!profileId) return 0
@@ -122,17 +171,26 @@ export default function DailyQueue() {
     .map(t => ({ name: t.name, drop: Math.round((t.mastery - decayedMastery(t)) * 100) }))
     .slice(0, 3)
 
+  // Block E: Record a rating result and compute nudge
+  const recordResult = useCallback((topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => {
+    sessionResults.current.push({ topicName, type, rating })
+    const nudge = computeNudge({
+      completedTopicName: topicName,
+      completedCount: completedCount + 1,
+      totalCount,
+      sessionResults: sessionResults.current,
+      streak,
+    })
+    setCurrentNudge(nudge)
+  }, [completedCount, totalCount, streak])
+
   const handleStartSession = useCallback((minutes: number) => {
     if (profileId) {
       localStorage.setItem(SESSION_START_KEY(profileId, today), 'true')
-      // Block 1B: Start ONE session for the whole queue visit
-      startSession('review').catch(() => {})
-      sessionStartRef.current = Date.now()
-      sessionStartedRef.current = true
     }
     setTimeAvailable(minutes)
     setShowStartOverlay(false)
-  }, [profileId, today, startSession])
+  }, [profileId, today])
 
   const handleComplete = useCallback((itemId: string) => {
     setConceptRevealed(false)
@@ -141,6 +199,7 @@ export default function DailyQueue() {
 
   const handleSkip = useCallback((itemId: string) => {
     setConceptRevealed(false)
+    setCurrentNudge(null)
     skipItem(itemId)
   }, [skipItem])
 
@@ -154,7 +213,7 @@ export default function DailyQueue() {
 
   const completionData: SessionCompletionData = {
     activityType: 'flashcards',
-    timeSpentSeconds: Math.round((Date.now() - (sessionStartRef.current || Date.now())) / 1000),
+    timeSpentSeconds: finalTimeSpent,
     streak,
     weeklyHours,
     weeklyTarget: activeProfile.weeklyTargetHours,
@@ -164,7 +223,6 @@ export default function DailyQueue() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
-      {/* Start Overlay */}
       {showStartOverlay && (
         <SessionStartOverlay
           streak={streak}
@@ -177,11 +235,12 @@ export default function DailyQueue() {
         />
       )}
 
-      {/* Completion Overlay */}
       {showCompletion && (
         <SessionCompletionOverlay
           data={completionData}
           onDismiss={() => setShowCompletion(false)}
+          aiDebrief={aiDebrief}
+          isDebriefStreaming={isDebriefStreaming}
         />
       )}
 
@@ -210,10 +269,22 @@ export default function DailyQueue() {
         />
       </div>
 
+      {/* Block E: Nudge banner */}
+      {currentNudge && (
+        <div className="glass-card p-3 mb-4 flex items-center gap-2 text-sm animate-fade-in">
+          <span className="text-base">
+            {currentNudge.type === 'reinforcement' ? '🔄' : currentNudge.type === 'progress' ? '📊' : '✨'}
+          </span>
+          <span className="text-[var(--text-body)] flex-1">{currentNudge.text}</span>
+          <button onClick={() => setCurrentNudge(null)} className="text-[var(--text-muted)] hover:text-[var(--text-body)]">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Current Item */}
       {currentItem ? (
         <div className={`glass-card p-6 mb-4 ${cramMode ? 'border border-red-500/20' : ''}`}>
-          {/* Item type badge */}
           <div className="flex items-center gap-2 mb-3">
             <ItemTypeIcon type={currentItem.type} />
             <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
@@ -226,12 +297,12 @@ export default function DailyQueue() {
           <h2 className="text-lg font-semibold text-[var(--text-heading)] mb-1">{currentItem.topicName}</h2>
           <p className="text-sm text-[var(--text-muted)] mb-4">~{currentItem.estimatedMinutes} min</p>
 
-          {/* Render based on type — with rating UIs */}
           {currentItem.type === 'flashcard-review' && (
             <FlashcardReviewInline
               item={currentItem}
               profileId={profileId}
               onComplete={handleComplete}
+              onRated={recordResult}
             />
           )}
 
@@ -240,6 +311,7 @@ export default function DailyQueue() {
               item={currentItem}
               profileId={profileId}
               onComplete={handleComplete}
+              onRated={recordResult}
             />
           )}
 
@@ -250,45 +322,20 @@ export default function DailyQueue() {
               revealed={conceptRevealed}
               onReveal={() => setConceptRevealed(true)}
               onComplete={handleComplete}
+              onRated={recordResult}
             />
           )}
 
-          {currentItem.type === 'reading' && (
-            <ReadingInline item={currentItem} />
-          )}
-
-          {/* Action buttons — only show generic Done for reading type */}
-          {currentItem.type === 'reading' && (
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => handleComplete(currentItem.id)}
-                className="flex-1 btn-primary py-2.5 text-sm font-semibold flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                Done
-              </button>
-              <button
-                onClick={() => handleSkip(currentItem.id)}
-                className="btn-secondary py-2.5 text-sm px-4 flex items-center gap-2"
-              >
-                <SkipForward className="w-4 h-4" />
-                Skip
-              </button>
-            </div>
-          )}
-
-          {/* Skip button for non-reading types (rating buttons handle completion) */}
-          {currentItem.type !== 'reading' && (
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => handleSkip(currentItem.id)}
-                className="btn-secondary py-2 text-sm px-4 flex items-center gap-2"
-              >
-                <SkipForward className="w-4 h-4" />
-                Skip
-              </button>
-            </div>
-          )}
+          {/* Skip button */}
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={() => handleSkip(currentItem.id)}
+              className="btn-secondary py-2 text-sm px-4 flex items-center gap-2"
+            >
+              <SkipForward className="w-4 h-4" />
+              Skip
+            </button>
+          </div>
         </div>
       ) : queue.length === 0 ? (
         <div className="glass-card p-8 text-center">
@@ -308,7 +355,7 @@ export default function DailyQueue() {
         </div>
       ) : null}
 
-      {/* Queue preview (collapsed) */}
+      {/* Queue preview */}
       {queue.length > 1 && currentItem && (
         <details className="glass-card overflow-hidden">
           <summary className="px-4 py-3 text-sm font-medium text-[var(--text-muted)] cursor-pointer hover:bg-[var(--bg-input)]/30">
@@ -337,12 +384,11 @@ function ItemTypeIcon({ type }: { type: string }) {
     case 'flashcard-review': return <BookOpen className="w-4 h-4 text-blue-500" />
     case 'exercise': return <ListChecks className="w-4 h-4 text-orange-500" />
     case 'concept-quiz': return <Brain className="w-4 h-4 text-purple-500" />
-    case 'reading': return <RotateCw className="w-4 h-4 text-emerald-500" />
     default: return <ArrowRight className="w-4 h-4 text-[var(--text-muted)]" />
   }
 }
 
-// ─── Block 1A: Flashcard review with per-card SM-2 rating ──────
+// ─── Flashcard review (one card at a time + inline AI on "Again") ──────
 
 const RATING_BUTTONS = [
   { quality: 1, label: 'Again', color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
@@ -352,16 +398,19 @@ const RATING_BUTTONS = [
 ]
 
 function FlashcardReviewInline({
-  item, profileId, onComplete,
+  item, profileId, onComplete, onRated,
 }: {
   item: QueueItem
   profileId: string | undefined
   onComplete: (itemId: string) => void
+  onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
 }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [reviewedCount, setReviewedCount] = useState(0)
+  // Block B: AI explanation after "Again"
+  const [explanationCtx, setExplanationCtx] = useState<{ front: string; back: string } | null>(null)
 
   const cards = useLiveQuery(async () => {
     if (!item.flashcardIds?.length) return []
@@ -372,13 +421,22 @@ function FlashcardReviewInline({
 
   const currentCard = cards[currentIndex]
   if (!currentCard) {
-    // All cards done
     return (
       <div className="text-center py-4">
         <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
         <p className="text-sm font-medium text-[var(--text-heading)]">All {reviewedCount} cards reviewed!</p>
       </div>
     )
+  }
+
+  const advanceCard = () => {
+    setExplanationCtx(null)
+    if (currentIndex + 1 >= cards.length) {
+      onComplete(item.id)
+    } else {
+      setCurrentIndex(prev => prev + 1)
+      setFlipped(false)
+    }
   }
 
   const handleRate = async (quality: number) => {
@@ -394,10 +452,8 @@ function FlashcardReviewInline({
         lastRating: card.lastRating,
       })
       await db.flashcards.update(card.id, {
-        easeFactor: result.easeFactor,
-        interval: result.interval,
-        repetitions: result.repetitions,
-        nextReviewDate: result.nextReviewDate,
+        easeFactor: result.easeFactor, interval: result.interval,
+        repetitions: result.repetitions, nextReviewDate: result.nextReviewDate,
         lastRating: quality,
       })
       if (card.topicId) {
@@ -405,41 +461,32 @@ function FlashcardReviewInline({
         await advanceTopicSRS(card.topicId, quality)
       }
 
-      const newReviewed = reviewedCount + 1
-      setReviewedCount(newReviewed)
+      setReviewedCount(prev => prev + 1)
+      onRated(item.topicName, 'flashcard-review', quality <= 2 ? 'struggled' : quality <= 3 ? 'ok' : 'good')
 
-      // Move to next card or complete
-      if (currentIndex + 1 >= cards.length) {
-        onComplete(item.id)
+      // Block B: Show AI explanation on "Again", don't auto-advance
+      if (quality === 1) {
+        setExplanationCtx({ front: card.front, back: card.back })
       } else {
-        setCurrentIndex(prev => prev + 1)
-        setFlipped(false)
+        advanceCard()
       }
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Check if card is struggling
-  const struggling = currentCard.repetitions === 0 && currentCard.lastRating <= 2
-
   return (
     <div className="space-y-3">
-      {/* Progress */}
       <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
         <span>Card {currentIndex + 1} of {cards.length}</span>
         <span>{reviewedCount} reviewed</span>
       </div>
       <div className="w-full h-1 rounded-full bg-[var(--bg-input)] overflow-hidden">
-        <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${((currentIndex) / cards.length) * 100}%` }} />
+        <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${(currentIndex / cards.length) * 100}%` }} />
       </div>
 
-      {/* Current card */}
       <div className="glass-card p-5">
-        <div
-          onClick={() => setFlipped(!flipped)}
-          className="cursor-pointer min-h-[80px]"
-        >
+        <div onClick={() => !explanationCtx && setFlipped(!flipped)} className="cursor-pointer min-h-[80px]">
           <p className="text-sm font-medium text-[var(--text-heading)]">
             <MathText>{currentCard.front}</MathText>
           </p>
@@ -454,8 +501,7 @@ function FlashcardReviewInline({
           )}
         </div>
 
-        {/* Rating buttons — show after flip */}
-        {flipped && (
+        {flipped && !explanationCtx && (
           <div className="flex gap-1.5 mt-4 pt-3 border-t border-[var(--border-card)]">
             {RATING_BUTTONS.map(btn => (
               <button
@@ -470,17 +516,17 @@ function FlashcardReviewInline({
           </div>
         )}
 
-        {/* AI explain for struggling cards */}
-        {flipped && struggling && (
-          <p className="mt-2 text-xs text-[var(--text-muted)] flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-[var(--accent-text)]" />
-            Tip: Rate "Again" and revisit this card later
-          </p>
+        {/* Block B: Inline AI explanation after "Again" */}
+        {explanationCtx && (
+          <InlineAIExplanation
+            content={`Question: ${explanationCtx.front}\nAnswer: ${explanationCtx.back}`}
+            topicName={item.topicName}
+            onDismiss={advanceCard}
+          />
         )}
       </div>
 
-      {/* Finish early */}
-      {reviewedCount > 0 && (
+      {reviewedCount > 0 && !explanationCtx && (
         <button
           onClick={() => onComplete(item.id)}
           className="w-full text-xs text-[var(--text-muted)] hover:text-[var(--text-body)] py-2 transition-colors"
@@ -492,7 +538,7 @@ function FlashcardReviewInline({
   )
 }
 
-// ─── Block 1A: Exercise with self-assessment ──────
+// ─── Exercise with self-assessment + inline AI on "Didn't Get It" ──────
 
 const EXERCISE_RATINGS = [
   { score: 0.2, label: "Didn't Get It", color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
@@ -501,13 +547,15 @@ const EXERCISE_RATINGS = [
 ]
 
 function ExerciseInline({
-  item, profileId, onComplete,
+  item, profileId, onComplete, onRated,
 }: {
   item: QueueItem
   profileId: string | undefined
   onComplete: (itemId: string) => void
+  onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [explanationCtx, setExplanationCtx] = useState<string | null>(null)
 
   const exercise = useLiveQuery(
     () => item.exerciseId ? db.exercises.get(item.exerciseId) : undefined,
@@ -520,25 +568,23 @@ function ExerciseInline({
     if (!profileId || !item.exerciseId) return
     setIsSubmitting(true)
     try {
-      // Record attempt
       await db.exerciseAttempts.put({
-        id: crypto.randomUUID(),
-        exerciseId: item.exerciseId,
-        examProfileId: profileId,
-        score,
-        createdAt: new Date().toISOString(),
+        id: crypto.randomUUID(), exerciseId: item.exerciseId,
+        examProfileId: profileId, score, createdAt: new Date().toISOString(),
       })
-      // Update exercise status
       await db.exercises.update(item.exerciseId, {
         status: score >= 0.7 ? 'completed' : 'attempted',
-        lastAttemptScore: score,
-        attemptCount: exercise.attemptCount + 1,
+        lastAttemptScore: score, attemptCount: exercise.attemptCount + 1,
       })
-      // Recompute topic mastery
-      if (item.topicId) {
-        await recomputeTopicMastery(item.topicId)
+      if (item.topicId) await recomputeTopicMastery(item.topicId)
+
+      onRated(item.topicName, 'exercise', score <= 0.3 ? 'struggled' : score <= 0.6 ? 'ok' : 'good')
+
+      if (score === 0.2) {
+        setExplanationCtx(exercise.text)
+      } else {
+        onComplete(item.id)
       }
-      onComplete(item.id)
     } finally {
       setIsSubmitting(false)
     }
@@ -554,27 +600,36 @@ function ExerciseInline({
         <MathText>{exercise.text}</MathText>
       </div>
 
-      {/* Self-assessment buttons */}
-      <div className="space-y-2">
-        <p className="text-xs font-medium text-[var(--text-muted)]">How did you do?</p>
-        <div className="flex gap-2">
-          {EXERCISE_RATINGS.map(btn => (
-            <button
-              key={btn.score}
-              onClick={() => handleRate(btn.score)}
-              disabled={isSubmitting}
-              className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
-            >
-              {btn.label}
-            </button>
-          ))}
+      {!explanationCtx && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-[var(--text-muted)]">How did you do?</p>
+          <div className="flex gap-2">
+            {EXERCISE_RATINGS.map(btn => (
+              <button
+                key={btn.score}
+                onClick={() => handleRate(btn.score)}
+                disabled={isSubmitting}
+                className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {explanationCtx && (
+        <InlineAIExplanation
+          content={explanationCtx}
+          topicName={item.topicName}
+          onDismiss={() => { setExplanationCtx(null); onComplete(item.id) }}
+        />
+      )}
     </div>
   )
 }
 
-// ─── Block 1A: Concept quiz with self-assessment ──────
+// ─── Concept quiz with self-assessment + inline AI on "Couldn't Explain" ──────
 
 const CONCEPT_RATINGS = [
   { quality: 1, label: "Couldn't Explain", color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
@@ -583,15 +638,17 @@ const CONCEPT_RATINGS = [
 ]
 
 function ConceptQuizInline({
-  item, profileId, revealed, onReveal, onComplete,
+  item, profileId, revealed, onReveal, onComplete, onRated,
 }: {
   item: QueueItem
   profileId: string | undefined
   revealed: boolean
   onReveal: () => void
   onComplete: (itemId: string) => void
+  onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [explanationCtx, setExplanationCtx] = useState<string | null>(null)
 
   const card = useLiveQuery(
     () => item.conceptCardId ? db.conceptCards.get(item.conceptCardId) : undefined,
@@ -609,7 +666,14 @@ function ConceptQuizInline({
     try {
       await advanceTopicSRS(item.topicId, quality)
       await recomputeTopicMastery(item.topicId)
-      onComplete(item.id)
+
+      onRated(item.topicName, 'concept-quiz', quality <= 1 ? 'struggled' : quality <= 3 ? 'ok' : 'good')
+
+      if (quality === 1) {
+        setExplanationCtx(`Concept: ${card.title}\nKey points: ${keyPoints.join('; ')}`)
+      } else {
+        onComplete(item.id)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -636,33 +700,33 @@ function ConceptQuizInline({
             )}
           </div>
 
-          {/* Self-assessment buttons */}
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-[var(--text-muted)]">How well could you explain it?</p>
-            <div className="flex gap-2">
-              {CONCEPT_RATINGS.map(btn => (
-                <button
-                  key={btn.quality}
-                  onClick={() => handleRate(btn.quality)}
-                  disabled={isSubmitting}
-                  className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
-                >
-                  {btn.label}
-                </button>
-              ))}
+          {!explanationCtx && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-[var(--text-muted)]">How well could you explain it?</p>
+              <div className="flex gap-2">
+                {CONCEPT_RATINGS.map(btn => (
+                  <button
+                    key={btn.quality}
+                    onClick={() => handleRate(btn.quality)}
+                    disabled={isSubmitting}
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {explanationCtx && (
+            <InlineAIExplanation
+              content={explanationCtx}
+              topicName={item.topicName}
+              onDismiss={() => { setExplanationCtx(null); onComplete(item.id) }}
+            />
+          )}
         </>
       )}
-    </div>
-  )
-}
-
-function ReadingInline({ item }: { item: QueueItem }) {
-  return (
-    <div>
-      <p className="text-sm text-[var(--text-body)]">{item.readingContent ?? 'Review the material for this topic.'}</p>
-      <p className="text-xs text-[var(--text-muted)] mt-2">Mark as done when you've finished reading.</p>
     </div>
   )
 }

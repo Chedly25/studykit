@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { SignIn, SignUp } from '@clerk/clerk-react'
 import { Layout } from './components/Layout'
 import { AuthLayout } from './components/AuthLayout'
@@ -22,9 +22,7 @@ const FocusMode = lazy(() => import('./pages/FocusMode'))
 
 // AI
 const Chat = lazy(() => import('./pages/Chat'))
-const SocraticMode = lazy(() => import('./pages/SocraticMode'))
 const PracticeExam = lazy(() => import('./pages/PracticeExam'))
-const ExplainBack = lazy(() => import('./pages/ExplainBack'))
 const StudyPlan = lazy(() => import('./pages/StudyPlan'))
 const StudySession = lazy(() => import('./pages/StudySession'))
 const Exercises = lazy(() => import('./pages/Exercises'))
@@ -125,9 +123,9 @@ export default function App() {
 
           {/* Protected — AI */}
           <Route path="chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-          <Route path="socratic" element={<ProtectedRoute><SocraticMode /></ProtectedRoute>} />
+          <Route path="socratic" element={<Navigate to="/chat" replace />} />
           <Route path="practice-exam" element={<ProtectedRoute><PracticeExam /></ProtectedRoute>} />
-          <Route path="explain-back" element={<ProtectedRoute><ExplainBack /></ProtectedRoute>} />
+          <Route path="explain-back" element={<Navigate to="/chat" replace />} />
           <Route path="study-plan" element={<ProtectedRoute><StudyPlan /></ProtectedRoute>} />
           <Route path="session" element={<ProtectedRoute><StudySession /></ProtectedRoute>} />
           <Route path="exercises" element={<ProtectedRoute><Exercises /></ProtectedRoute>} />
