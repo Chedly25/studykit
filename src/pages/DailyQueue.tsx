@@ -52,6 +52,9 @@ export default function DailyQueue() {
   const sessionStartRef = useRef<number>(0)
   const sessionStartedRef = useRef(false)
   const [finalTimeSpent, setFinalTimeSpent] = useState(0)
+  // Keep a ref to latest endSession to avoid stale closure in unmount cleanup
+  const endSessionRef = useRef(endSession)
+  endSessionRef.current = endSession
 
   // Block C: AI debrief
   const [aiDebrief, setAiDebrief] = useState('')
@@ -86,17 +89,18 @@ export default function DailyQueue() {
     }
   }, [currentItem, profileId, startSession])
 
-  // End session on unmount
+  // End session on unmount — use ref to always get latest endSession
   useEffect(() => {
     return () => {
       if (sessionStartedRef.current) {
-        endSession().catch(() => {})
+        endSessionRef.current().catch(() => {})
         sessionStartedRef.current = false
       }
     }
-  }, [endSession])
+  }, [])
 
   // Queue completion — end session, trigger debrief, achievements, notifications
+  const debriefAbortRef = useRef<AbortController | null>(null)
   useEffect(() => {
     if (isQueueEmpty && completedCount > 0) {
       // Block A: Capture time before ending session
@@ -114,13 +118,15 @@ export default function DailyQueue() {
         }).catch(() => {})
       }
 
-      // Block C: Generate AI debrief
+      // Block C: Generate AI debrief with abort support
       if (sessionResults.current.length > 0) {
         setIsDebriefStreaming(true)
+        const controller = new AbortController()
+        debriefAbortRef.current = controller
         ;(async () => {
           try {
             const token = await getToken()
-            if (!token) return
+            if (!token || controller.signal.aborted) return
             const results = sessionResults.current
             const struggled = results.filter(r => r.rating === 'struggled').map(r => r.topicName)
             const good = results.filter(r => r.rating === 'good').map(r => r.topicName)
@@ -136,13 +142,18 @@ export default function DailyQueue() {
               tools: [],
               authToken: token,
               onToken: (t) => { text += t; setAiDebrief(text) },
+              signal: controller.signal,
             })
-          } catch { /* non-critical */ }
+          } catch { /* non-critical — includes AbortError */ }
           finally { setIsDebriefStreaming(false) }
         })()
       }
 
       setShowCompletion(true)
+    }
+
+    return () => {
+      debriefAbortRef.current?.abort()
     }
   }, [isQueueEmpty, completedCount, profileId, endSession, getToken])
 
