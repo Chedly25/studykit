@@ -1,6 +1,9 @@
 import { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
 import { Bot, Loader2, FileText } from 'lucide-react'
 import type { Message } from '../../ai/types'
 import { parseCitations, CitationBadge, type Citation } from './SourceCitation'
@@ -145,7 +148,7 @@ export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Pro
             if (seg.type === 'text' && seg.content.trim()) {
               return (
                 <div key={i} className={proseClass}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{seg.content}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{seg.content}</ReactMarkdown>
                 </div>
               )
             }
