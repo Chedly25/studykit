@@ -58,7 +58,7 @@ export function CourseView({ examProfileId, topicId, topicName }: CourseViewProp
               {detail.documentSections.map((sec, i) => (
                 <Link
                   key={i}
-                  to={`/read/${sec.documentId}`}
+                  to={`/read/${sec.documentId}?topicId=${topicId}`}
                   className="glass-card p-4 flex items-center gap-3 hover:bg-[var(--bg-input)]/30 transition-colors block"
                 >
                   <FileText className="w-5 h-5 text-[var(--accent-text)] shrink-0" />
@@ -85,7 +85,7 @@ export function CourseView({ examProfileId, topicId, topicName }: CourseViewProp
                 return (
                   <Link
                     key={group.source.id}
-                    to={`/read/${group.source.documentId}`}
+                    to={`/read/${group.source.documentId}?topicId=${topicId}`}
                     className="glass-card p-4 flex items-center gap-3 hover:bg-[var(--bg-input)]/30 transition-colors block"
                   >
                     <ExternalLink className="w-5 h-5 text-orange-500 shrink-0" />

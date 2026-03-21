@@ -67,14 +67,19 @@ export function ReaderChatPane({ documentId, documentTitle, selectionContext, on
   }, [selectionContext, onSelectionContextConsumed])
 
   const handleSend = useCallback(async (message: string) => {
-    let fullMessage = message
+    let attachmentContext: { chunks: Array<{ content: string; documentTitle: string; chunkIndex: number }> } | undefined
     if (contextPills.length > 0) {
-      const contextBlock = contextPills.map(p => p.content).join('\n\n')
-      fullMessage = `${contextBlock}\n\n${message}`
+      attachmentContext = {
+        chunks: contextPills.map(p => ({
+          content: p.content,
+          documentTitle: documentTitle,
+          chunkIndex: 0,
+        }))
+      }
       setContextPills([])
     }
-    await sendMessage(fullMessage)
-  }, [sendMessage, contextPills])
+    await sendMessage(message, attachmentContext)
+  }, [sendMessage, contextPills, documentTitle])
 
   const handleRemoveContextPill = useCallback((id: string) => {
     setContextPills(prev => prev.filter(p => p.id !== id))

@@ -6,9 +6,10 @@
  * AI chat pane on the right. Native text selection via pdfjs text layer,
  * context menu with "Ask AI", highlight, flashcard creation.
  */
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { PdfScrollViewer } from '../components/reader/PdfScrollViewer'
@@ -18,6 +19,8 @@ import type { Document } from '../db/schema'
 
 export default function DocumentReader() {
   const { documentId } = useParams<{ documentId: string }>()
+  const [searchParams] = useSearchParams()
+  const topicId = searchParams.get('topicId')
   const navigate = useNavigate()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
@@ -27,9 +30,57 @@ export default function DocumentReader() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [scale, setScale] = useState(1.2)
+  const [scaleInitialized, setScaleInitialized] = useState(false)
   const [chatOpen, setChatOpen] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectionContext, setSelectionContext] = useState<{ text: string; pageNumber: number; documentTitle: string } | null>(null)
+
+  // Fix 1: Resizable chat panel
+  const [chatWidth, setChatWidth] = useState(400)
+  const isDragging = useRef(false)
+  const dragStartX = useRef(0)
+  const dragStartWidth = useRef(0)
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return
+      const newWidth = dragStartWidth.current - (e.clientX - dragStartX.current)
+      setChatWidth(Math.max(280, Math.min(700, newWidth)))
+    }
+    const handleMouseUp = () => {
+      if (!isDragging.current) return
+      isDragging.current = false
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+    }
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [])
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    isDragging.current = true
+    dragStartX.current = e.clientX
+    dragStartWidth.current = chatWidth
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'col-resize'
+  }, [chatWidth])
+
+  // Fix 3: Load topic chunks for highlighting
+  const topicChunkTexts = useLiveQuery(
+    async () => {
+      if (!topicId || !documentId) return []
+      const chunks = await db.documentChunks
+        .where('documentId').equals(documentId)
+        .filter(c => c.topicId === topicId)
+        .toArray()
+      return chunks.map(c => c.content)
+    },
+    [topicId, documentId],
+  ) ?? []
 
   // Load document metadata + PDF blob
   useEffect(() => {
@@ -99,6 +150,14 @@ export default function DocumentReader() {
     return () => document.removeEventListener('keydown', handler)
   }, [navigate])
 
+  // Fix 2: Auto-fit scale callback
+  const handleAutoScale = useCallback((fitScale: number) => {
+    if (!scaleInitialized) {
+      setScale(fitScale)
+      setScaleInitialized(true)
+    }
+  }, [scaleInitialized])
+
   const handleAskAI = useCallback((text: string, pageNumber: number) => {
     setChatOpen(true)
     setSelectionContext({
@@ -141,14 +200,24 @@ export default function DocumentReader() {
             scale={scale}
             onPageChange={setCurrentPage}
             onAskAI={handleAskAI}
+            onAutoScale={handleAutoScale}
             documentId={documentId!}
             examProfileId={profileId}
+            topicHighlightTexts={topicChunkTexts}
+          />
+        )}
+
+        {/* Drag handle */}
+        {chatOpen && (
+          <div
+            onMouseDown={handleDragStart}
+            className="w-1 flex-shrink-0 cursor-col-resize hover:bg-[var(--accent-text)]/30 active:bg-[var(--accent-text)]/50 transition-colors"
           />
         )}
 
         {/* Chat pane */}
         {chatOpen && documentMeta && (
-          <div className="w-[400px] flex-shrink-0">
+          <div style={{ width: chatWidth }} className="flex-shrink-0">
             <ReaderChatPane
               documentId={documentId!}
               documentTitle={documentMeta.title}

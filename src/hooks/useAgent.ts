@@ -221,12 +221,15 @@ export function useAgent(options: UseAgentOptions) {
         systemPrompt = buildSystemPrompt(ctx)
       }
 
+      // Refresh token right before API call to avoid JWT expiry
+      const freshToken = await getToken() ?? authToken
+
       // Run agent loop
       const result = await runAgentLoop({
         messages: newMessages,
         systemPrompt,
         examProfileId: profile.id,
-        authToken,
+        authToken: freshToken,
         signal: abortController.signal,
         onToken: (text) => {
           if (!abortRef.current) {

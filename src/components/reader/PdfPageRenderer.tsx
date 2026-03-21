@@ -19,11 +19,13 @@ interface Props {
   onDeleteHighlight: (id: string) => void
   onAskAI: (text: string) => void
   onCreateFlashcard: (highlightId: string, front: string) => Promise<string | null>
+  topicHighlightTexts?: string[]
 }
 
 export function PdfPageRenderer({
   pdfDoc, pageNumber, scale, width, height, highlights,
   onAddHighlight, onUpdateNote, onDeleteHighlight, onAskAI, onCreateFlashcard,
+  topicHighlightTexts,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textLayerRef = useRef<HTMLDivElement>(null)
@@ -71,6 +73,28 @@ export function PdfPageRenderer({
               viewport,
             })
             await tl.render()
+
+            // Topic highlighting: mark spans whose text matches chunk content
+            if (topicHighlightTexts && topicHighlightTexts.length > 0 && textLayerRef.current) {
+              const spans = textLayerRef.current.querySelectorAll('span')
+              // Build key phrases from chunk content (first 30 chars, trimmed)
+              const phrases = topicHighlightTexts
+                .map(t => t.replace(/\s+/g, ' ').trim().slice(0, 40).toLowerCase())
+                .filter(p => p.length >= 10)
+
+              if (phrases.length > 0) {
+                spans.forEach(span => {
+                  const text = (span.textContent ?? '').toLowerCase()
+                  if (text.length < 3) return
+                  for (const phrase of phrases) {
+                    if (phrase.includes(text) || text.includes(phrase.slice(0, 20))) {
+                      ;(span as HTMLElement).style.backgroundColor = 'rgba(251, 191, 36, 0.2)'
+                      break
+                    }
+                  }
+                })
+              }
+            }
           } catch {
             // TextLayer might not be available — fallback: no text selection
           }
@@ -109,7 +133,7 @@ export function PdfPageRenderer({
         y: rect.bottom + 4,
         text,
       })
-    }, 10)
+    }, 50)
   }, [])
 
   // Capture highlight rects from text layer selection

@@ -12,8 +12,10 @@ interface Props {
   scale: number
   onPageChange: (page: number) => void
   onAskAI: (text: string, pageNumber: number) => void
+  onAutoScale?: (fitScale: number) => void
   documentId: string
   examProfileId: string | undefined
+  topicHighlightTexts?: string[]
 }
 
 interface PageDim {
@@ -21,12 +23,13 @@ interface PageDim {
   height: number
 }
 
-export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, documentId, examProfileId }: Props) {
+export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, onAutoScale, documentId, examProfileId, topicHighlightTexts }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [pageDimensions, setPageDimensions] = useState<PageDim[]>([])
   const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set([1]))
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map())
   const observerRef = useRef<IntersectionObserver | null>(null)
+  const autoScaleFired = useRef(false)
 
   const { highlights, addHighlight, updateNote, deleteHighlight, createFlashcardFromHighlight, getHighlightsForPage } = usePdfHighlights(documentId, examProfileId)
 
@@ -48,6 +51,17 @@ export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, document
     getDimensions()
     return () => { cancelled = true }
   }, [pdfDoc])
+
+  // Auto-fit scale on first load
+  useEffect(() => {
+    if (autoScaleFired.current || pageDimensions.length === 0 || !containerRef.current || !onAutoScale) return
+    const containerWidth = containerRef.current.clientWidth
+    if (containerWidth > 0 && pageDimensions[0]) {
+      const fitScale = (containerWidth - 32) / pageDimensions[0].width
+      onAutoScale(Math.min(fitScale, 2.5)) // cap at 2.5x
+      autoScaleFired.current = true
+    }
+  }, [pageDimensions, onAutoScale])
 
   // Setup IntersectionObserver
   const setupObserver = useCallback(() => {
@@ -113,7 +127,7 @@ export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, document
   }
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-y-auto bg-[var(--bg-body)] flex flex-col items-center py-4 gap-4 min-h-0">
+    <div ref={containerRef} className="flex-1 overflow-y-auto bg-neutral-100 dark:bg-neutral-900 flex flex-col items-center py-2 gap-2 min-h-0">
       {pageDimensions.map((dim, i) => {
         const pageNum = i + 1
         const isVisible = visiblePages.has(pageNum)
@@ -125,7 +139,7 @@ export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, document
             ref={el => setPageRef(pageNum, el)}
             data-page={pageNum}
             style={{ width: dim.width * scale, height: dim.height * scale }}
-            className="relative flex-shrink-0 shadow-lg bg-white"
+            className="relative flex-shrink-0 shadow-md bg-white"
           >
             {isVisible && (
               <PdfPageRenderer
@@ -140,6 +154,7 @@ export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, document
                 onDeleteHighlight={deleteHighlight}
                 onAskAI={(text) => onAskAI(text, pageNum)}
                 onCreateFlashcard={createFlashcardFromHighlight}
+                topicHighlightTexts={topicHighlightTexts}
               />
             )}
           </div>

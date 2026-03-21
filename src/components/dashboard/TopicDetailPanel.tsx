@@ -109,7 +109,7 @@ export function TopicDetailPanel({ topicId, topicName, subjectName, mastery, exa
                     {group.source.institution && <span className="text-[var(--text-faint)]"> · {group.source.institution}</span>}
                   </p>
                   <Link
-                    to={`/read/${group.source.documentId}`}
+                    to={`/read/${group.source.documentId}?topicId=${topicId}`}
                     className="text-[10px] text-[var(--accent-text)] hover:underline flex items-center gap-1"
                     onClick={e => e.stopPropagation()}
                   >
@@ -237,7 +237,7 @@ export function TopicDetailPanel({ topicId, topicName, subjectName, mastery, exa
                 <FileText className="w-3 h-3 text-[var(--text-muted)]" />
                 <span className="flex-1">{sec.chunkCount} sections from {sec.documentTitle}</span>
                 <Link
-                  to={`/read/${sec.documentId}`}
+                  to={`/read/${sec.documentId}?topicId=${topicId}`}
                   className="text-[10px] text-[var(--accent-text)] hover:underline"
                   onClick={e => e.stopPropagation()}
                 >
