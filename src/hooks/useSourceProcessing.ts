@@ -29,7 +29,7 @@ export function useSourceProcessing(examProfileId: string | undefined) {
       'source-processing',
       examProfileId,
       { documentId, isPro },
-      6, // 6 steps: gather → embed → extract → flashcards → save → concept cards
+      4, // 4 steps: gather → parallel(embed+extract+flashcards) → save → concept cards
     )
     setJobId(id)
     return id

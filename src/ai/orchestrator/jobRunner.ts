@@ -18,7 +18,8 @@ import { reconstructWorkflow, reconstructArticleWorkflow } from './jobTypes'
 export class JobRunner {
   private getToken: () => Promise<string | null>
   private abortControllers = new Map<string, AbortController>()
-  private processing = false
+  private activeJobs = 0
+  private readonly maxConcurrency = 2
 
   constructor(getToken: () => Promise<string | null>) {
     this.getToken = getToken
@@ -112,27 +113,27 @@ export class JobRunner {
   // ─── Queue Processing ─────────────────────────────────────────
 
   private async processQueue(): Promise<void> {
-    if (this.processing) return
-    this.processing = true
+    while (this.activeJobs < this.maxConcurrency) {
+      // Pick oldest queued job
+      const job = await db.backgroundJobs
+        .where('status').equals('queued')
+        .sortBy('createdAt')
+        .then(jobs => jobs[0])
 
-    try {
-      while (true) {
-        // Pick oldest queued job
-        const job = await db.backgroundJobs
-          .where('status').equals('queued')
-          .sortBy('createdAt')
-          .then(jobs => jobs[0])
+      if (!job) break
 
-        if (!job) break
+      // Optimistic lock: atomically set to 'running'
+      const modified = await db.backgroundJobs
+        .where('id').equals(job.id)
+        .and(j => j.status === 'queued')
+        .modify({ status: 'running', startedAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
 
-        // Optimistic lock: atomically set to 'running'
-        const modified = await db.backgroundJobs
-          .where('id').equals(job.id)
-          .and(j => j.status === 'queued')
-          .modify({ status: 'running', startedAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
+      if (modified === 0) continue // Another tab got it
 
-        if (modified === 0) continue // Another tab got it
+      this.activeJobs++
 
+      // Fire and forget — run the job, then check for more work
+      ;(async () => {
         try {
           if (job.batchItemIds) {
             await this.executeBatchJob(job)
@@ -149,10 +150,11 @@ export class JobRunner {
           })
         } finally {
           this.abortControllers.delete(job.id)
+          this.activeJobs--
+          // Check for more queued jobs now that a slot opened
+          this.processQueue()
         }
-      }
-    } finally {
-      this.processing = false
+      })()
     }
   }
 

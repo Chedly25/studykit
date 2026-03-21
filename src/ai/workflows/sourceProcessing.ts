@@ -1,12 +1,12 @@
 /**
  * Source processing workflow — runs after document upload.
- * Steps: gather context → embed chunks → extract concepts + summary (LLM) → generate flashcards (LLM) → save results
+ * Steps: gather context → parallel (embed + extract + flashcards) → save results → concept cards (batched)
  */
 import { db } from '../../db'
 import { getChunksByDocumentId } from '../../lib/sources'
 import { embedAndStoreChunks, hasEmbeddings } from '../../lib/embeddings'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
-import { llmJsonStep, dbQueryStep, localStep } from '../orchestrator/steps'
+import { dbQueryStep, localStep } from '../orchestrator/steps'
 
 interface SourceProcessingResult {
   summary: string
@@ -49,38 +49,40 @@ export function createSourceProcessingWorkflow(
         }
       }),
 
-      // Step 2: Embed chunks (if not already done) — optional so API failure doesn't abort the workflow
+      // Step 2: Parallel — embed chunks + extract concepts + generate flashcards
       {
-        id: 'embed-chunks',
-        name: 'Generating search embeddings',
-        optional: true,
+        id: 'parallel-process',
+        name: 'Analyzing document',
         async execute(_input: unknown, ctx: WorkflowContext) {
-          const alreadyEmbedded = await hasEmbeddings(config.documentId)
-          if (alreadyEmbedded) return { skipped: true }
+          const context = ctx.results['gather-context']?.data as {
+            doc: { title: string }
+            sampleContent: string
+            topics: Array<{ id: string; name: string }>
+            subjects: Array<{ name: string }>
+            profileName: string
+          }
 
-          const chunks = await getChunksByDocumentId(config.documentId)
-          await embedAndStoreChunks(chunks, ctx.authToken)
-          return { embedded: chunks.length }
-        },
-      },
+          const topicList = context.topics.map(t => t.name).join(', ')
+          const subjectList = context.subjects.map(s => s.name).join(', ')
 
-      // Step 3: Extract concepts + summary (1 LLM call)
-      llmJsonStep<{
-        summary: string
-        concepts: Array<{ name: string; chunkIndices: number[] }>
-      }>('extract-concepts', 'Extracting concepts and summary', (ctx) => {
-        const context = ctx.results['gather-context']?.data as {
-          doc: { title: string }
-          sampleContent: string
-          topics: Array<{ id: string; name: string }>
-          subjects: Array<{ name: string }>
-          profileName: string
-        }
+          // Launch all three in parallel
+          const [embedResult, extractResult, flashcardResult] = await Promise.all([
+            // Embed chunks
+            (async () => {
+              try {
+                const alreadyEmbedded = await hasEmbeddings(config.documentId)
+                if (alreadyEmbedded) return { skipped: true }
+                const chunks = await getChunksByDocumentId(config.documentId)
+                await embedAndStoreChunks(chunks, ctx.authToken)
+                return { embedded: chunks.length }
+              } catch {
+                return { error: 'embedding failed' }
+              }
+            })(),
 
-        const topicList = context.topics.map(t => t.name).join(', ')
-        const subjectList = context.subjects.map(s => s.name).join(', ')
-
-        return `Analyze this document and produce a JSON response.
+            // Extract concepts + summary (1 LLM call)
+            (async () => {
+              const prompt = `Analyze this document and produce a JSON response.
 
 Document: "${context.doc.title}"
 Study goal: ${context.profileName}
@@ -99,21 +101,21 @@ Return JSON with:
 Match concept names to existing topics when the content clearly maps. Only include concepts that are substantive.
 
 Respond ONLY with valid JSON.`
-      }, 'You are an academic content analyst. Extract key concepts and generate concise summaries.'),
 
-      // Step 4: Generate flashcards (Pro only)
-      {
-        id: 'generate-flashcards',
-        name: 'Generating flashcards',
-        shouldRun: () => config.isPro,
-        async execute(_input, ctx) {
-          const context = ctx.results['gather-context']?.data as {
-            doc: { title: string }
-            sampleContent: string
-            profileName: string
-          }
+              const text = await ctx.llm(prompt, 'You are an academic content analyst. Extract key concepts and generate concise summaries.')
+              const jsonMatch = text.match(/\{[\s\S]*\}/)
+              if (!jsonMatch) throw new Error('No JSON in extract response')
+              return JSON.parse(jsonMatch[0]) as {
+                summary: string
+                concepts: Array<{ name: string; chunkIndices: number[] }>
+              }
+            })(),
 
-          const prompt = `Generate flashcards from this document for studying.
+            // Generate flashcards (Pro only)
+            (async () => {
+              if (!config.isPro) return null
+              try {
+                const prompt = `Generate flashcards from this document for studying.
 
 Document: "${context.doc.title}"
 Study goal: ${context.profileName}
@@ -130,26 +132,29 @@ Return JSON with:
 
 Generate 10-20 high-quality flashcards covering the key concepts. Focus on understanding, not just recall. Respond ONLY with valid JSON.`
 
-          const text = await ctx.llm(prompt, 'You are an expert flashcard creator. Generate concise, effective study cards.')
+                const text = await ctx.llm(prompt, 'You are an expert flashcard creator. Generate concise, effective study cards.')
+                const jsonMatch = text.match(/\{[\s\S]*\}/)
+                if (!jsonMatch) return null
+                return JSON.parse(jsonMatch[0]) as { cards: Array<{ front: string; back: string }> }
+              } catch {
+                return null
+              }
+            })(),
+          ])
 
-          // Parse JSON
-          const jsonMatch = text.match(/\{[\s\S]*\}/)
-          if (!jsonMatch) throw new Error('No JSON in flashcard response')
-          return JSON.parse(jsonMatch[0]) as { cards: Array<{ front: string; back: string }> }
+          return { embedResult, extractResult, flashcardResult }
         },
-        optional: true,
       },
 
-      // Step 5: Save results
+      // Step 3: Save results
       localStep('save-results', 'Saving results', async (ctx) => {
-        const conceptData = ctx.results['extract-concepts']?.data as {
-          summary: string
-          concepts: Array<{ name: string; chunkIndices: number[] }>
-        } | undefined
+        const parallelData = ctx.results['parallel-process']?.data as {
+          extractResult: { summary: string; concepts: Array<{ name: string; chunkIndices: number[] }> }
+          flashcardResult: { cards: Array<{ front: string; back: string }> } | null
+        }
 
-        const flashcardData = ctx.results['generate-flashcards']?.data as {
-          cards: Array<{ front: string; back: string }>
-        } | undefined
+        const conceptData = parallelData?.extractResult
+        const flashcardData = parallelData?.flashcardResult
 
         const context = ctx.results['gather-context']?.data as {
           doc: { title: string; id: string }
@@ -218,16 +223,18 @@ Generate 10-20 high-quality flashcards covering the key concepts. Focus on under
         return { summary: conceptData?.summary ?? '', conceptsFound, mappingsApplied, flashcardDeckId, flashcardCount }
       }),
 
-      // Step 6: Generate concept cards
+      // Step 4: Generate concept cards (batched + parallel)
       {
         id: 'generate-concept-cards',
         name: 'Generating concept cards',
         shouldRun: () => true,
         optional: true,
         async execute(_input: unknown, ctx: WorkflowContext) {
-          const conceptData = ctx.results['extract-concepts']?.data as {
-            concepts: Array<{ name: string; chunkIndices: number[] }>
+          const parallelData = ctx.results['parallel-process']?.data as {
+            extractResult: { concepts: Array<{ name: string; chunkIndices: number[] }> }
           } | undefined
+
+          const conceptData = parallelData?.extractResult
 
           const context = ctx.results['gather-context']?.data as {
             chunks: Array<{ id: string; chunkIndex: number; content: string }>
@@ -239,13 +246,18 @@ Generate 10-20 high-quality flashcards covering the key concepts. Focus on under
           }
 
           const topicMap = new Map(context.topics.map(t => [t.name.toLowerCase(), t.id]))
-          let cardsGenerated = 0
 
-          for (const concept of conceptData.concepts.slice(0, 10)) {
-            // Find matching topic
+          // Resolve topic IDs and filter to matchable concepts
+          const matchedConcepts: Array<{
+            name: string
+            topicId: string
+            relevantContent: string
+            chunkIds: string[]
+          }> = []
+
+          for (const concept of conceptData.concepts.slice(0, 12)) {
             let topicId = topicMap.get(concept.name.toLowerCase())
             if (!topicId) {
-              // Try partial match
               for (const [name, id] of topicMap) {
                 if (concept.name.toLowerCase().includes(name) || name.includes(concept.name.toLowerCase())) {
                   topicId = id
@@ -255,53 +267,99 @@ Generate 10-20 high-quality flashcards covering the key concepts. Focus on under
             }
             if (!topicId) continue
 
-            // Get relevant chunk content
-            const relevantContent = concept.chunkIndices
+            const relevantChunks = concept.chunkIndices
               .map(i => context.chunks.find(c => c.chunkIndex === i))
               .filter(Boolean)
               .slice(0, 3)
-              .map(c => c!.content)
-              .join('\n---\n')
 
+            const relevantContent = relevantChunks.map(c => c!.content).join('\n---\n')
             if (!relevantContent) continue
 
-            try {
-              const cardJson = await ctx.llm(
-                `Generate a concept card for "${concept.name}".
+            matchedConcepts.push({
+              name: concept.name,
+              topicId,
+              relevantContent,
+              chunkIds: relevantChunks.map(c => c!.id),
+            })
+          }
 
-Source material:
-${relevantContent.slice(0, 4000)}
+          if (matchedConcepts.length === 0) return { cardsGenerated: 0 }
 
-Return JSON: { "title": "concept name", "keyPoints": ["point 1", "point 2", "point 3"], "example": "a concrete example", "sourceReference": "source reference like Ch.3 p.12" }
+          // Batch concepts into groups of 4 and run all batches in parallel
+          const BATCH_SIZE = 4
+          const batches: typeof matchedConcepts[] = []
+          for (let i = 0; i < matchedConcepts.length; i += BATCH_SIZE) {
+            batches.push(matchedConcepts.slice(i, i + BATCH_SIZE))
+          }
 
-Respond ONLY with valid JSON.`,
-                'You are an expert at creating concise study concept cards.',
-              )
+          let cardsGenerated = 0
 
-              const jsonMatch = cardJson.match(/\{[\s\S]*\}/)
-              if (!jsonMatch) continue
+          const batchResults = await Promise.all(
+            batches.map(async (batch) => {
+              const conceptList = batch.map((c, i) => {
+                return `Concept ${i + 1}: "${c.name}"\nSource material:\n${c.relevantContent.slice(0, 3000)}`
+              }).join('\n\n===\n\n')
 
-              const parsed = JSON.parse(jsonMatch[0])
-              const now = new Date().toISOString()
+              try {
+                const text = await ctx.llm(
+                  `Generate concept cards for the following ${batch.length} concepts.
 
-              await db.conceptCards.put({
-                id: crypto.randomUUID(),
-                examProfileId: ctx.examProfileId,
-                topicId,
-                title: parsed.title ?? concept.name,
-                keyPoints: JSON.stringify(parsed.keyPoints ?? []),
-                example: parsed.example ?? '',
-                sourceChunkIds: JSON.stringify(concept.chunkIndices.map(i => context.chunks.find(c => c.chunkIndex === i)?.id).filter(Boolean)),
-                sourceReference: parsed.sourceReference ?? '',
-                relatedCardIds: '[]',
-                mastery: 0,
-                createdAt: now,
-                updatedAt: now,
-              })
-              cardsGenerated++
-            } catch {
-              // Skip individual card failures
-              continue
+${conceptList}
+
+Return a JSON array with one object per concept:
+[
+  { "title": "concept name", "keyPoints": ["point 1", "point 2", "point 3"], "example": "a concrete example", "sourceReference": "source reference like Ch.3 p.12" }
+]
+
+Return EXACTLY ${batch.length} cards in the array, one per concept above, in the same order.
+Respond ONLY with valid JSON (an array).`,
+                  'You are an expert at creating concise study concept cards.',
+                )
+
+                const jsonMatch = text.match(/\[[\s\S]*\]/)
+                if (!jsonMatch) return []
+
+                const parsed = JSON.parse(jsonMatch[0]) as Array<{
+                  title?: string
+                  keyPoints?: string[]
+                  example?: string
+                  sourceReference?: string
+                }>
+
+                return parsed.map((card, i) => ({
+                  card,
+                  concept: batch[i],
+                }))
+              } catch {
+                return []
+              }
+            })
+          )
+
+          // Save all generated cards
+          const now = new Date().toISOString()
+          for (const results of batchResults) {
+            for (const { card, concept } of results) {
+              if (!card || !concept) continue
+              try {
+                await db.conceptCards.put({
+                  id: crypto.randomUUID(),
+                  examProfileId: ctx.examProfileId,
+                  topicId: concept.topicId,
+                  title: card.title ?? concept.name,
+                  keyPoints: JSON.stringify(card.keyPoints ?? []),
+                  example: card.example ?? '',
+                  sourceChunkIds: JSON.stringify(concept.chunkIds),
+                  sourceReference: card.sourceReference ?? '',
+                  relatedCardIds: '[]',
+                  mastery: 0,
+                  createdAt: now,
+                  updatedAt: now,
+                })
+                cardsGenerated++
+              } catch {
+                continue
+              }
             }
           }
 
