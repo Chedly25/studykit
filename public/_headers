@@ -6,7 +6,25 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 
+/
+  Cache-Control: no-cache, no-store, must-revalidate
+
 /index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/queue
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/dashboard
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/subject/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/read/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/session
   Cache-Control: no-cache, no-store, must-revalidate
 
 /assets/*
