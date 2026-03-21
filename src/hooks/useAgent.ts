@@ -2,8 +2,8 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { runAgentLoop } from '../ai/agentLoop'
-import { buildSystemPrompt, buildSocraticPrompt, buildExplainBackPrompt, buildSessionPrompt } from '../ai/systemPrompt'
-import type { SessionContext } from '../ai/systemPrompt'
+import { buildSystemPrompt, buildSocraticPrompt, buildExplainBackPrompt, buildSessionPrompt, buildSourceSection } from '../ai/systemPrompt'
+import type { SessionContext, SourceContext } from '../ai/systemPrompt'
 import { createConversation, loadMessages, saveMessages } from '../ai/messageStore'
 import { QuotaExceededError } from '../ai/client'
 import { generateSessionInsight } from '../ai/insightGenerator'
@@ -49,6 +49,7 @@ interface UseAgentOptions {
   studentModel?: StudentModel
   conversationSummaries?: ConversationSummary[]
   sessionContext?: SessionContext
+  customSystemPrompt?: string
 }
 
 export function useAgent(options: UseAgentOptions) {
@@ -202,9 +203,15 @@ export function useAgent(options: UseAgentOptions) {
         examFormats: examFormats.length > 0 ? examFormats : undefined,
       }
 
-      // Block 5C: Inject Socratic attempt counter into system prompt
+      // Build system prompt based on mode
       let systemPrompt: string
-      if (options.sessionContext) {
+      if (options.customSystemPrompt) {
+        systemPrompt = options.customSystemPrompt
+        // Append source context so semantic search / attachment chunks are included
+        if (sourceContext) {
+          systemPrompt += buildSourceSection(sourceContext)
+        }
+      } else if (options.sessionContext) {
         systemPrompt = buildSessionPrompt(ctx, options.sessionContext)
       } else if (isExplainBack && explainBackTopic) {
         systemPrompt = buildExplainBackPrompt(ctx, explainBackTopic)

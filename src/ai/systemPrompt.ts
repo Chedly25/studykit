@@ -38,7 +38,7 @@ function buildLanguageSection(lang: string): string {
 Respond in ${lang === 'fr' ? 'French' : lang}. All explanations, questions, and feedback should be in this language.`
 }
 
-interface SourceContext {
+export interface SourceContext {
   documentCount: number
   preRetrievedChunks?: string
 }
@@ -144,7 +144,7 @@ You have tools to read and write the student's data. Always use tools to access 
 18. CRITICAL: The student's profile has no subjects or topics yet. Before using any tools that require topic data (generateStudyPlan, getWeakTopics, generateQuestions, etc.), you MUST first ask the student about what they're studying, their subjects/topics, exam date, and available study time. Do NOT call generateStudyPlan or generateQuestions when there are no topics — it will produce empty results.` : ''}${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.conversationSummaries && ctx.conversationSummaries.length > 0 ? buildConversationHistorySection(ctx.conversationSummaries) : ''}${ctx.flashcardPerformance && ctx.flashcardPerformance.length > 0 ? buildFlashcardPerformanceSection(ctx.flashcardPerformance) : ''}${buildTopicDependencySection(ctx.topics)}${ctx.examFormats && ctx.examFormats.length > 0 ? buildExamFormatSection(ctx.examFormats) : ''}${ctx.profile.examIntelligence ? buildExamIntelligenceSection(ctx.profile.examIntelligence) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${ctx.sessionInsights && ctx.sessionInsights.length > 0 ? buildSessionMemorySection(ctx.sessionInsights) : ''}${buildCalibrationSection(ctx.topics)}${buildEmotionalIntelligenceSection()}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
 }
 
-function buildSourceSection(sc: SourceContext): string {
+export function buildSourceSection(sc: SourceContext): string {
   let section = `
 
 ## Uploaded Sources

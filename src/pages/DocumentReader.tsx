@@ -220,6 +220,7 @@ export default function DocumentReader() {
             <ReaderChatPane
               documentId={documentId!}
               documentTitle={documentMeta.title}
+              documentCategory={documentMeta.category}
               selectionContext={selectionContext}
               onSelectionContextConsumed={() => setSelectionContext(null)}
               onClose={() => setChatOpen(false)}
