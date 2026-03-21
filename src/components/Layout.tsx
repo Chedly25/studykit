@@ -61,7 +61,7 @@ export function Layout() {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail
       setChatOpen(true)
-      if (detail?.prefill) setChatPrefill(detail.prefill)
+      setChatPrefill(detail?.prefill ?? null)
     }
     window.addEventListener('open-chat-panel', handler)
     return () => window.removeEventListener('open-chat-panel', handler)

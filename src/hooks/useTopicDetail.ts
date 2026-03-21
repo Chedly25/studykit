@@ -49,10 +49,10 @@ export function useTopicDetail(topicId: string | null, examProfileId: string | u
   )
 
   const examSources = useLiveQuery(
-    () => examProfileId
+    () => topicId && examProfileId
       ? db.examSources.where('examProfileId').equals(examProfileId).toArray()
       : [],
-    [examProfileId],
+    [topicId, examProfileId],
   )
 
   const flashcards = useLiveQuery(

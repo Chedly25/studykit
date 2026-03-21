@@ -52,6 +52,7 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) 
   const scrollRef = useRef<HTMLDivElement>(null)
   const [pendingSaveAttachments, setPendingSaveAttachments] = useState<ChatAttachment[] | null>(null)
   const [inputPrefill, setInputPrefill] = useState<string | undefined>()
+  const clearInputPrefill = useCallback(() => setInputPrefill(undefined), [])
 
   // Handle prefill from parent
   useEffect(() => {
@@ -177,7 +178,7 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) 
           onRemoveAttachment={removeAttachment}
           isParsing={isParsing}
           initialValue={inputPrefill}
-          onInitialValueConsumed={() => setInputPrefill(undefined)}
+          onInitialValueConsumed={clearInputPrefill}
         />
       </div>
 

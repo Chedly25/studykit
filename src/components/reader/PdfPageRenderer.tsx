@@ -62,7 +62,9 @@ export function PdfPageRenderer({
           textLayerRef.current.innerHTML = ''
           try {
             const pdfjsLib: any = await import('pdfjs-dist/build/pdf.mjs')
+            if (cancelled || !textLayerRef.current) return
             const textContent = await page.getTextContent()
+            if (cancelled || !textLayerRef.current) return
             const tl = new pdfjsLib.TextLayer({
               textContentSource: textContent,
               container: textLayerRef.current,
@@ -81,7 +83,10 @@ export function PdfPageRenderer({
     }
 
     render()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      try { renderTaskRef.current?.cancel() } catch { /* ignore */ }
+    }
   }, [pdfDoc, pageNumber, scale])
 
   // Handle text selection → context menu

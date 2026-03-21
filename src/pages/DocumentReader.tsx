@@ -33,7 +33,11 @@ export default function DocumentReader() {
 
   // Load document metadata + PDF blob
   useEffect(() => {
-    if (!documentId) return
+    if (!documentId) {
+      setError('Invalid document URL.')
+      setLoading(false)
+      return
+    }
     let cancelled = false
 
     async function load() {
@@ -86,7 +90,7 @@ export default function DocumentReader() {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) return
       if (e.key === 'Escape') navigate(-1)
       else if (e.key === '+' || e.key === '=') setScale(s => Math.min(3, s + 0.2))
       else if (e.key === '-') setScale(s => Math.max(0.5, s - 0.2))

@@ -28,16 +28,20 @@ export function ReaderChatPane({ documentId, documentTitle, prefill, onPrefillCo
   const scrollRef = useRef<HTMLDivElement>(null)
   const [inputPrefill, setInputPrefill] = useState<string | undefined>()
 
-  const {
-    messages, isLoading, currentToolCall, streamingText, error,
-    quotaExceeded, sendMessage, cancel,
-  } = useAgent({
+  const agent = useAgent({
     profile: activeProfile,
     subjects,
     topics,
     dailyLogs,
     sourcesEnabled: true,
   })
+
+  const { messages, isLoading, currentToolCall, streamingText, error, quotaExceeded, sendMessage, cancel } = agent
+
+  // Cancel in-flight requests on unmount
+  useEffect(() => {
+    return () => { cancel() }
+  }, [cancel])
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -55,9 +59,8 @@ export function ReaderChatPane({ documentId, documentTitle, prefill, onPrefillCo
   }, [prefill, onPrefillConsumed])
 
   const handleSend = useCallback(async (message: string) => {
-    const contextMessage = `[Reading: "${documentTitle}"]\n\n${message}`
-    await sendMessage(contextMessage)
-  }, [sendMessage, documentTitle])
+    await sendMessage(message)
+  }, [sendMessage])
 
   return (
     <div className="flex flex-col h-full border-l border-[var(--border-card)] bg-[var(--bg-card)]">

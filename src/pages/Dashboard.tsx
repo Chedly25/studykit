@@ -39,12 +39,6 @@ export default function Dashboard() {
   const { signals } = useIntelligence(topics, subjects, profileId)
   const { queue: dailyQueue, typeCounts, remainingMinutes: queueMinutes } = useDailyQueue(profileId)
 
-  const dueFlashcardCount = useMemo(() => {
-    let count = 0
-    for (const v of dueFlashcardsByTopic.values()) count += v
-    return count
-  }, [dueFlashcardsByTopic])
-
   const sessions = useLiveQuery(
     () => profileId
       ? db.studySessions.where('examProfileId').equals(profileId).toArray()
@@ -63,6 +57,12 @@ export default function Dashboard() {
     }
     return map
   }) ?? new Map()
+
+  const dueFlashcardCount = useMemo(() => {
+    let count = 0
+    for (const v of dueFlashcardsByTopic.values()) count += v
+    return count
+  }, [dueFlashcardsByTopic])
 
   // Load today's study plan activities for recommender plan awareness
   const todayPlanActivities = useLiveQuery(async () => {

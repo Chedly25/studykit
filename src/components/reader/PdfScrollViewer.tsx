@@ -94,9 +94,9 @@ export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, document
   // Re-setup observer when page dimensions are ready
   useEffect(() => {
     if (pageDimensions.length === 0) return
-    // Wait a tick for refs to be set
-    const timer = setTimeout(setupObserver, 50)
-    return () => clearTimeout(timer)
+    // Refs are set synchronously during commit; useEffect fires post-commit
+    setupObserver()
+    return () => { observerRef.current?.disconnect() }
   }, [pageDimensions, setupObserver])
 
   const setPageRef = useCallback((pageNum: number, el: HTMLDivElement | null) => {
