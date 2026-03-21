@@ -19,6 +19,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'))
 const ExamProfile = lazy(() => import('./pages/ExamProfile'))
 const Analytics = lazy(() => import('./pages/Analytics'))
 const FocusMode = lazy(() => import('./pages/FocusMode'))
+const SubjectPage = lazy(() => import('./pages/SubjectPage'))
 
 // AI
 const PracticeExam = lazy(() => import('./pages/PracticeExam'))
@@ -117,6 +118,7 @@ export default function App() {
 
           {/* Protected — Command Center */}
           <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="subject/:subjectId" element={<ProtectedRoute><SubjectPage /></ProtectedRoute>} />
           <Route path="exam-profile" element={<ProtectedRoute><ExamProfile /></ProtectedRoute>} />
           <Route path="analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="focus" element={<ProtectedRoute><FocusMode /></ProtectedRoute>} />

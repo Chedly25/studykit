@@ -12,10 +12,10 @@ import { useProfileMode } from '../hooks/useProfileMode'
 import { useMilestones } from '../hooks/useMilestones'
 import { useHabitGoals } from '../hooks/useHabitGoals'
 import { useStudentModel } from '../hooks/useStudentModel'
-import { useExerciseBank } from '../hooks/useExerciseBank'
+// useExerciseBank removed — topic rows are now on SubjectPage
 import { MilestoneTrackerCard } from '../components/dashboard/MilestoneTrackerCard'
 import { HabitGoalsCard } from '../components/dashboard/HabitGoalsCard'
-import { LevelsView } from '../components/dashboard/LevelsView'
+import { SubjectGrid } from '../components/dashboard/SubjectGrid'
 import { GettingStartedCard } from '../components/dashboard/GettingStartedCard'
 import { StatusBar } from '../components/dashboard/StatusBar'
 import { UpNextList } from '../components/dashboard/UpNextList'
@@ -34,8 +34,6 @@ export default function Dashboard() {
   const { goals: habitGoals, getTodayProgress, addGoal: addHabitGoal, logProgress: logHabitProgress, deleteGoal: deleteHabitGoal } = useHabitGoals(profileId)
   const { subjects, chapters, topics, readiness, weakTopics, streak, freezeUsed, weeklyHours, getTopicsForSubject, getChaptersForSubject, getTopicsForChapter, dailyLogs } = useKnowledgeGraph(profileId)
   const { studentModel } = useStudentModel(profileId)
-  const { getExerciseStatsByTopic: getExerciseStatsMap } = useExerciseBank(profileId)
-  const exerciseStatsByTopic = useMemo(() => getExerciseStatsMap(), [getExerciseStatsMap])
   const { signals } = useIntelligence(topics, subjects, profileId)
   const { queue: dailyQueue, typeCounts, remainingMinutes: queueMinutes } = useDailyQueue(profileId)
 
@@ -305,15 +303,11 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Levels View — Subject > Chapter > Topic with mastery */}
-      <LevelsView
+      {/* Subject Grid — clickable subject cards */}
+      <SubjectGrid
         subjects={subjects}
-        chapters={chapters}
         topics={topics}
-        exerciseStatsByTopic={exerciseStatsByTopic}
         getChaptersForSubject={getChaptersForSubject}
-        getTopicsForChapter={getTopicsForChapter}
-        examProfileId={profileId}
       />
 
       {/* Achievements */}
