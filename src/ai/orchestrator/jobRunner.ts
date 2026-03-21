@@ -301,7 +301,7 @@ export class JobRunner {
           break
         } catch (err) {
           const error = err instanceof Error ? err.message : String(err)
-          const isRetryable = error.includes('429') || error.includes('overloaded') || error.includes('rate limit') || error.includes('ECONNRESET') || error.includes('fetch failed')
+          const isRetryable = error.includes('429') || error.includes('overloaded') || error.includes('rate limit') || error.includes('ECONNRESET') || error.includes('fetch failed') || error.includes('network error') || error.includes('Failed to fetch') || error.includes('NetworkError') || error.includes('aborted')
 
           if (isRetryable && attempt < 2) {
             const delay = (attempt + 1) * 5000 // 5s, 10s
