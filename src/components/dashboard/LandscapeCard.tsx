@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 import { Map as MapIcon } from 'lucide-react'
 import type { Topic, Subject } from '../../db/schema'
 import { decayedMastery } from '../../lib/knowledgeGraph'
@@ -88,14 +87,14 @@ export function LandscapeCard({ topics, subjects }: Props) {
                 {items.map(topic => {
                   const subject = subjectMap.get(topic.subjectId)
                   return (
-                    <Link
+                    <button
                       key={topic.id}
-                      to={`/chat?topic=${encodeURIComponent(topic.name)}`}
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel'))}
                       className={`text-xs px-2 py-1 rounded-md bg-[var(--accent-text)] text-white hover:scale-105 transition-transform ${level.opacity}`}
                       title={`${topic.name}${subject ? ` · ${subject.name}` : ''} — ${Math.round(topic.dm * 100)}%`}
                     >
                       {topic.name}
-                    </Link>
+                    </button>
                   )
                 })}
               </div>

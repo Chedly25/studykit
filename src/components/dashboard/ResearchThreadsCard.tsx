@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 import type { Topic, Subject } from '../../db/schema'
 import type { TopicStatus } from '../../db/schema'
 
@@ -60,17 +59,17 @@ export function ResearchThreadsCard({ topics, subjects }: Props) {
                 const subject = subjectMap.get(topic.subjectId)
                 const pct = Math.round(topic.mastery * 100)
                 return (
-                  <Link
+                  <button
                     key={topic.id}
-                    to={`/chat?topic=${encodeURIComponent(topic.name)}`}
-                    className="flex items-center justify-between text-sm hover:bg-[var(--bg-input)] rounded px-2 py-1 transition-colors"
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel'))}
+                    className="flex items-center justify-between text-sm hover:bg-[var(--bg-input)] rounded px-2 py-1 transition-colors w-full text-left"
                   >
                     <span className="text-[var(--text-body)] truncate">
                       {topic.name}
                       {subject && <span className="text-[var(--text-faint)]"> &middot; {subject.name}</span>}
                     </span>
                     <span className="text-xs text-[var(--text-muted)] ml-2">{pct}%</span>
-                  </Link>
+                  </button>
                 )
               })}
               {group.items.length > 4 && (

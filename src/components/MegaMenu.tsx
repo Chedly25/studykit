@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, LayoutDashboard, GraduationCap, BarChart3, Focus, MessageCircle, Brain, ClipboardCheck, FileText, Lightbulb, Calendar, PenTool, Users, StickyNote } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, GraduationCap, BarChart3, Focus, Brain, ClipboardCheck, FileText, Lightbulb, Calendar, PenTool, Users, StickyNote } from 'lucide-react'
 import { ProBadge } from './subscription/ProBadge'
 import { useProfileMode } from '../hooks/useProfileMode'
 
@@ -48,7 +48,6 @@ export function MegaMenu() {
               ] : [
                 { to: '/focus', icon: Focus, label: t('focus.title'), pro: false },
               ]),
-              { to: '/chat', icon: MessageCircle, label: isResearch ? t('research.partner') : t('ai.chat'), pro: true },
               ...(!isResearch ? [
                 { to: '/practice-exam', icon: ClipboardCheck, label: t('ai.practiceSession'), pro: true },
               ] : []),

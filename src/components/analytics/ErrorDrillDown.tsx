@@ -91,7 +91,7 @@ export function ErrorDrillDown({ topicName, errorType, examProfileId, onClose }:
           {actions.map(action => (
             <button
               key={action.linkTo}
-              onClick={() => { onClose(); navigate(action.linkTo) }}
+              onClick={() => { onClose(); action.linkTo === '#open-chat' ? window.dispatchEvent(new CustomEvent('open-chat-panel')) : navigate(action.linkTo) }}
               className="w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-[var(--bg-input)] transition-colors"
             >
               <div className="w-8 h-8 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
@@ -120,7 +120,7 @@ function getActionsForErrorType(errorType: string, topicName: string) {
     case 'conceptual':
       return [
         { label: 'Study Theory', description: 'Deep-dive into core concepts', linkTo: `/session?topic=${encoded}`, icon: <Brain className="w-4 h-4 text-[var(--accent-text)]" /> },
-        { label: 'Explain Back', description: 'Test your understanding', linkTo: '/chat', icon: <ClipboardCheck className="w-4 h-4 text-[var(--accent-text)]" /> },
+        { label: 'Explain Back', description: 'Test your understanding', linkTo: '#open-chat', icon: <ClipboardCheck className="w-4 h-4 text-[var(--accent-text)]" /> },
       ]
     case 'application':
       return [

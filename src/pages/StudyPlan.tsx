@@ -13,12 +13,12 @@ interface StudyActivity {
   completed: boolean
 }
 
-const ACTIVITY_ROUTES: Record<string, string> = {
+const ACTIVITY_ROUTES: Record<string, string | null> = {
   practice: '/practice-exam',
-  socratic: '/chat',
-  'explain-back': '/chat',
+  socratic: null,
+  'explain-back': null,
   flashcards: '/flashcard-maker',
-  review: '/chat',
+  review: null,
   read: '/sources',
 }
 
@@ -189,12 +189,21 @@ export default function StudyPlan() {
                     {ACTIVITY_LABELS[act.activityType] ?? act.activityType} &middot; {act.durationMinutes}m
                   </span>
                 </div>
-                <Link
-                  to={ACTIVITY_ROUTES[act.activityType] ?? '/chat'}
-                  className="text-xs text-[var(--accent-text)] hover:underline"
-                >
-                  Start
-                </Link>
+                {ACTIVITY_ROUTES[act.activityType] ? (
+                  <Link
+                    to={ACTIVITY_ROUTES[act.activityType]!}
+                    className="text-xs text-[var(--accent-text)] hover:underline"
+                  >
+                    Start
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel'))}
+                    className="text-xs text-[var(--accent-text)] hover:underline"
+                  >
+                    Start
+                  </button>
+                )}
               </div>
             ))}
           </div>
