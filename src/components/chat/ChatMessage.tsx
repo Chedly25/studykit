@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Bot, Loader2 } from 'lucide-react'
+import { Bot, Loader2, FileText } from 'lucide-react'
 import type { Message } from '../../ai/types'
 import { parseCitations, CitationBadge, type Citation } from './SourceCitation'
 import { StudyPlanCanvas } from './StudyPlanCanvas'
@@ -53,10 +53,32 @@ export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Pro
   if (!text) return null
 
   if (isUser) {
+    // Parse context pill markers: <<CTX:label>>content<</CTX>>
+    const ctxRe = /<<CTX:(.+?)>>[\s\S]*?<<\/CTX>>\n?/g
+    const contextLabels: string[] = []
+    let userText = text
+    let match: RegExpExecArray | null
+    while ((match = ctxRe.exec(text)) !== null) {
+      contextLabels.push(match[1])
+    }
+    if (contextLabels.length > 0) {
+      userText = text.replace(/<<CTX:.+?>>[\s\S]*?<<\/CTX>>\n?/g, '').trim()
+    }
+
     return (
       <div className="flex justify-end">
         <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-[var(--accent-bg)] border border-[var(--border-card)] text-[var(--text-body)]">
-          <p className="text-base whitespace-pre-wrap">{text}</p>
+          {contextLabels.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {contextLabels.map((label, i) => (
+                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                  <FileText className="w-2.5 h-2.5" />
+                  {label}
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="text-base whitespace-pre-wrap">{userText}</p>
         </div>
       </div>
     )

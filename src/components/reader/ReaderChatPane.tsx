@@ -91,19 +91,18 @@ export function ReaderChatPane({ documentId, documentTitle, selectionContext, on
   }, [selectionContext, onSelectionContextConsumed])
 
   const handleSend = useCallback(async (message: string) => {
-    let attachmentContext: { chunks: Array<{ content: string; documentTitle: string; chunkIndex: number }> } | undefined
+    let fullMessage = message
     if (contextPills.length > 0) {
-      attachmentContext = {
-        chunks: contextPills.map(p => ({
-          content: p.content,
-          documentTitle: documentTitle,
-          chunkIndex: 0,
-        }))
-      }
+      // Prepend context with markers so ChatMessageBubble renders it as a pill
+      // Format: <<CTX:label>>content<</CTX>>
+      const contextBlock = contextPills.map(p =>
+        `<<CTX:${p.label}>>${p.content}<</CTX>>`
+      ).join('\n')
+      fullMessage = `${contextBlock}\n${message}`
       setContextPills([])
     }
-    await sendMessage(message, attachmentContext)
-  }, [sendMessage, contextPills, documentTitle])
+    await sendMessage(fullMessage)
+  }, [sendMessage, contextPills])
 
   const handleRemoveContextPill = useCallback((id: string) => {
     setContextPills(prev => prev.filter(p => p.id !== id))
