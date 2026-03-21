@@ -203,6 +203,8 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
   const { systemPrompt, examProfileId, authToken, getToken, onToken, onToolCall, signal } = options
   const messages = [...options.messages]
   let finalText = ''
+  // Collect markers from tool results (quiz, card, code) to inject if the AI doesn't include them
+  const pendingMarkers: string[] = []
 
   const startTime = Date.now()
 
@@ -264,6 +266,11 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
           if (result.length > MAX_TOOL_RESULT_CHARS) {
             result = result.slice(0, MAX_TOOL_RESULT_CHARS) + '\n...[truncated]'
           }
+          // Extract marker from tool result for auto-injection
+          try {
+            const parsed = JSON.parse(result)
+            if (parsed.marker) pendingMarkers.push(parsed.marker)
+          } catch { /* not JSON or no marker — fine */ }
           resultBlocks.push({
             type: 'tool_result',
             tool_use_id: toolUse.id,
@@ -287,7 +294,16 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
     }
 
     // No tool calls — we have a final text response
-    const text = textBlocks.map(b => b.text).join('')
+    let text = textBlocks.map(b => b.text).join('')
+
+    // Auto-inject markers the AI forgot to include (quiz, card, code blocks)
+    for (const marker of pendingMarkers) {
+      if (!text.includes(marker)) {
+        text = marker + '\n' + text
+      }
+    }
+    pendingMarkers.length = 0
+
     finalText += text
     messages.push({ role: 'assistant', content: text })
     break
