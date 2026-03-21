@@ -5,6 +5,7 @@
  * To switch to Anthropic's native format later, swap the parser in this file.
  */
 import type { Message, ToolDefinition } from './types'
+import { llmGate, fetchWithGate } from '../lib/requestGate'
 
 const API_URL = import.meta.env.VITE_API_URL || '/api/chat'
 
@@ -137,20 +138,21 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
 
   let currentToken = authToken
 
-  const doFetch = async (token?: string) => {
+  const doFetch = (token?: string) => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (token) headers['Authorization'] = `Bearer ${token}`
     return fetch(API_URL, { method: 'POST', headers, body: JSON.stringify(body), signal })
   }
 
-  let response = await doFetch(currentToken)
+  // Use the global LLM gate for concurrency control + automatic 429 retry
+  let response = await fetchWithGate(llmGate, () => doFetch(currentToken), { signal })
 
   // Retry once with fresh token on 401 (JWT expired)
   if (response.status === 401 && getToken) {
     const freshToken = await getToken()
     if (freshToken) {
       currentToken = freshToken
-      response = await doFetch(freshToken)
+      response = await fetchWithGate(llmGate, () => doFetch(freshToken), { signal })
     }
   }
 

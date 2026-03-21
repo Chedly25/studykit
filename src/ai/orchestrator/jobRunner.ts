@@ -19,7 +19,7 @@ export class JobRunner {
   private getToken: () => Promise<string | null>
   private abortControllers = new Map<string, AbortController>()
   private activeJobs = 0
-  private readonly maxConcurrency = 1
+  private readonly maxConcurrency = 2
 
   constructor(getToken: () => Promise<string | null>) {
     this.getToken = getToken

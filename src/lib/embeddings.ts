@@ -5,6 +5,7 @@
 import { db } from '../db'
 import type { ChunkEmbedding, DocumentChunk } from '../db/schema'
 import { searchChunks } from './sources'
+import { embedGate, fetchWithGate } from './requestGate'
 
 const BATCH_SIZE = 50
 
@@ -30,14 +31,16 @@ export async function generateEmbeddings(
 
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
     const batch = texts.slice(i, i + BATCH_SIZE)
-    const res = await fetch('/api/embed', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({ texts: batch }),
-    })
+    const res = await fetchWithGate(embedGate, () =>
+      fetch('/api/embed', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ texts: batch }),
+      })
+    )
 
     if (!res.ok) {
       throw new Error(`Embedding API error: ${res.status}`)
