@@ -16,7 +16,8 @@ import {
 } from '../lib/sources'
 import { parsePdf } from '../lib/pdfParser'
 import { processFile } from '../lib/fileProcessor'
-import { semanticSearch, deleteEmbeddings } from '../lib/embeddings'
+import { semanticSearch, deleteEmbeddings, embedAndStoreChunks } from '../lib/embeddings'
+import { getChunksByDocumentId } from '../lib/sources'
 import type { DocumentChunk } from '../db/schema'
 import type { BatchUploadProgressState } from '../components/sources/BatchUploadProgress'
 
@@ -62,9 +63,19 @@ export function useSources(examProfileId: string | undefined) {
       setProcessingStatus(`Chunking ${pageCount} pages...`)
       const chunks = chunkText(text)
       await saveChunks(doc.id, examProfileId, chunks)
+      // Embed immediately at upload time (uses Cloudflare Workers AI, separate from LLM)
+      try {
+        setProcessingStatus('Embedding chunks...')
+        const token = await getToken()
+        if (token) {
+          const savedChunks = await getChunksByDocumentId(doc.id)
+          await embedAndStoreChunks(savedChunks, token)
+        }
+      } catch {
+        // Non-blocking — workflow will retry if needed
+      }
       setProcessingStatus('')
       toast.success(`"${title}" uploaded`)
-      // Embeddings are handled by the source processing orchestrator workflow
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Upload failed')
       throw err
@@ -101,6 +112,14 @@ export function useSources(examProfileId: string | undefined) {
           examProfileId,
           file: file,
         })
+        // Embed immediately at upload time
+        try {
+          const token = await getToken()
+          if (token) {
+            const savedChunks = await getChunksByDocumentId(doc.id)
+            await embedAndStoreChunks(savedChunks, token)
+          }
+        } catch { /* non-blocking */ }
         progress.results.push({ fileName: file.name, status: 'done' })
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Upload failed'

@@ -10,7 +10,7 @@
 import { db } from '../../db'
 import type { BackgroundJob, JobType, JobStatus } from '../../db/schema'
 import type { WorkflowContext, WorkflowDefinition, StepResult } from './types'
-import { streamChat } from '../client'
+import { callFastModel } from '../fastClient'
 import { semanticSearch } from '../../lib/embeddings'
 import { searchWeb as searchWebClient } from '../tools/webSearchTool'
 import { reconstructWorkflow, reconstructArticleWorkflow } from './jobTypes'
@@ -221,16 +221,12 @@ export class JobRunner {
       results,
 
       async llm(prompt: string, system?: string): Promise<string> {
-        const response = await streamChat({
-          messages: [{ role: 'user', content: prompt }],
-          system: system ?? 'You are a helpful assistant. Respond with the requested format only.',
-          tools: [],
-          maxTokens: 4096,
-          authToken: ctx.authToken,
-          signal: controller.signal,
-        })
-        const textBlock = response.content.find((b: { type: string }) => b.type === 'text')
-        return textBlock && 'text' in textBlock ? (textBlock as { text: string }).text : ''
+        return callFastModel(
+          prompt,
+          system ?? 'You are a helpful assistant. Respond with the requested format only.',
+          ctx.authToken,
+          { maxTokens: 4096, signal: controller.signal },
+        )
       },
 
       async searchSources(query: string, topN = 5): Promise<string> {
@@ -405,16 +401,12 @@ export class JobRunner {
             signal: controller.signal,
             results,
             async llm(prompt: string, system?: string): Promise<string> {
-              const response = await streamChat({
-                messages: [{ role: 'user', content: prompt }],
-                system: system ?? 'You are a helpful assistant. Respond with the requested format only.',
-                tools: [],
-                maxTokens: 4096,
-                authToken: ctx.authToken,
-                signal: controller.signal,
-              })
-              const textBlock = response.content.find((b: { type: string }) => b.type === 'text')
-              return textBlock && 'text' in textBlock ? (textBlock as { text: string }).text : ''
+              return callFastModel(
+                prompt,
+                system ?? 'You are a helpful assistant. Respond with the requested format only.',
+                ctx.authToken,
+                { maxTokens: 4096, signal: controller.signal },
+              )
             },
             async searchSources(query: string, topN = 5): Promise<string> {
               const chunks = await semanticSearch(job.examProfileId, query, ctx.authToken, topN)

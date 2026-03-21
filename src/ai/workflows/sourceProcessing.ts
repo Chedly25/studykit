@@ -1,10 +1,12 @@
 /**
  * Source processing workflow — runs after document upload.
- * Steps: gather context → parallel (embed + extract + flashcards) → save results → concept cards (batched)
+ * Steps: gather context → analyze (LLM) → save results + classify → concept cards (batched)
+ * Embeddings are generated at upload time, not here.
  */
 import { db } from '../../db'
 import { getChunksByDocumentId } from '../../lib/sources'
 import { embedAndStoreChunks, hasEmbeddings } from '../../lib/embeddings'
+import { classifyChunksByEmbedding } from '../../lib/topicClassifier'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { dbQueryStep, localStep } from '../orchestrator/steps'
 
@@ -49,7 +51,8 @@ export function createSourceProcessingWorkflow(
         }
       }),
 
-      // Step 2: Parallel — embed chunks + extract concepts + generate flashcards
+      // Step 2: Analyze document (single LLM call via fast model)
+      // Embeddings are already generated at upload time
       {
         id: 'parallel-process',
         name: 'Analyzing document',
@@ -65,7 +68,7 @@ export function createSourceProcessingWorkflow(
           const topicList = context.topics.map(t => t.name).join(', ')
           const subjectList = context.subjects.map(s => s.name).join(', ')
 
-          // Embed chunks first (uses embed API, not LLM — runs via embedGate)
+          // Ensure embeddings exist (normally done at upload, but handle edge cases)
           let embedResult: { skipped?: boolean; embedded?: number; error?: string }
           try {
             const alreadyEmbedded = await hasEmbeddings(config.documentId)
@@ -197,6 +200,14 @@ Respond ONLY with valid JSON.`
           flashcardDeckId = deckId
           flashcardCount = cards.length
         }
+
+        // Classify remaining unclassified chunks via embeddings (zero LLM cost)
+        try {
+          const extraClassified = await classifyChunksByEmbedding(
+            config.documentId, ctx.examProfileId, ctx.authToken
+          )
+          mappingsApplied += extraClassified
+        } catch { /* non-fatal */ }
 
         return { summary: conceptData?.summary ?? '', conceptsFound, mappingsApplied, flashcardDeckId, flashcardCount }
       }),

@@ -63,10 +63,13 @@ class RequestGate {
   }
 }
 
-// LLM gate: max 3 concurrent, 300ms minimum gap between requests
+// LLM gate: max 3 concurrent, 300ms minimum gap (interactive chat via Kimi)
 export const llmGate = new RequestGate(3, 300)
 
-// Embedding gate: max 2 concurrent, 200ms minimum gap
+// Fast gate: max 5 concurrent, 200ms minimum gap (pipeline via Claude Haiku)
+export const fastGate = new RequestGate(5, 200)
+
+// Embedding gate: max 2 concurrent, 200ms minimum gap (Cloudflare Workers AI)
 export const embedGate = new RequestGate(2, 200)
 
 /**

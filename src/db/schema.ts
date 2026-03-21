@@ -417,6 +417,16 @@ export interface ChunkEmbedding {
   embedding: string // base64-encoded Float32Array (768-dim)
 }
 
+// ─── Topic Embeddings (cached) ──────────────────────────────────
+export interface TopicEmbedding {
+  id: string
+  topicId: string
+  examProfileId: string
+  topicName: string           // detect renames by comparing to current topic.name
+  embedding: string           // base64-encoded Float32Array (768-dim)
+  updatedAt: string
+}
+
 // ─── Daily Study Logs ───────────────────────────────────────────
 export interface SubjectBreakdown {
   subjectId: string

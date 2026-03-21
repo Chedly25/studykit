@@ -4,7 +4,7 @@
  * falls back to LLM approach when no embeddings exist.
  */
 import { db } from '../../db'
-import { streamChat } from '../client'
+import { callFastModel } from '../fastClient'
 import { classifyChunksByEmbedding } from '../../lib/topicClassifier'
 
 export async function autoMapSourceToTopics(
@@ -72,19 +72,12 @@ Return ONLY valid JSON:
 }`
 
   try {
-    const response = await streamChat({
-      messages: [{ role: 'user', content: prompt }],
-      system: 'You are a concept extraction expert. Analyze documents and map content to study topics. Return only valid JSON.',
-      tools: [],
-      maxTokens: 2048,
+    const text = await callFastModel(
+      prompt,
+      'You are a concept extraction expert. Analyze documents and map content to study topics. Return only valid JSON.',
       authToken,
-      signal,
-    })
-
-    const text = response.content
-      .filter((c): c is { type: 'text'; text: string } => c.type === 'text')
-      .map(c => c.text)
-      .join('')
+      { maxTokens: 2048, signal },
+    )
 
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return JSON.stringify({ error: 'Failed to parse AI response' })

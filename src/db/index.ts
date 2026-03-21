@@ -48,6 +48,7 @@ import type {
   MasterySnapshot,
   PdfHighlight,
   AchievementRecord,
+  TopicEmbedding,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -99,6 +100,7 @@ export class StudiesKitDB extends Dexie {
   masterySnapshots!: Table<MasterySnapshot>
   pdfHighlights!: Table<PdfHighlight>
   achievements!: Table<AchievementRecord>
+  topicEmbeddings!: Table<TopicEmbedding>
 
   constructor() {
     super('studieskit')
@@ -260,6 +262,10 @@ export class StudiesKitDB extends Dexie {
     })
 
     this.version(20).stores({})
+
+    this.version(21).stores({
+      topicEmbeddings: 'id, topicId, examProfileId',
+    })
   }
 }
 

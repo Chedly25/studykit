@@ -1,10 +1,11 @@
 /**
  * Embedding-based chunk → topic classification.
  * Uses cosine similarity against topic centroids instead of LLM calls.
- * Falls back to LLM classification when embeddings are unavailable.
+ * Topic name embeddings are cached in DB to avoid re-embedding.
+ * Falls back to fast LLM classification when embeddings are unavailable.
  */
 import { db } from '../db'
-import { streamChat } from '../ai/client'
+import { callFastModel } from '../ai/fastClient'
 import { base64ToFloat32Array, cosineSimilarity, generateEmbeddings } from './embeddings'
 import type { DocumentChunk, Topic } from '../db/schema'
 
@@ -20,7 +21,6 @@ export async function classifyChunksByEmbedding(
   examProfileId: string,
   authToken: string,
 ): Promise<number> {
-  // Load chunk embeddings for this document
   const chunkEmbeddings = await db.chunkEmbeddings
     .where('documentId')
     .equals(documentId)
@@ -28,11 +28,9 @@ export async function classifyChunksByEmbedding(
 
   if (chunkEmbeddings.length === 0) return 0
 
-  // Load all topics for the profile
   const topics = await db.topics.where('examProfileId').equals(examProfileId).toArray()
   if (topics.length === 0) return 0
 
-  // Load all chunks for this document to find unclassified ones
   const allChunks = await db.documentChunks
     .where('documentId')
     .equals(documentId)
@@ -42,21 +40,17 @@ export async function classifyChunksByEmbedding(
     allChunks.filter(c => !c.topicId).map(c => c.id)
   )
 
-  // Filter to embeddings for unclassified chunks only
   const unclassifiedEmbeddings = chunkEmbeddings.filter(e => unclassifiedChunkIds.has(e.chunkId))
   if (unclassifiedEmbeddings.length === 0) return 0
 
-  // Build a map of chunkId → embedding vector
   const embeddingByChunkId = new Map<string, string>()
   for (const e of chunkEmbeddings) {
     embeddingByChunkId.set(e.chunkId, e.embedding)
   }
 
-  // Build topic vectors (centroids from already-classified chunks, or embed topic name)
-  const topicVectors = await buildTopicVectors(topics, allChunks, embeddingByChunkId, authToken)
+  const topicVectors = await buildTopicVectors(topics, allChunks, embeddingByChunkId, examProfileId, authToken)
   if (topicVectors.length === 0) return 0
 
-  // Classify each unclassified chunk
   let classified = 0
   for (const emb of unclassifiedEmbeddings) {
     const chunkVec = base64ToFloat32Array(emb.embedding)
@@ -85,11 +79,10 @@ async function buildTopicVectors(
   topics: Topic[],
   chunks: DocumentChunk[],
   embeddingByChunkId: Map<string, string>,
+  examProfileId: string,
   authToken: string,
 ): Promise<Array<{ topicId: string; vector: Float32Array }>> {
   const result: Array<{ topicId: string; vector: Float32Array }> = []
-
-  // Topics with existing classified chunks → centroid of their chunk embeddings
   const topicsNeedingEmbedding: Topic[] = []
 
   for (const topic of topics) {
@@ -104,7 +97,6 @@ async function buildTopicVectors(
     }
 
     if (vectors.length > 0) {
-      // Compute centroid (average of all vectors)
       const dim = vectors[0].length
       const centroid = new Float32Array(dim)
       for (const v of vectors) {
@@ -121,19 +113,51 @@ async function buildTopicVectors(
     }
   }
 
-  // Topics without classified chunks → embed the topic name
+  // Check cached topic embeddings first
   if (topicsNeedingEmbedding.length > 0) {
-    try {
-      const names = topicsNeedingEmbedding.map(t => t.name)
-      const embeddings = await generateEmbeddings(names, authToken)
-      for (let i = 0; i < topicsNeedingEmbedding.length; i++) {
-        result.push({
-          topicId: topicsNeedingEmbedding[i].id,
-          vector: base64ToFloat32Array(embeddings[i]),
-        })
+    const cached = await db.topicEmbeddings
+      .where('examProfileId')
+      .equals(examProfileId)
+      .toArray()
+    const cacheMap = new Map(cached.map(c => [c.topicId, c]))
+
+    const uncached: Topic[] = []
+    for (const topic of topicsNeedingEmbedding) {
+      const hit = cacheMap.get(topic.id)
+      // Valid cache: same topic name (detect renames)
+      if (hit && hit.topicName === topic.name) {
+        result.push({ topicId: topic.id, vector: base64ToFloat32Array(hit.embedding) })
+      } else {
+        uncached.push(topic)
       }
-    } catch {
-      // If embedding fails, we just won't have vectors for these topics
+    }
+
+    // Embed only truly uncached topics, then store in DB
+    if (uncached.length > 0) {
+      try {
+        const names = uncached.map(t => t.name)
+        const embeddings = await generateEmbeddings(names, authToken)
+        const now = new Date().toISOString()
+
+        for (let i = 0; i < uncached.length; i++) {
+          result.push({
+            topicId: uncached[i].id,
+            vector: base64ToFloat32Array(embeddings[i]),
+          })
+          // Cache for future runs
+          const existing = cacheMap.get(uncached[i].id)
+          await db.topicEmbeddings.put({
+            id: existing?.id ?? crypto.randomUUID(),
+            topicId: uncached[i].id,
+            examProfileId,
+            topicName: uncached[i].name,
+            embedding: embeddings[i],
+            updatedAt: now,
+          })
+        }
+      } catch {
+        // Embedding failure is non-fatal
+      }
     }
   }
 
@@ -141,7 +165,7 @@ async function buildTopicVectors(
 }
 
 /**
- * LLM-based chunk classification fallback.
+ * LLM-based chunk classification fallback (uses fast model).
  * Used when embeddings are not available for a document.
  */
 export async function classifyChunks(
@@ -176,20 +200,13 @@ Chunks:
 ${chunkSummaries}`
 
     try {
-      const response = await streamChat({
-        messages: [{ role: 'user', content: prompt }],
-        system: 'You are a document classifier. Return only valid JSON.',
-        tools: [],
-        maxTokens: 1024,
+      const text = await callFastModel(
+        prompt,
+        'You are a document classifier. Return only valid JSON.',
         authToken,
-      })
+        { maxTokens: 1024 },
+      )
 
-      const text = response.content
-        .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
-        .map(b => b.text)
-        .join('')
-
-      // Extract JSON from response
       const jsonMatch = text.match(/\[[\s\S]*\]/)
       if (jsonMatch) {
         const classifications = JSON.parse(jsonMatch[0]) as Array<{ chunkIndex: number; topicName: string }>
