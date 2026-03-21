@@ -53,7 +53,7 @@ interface UseAgentOptions {
 }
 
 export function useAgent(options: UseAgentOptions) {
-  const { profile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries } = options
+  const { profile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, customSystemPrompt } = options
   const { getToken } = useAuth()
   const { i18n } = useTranslation()
   const { isPro } = useSubscription()
@@ -205,8 +205,8 @@ export function useAgent(options: UseAgentOptions) {
 
       // Build system prompt based on mode
       let systemPrompt: string
-      if (options.customSystemPrompt) {
-        systemPrompt = options.customSystemPrompt
+      if (customSystemPrompt) {
+        systemPrompt = customSystemPrompt
         // Append source context so semantic search / attachment chunks are included
         if (sourceContext) {
           systemPrompt += buildSourceSection(sourceContext)
@@ -300,7 +300,7 @@ export function useAgent(options: UseAgentOptions) {
     } finally {
       setIsLoading(false)
     }
-  }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, isSocratic, socraticTopic, isExplainBack, explainBackTopic, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, i18n.language])
+  }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, isSocratic, socraticTopic, isExplainBack, explainBackTopic, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, customSystemPrompt, i18n.language])
 
   // Track conversation state in refs for beforeunload handler
   const messagesRef = useRef(messages)
