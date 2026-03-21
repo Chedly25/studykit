@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronDown, ChevronRight, BookOpen, ArrowRight, Lock } from 'lucide-react'
 import type { Subject, Topic, Chapter } from '../../db/schema'
@@ -20,6 +20,7 @@ interface LevelsViewProps {
   getChaptersForSubject: (subjectId: string) => Chapter[]
   getTopicsForChapter: (chapterId: string) => Topic[]
   examProfileId?: string
+  focusTopicId?: string | null
 }
 
 function masteryColor(mastery: number): string {
@@ -34,7 +35,7 @@ function masteryTextColor(mastery: number): string {
   return 'text-red-500'
 }
 
-export function LevelsView({ subjects, chapters: _chapters, topics, exerciseStatsByTopic, getChaptersForSubject, getTopicsForChapter, examProfileId }: LevelsViewProps) {
+export function LevelsView({ subjects, chapters: _chapters, topics, exerciseStatsByTopic, getChaptersForSubject, getTopicsForChapter, examProfileId, focusTopicId }: LevelsViewProps) {
   // Build mastery map for prerequisite checking
   const topicMasteryMap = useMemo(() => {
     return new Map(topics.map(t => [t.id, t.mastery]))
@@ -43,6 +44,21 @@ export function LevelsView({ subjects, chapters: _chapters, topics, exerciseStat
   const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(new Set())
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set())
   const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null)
+
+  // Auto-expand and scroll to focused topic from UpNextList click
+  useEffect(() => {
+    if (!focusTopicId) return
+    const topic = topics.find(t => t.id === focusTopicId)
+    if (!topic) return
+    setExpandedSubjects(prev => new Set(prev).add(topic.subjectId))
+    if (topic.chapterId) setExpandedChapters(prev => new Set(prev).add(topic.chapterId!))
+    setExpandedTopicId(focusTopicId)
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        document.querySelector(`[data-topic-id="${focusTopicId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 150)
+    })
+  }, [focusTopicId, topics])
 
   const toggleSubject = (id: string) => {
     setExpandedSubjects(prev => {
@@ -147,7 +163,7 @@ export function LevelsView({ subjects, chapters: _chapters, topics, exerciseStat
                         const isExpTopic = expandedTopicId === topic.id
 
                         return (
-                          <div key={topic.id}>
+                          <div key={topic.id} data-topic-id={topic.id}>
                             <div
                               onClick={() => !lockInfo.locked && setExpandedTopicId(prev => prev === topic.id ? null : topic.id)}
                               className={`flex items-center gap-3 px-10 py-2.5 border-b border-[var(--border-card)]/30 hover:bg-[var(--bg-input)]/20 ${lockInfo.locked ? 'opacity-60' : 'cursor-pointer'}`}

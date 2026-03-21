@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Zap, ListTodo } from 'lucide-react'
+import { ArrowRight, Zap, ListTodo, ClipboardCheck } from 'lucide-react'
 import { isCramModeActive } from '../lib/cramModeEngine'
 import { db } from '../db'
 import type { StudySession } from '../db/schema'
@@ -163,6 +163,25 @@ export default function Dashboard() {
     }
   }, [profileId])
 
+  const [focusTopicId, setFocusTopicId] = useState<string | null>(null)
+
+  const examSources = useLiveQuery(
+    async () => {
+      if (!profileId) return []
+      const sources = await db.examSources.where('examProfileId').equals(profileId).toArray()
+      const exercises = await db.exercises.where('examProfileId').equals(profileId).toArray()
+      return sources.map(source => {
+        const exs = exercises.filter(e => e.examSourceId === source.id && !e.hidden)
+        return {
+          ...source,
+          exerciseCount: exs.length,
+          completedCount: exs.filter(e => e.status === 'completed').length,
+        }
+      })
+    },
+    [profileId],
+  ) ?? []
+
   if (!activeProfile) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
@@ -259,10 +278,34 @@ export default function Dashboard() {
       )}
 
       {/* Up Next — top 3 recommendations with action-specific links */}
-      <UpNextList recommendations={recommendations} queueTopicIds={new Set(dailyQueue.map(q => q.topicId))} />
+      <UpNextList recommendations={recommendations} queueTopicIds={new Set(dailyQueue.map(q => q.topicId))} onTopicClick={(id) => setFocusTopicId(id)} />
 
       {/* Attention — proactive intelligence signals */}
       <AttentionCard signals={signals} />
+
+      {/* Your exams */}
+      {examSources.length > 0 && (
+        <div className="glass-card p-4 mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Your exams</p>
+          <div className="space-y-1">
+            {examSources.map(source => (
+              <Link key={source.id} to={`/read/${source.documentId}`}
+                className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--bg-input)] transition-colors">
+                <ClipboardCheck size={16} className="text-[var(--text-muted)] shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium text-[var(--text-heading)] truncate block">
+                    {source.name}{source.year ? ` ${source.year}` : ''}
+                  </span>
+                  <span className="text-xs text-[var(--text-faint)]">
+                    {source.completedCount}/{source.exerciseCount} exercises completed
+                  </span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Levels View — Subject > Chapter > Topic with mastery */}
       <LevelsView
@@ -273,6 +316,7 @@ export default function Dashboard() {
         getChaptersForSubject={getChaptersForSubject}
         getTopicsForChapter={getTopicsForChapter}
         examProfileId={profileId}
+        focusTopicId={focusTopicId}
       />
 
       {/* Achievements */}

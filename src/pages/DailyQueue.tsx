@@ -9,9 +9,9 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
-import { ArrowRight, SkipForward, CheckCircle2, BookOpen, ListChecks, Brain, Zap, Loader2, X, Flag } from 'lucide-react'
+import { ArrowRight, SkipForward, CheckCircle2, BookOpen, ListChecks, Brain, Zap, Loader2, X, Flag, ExternalLink, MessageCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
@@ -245,8 +245,12 @@ export default function DailyQueue() {
       }
     : undefined
 
+  const exerciseCount = queue.filter(q => q.type === 'exercise').length
+  const flashcardCount = queue.filter(q => q.type === 'flashcard-review').length
+  const activityType = exerciseCount > flashcardCount ? 'practice-exam' as const : 'flashcards' as const
+
   const completionData: SessionCompletionData = {
-    activityType: 'flashcards',
+    activityType,
     timeSpentSeconds: finalTimeSpent,
     streak,
     weeklyHours,
@@ -649,6 +653,8 @@ function ExerciseInline({
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [explanationCtx, setExplanationCtx] = useState<string | null>(null)
+  const [rated, setRated] = useState(false)
+  const [showSolution, setShowSolution] = useState(false)
 
   const exercise = useLiveQuery(
     () => item.exerciseId ? db.exercises.get(item.exerciseId) : undefined,
@@ -661,6 +667,12 @@ function ExerciseInline({
   )
 
   if (!exercise) return <p className="text-sm text-[var(--text-muted)]">Loading exercise...</p>
+
+  const dispatchAI = (prefill: string) => {
+    window.dispatchEvent(new CustomEvent('open-chat-panel', {
+      detail: { prefill, context: { topicId: item.topicId, topicName: item.topicName } }
+    }))
+  }
 
   const handleRate = async (score: number) => {
     if (!profileId || !item.exerciseId) return
@@ -681,7 +693,7 @@ function ExerciseInline({
       if (score === 0.2) {
         setExplanationCtx(exercise.text)
       } else {
-        onComplete(item.id)
+        setRated(true)
       }
     } finally {
       setIsSubmitting(false)
@@ -712,7 +724,7 @@ function ExerciseInline({
         <MathText>{exercise.text}</MathText>
       </div>
 
-      {!explanationCtx && (
+      {!explanationCtx && !rated && (
         <div className="space-y-2">
           <p className="text-xs font-medium text-[var(--text-muted)]">How did you do?</p>
           <div className="flex gap-2">
@@ -727,6 +739,48 @@ function ExerciseInline({
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {rated && !explanationCtx && (
+        <div className="space-y-2 mt-3">
+          {exercise.solutionText && (
+            <div>
+              <button
+                onClick={() => setShowSolution(!showSolution)}
+                className="text-xs text-[var(--accent-text)] hover:underline"
+              >
+                {showSolution ? 'Hide correction' : 'Show correction'}
+              </button>
+              {showSolution && (
+                <div className="glass-card p-3 mt-1 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-emerald-500">
+                  <MathText>{exercise.solutionText}</MathText>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex gap-3">
+            {examSource?.documentId && (
+              <Link
+                to={`/read/${examSource.documentId}`}
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-text)] flex items-center gap-1"
+              >
+                <ExternalLink className="w-3 h-3" /> View in exam
+              </Link>
+            )}
+            <button
+              onClick={() => dispatchAI(`Help me understand this exercise:\n${exercise.text.slice(0, 500)}`)}
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-text)] flex items-center gap-1"
+            >
+              <MessageCircle className="w-3 h-3" /> Discuss with AI
+            </button>
+          </div>
+          <button
+            onClick={() => onComplete(item.id)}
+            className="btn-primary text-sm px-4 py-2 mt-2"
+          >
+            Continue
+          </button>
         </div>
       )}
 

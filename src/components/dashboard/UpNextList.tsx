@@ -5,6 +5,7 @@ import type { StudyRecommendation } from '../../lib/studyRecommender'
 interface UpNextListProps {
   recommendations: StudyRecommendation[]
   queueTopicIds?: Set<string>
+  onTopicClick?: (topicId: string) => void
 }
 
 const ACTION_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -15,7 +16,7 @@ const ACTION_ICONS: Record<string, React.ComponentType<{ size?: number; classNam
   'flashcards': Layers,
 }
 
-export function UpNextList({ recommendations, queueTopicIds }: UpNextListProps) {
+export function UpNextList({ recommendations, queueTopicIds, onTopicClick }: UpNextListProps) {
   const { t } = useTranslation()
 
   if (recommendations.length === 0) return null
@@ -29,9 +30,10 @@ export function UpNextList({ recommendations, queueTopicIds }: UpNextListProps) 
         {recommendations.slice(0, 3).map(rec => {
           const Icon = ACTION_ICONS[rec.action] ?? BookOpen
           return (
-            <div
+            <button
               key={rec.topicId}
-              className="flex items-center gap-3 px-2 py-2 rounded-lg"
+              onClick={() => onTopicClick?.(rec.topicId)}
+              className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--bg-input)] transition-colors w-full text-left"
             >
               <Icon size={18} className="text-[var(--text-muted)] shrink-0" />
               <div className="flex-1 min-w-0">
@@ -46,7 +48,7 @@ export function UpNextList({ recommendations, queueTopicIds }: UpNextListProps) 
               {queueTopicIds?.has(rec.topicId) && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--accent-bg)] text-[var(--accent-text)] shrink-0">In queue</span>
               )}
-            </div>
+            </button>
           )
         })}
       </div>

@@ -2,7 +2,9 @@
  * Expandable topic detail panel — shows exercises, flashcards, concepts,
  * documents, and mastery trend for a single topic.
  */
-import { Sparkles, BookOpen, FileText, TrendingUp, TrendingDown, Minus, Star } from 'lucide-react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Sparkles, BookOpen, FileText, TrendingUp, TrendingDown, Minus, Star, ChevronDown, ChevronRight, ExternalLink, MessageCircle } from 'lucide-react'
 import { useTopicDetail } from '../../hooks/useTopicDetail'
 import { SkeletonLine, SkeletonBlock } from '../Skeleton'
 import { MathText } from '../MathText'
@@ -35,11 +37,22 @@ function difficultyStars(level: number) {
 
 export function TopicDetailPanel({ topicId, topicName, subjectName, mastery, examProfileId, questionsAttempted, questionsCorrect }: Props) {
   const detail = useTopicDetail(topicId, examProfileId)
+  const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null)
+  const [showSolution, setShowSolution] = useState<Set<string>>(new Set())
+  const [expandedFicheId, setExpandedFicheId] = useState<string | null>(null)
 
   const dispatchAI = (prefill: string) => {
     window.dispatchEvent(new CustomEvent('open-chat-panel', {
       detail: { prefill, context: { topicId, topicName, subjectName, mastery } }
     }))
+  }
+
+  const toggleSolution = (id: string) => {
+    setShowSolution(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
   }
 
   if (detail.isLoading) {
@@ -81,24 +94,70 @@ export function TopicDetailPanel({ topicId, topicName, subjectName, mastery, exa
           <div className="space-y-3">
             {detail.exerciseGroups.map(group => (
               <div key={group.source.id}>
-                <p className="text-xs font-medium text-[var(--text-heading)] mb-1">
-                  {group.source.name}{group.source.year ? ` ${group.source.year}` : ''}
-                  {group.source.institution && <span className="text-[var(--text-faint)]"> · {group.source.institution}</span>}
-                </p>
-                <div className="space-y-1">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium text-[var(--text-heading)]">
+                    {group.source.name}{group.source.year ? ` ${group.source.year}` : ''}
+                    {group.source.institution && <span className="text-[var(--text-faint)]"> · {group.source.institution}</span>}
+                  </p>
+                  <Link
+                    to={`/read/${group.source.documentId}`}
+                    className="text-[10px] text-[var(--accent-text)] hover:underline flex items-center gap-1"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <ExternalLink className="w-3 h-3" /> Open exam
+                  </Link>
+                </div>
+                <div className="space-y-0.5">
                   {group.exercises.map(ex => (
-                    <div key={ex.id} className="flex items-center gap-2 text-xs pl-2">
-                      <span className="text-[var(--text-body)]">Ex. {ex.exerciseNumber}</span>
-                      {difficultyStars(ex.difficulty)}
-                      {statusBadge(ex.status, ex.lastAttemptScore ?? undefined)}
-                      <span className="flex-1" />
+                    <div key={ex.id}>
                       <button
-                        onClick={() => dispatchAI(`Explain this exercise:\n${ex.text.slice(0, 500)}`)}
-                        className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors"
-                        title="Ask AI about this exercise"
+                        onClick={() => setExpandedExerciseId(prev => prev === ex.id ? null : ex.id)}
+                        className="w-full flex items-center gap-2 text-xs pl-2 py-1 hover:bg-[var(--bg-input)]/30 rounded text-left"
                       >
-                        <Sparkles className="w-3 h-3" />
+                        {expandedExerciseId === ex.id
+                          ? <ChevronDown className="w-3 h-3 text-[var(--text-muted)] shrink-0" />
+                          : <ChevronRight className="w-3 h-3 text-[var(--text-muted)] shrink-0" />
+                        }
+                        <span className="text-[var(--text-body)]">Ex. {ex.exerciseNumber}</span>
+                        {difficultyStars(ex.difficulty)}
+                        {statusBadge(ex.status, ex.lastAttemptScore ?? undefined)}
+                        <span className="flex-1" />
+                        <span
+                          onClick={(e) => { e.stopPropagation(); dispatchAI(`Explain this exercise:\n${ex.text.slice(0, 500)}`) }}
+                          className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors"
+                          title="Ask AI about this exercise"
+                        >
+                          <Sparkles className="w-3 h-3" />
+                        </span>
                       </button>
+                      {expandedExerciseId === ex.id && (
+                        <div className="pl-6 py-2 text-xs">
+                          <div className="glass-card p-3 text-[var(--text-body)] whitespace-pre-wrap mb-2">
+                            <MathText>{ex.text}</MathText>
+                          </div>
+                          {ex.solutionText && (
+                            <>
+                              <button
+                                onClick={() => toggleSolution(ex.id)}
+                                className="text-[var(--accent-text)] text-[10px] hover:underline mb-1"
+                              >
+                                {showSolution.has(ex.id) ? 'Hide correction' : 'Show correction'}
+                              </button>
+                              {showSolution.has(ex.id) && (
+                                <div className="glass-card p-3 text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-emerald-500 mb-2">
+                                  <MathText>{ex.solutionText}</MathText>
+                                </div>
+                              )}
+                            </>
+                          )}
+                          <button
+                            onClick={() => dispatchAI(`Help me with this exercise:\n${ex.text.slice(0, 500)}${ex.solutionText ? '\n\nReference solution:\n' + ex.solutionText.slice(0, 500) : ''}`)}
+                            className="flex items-center gap-1 text-[10px] text-[var(--accent-text)] hover:underline mt-1"
+                          >
+                            <MessageCircle className="w-3 h-3" /> Discuss with AI
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -122,16 +181,39 @@ export function TopicDetailPanel({ topicId, topicName, subjectName, mastery, exa
         </div>
       )}
 
-      {/* Concepts */}
+      {/* Fiches */}
       {detail.conceptCards.length > 0 && (
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1">Concepts</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1">Fiches</p>
           <div className="space-y-0.5">
-            {detail.conceptCards.map(card => (
-              <p key={card.id} className="text-xs text-[var(--text-body)] pl-2">
-                <MathText>{card.title}</MathText>
-              </p>
-            ))}
+            {detail.conceptCards.map(card => {
+              let keyPoints: string[] = []
+              try { keyPoints = JSON.parse(card.keyPoints) } catch { /* ignore */ }
+              return (
+                <div key={card.id}>
+                  <button
+                    onClick={() => setExpandedFicheId(prev => prev === card.id ? null : card.id)}
+                    className="text-xs text-[var(--text-body)] pl-2 flex items-center gap-1 hover:text-[var(--accent-text)] w-full text-left"
+                  >
+                    {expandedFicheId === card.id
+                      ? <ChevronDown className="w-3 h-3 shrink-0" />
+                      : <ChevronRight className="w-3 h-3 shrink-0" />
+                    }
+                    <MathText>{card.title}</MathText>
+                  </button>
+                  {expandedFicheId === card.id && (
+                    <div className="pl-6 py-1 space-y-1">
+                      {keyPoints.map((p, i) => (
+                        <p key={i} className="text-xs text-[var(--text-body)]">• <MathText>{p}</MathText></p>
+                      ))}
+                      {card.example && (
+                        <p className="text-xs text-[var(--text-muted)] italic"><MathText>{card.example}</MathText></p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -144,7 +226,14 @@ export function TopicDetailPanel({ topicId, topicName, subjectName, mastery, exa
             {detail.documentSections.map((sec, i) => (
               <div key={i} className="flex items-center gap-2 text-xs text-[var(--text-body)] pl-2">
                 <FileText className="w-3 h-3 text-[var(--text-muted)]" />
-                <span>{sec.chunkCount} sections from {sec.documentTitle}</span>
+                <span className="flex-1">{sec.chunkCount} sections from {sec.documentTitle}</span>
+                <Link
+                  to={`/read/${sec.documentId}`}
+                  className="text-[10px] text-[var(--accent-text)] hover:underline"
+                  onClick={e => e.stopPropagation()}
+                >
+                  Read
+                </Link>
               </div>
             ))}
           </div>

@@ -16,7 +16,7 @@ export interface TopicDetail {
   exerciseGroups: ExerciseGroup[]
   flashcardStats: { total: number; due: number }
   conceptCards: ConceptCard[]
-  documentSections: Array<{ documentTitle: string; chunkCount: number }>
+  documentSections: Array<{ documentId: string; documentTitle: string; chunkCount: number }>
   masteryTrend: MasterySnapshot[]
   isLoading: boolean
 }
@@ -82,6 +82,7 @@ export function useTopicDetail(topicId: string | null, examProfileId: string | u
       const docs = await db.documents.where('id').anyOf([...byDoc.keys()]).toArray()
       const docMap = new Map(docs.map(d => [d.id, d.title]))
       return [...byDoc.entries()].map(([docId, count]) => ({
+        documentId: docId,
         documentTitle: docMap.get(docId) ?? 'Unknown',
         chunkCount: count,
       }))
