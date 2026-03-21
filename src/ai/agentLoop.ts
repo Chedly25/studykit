@@ -66,6 +66,7 @@ interface AgentLoopOptions {
   systemPrompt: string
   examProfileId: string
   authToken?: string
+  getToken?: () => Promise<string | null>
   onToken?: (text: string) => void
   onToolCall?: (toolName: string) => void
   onMessagesUpdate?: (messages: Message[]) => void
@@ -199,7 +200,7 @@ async function executeToolLocally(
 }
 
 export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoopResult> {
-  const { systemPrompt, examProfileId, authToken, onToken, onToolCall, signal } = options
+  const { systemPrompt, examProfileId, authToken, getToken, onToken, onToolCall, signal } = options
   const messages = [...options.messages]
   let finalText = ''
 
@@ -220,6 +221,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
       system: systemPrompt,
       tools: agentTools,
       authToken,
+      getToken,
       onToken,
       onToolCall,
       signal,

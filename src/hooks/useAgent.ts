@@ -230,6 +230,7 @@ export function useAgent(options: UseAgentOptions) {
         systemPrompt,
         examProfileId: profile.id,
         authToken: freshToken,
+        getToken,
         signal: abortController.signal,
         onToken: (text) => {
           if (!abortRef.current) {

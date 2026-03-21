@@ -28,6 +28,7 @@ export interface ChatRequestOptions {
   model?: string
   maxTokens?: number
   authToken?: string
+  getToken?: () => Promise<string | null>
   onToken?: (text: string) => void
   onToolCall?: (name: string) => void
   signal?: AbortSignal
@@ -121,7 +122,7 @@ function toOpenAIMessages(messages: Message[], system: string) {
 }
 
 export async function streamChat(options: ChatRequestOptions): Promise<ChatResponse> {
-  const { messages, system, tools, model, maxTokens = 4096, authToken, onToken, onToolCall, signal } = options
+  const { messages, system, tools, model, maxTokens = 4096, authToken, getToken, onToken, onToolCall, signal } = options
 
   const openaiMessages = toOpenAIMessages(messages, system)
   const openaiTools = tools.length > 0 ? toOpenAITools(tools) : undefined
@@ -134,15 +135,24 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
   if (model) body.model = model
   if (openaiTools) body.tools = openaiTools
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  if (authToken) headers['Authorization'] = `Bearer ${authToken}`
+  let currentToken = authToken
 
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-    signal,
-  })
+  const doFetch = async (token?: string) => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    return fetch(API_URL, { method: 'POST', headers, body: JSON.stringify(body), signal })
+  }
+
+  let response = await doFetch(currentToken)
+
+  // Retry once with fresh token on 401 (JWT expired)
+  if (response.status === 401 && getToken) {
+    const freshToken = await getToken()
+    if (freshToken) {
+      currentToken = freshToken
+      response = await doFetch(freshToken)
+    }
+  }
 
   if (!response.ok) {
     const errText = await response.text()
