@@ -16,8 +16,14 @@ interface ParsedExercise {
   exerciseNumber: number
   text: string
   solutionText?: string
+  keyResult?: string
   estimatedDifficulty: number
   pointValue?: number
+}
+
+interface ParsedExamData {
+  preamble: string
+  exercises: ParsedExercise[]
 }
 
 export function createExamExerciseProcessingWorkflow(
@@ -59,7 +65,7 @@ export function createExamExerciseProcessingWorkflow(
             fullContent: string
           }
 
-          const prompt = `Analyze this exam document and extract each individual exercise/question.
+          const prompt = `Analyze this exam document and extract each individual exercise/question WITH context.
 
 Document: "${context.doc.title}"
 
@@ -68,11 +74,13 @@ ${context.fullContent}
 
 Return ONLY valid JSON:
 {
+  "preamble": "The problem setup that defines variables, notation, objects used across all questions (e.g. 'Soit E un K-espace vectoriel de dimension finie, u un endomorphisme de E...'). If the exam has multiple independent problems, combine all preambles.",
   "exercises": [
     {
       "exerciseNumber": 1,
-      "text": "Full text of the exercise/question",
+      "text": "Full text of this question",
       "solutionText": "Solution if provided, or null",
+      "keyResult": "The key result/conclusion of this question that later questions might use (e.g. 'dim(F ∩ G) = 1', 'u est diagonalisable'). null if the question has no reusable result.",
       "estimatedDifficulty": 3,
       "pointValue": null
     }
@@ -80,19 +88,50 @@ Return ONLY valid JSON:
 }
 
 Rules:
-- Extract EVERY exercise/question from the document
+- "preamble": Extract the setup/context that defines objects, variables, spaces, maps, etc. used across questions. This is critical — later questions are meaningless without it.
+- "text": The full text of this specific question (don't summarize)
+- "keyResult": The main conclusion/result of this question, stated as a fact (not a proof). Later questions that say "en déduire", "en utilisant", "montrer que" depend on previous keyResults.
+- "solutionText": Include if provided in the document, null otherwise
 - exerciseNumber should be sequential (1, 2, 3...)
 - estimatedDifficulty: 1 (easy) to 5 (very hard)
-- Include the full text of each exercise (don't summarize)
 - If sub-questions exist (a, b, c), include them as part of the exercise text
-- pointValue: include if specified in the document, null otherwise
 Respond ONLY with valid JSON.`
 
-          const text = await ctx.llm(prompt, 'You are an expert at parsing academic exam documents. Extract individual exercises accurately.')
+          const text = await ctx.llm(prompt, 'You are an expert at parsing academic exam documents. Extract exercises with full context, preambles, and key results.')
 
           const jsonMatch = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').match(/\{[\s\S]*\}/)
           if (!jsonMatch) throw new Error('No JSON found in response')
-          return JSON.parse(jsonMatch[0]) as { exercises: ParsedExercise[] }
+          const parsed = JSON.parse(jsonMatch[0]) as ParsedExamData
+
+          // Enrich each exercise with preamble + admitted results from previous questions
+          const enrichedExercises: ParsedExercise[] = []
+          for (let i = 0; i < parsed.exercises.length; i++) {
+            const ex = parsed.exercises[i]
+            let contextBlock = ''
+
+            // Add preamble
+            if (parsed.preamble) {
+              contextBlock += parsed.preamble + '\n\n'
+            }
+
+            // Add admitted results from all previous questions
+            const prevResults = parsed.exercises
+              .slice(0, i)
+              .filter(prev => prev.keyResult)
+              .map(prev => `Q${prev.exerciseNumber}: ${prev.keyResult}`)
+            if (prevResults.length > 0) {
+              contextBlock += 'Résultats admis des questions précédentes:\n'
+              contextBlock += prevResults.map(r => `• ${r}`).join('\n')
+              contextBlock += '\n\n'
+            }
+
+            enrichedExercises.push({
+              ...ex,
+              text: contextBlock + `${ex.exerciseNumber}. ${ex.text}`,
+            })
+          }
+
+          return { exercises: enrichedExercises }
         },
       },
 

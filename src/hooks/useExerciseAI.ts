@@ -28,7 +28,7 @@ const INITIAL_STATE: ExerciseAIState = {
 }
 
 function buildGradingPrompt(exercise: Exercise, userAnswer: string, topicNames: string[]): string {
-  return `You are a demanding but fair math professor grading a student's work. Be direct and honest. If the answer is nonsense, say so bluntly — don't sugarcoat. If they clearly didn't try, call it out. When the answer is wrong, explain WHY it's wrong and what the correct reasoning is. Be rigorous.
+  return `You are a demanding but fair professor grading a student's work. Be direct and honest. If the answer is nonsense, say so bluntly — don't sugarcoat. If they clearly didn't try, call it out. When the answer is wrong, explain WHY it's wrong and what the correct reasoning is. Be rigorous.
 
 ## Exercise
 ${exercise.text}
