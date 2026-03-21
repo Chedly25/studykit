@@ -1,6 +1,7 @@
 /**
  * Embedded chat pane for the document reader.
  * Uses useAgent with sourcesEnabled for full document context.
+ * Persists conversation per document via localStorage.
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { X, Sparkles, Loader2 } from 'lucide-react'
@@ -21,12 +22,15 @@ interface Props {
   onClose: () => void
 }
 
+const CONV_KEY = (docId: string) => `reader_conv_${docId}`
+
 export function ReaderChatPane({ documentId, documentTitle, selectionContext, onSelectionContextConsumed, onClose }: Props) {
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { subjects, topics, dailyLogs } = useKnowledgeGraph(profileId)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [contextPills, setContextPills] = useState<ContextPill[]>([])
+  const restoredRef = useRef(false)
 
   const agent = useAgent({
     profile: activeProfile,
@@ -36,12 +40,32 @@ export function ReaderChatPane({ documentId, documentTitle, selectionContext, on
     sourcesEnabled: true,
   })
 
-  const { messages, isLoading, currentToolCall, streamingText, error, quotaExceeded, sendMessage, cancel } = agent
+  const { messages, isLoading, currentToolCall, streamingText, error, quotaExceeded, conversationId, sendMessage, cancel, loadConversation } = agent
 
   // Cancel in-flight requests on unmount
   useEffect(() => {
     return () => { cancel() }
   }, [cancel])
+
+  // Restore conversation for this document on mount
+  useEffect(() => {
+    if (restoredRef.current) return
+    restoredRef.current = true
+    const savedConvId = localStorage.getItem(CONV_KEY(documentId))
+    if (savedConvId) {
+      loadConversation(savedConvId).catch(() => {
+        // Conversation may have been deleted — clear stale reference
+        localStorage.removeItem(CONV_KEY(documentId))
+      })
+    }
+  }, [documentId, loadConversation])
+
+  // Persist conversation ID when it changes
+  useEffect(() => {
+    if (conversationId) {
+      localStorage.setItem(CONV_KEY(documentId), conversationId)
+    }
+  }, [conversationId, documentId])
 
   // Auto-scroll on new messages
   useEffect(() => {

@@ -114,18 +114,27 @@ export function PdfPageRenderer({
   }, [pdfDoc, pageNumber, scale])
 
   // Handle text selection → context menu
-  const handleMouseUp = useCallback((e: React.MouseEvent) => {
-    // Small delay to let the selection settle
+  const handleMouseUp = useCallback(() => {
     setTimeout(() => {
       const sel = window.getSelection()
-      if (!sel || sel.isCollapsed || !sel.toString().trim()) {
-        return
-      }
-
-      const text = sel.toString().trim()
-      if (!text || !containerRef.current) return
+      if (!sel || sel.isCollapsed || !sel.rangeCount) return
 
       const range = sel.getRangeAt(0)
+      if (!textLayerRef.current || !containerRef.current) return
+
+      // Collect text from all spans intersecting the selection range.
+      // This is more reliable than sel.toString() for absolutely-positioned spans
+      // where the browser may skip spans that aren't in DOM flow order.
+      const spans = textLayerRef.current.querySelectorAll('span')
+      const parts: string[] = []
+      for (const span of spans) {
+        if (range.intersectsNode(span)) {
+          parts.push(span.textContent ?? '')
+        }
+      }
+      const text = parts.join(' ').replace(/\s+/g, ' ').trim()
+      if (!text) return
+
       const rect = range.getBoundingClientRect()
 
       setContextMenu({
