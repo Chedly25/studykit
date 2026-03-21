@@ -487,17 +487,7 @@ function FlashcardReviewInline({
     return db.flashcards.where('id').anyOf(item.flashcardIds).toArray()
   }, [item.flashcardIds]) ?? []
 
-  if (cards.length === 0) return <p className="text-sm text-[var(--text-muted)]">Loading cards...</p>
-
-  const currentCard = cards[currentIndex]
-  if (!currentCard) {
-    return (
-      <div className="text-center py-4">
-        <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-        <p className="text-sm font-medium text-[var(--text-heading)]">All {reviewedCount} cards reviewed!</p>
-      </div>
-    )
-  }
+  const currentCard = cards[currentIndex] ?? null
 
   const advanceCard = () => {
     setExplanationCtx(null)
@@ -573,6 +563,18 @@ function FlashcardReviewInline({
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [flipped, explanationCtx, isSubmitting, nextInterval])
+
+  // Early returns AFTER all hooks to respect Rules of Hooks
+  if (cards.length === 0) return <p className="text-sm text-[var(--text-muted)]">Loading cards...</p>
+
+  if (!currentCard) {
+    return (
+      <div className="text-center py-4">
+        <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+        <p className="text-sm font-medium text-[var(--text-heading)]">All {reviewedCount} cards reviewed!</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-3">
