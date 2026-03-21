@@ -165,7 +165,14 @@ export default function Writing() {
                 </button>
               </div>
               <p className="text-xs text-[var(--text-muted)]">
-                Open the full <a href="/chat" className="text-[var(--accent-text)] hover:underline">AI Chat</a> for writing assistance. The AI will use your writing partner persona.
+                Use the{' '}
+                <button
+                  onClick={() => { window.dispatchEvent(new CustomEvent('open-chat-panel')); setShowAI(false) }}
+                  className="text-[var(--accent-text)] hover:underline"
+                >
+                  AI Chat panel
+                </button>
+                {' '}for writing assistance.
               </p>
             </div>
           )}

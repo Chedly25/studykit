@@ -8,6 +8,7 @@ import { useProactiveInsights } from '../hooks/useProactiveInsights'
 import { useSessionInsights } from '../hooks/useSessionInsights'
 import { useSourceCoverage } from '../hooks/useSourceCoverage'
 import { useStudentModel } from '../hooks/useStudentModel'
+import { Link } from 'react-router-dom'
 import { BarChart3 } from 'lucide-react'
 import { useTranslation, Trans } from 'react-i18next'
 import { CalibrationChart } from '../components/analytics/CalibrationChart'
@@ -119,7 +120,7 @@ export default function Analytics() {
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
         <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('analytics.title')}</h1>
         <p className="text-[var(--text-muted)]">{t('analytics.noData')}</p>
-        <a href="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</a>
+        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</Link>
       </div>
     )
   }
@@ -343,7 +344,7 @@ export default function Analytics() {
               components={{ 1: <strong /> }}
             />
           </span>
-          <a href="/sources" className="text-xs text-[var(--accent-text)] hover:underline">{t('dashboard.viewSources')}</a>
+          <Link to="/sources" className="text-xs text-[var(--accent-text)] hover:underline">{t('dashboard.viewSources')}</Link>
         </div>
       )}
     </div>

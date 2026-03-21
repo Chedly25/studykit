@@ -1,10 +1,11 @@
 /**
- * Cmd+K search modal — searches across documents, topics, exercises, concept cards, flashcards.
+ * Cmd+K search modal + command palette — searches across documents, topics, exercises,
+ * concept cards, flashcards, and offers quick actions.
  */
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Search, FileText, BookOpen, ListChecks, Layers, CreditCard, Loader2 } from 'lucide-react'
+import { Search, FileText, BookOpen, ListChecks, Layers, CreditCard, Loader2, ListTodo, Upload, ClipboardCheck, BarChart3, Settings } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useSearch, type SearchResult } from '../hooks/useSearch'
 
@@ -15,6 +16,23 @@ const TYPE_CONFIG: Record<SearchResult['type'], { icon: typeof FileText; label: 
   'concept-card': { icon: Layers, label: 'Concept', color: 'text-emerald-500' },
   flashcard: { icon: CreditCard, label: 'Flashcard', color: 'text-pink-500' },
 }
+
+interface QuickAction {
+  id: string
+  label: string
+  keywords: string[]
+  icon: typeof FileText
+  path: string
+}
+
+const QUICK_ACTIONS: QuickAction[] = [
+  { id: 'queue', label: 'Start study queue', keywords: ['queue', 'study', 'start', 'daily'], icon: ListTodo, path: '/queue' },
+  { id: 'upload', label: 'Upload document', keywords: ['upload', 'document', 'source', 'add'], icon: Upload, path: '/sources' },
+  { id: 'practice', label: 'Practice exam', keywords: ['practice', 'exam', 'test', 'mock'], icon: ClipboardCheck, path: '/practice-exam' },
+  { id: 'analytics', label: 'View analytics', keywords: ['analytics', 'progress', 'stats', 'charts'], icon: BarChart3, path: '/analytics' },
+  { id: 'flashcards', label: 'Flashcard maker', keywords: ['flashcard', 'cards', 'review', 'deck'], icon: CreditCard, path: '/flashcard-maker' },
+  { id: 'settings', label: 'Settings', keywords: ['settings', 'preferences', 'config', 'export'], icon: Settings, path: '/settings' },
+]
 
 interface Props {
   open: boolean
@@ -31,6 +49,18 @@ export function SearchModal({ open, onClose }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+
+  // Filter quick actions by query
+  const matchingActions = useMemo(() => {
+    if (!query.trim()) return QUICK_ACTIONS
+    const q = query.toLowerCase()
+    return QUICK_ACTIONS.filter(a =>
+      a.keywords.some(k => k.includes(q)) ||
+      a.label.toLowerCase().includes(q)
+    )
+  }, [query])
+
+  const totalSelectableItems = matchingActions.length + results.length
 
   // Focus input when opened
   useEffect(() => {
@@ -63,21 +93,33 @@ export function SearchModal({ open, onClose }: Props) {
     navigate(result.linkTo)
   }, [navigate, onClose])
 
+  const handleActionSelect = useCallback((action: QuickAction) => {
+    onClose()
+    navigate(action.path)
+  }, [navigate, onClose])
+
   // Keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setSelectedIndex(i => Math.min(i + 1, results.length - 1))
+      setSelectedIndex(i => Math.min(i + 1, totalSelectableItems - 1))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setSelectedIndex(i => Math.max(i - 1, 0))
-    } else if (e.key === 'Enter' && results[selectedIndex]) {
+    } else if (e.key === 'Enter') {
       e.preventDefault()
-      handleSelect(results[selectedIndex])
+      if (selectedIndex < matchingActions.length) {
+        handleActionSelect(matchingActions[selectedIndex])
+      } else {
+        const resultIdx = selectedIndex - matchingActions.length
+        if (results[resultIdx]) {
+          handleSelect(results[resultIdx])
+        }
+      }
     } else if (e.key === 'Escape') {
       onClose()
     }
-  }, [results, selectedIndex, handleSelect, onClose])
+  }, [totalSelectableItems, matchingActions, results, selectedIndex, handleSelect, handleActionSelect, onClose])
 
   if (!open) return null
 
@@ -88,7 +130,7 @@ export function SearchModal({ open, onClose }: Props) {
     return acc
   }, {})
 
-  let globalIndex = -1
+  let globalIndex = matchingActions.length - 1
 
   return (
     <div
@@ -126,7 +168,34 @@ export function SearchModal({ open, onClose }: Props) {
 
         {/* Results */}
         <div className="max-h-[50vh] overflow-y-auto">
-          {query.trim() && results.length === 0 && !isSearching && (
+          {/* Quick Actions */}
+          {matchingActions.length > 0 && (
+            <div>
+              <div className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-body)]/50">
+                Quick Actions
+              </div>
+              {matchingActions.map((action, i) => {
+                const Icon = action.icon
+                return (
+                  <button
+                    key={action.id}
+                    onClick={() => handleActionSelect(action)}
+                    onMouseEnter={() => setSelectedIndex(i)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                      selectedIndex === i
+                        ? 'bg-[var(--accent-bg)]'
+                        : 'hover:bg-[var(--bg-input)]'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 text-[var(--accent-text)] shrink-0" />
+                    <span className="text-sm font-medium text-[var(--text-heading)]">{action.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {query.trim() && results.length === 0 && matchingActions.length === 0 && !isSearching && (
             <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
               {t('search.noResults', 'No results found')}
             </div>
@@ -182,7 +251,7 @@ export function SearchModal({ open, onClose }: Props) {
         </div>
 
         {/* Footer hint */}
-        {results.length > 0 && (
+        {(results.length > 0 || matchingActions.length > 0) && (
           <div className="px-4 py-2 border-t border-[var(--border-card)] flex items-center gap-4 text-[10px] text-[var(--text-faint)]">
             <span><kbd className="border border-[var(--border-card)] rounded px-1">↑↓</kbd> navigate</span>
             <span><kbd className="border border-[var(--border-card)] rounded px-1">↵</kbd> open</span>

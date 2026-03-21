@@ -28,6 +28,9 @@ export default function PracticeExam() {
   weeklyHoursRef.current = weeklyHours
   const [completionData, setCompletionData] = useState<SessionCompletionData | null>(null)
 
+  // Scroll to top on phase change
+  useEffect(() => { window.scrollTo(0, 0) }, [exam.phase])
+
   // Snapshot mastery when exam starts
   useEffect(() => {
     if (exam.phase === 'taking' && masterySnapshotRef.current.size === 0) {

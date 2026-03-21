@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Calendar, Check, Loader2, RefreshCw, Play } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -41,13 +42,21 @@ export default function StudyPlan() {
     replanPlan, replanSuggestion,
   } = useStudyPlan(profileId)
 
+  const [confirmDismiss, setConfirmDismiss] = useState(false)
+  useEffect(() => {
+    if (confirmDismiss) {
+      const timer = setTimeout(() => setConfirmDismiss(false), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [confirmDismiss])
+
   if (!activeProfile) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
         <Calendar className="w-12 h-12 text-[var(--accent-text)] mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('ai.studyPlan')}</h1>
         <p className="text-[var(--text-muted)]">{t('ai.createProfileFirst')}</p>
-        <a href="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</a>
+        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</Link>
       </div>
     )
   }
@@ -113,8 +122,18 @@ export default function StudyPlan() {
             <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
             {t('ai.regeneratePlan')}
           </button>
-          <button onClick={deactivatePlan} className="text-sm text-[var(--text-muted)] hover:text-red-500 px-2">
-            Dismiss
+          <button
+            onClick={() => {
+              if (confirmDismiss) {
+                deactivatePlan()
+                setConfirmDismiss(false)
+              } else {
+                setConfirmDismiss(true)
+              }
+            }}
+            className={`text-sm px-2 ${confirmDismiss ? 'text-red-500 font-medium' : 'text-[var(--text-muted)] hover:text-red-500'}`}
+          >
+            {confirmDismiss ? 'Are you sure?' : 'Dismiss'}
           </button>
         </div>
       </div>

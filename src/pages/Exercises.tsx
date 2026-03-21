@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { ListChecks, Filter, Star, Check, Clock, Send, Bot, RotateCcw, Loader2 } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
@@ -166,6 +166,7 @@ export default function Exercises() {
         <ListChecks className="w-12 h-12 text-[var(--accent-text)] mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('exercises.title', 'Exercise Bank')}</h1>
         <p className="text-[var(--text-muted)]">{t('ai.createProfileFirst')}</p>
+        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</Link>
       </div>
     )
   }
@@ -332,7 +333,7 @@ export default function Exercises() {
               <ListChecks className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
               <p className="text-sm text-[var(--text-muted)]">
                 {exercises.length === 0
-                  ? t('exercises.empty', 'No exercises yet. Upload past exams from the Sources page to build your exercise bank.')
+                  ? <>No exercises yet. Upload past exams from the <Link to="/sources" className="text-[var(--accent-text)] hover:underline">Sources page</Link> to build your exercise bank.</>
                   : t('exercises.noMatch', 'No exercises match your filters.')}
               </p>
             </div>

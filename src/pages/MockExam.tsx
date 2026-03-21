@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { Clock, Play, Brain, CheckCircle } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
@@ -64,6 +65,7 @@ export default function MockExam() {
         <Clock className="w-12 h-12 text-[var(--accent-text)] mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('mockExam.title')}</h1>
         <p className="text-[var(--text-muted)]">{t('ai.createProfileFirst')}</p>
+        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</Link>
       </div>
     )
   }

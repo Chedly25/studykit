@@ -235,12 +235,23 @@ export default function DailyQueue() {
     )
   }
 
+  const struggled = sessionResults.current.filter(r => r.rating === 'struggled')
+  const nextRecommendation = struggled.length > 0
+    ? {
+        topicName: struggled[0].topicName,
+        action: 'Chat with AI',
+        reason: `You struggled with ${struggled[0].topicName} — get help to solidify this concept`,
+        linkTo: '#open-chat',
+      }
+    : undefined
+
   const completionData: SessionCompletionData = {
     activityType: 'flashcards',
     timeSpentSeconds: finalTimeSpent,
     streak,
     weeklyHours,
     weeklyTarget: activeProfile.weeklyTargetHours,
+    nextRecommendation,
   }
 
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
@@ -263,6 +274,15 @@ export default function DailyQueue() {
         <SessionCompletionOverlay
           data={completionData}
           onDismiss={() => setShowCompletion(false)}
+          onAction={(linkTo) => {
+            if (linkTo === '#open-chat') {
+              window.dispatchEvent(new CustomEvent('open-chat-panel'))
+              setShowCompletion(false)
+            } else {
+              navigate(linkTo)
+              setShowCompletion(false)
+            }
+          }}
           aiDebrief={aiDebrief}
           isDebriefStreaming={isDebriefStreaming}
         />

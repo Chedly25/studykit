@@ -160,7 +160,7 @@ export default function Dashboard() {
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
         <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('dashboard.welcome')}</h1>
         <p className="text-[var(--text-muted)] mb-6">{t('dashboard.setupPrompt')}</p>
-        <a href="/exam-profile" className="btn-primary px-6 py-2.5 inline-block">{t('dashboard.createProfile')}</a>
+        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 inline-block">{t('dashboard.createProfile')}</Link>
       </div>
     )
   }
@@ -196,26 +196,19 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Block 2B: Resume queue banner */}
-      {queueInProgress && (
-        <Link
-          to="/queue"
-          className="flex items-center justify-between w-full px-6 py-3 mb-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 font-semibold text-sm hover:bg-amber-500/15 transition-colors"
-        >
-          <span>You have items left in today's queue</span>
-          <span className="text-xs font-bold px-3 py-1 rounded-lg bg-amber-500/20">Resume</span>
-        </Link>
-      )}
-
-      {/* Queue CTA */}
+      {/* Queue CTA — unified resume/start */}
       {topics.length > 0 && (
         <Link
           to="/queue"
-          className="flex items-center justify-between w-full px-6 py-4 mb-3 rounded-xl bg-[var(--accent-text)] text-white font-semibold text-base hover:opacity-90 transition-opacity"
+          className={`flex items-center justify-between w-full px-6 py-4 mb-3 rounded-xl font-semibold text-base hover:opacity-90 transition-opacity ${
+            queueInProgress
+              ? 'bg-amber-500 text-white'
+              : 'bg-[var(--accent-text)] text-white'
+          }`}
         >
           <div className="flex items-center gap-3">
             <ListTodo className="w-5 h-5" />
-            <span>Start Today's Queue</span>
+            <span>{queueInProgress ? "Resume Today's Queue" : "Start Today's Queue"}</span>
           </div>
           <ArrowRight className="w-5 h-5" />
         </Link>

@@ -36,7 +36,7 @@ export function Layout() {
   const { t } = useTranslation()
   const location = useLocation()
   const isOnline = useOnlineStatus()
-  const isChatPage = location.pathname === '/chat' || location.pathname === '/session'
+  const isChatPage = location.pathname === '/session'
 
   const sidebarExpanded = sidebarPinned || sidebarHovered
   const collapsed = !sidebarExpanded
@@ -53,6 +53,13 @@ export function Layout() {
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
+  }, [])
+
+  // Open chat panel from anywhere via custom event
+  useEffect(() => {
+    const handler = () => setChatOpen(true)
+    window.addEventListener('open-chat-panel', handler)
+    return () => window.removeEventListener('open-chat-panel', handler)
   }, [])
 
   // Auto-collapse on route change
@@ -204,7 +211,32 @@ export function Layout() {
                   </>
                 )}
                 <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} collapsed={collapsed} pro />
-                <SidebarLink to="/chat" icon={MessageCircle} label={isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')} active={location.pathname === '/chat'} collapsed={collapsed} pro />
+                {collapsed ? (
+                  <button
+                    onClick={() => setChatOpen(true)}
+                    className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors ${
+                      chatOpen
+                        ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+                        : 'text-[var(--text-body)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)]'
+                    }`}
+                    title={isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')}
+                  >
+                    <MessageCircle size={20} />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setChatOpen(true)}
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors w-full ${
+                      chatOpen
+                        ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+                        : 'text-[var(--text-body)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)]'
+                    }`}
+                  >
+                    <MessageCircle size={16} />
+                    <span className="flex-1 truncate text-left">{isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')}</span>
+                    <ProBadge />
+                  </button>
+                )}
               </SidebarSection>
             </nav>
 
@@ -282,7 +314,18 @@ export function Layout() {
                     </>
                   )}
                   <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} onClick={closeSidebar} collapsed={false} pro />
-                  <SidebarLink to="/chat" icon={MessageCircle} label={isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')} active={location.pathname === '/chat'} onClick={closeSidebar} collapsed={false} pro />
+                  <button
+                    onClick={() => { closeSidebar(); setChatOpen(true) }}
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors w-full ${
+                      chatOpen
+                        ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+                        : 'text-[var(--text-body)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)]'
+                    }`}
+                  >
+                    <MessageCircle size={16} />
+                    <span className="flex-1 truncate text-left">{isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')}</span>
+                    <ProBadge />
+                  </button>
                 </SidebarSection>
               </nav>
 

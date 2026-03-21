@@ -21,7 +21,6 @@ const Analytics = lazy(() => import('./pages/Analytics'))
 const FocusMode = lazy(() => import('./pages/FocusMode'))
 
 // AI
-const Chat = lazy(() => import('./pages/Chat'))
 const PracticeExam = lazy(() => import('./pages/PracticeExam'))
 const StudyPlan = lazy(() => import('./pages/StudyPlan'))
 const StudySession = lazy(() => import('./pages/StudySession'))
@@ -122,10 +121,8 @@ export default function App() {
           <Route path="focus" element={<ProtectedRoute><FocusMode /></ProtectedRoute>} />
 
           {/* Protected — AI */}
-          <Route path="chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-          <Route path="socratic" element={<Navigate to="/chat" replace />} />
+          <Route path="chat" element={<Navigate to="/" replace />} />
           <Route path="practice-exam" element={<ProtectedRoute><PracticeExam /></ProtectedRoute>} />
-          <Route path="explain-back" element={<Navigate to="/chat" replace />} />
           <Route path="study-plan" element={<ProtectedRoute><StudyPlan /></ProtectedRoute>} />
           <Route path="session" element={<ProtectedRoute><StudySession /></ProtectedRoute>} />
           <Route path="exercises" element={<ProtectedRoute><Exercises /></ProtectedRoute>} />

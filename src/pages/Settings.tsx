@@ -3,6 +3,7 @@
  * Route: /settings
  */
 import { useState, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell } from 'lucide-react'
 import { requestPermission, getNotificationStatus, registerServiceWorker } from '../lib/pushNotifications'
 import { useExamProfile } from '../hooks/useExamProfile'
@@ -76,6 +77,7 @@ export default function Settings() {
       <div className="max-w-2xl mx-auto px-4 py-12 text-center">
         <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">Settings</h1>
         <p className="text-[var(--text-muted)]">Create a profile to access settings.</p>
+        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</Link>
       </div>
     )
   }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Plus, Trash2, Download, Upload, ArrowLeft, RotateCcw, BookOpen, BarChart3, Loader2, Brain, Layers, GraduationCap, Sparkles } from 'lucide-react'
 import { useAuth } from '@clerk/clerk-react'
 import { ToolSEO } from '../../components/SEO'
@@ -50,6 +50,7 @@ export default function FlashcardMaker() {
   } = useFlashcards(activeProfile?.id)
 
   const [mode, setMode] = useState<Mode>('manage')
+  useEffect(() => { window.scrollTo(0, 0) }, [mode])
   const [expandedDeckId, setExpandedDeckId] = useState<string | null>(null)
   const [newDeckName, setNewDeckName] = useState('')
   const [newCardFront, setNewCardFront] = useState('')
