@@ -9,70 +9,85 @@ import { runMigration } from './db/migrations'
 // Run IndexedDB migration on app load
 runMigration().catch(console.warn)
 
+// Auto-reload on stale chunk errors (happens after deploy with new hashes)
+function lazyWithRetry(importFn: () => Promise<any>) {
+  return lazy(() =>
+    importFn().catch(() => {
+      // Chunk failed to load — likely a stale deploy. Reload once.
+      const key = 'chunk_reload'
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1')
+        window.location.reload()
+      }
+      return importFn()
+    })
+  )
+}
+
 // Pages
-const Home = lazy(() => import('./pages/Home'))
-const AllTools = lazy(() => import('./pages/AllTools'))
-const NotFound = lazy(() => import('./pages/NotFound'))
+const Home = lazyWithRetry(() => import('./pages/Home'))
+const AllTools = lazyWithRetry(() => import('./pages/AllTools'))
+const NotFound = lazyWithRetry(() => import('./pages/NotFound'))
 
 // Command Center
-const Dashboard = lazy(() => import('./pages/Dashboard'))
-const ExamProfile = lazy(() => import('./pages/ExamProfile'))
-const Analytics = lazy(() => import('./pages/Analytics'))
-const FocusMode = lazy(() => import('./pages/FocusMode'))
-const SubjectPage = lazy(() => import('./pages/SubjectPage'))
+const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'))
+const ExamProfile = lazyWithRetry(() => import('./pages/ExamProfile'))
+const Analytics = lazyWithRetry(() => import('./pages/Analytics'))
+const FocusMode = lazyWithRetry(() => import('./pages/FocusMode'))
+const SubjectPage = lazyWithRetry(() => import('./pages/SubjectPage'))
 
 // AI
-const PracticeExam = lazy(() => import('./pages/PracticeExam'))
-const StudyPlan = lazy(() => import('./pages/StudyPlan'))
-const StudySession = lazy(() => import('./pages/StudySession'))
-const Exercises = lazy(() => import('./pages/Exercises'))
-const MockExam = lazy(() => import('./pages/MockExam'))
-const DailyQueue = lazy(() => import('./pages/DailyQueue'))
-const DocumentReader = lazy(() => import('./pages/DocumentReader'))
-const Settings = lazy(() => import('./pages/Settings'))
+const PracticeExam = lazyWithRetry(() => import('./pages/PracticeExam'))
+const StudyPlan = lazyWithRetry(() => import('./pages/StudyPlan'))
+const StudySession = lazyWithRetry(() => import('./pages/StudySession'))
+const Exercises = lazyWithRetry(() => import('./pages/Exercises'))
+const MockExam = lazyWithRetry(() => import('./pages/MockExam'))
+const DailyQueue = lazyWithRetry(() => import('./pages/DailyQueue'))
+const DocumentReader = lazyWithRetry(() => import('./pages/DocumentReader'))
+const Settings = lazyWithRetry(() => import('./pages/Settings'))
 
 // Admin
-const AdminLayout = lazy(() => import('./components/admin/AdminLayout'))
-const AdminOverview = lazy(() => import('./pages/admin/Overview'))
-const AdminRevenue = lazy(() => import('./pages/admin/Revenue'))
-const AdminUsers = lazy(() => import('./pages/admin/Users'))
-const AdminUsage = lazy(() => import('./pages/admin/Usage'))
+const AdminLayout = lazyWithRetry(() => import('./components/admin/AdminLayout'))
+const AdminOverview = lazyWithRetry(() => import('./pages/admin/Overview'))
+const AdminRevenue = lazyWithRetry(() => import('./pages/admin/Revenue'))
+const AdminUsers = lazyWithRetry(() => import('./pages/admin/Users'))
+const AdminUsage = lazyWithRetry(() => import('./pages/admin/Usage'))
 
 // Subscription
-const Pricing = lazy(() => import('./pages/Pricing'))
-const SubscriptionSuccess = lazy(() => import('./pages/SubscriptionSuccess'))
+const Pricing = lazyWithRetry(() => import('./pages/Pricing'))
+const SubscriptionSuccess = lazyWithRetry(() => import('./pages/SubscriptionSuccess'))
 
 // Sources
-const Sources = lazy(() => import('./pages/Sources'))
+const Sources = lazyWithRetry(() => import('./pages/Sources'))
 
 // Research
-const Writing = lazy(() => import('./pages/Writing'))
-const Meetings = lazy(() => import('./pages/Meetings'))
-const Notes = lazy(() => import('./pages/Notes'))
+const Writing = lazyWithRetry(() => import('./pages/Writing'))
+const Meetings = lazyWithRetry(() => import('./pages/Meetings'))
+const Notes = lazyWithRetry(() => import('./pages/Notes'))
 
 // Article Review
-const ArticleReview = lazy(() => import('./pages/ArticleReview'))
+const ArticleReview = lazyWithRetry(() => import('./pages/ArticleReview'))
 
 // Grades
-const GpaCalculator = lazy(() => import('./pages/tools/GpaCalculator'))
-const GradeCalculator = lazy(() => import('./pages/tools/GradeCalculator'))
-const FinalGradeCalculator = lazy(() => import('./pages/tools/FinalGradeCalculator'))
+const GpaCalculator = lazyWithRetry(() => import('./pages/tools/GpaCalculator'))
+const GradeCalculator = lazyWithRetry(() => import('./pages/tools/GradeCalculator'))
+const FinalGradeCalculator = lazyWithRetry(() => import('./pages/tools/FinalGradeCalculator'))
 
 // Writing
-const WordCounter = lazy(() => import('./pages/tools/WordCounter'))
-const CitationGenerator = lazy(() => import('./pages/tools/CitationGenerator'))
+const WordCounter = lazyWithRetry(() => import('./pages/tools/WordCounter'))
+const CitationGenerator = lazyWithRetry(() => import('./pages/tools/CitationGenerator'))
 
 // Study
-const PomodoroTimer = lazy(() => import('./pages/tools/PomodoroTimer'))
-const ExamCountdown = lazy(() => import('./pages/tools/ExamCountdown'))
-const StudyTimeTracker = lazy(() => import('./pages/tools/StudyTimeTracker'))
-const FlashcardMaker = lazy(() => import('./pages/tools/FlashcardMaker'))
-const AssignmentTracker = lazy(() => import('./pages/tools/AssignmentTracker'))
-const AmbientSoundGenerator = lazy(() => import('./pages/tools/AmbientSoundGenerator'))
+const PomodoroTimer = lazyWithRetry(() => import('./pages/tools/PomodoroTimer'))
+const ExamCountdown = lazyWithRetry(() => import('./pages/tools/ExamCountdown'))
+const StudyTimeTracker = lazyWithRetry(() => import('./pages/tools/StudyTimeTracker'))
+const FlashcardMaker = lazyWithRetry(() => import('./pages/tools/FlashcardMaker'))
+const AssignmentTracker = lazyWithRetry(() => import('./pages/tools/AssignmentTracker'))
+const AmbientSoundGenerator = lazyWithRetry(() => import('./pages/tools/AmbientSoundGenerator'))
 
 // Reference
-const UnitConverter = lazy(() => import('./pages/tools/UnitConverter'))
-const PeriodicTable = lazy(() => import('./pages/tools/PeriodicTable'))
+const UnitConverter = lazyWithRetry(() => import('./pages/tools/UnitConverter'))
+const PeriodicTable = lazyWithRetry(() => import('./pages/tools/PeriodicTable'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
