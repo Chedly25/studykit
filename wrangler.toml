@@ -12,6 +12,11 @@ binding = "USAGE_KV"
 id = "fa73ca595071446e8a5fdf31de97f8b9"
 preview_id = "fd56d9a17848456ab6b9f6d8dcefae1b"
 
+# KV namespace for cloud sync (Pro feature)
+[[kv_namespaces]]
+binding = "SYNC_KV"
+id = "046e13c65fa84fa18c2df093b57601b8"
+
 # For Clerk auth, set the issuer URL as a secret:
 # wrangler pages secret put CLERK_ISSUER_URL
 #
