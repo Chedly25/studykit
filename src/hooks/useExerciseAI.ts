@@ -28,7 +28,7 @@ const INITIAL_STATE: ExerciseAIState = {
 }
 
 function buildGradingPrompt(exercise: Exercise, userAnswer: string, topicNames: string[]): string {
-  return `You are an expert academic tutor grading a student's answer to an exercise.
+  return `You are a demanding but fair math professor grading a student's work. Be direct and honest. If the answer is nonsense, say so bluntly — don't sugarcoat. If they clearly didn't try, call it out. When the answer is wrong, explain WHY it's wrong and what the correct reasoning is. Be rigorous.
 
 ## Exercise
 ${exercise.text}
@@ -41,18 +41,18 @@ ${exercise.solutionText ? `## Reference Solution\n${exercise.solutionText}\n` : 
 ${topicNames.join(', ')}
 
 ## Instructions
-Grade the student's answer. Respond with a JSON block followed by detailed feedback.
+Grade the student's answer. Respond with a JSON block followed by feedback.
 
 First, output EXACTLY this JSON block (no markdown code fences):
 {"score": <0-100>, "errorType": "<recall|conceptual|application|null>"}
 
-Then provide detailed feedback:
-1. What was correct in the student's answer
-2. What was incorrect or missing
-3. The correct approach with explanation
-4. Key concepts to review if the answer was wrong
+Then provide feedback in markdown:
+- If the answer is gibberish or clearly not an attempt: say so directly in one sentence, then show the correct solution
+- If wrong but shows effort: point out the specific errors, explain the correct approach
+- If partially correct: acknowledge what's right, fix what's wrong
+- If correct: confirm briefly, no need for extensive praise
 
-Use LaTeX notation (\\( ... \\) for inline, \\[ ... \\] for display) for any mathematical expressions.`
+Be concise. Use $...$ for inline math and $$...$$ for display math.`
 }
 
 function parseGradingResponse(text: string): { score: number | null; errorType: string | null } {

@@ -6,6 +6,7 @@ import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useExerciseBank } from '../hooks/useExerciseBank'
 import { useExerciseAI } from '../hooks/useExerciseAI'
+import { MathText } from '../components/MathText'
 import type { Exercise } from '../db/schema'
 
 function DifficultyStars({ level }: { level: number }) {
@@ -294,7 +295,7 @@ export default function Exercises() {
               )}
 
               <div className="prose prose-sm max-w-none text-[var(--text-body)]">
-                <p className="whitespace-pre-wrap">{exerciseAI.feedback}</p>
+                <MathText>{exerciseAI.feedback}</MathText>
               </div>
 
               {!exerciseAI.isStreaming && (
