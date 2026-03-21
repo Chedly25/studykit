@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
-import { Upload, MessageCircle, Layers, RotateCcw, GitBranch, ListChecks } from 'lucide-react'
+import { Upload, MessageCircle, Layers, RotateCcw, GitBranch, ListChecks, BookOpen } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useAgent } from '../hooks/useAgent'
@@ -28,6 +28,7 @@ import { PlanStrip } from '../components/session/PlanStrip'
 import { MaterialsPanel } from '../components/session/MaterialsPanel'
 import { ConceptCardStrip } from '../components/session/ConceptCardStrip'
 import { CardsView } from '../components/session/CardsView'
+import { CourseView } from '../components/session/CourseView'
 import { ReviewView } from '../components/session/ReviewView'
 import { KnowledgeMap } from '../components/session/KnowledgeMap'
 import { CodePlayground } from '../components/session/CodePlayground'
@@ -35,7 +36,7 @@ import { ExerciseDrill } from '../components/session/ExerciseDrill'
 import type { SessionContext } from '../ai/systemPrompt'
 import type { ChatAttachment } from '../hooks/useAttachments'
 
-type SessionView = 'chat' | 'cards' | 'map' | 'review' | 'exercises'
+type SessionView = 'course' | 'chat' | 'cards' | 'map' | 'review' | 'exercises'
 
 export default function StudySession() {
   const { t } = useTranslation()
@@ -56,7 +57,7 @@ export default function StudySession() {
   const exerciseStatsByTopic = useMemo(() => getExerciseStatsMap(), [getExerciseStatsMap])
 
   const [isDragging, setIsDragging] = useState(false)
-  const [activeView, setActiveView] = useState<SessionView>('cards')
+  const [activeView, setActiveView] = useState<SessionView>('course')
 
   // Determine layout variant based on exam type
   const CODING_KEYWORDS = ['python', 'java', 'javascript', 'c++', 'programming', 'code', 'coding', 'algorithm', 'data structure', 'web dev', 'react', 'sql']
@@ -294,6 +295,7 @@ export default function StudySession() {
       {/* View toggle */}
       <div className="flex items-center gap-1 px-4 py-1.5 border-b border-[var(--border-card)] bg-[var(--bg-card)]/30">
         {([
+          { key: 'course' as const, icon: BookOpen, label: 'Course' },
           { key: 'cards' as const, icon: Layers, label: `Cards${conceptCards.length > 0 ? ` (${conceptCards.length})` : ''}` },
           { key: 'exercises' as const, icon: ListChecks, label: 'Exercises' },
           { key: 'review' as const, icon: RotateCcw, label: 'Review' },
@@ -402,6 +404,14 @@ export default function StudySession() {
               </div>
             )}
           </div>
+        )}
+
+        {activeView === 'course' && profileId && topic && (
+          <CourseView
+            examProfileId={profileId}
+            topicId={topic.id}
+            topicName={topic.name}
+          />
         )}
 
         {activeView === 'cards' && profileId && topic && (

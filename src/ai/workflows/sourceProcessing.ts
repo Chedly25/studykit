@@ -218,11 +218,11 @@ Generate 10-20 high-quality flashcards covering the key concepts. Focus on under
         return { summary: conceptData?.summary ?? '', conceptsFound, mappingsApplied, flashcardDeckId, flashcardCount }
       }),
 
-      // Step 6: Generate concept cards (Pro only)
+      // Step 6: Generate concept cards
       {
         id: 'generate-concept-cards',
         name: 'Generating concept cards',
-        shouldRun: () => config.isPro,
+        shouldRun: () => true,
         optional: true,
         async execute(_input: unknown, ctx: WorkflowContext) {
           const conceptData = ctx.results['extract-concepts']?.data as {
