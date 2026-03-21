@@ -65,24 +65,24 @@ export function createSourceProcessingWorkflow(
           const topicList = context.topics.map(t => t.name).join(', ')
           const subjectList = context.subjects.map(s => s.name).join(', ')
 
-          // Launch all three in parallel
-          const [embedResult, extractResult, flashcardResult] = await Promise.all([
-            // Embed chunks
-            (async () => {
-              try {
-                const alreadyEmbedded = await hasEmbeddings(config.documentId)
-                if (alreadyEmbedded) return { skipped: true }
-                const chunks = await getChunksByDocumentId(config.documentId)
-                await embedAndStoreChunks(chunks, ctx.authToken)
-                return { embedded: chunks.length }
-              } catch {
-                return { error: 'embedding failed' }
-              }
-            })(),
+          // Embed chunks first (uses embed API, not LLM — runs via embedGate)
+          let embedResult: { skipped?: boolean; embedded?: number; error?: string }
+          try {
+            const alreadyEmbedded = await hasEmbeddings(config.documentId)
+            if (alreadyEmbedded) {
+              embedResult = { skipped: true }
+            } else {
+              const chunks = await getChunksByDocumentId(config.documentId)
+              await embedAndStoreChunks(chunks, ctx.authToken)
+              embedResult = { embedded: chunks.length }
+            }
+          } catch {
+            embedResult = { error: 'embedding failed' }
+          }
 
-            // Extract concepts + summary (1 LLM call)
-            (async () => {
-              const prompt = `Analyze this document and produce a JSON response.
+          // Single combined LLM call: summary + concepts + flashcards in one prompt
+          const includeFlashcards = config.isPro
+          const prompt = `Analyze this document and produce a JSON response.
 
 Document: "${context.doc.title}"
 Study goal: ${context.profileName}
@@ -97,50 +97,28 @@ Return JSON with:
 2. "concepts": Array of concepts found, each with:
    - "name": The concept name (match existing topic names when possible)
    - "chunkIndices": Which chunk indices (0-based) contain this concept
+${includeFlashcards ? `3. "flashcards": Array of 10-20 study flashcards, each with:
+   - "front": question or prompt
+   - "back": answer or explanation
+   Focus on understanding, not just recall.` : ''}
 
 Match concept names to existing topics when the content clearly maps. Only include concepts that are substantive.
 
 Respond ONLY with valid JSON.`
 
-              const text = await ctx.llm(prompt, 'You are an academic content analyst. Extract key concepts and generate concise summaries.')
-              const jsonMatch = text.match(/\{[\s\S]*\}/)
-              if (!jsonMatch) throw new Error('No JSON in extract response')
-              return JSON.parse(jsonMatch[0]) as {
-                summary: string
-                concepts: Array<{ name: string; chunkIndices: number[] }>
-              }
-            })(),
+          const text = await ctx.llm(prompt, 'You are an academic content analyst. Extract key concepts, generate summaries, and create study materials.')
+          const jsonMatch = text.match(/\{[\s\S]*\}/)
+          if (!jsonMatch) throw new Error('No JSON in extract response')
+          const parsed = JSON.parse(jsonMatch[0]) as {
+            summary: string
+            concepts: Array<{ name: string; chunkIndices: number[] }>
+            flashcards?: Array<{ front: string; back: string }>
+          }
 
-            // Generate flashcards (Pro only)
-            (async () => {
-              if (!config.isPro) return null
-              try {
-                const prompt = `Generate flashcards from this document for studying.
-
-Document: "${context.doc.title}"
-Study goal: ${context.profileName}
-
-Content:
-${context.sampleContent}
-
-Return JSON with:
-{
-  "cards": [
-    { "front": "question or prompt", "back": "answer or explanation" }
-  ]
-}
-
-Generate 10-20 high-quality flashcards covering the key concepts. Focus on understanding, not just recall. Respond ONLY with valid JSON.`
-
-                const text = await ctx.llm(prompt, 'You are an expert flashcard creator. Generate concise, effective study cards.')
-                const jsonMatch = text.match(/\{[\s\S]*\}/)
-                if (!jsonMatch) return null
-                return JSON.parse(jsonMatch[0]) as { cards: Array<{ front: string; back: string }> }
-              } catch {
-                return null
-              }
-            })(),
-          ])
+          const extractResult = { summary: parsed.summary, concepts: parsed.concepts }
+          const flashcardResult = parsed.flashcards && parsed.flashcards.length > 0
+            ? { cards: parsed.flashcards }
+            : null
 
           return { embedResult, extractResult, flashcardResult }
         },
@@ -285,8 +263,8 @@ Generate 10-20 high-quality flashcards covering the key concepts. Focus on under
 
           if (matchedConcepts.length === 0) return { cardsGenerated: 0 }
 
-          // Batch concepts into groups of 4 and run all batches in parallel
-          const BATCH_SIZE = 4
+          // Batch concepts into groups of 8 (fewer LLM calls)
+          const BATCH_SIZE = 8
           const batches: typeof matchedConcepts[] = []
           for (let i = 0; i < matchedConcepts.length; i += BATCH_SIZE) {
             batches.push(matchedConcepts.slice(i, i + BATCH_SIZE))

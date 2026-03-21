@@ -27,7 +27,7 @@ export function useExamProcessing(examProfileId: string | undefined) {
       'exam-exercise-processing',
       examProfileId,
       { documentId, isPro },
-      4, // 4 steps: gather → parse → tag → save
+      3, // 3 steps: gather → parse+tag → save
     )
     setJobId(id)
     return id

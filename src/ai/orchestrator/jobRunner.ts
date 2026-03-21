@@ -186,7 +186,7 @@ export class JobRunner {
               'exam-exercise-processing',
               job.examProfileId,
               { documentId: doc.id, isPro: config.isPro ?? false },
-              4,
+              3,
             )
           }
         }

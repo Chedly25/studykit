@@ -55,20 +55,34 @@ export function createExamExerciseProcessingWorkflow(
         }
       }),
 
-      // Step 2: Parse exercises from the exam
+      // Step 2: Parse exercises AND tag to topics in a single LLM call
       {
-        id: 'parse-exercises',
+        id: 'parse-and-tag-exercises',
         name: 'Extracting exercises',
         async execute(_input: unknown, ctx: WorkflowContext) {
           const context = ctx.results['gather-context']?.data as {
             doc: { title: string }
             fullContent: string
+            topics: Array<{ id: string; name: string; chapterId?: string }>
+            chapters: Array<{ id: string; name: string; subjectId: string }>
+            subjects: Array<{ id: string; name: string }>
           }
 
-          const prompt = `Analyze this exam document and extract each individual exercise/question WITH context.
+          // Build hierarchy description for topic tagging
+          const hierarchyDesc = context.subjects.map(s => {
+            const subChapters = context.chapters.filter(ch => ch.subjectId === s.id)
+            return `${s.name}:\n${subChapters.map(ch => {
+              const chTopics = context.topics.filter(t => t.chapterId === ch.id)
+              return `  ${ch.name}: ${chTopics.map(t => `${t.name} (${t.id})`).join(', ')}`
+            }).join('\n')}`
+          }).join('\n\n')
+
+          const hasTopics = context.topics.length > 0
+
+          const prompt = `Analyze this exam document: extract exercises WITH context${hasTopics ? ', AND map each to topics' : ''}.
 
 Document: "${context.doc.title}"
-
+${hasTopics ? `\nTopic hierarchy:\n${hierarchyDesc}\n` : ''}
 Content:
 ${context.fullContent}
 
@@ -82,7 +96,7 @@ Return ONLY valid JSON:
       "solutionText": "Solution if provided, or null",
       "keyResult": "The key result/conclusion of this question that later questions might use (e.g. 'dim(F ∩ G) = 1', 'u est diagonalisable'). null if the question has no reusable result.",
       "estimatedDifficulty": 3,
-      "pointValue": null
+      "pointValue": null${hasTopics ? ',\n      "topicIds": ["topic-id-1"]' : ''}
     }
   ]
 }
@@ -94,27 +108,27 @@ Rules:
 - "solutionText": Include if provided in the document, null otherwise
 - exerciseNumber should be sequential (1, 2, 3...)
 - estimatedDifficulty: 1 (easy) to 5 (very hard)
-- If sub-questions exist (a, b, c), include them as part of the exercise text
+- If sub-questions exist (a, b, c), include them as part of the exercise text${hasTopics ? '\n- "topicIds": 1-3 topic IDs from the hierarchy above that best match this exercise. Use exact IDs.' : ''}
 Respond ONLY with valid JSON.`
 
-          const text = await ctx.llm(prompt, 'You are an expert at parsing academic exam documents. Extract exercises with full context, preambles, and key results.')
+          const text = await ctx.llm(prompt, 'You are an expert at parsing academic exam documents. Extract exercises with full context, preambles, key results, and topic mappings.')
 
           const jsonMatch = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').match(/\{[\s\S]*\}/)
           if (!jsonMatch) throw new Error('No JSON found in response')
-          const parsed = JSON.parse(jsonMatch[0]) as ParsedExamData
+          const parsed = JSON.parse(jsonMatch[0]) as ParsedExamData & {
+            exercises: Array<ParsedExercise & { topicIds?: string[] }>
+          }
 
           // Enrich each exercise with preamble + admitted results from previous questions
-          const enrichedExercises: ParsedExercise[] = []
+          const taggedExercises: Array<ParsedExercise & { topicIds: string[] }> = []
           for (let i = 0; i < parsed.exercises.length; i++) {
             const ex = parsed.exercises[i]
             let contextBlock = ''
 
-            // Add preamble
             if (parsed.preamble) {
               contextBlock += parsed.preamble + '\n\n'
             }
 
-            // Add admitted results from all previous questions
             const prevResults = parsed.exercises
               .slice(0, i)
               .filter(prev => prev.keyResult)
@@ -125,92 +139,23 @@ Respond ONLY with valid JSON.`
               contextBlock += '\n\n'
             }
 
-            enrichedExercises.push({
+            taggedExercises.push({
               ...ex,
               text: contextBlock + `${ex.exerciseNumber}. ${ex.text}`,
+              topicIds: ex.topicIds ?? [],
             })
           }
 
-          return { exercises: enrichedExercises }
+          return { taggedExercises }
         },
       },
 
-      // Step 3: Tag exercises with topics
-      {
-        id: 'tag-exercises',
-        name: 'Tagging exercises with topics',
-        async execute(_input: unknown, ctx: WorkflowContext) {
-          const context = ctx.results['gather-context']?.data as {
-            topics: Array<{ id: string; name: string; chapterId?: string }>
-            chapters: Array<{ id: string; name: string }>
-            subjects: Array<{ id: string; name: string }>
-          }
-          const parsedData = ctx.results['parse-exercises']?.data as { exercises: ParsedExercise[] }
-
-          if (!parsedData?.exercises || parsedData.exercises.length === 0) {
-            return { taggedExercises: [] }
-          }
-
-          if (!context?.subjects || !context?.topics) {
-            return { taggedExercises: parsedData.exercises.map(e => ({ ...e, topicIds: [] as string[] })) }
-          }
-
-          // Build hierarchy description for the LLM
-          const hierarchyDesc = context.subjects.map(s => {
-            const subChapters = context.chapters.filter(ch => ch.subjectId === s.id)
-            return `${s.name}:\n${subChapters.map(ch => {
-              const chTopics = context.topics.filter(t => t.chapterId === ch.id)
-              return `  ${ch.name}: ${chTopics.map(t => `${t.name} (${t.id})`).join(', ')}`
-            }).join('\n')}`
-          }).join('\n\n')
-
-          const exerciseList = parsedData.exercises.map(e =>
-            `Exercise ${e.exerciseNumber}: ${e.text.slice(0, 200)}...`
-          ).join('\n')
-
-          const prompt = `Map each exercise to the most relevant topics from this hierarchy.
-
-Topic hierarchy:
-${hierarchyDesc}
-
-Exercises:
-${exerciseList}
-
-Return ONLY valid JSON:
-{
-  "mappings": [
-    { "exerciseNumber": 1, "topicIds": ["topic-id-1", "topic-id-2"] }
-  ]
-}
-
-Rules:
-- Each exercise can map to 1-3 topics
-- Use the exact topic IDs from the hierarchy above
-- If unsure, map to the most likely topic
-Respond ONLY with valid JSON.`
-
-          const text = await ctx.llm(prompt, 'You are an expert at classifying academic exam questions by topic.')
-          const jsonMatch = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').match(/\{[\s\S]*\}/)
-          if (!jsonMatch) return { taggedExercises: parsedData.exercises.map(e => ({ ...e, topicIds: [] as string[] })) }
-
-          const mappings = JSON.parse(jsonMatch[0]) as { mappings: Array<{ exerciseNumber: number; topicIds: string[] }> }
-          const mappingMap = new Map(mappings.mappings.map(m => [m.exerciseNumber, m.topicIds]))
-
-          return {
-            taggedExercises: parsedData.exercises.map(e => ({
-              ...e,
-              topicIds: mappingMap.get(e.exerciseNumber) ?? [],
-            })),
-          }
-        },
-      },
-
-      // Step 4: Save results
+      // Step 3: Save results
       localStep('save-results', 'Saving exercises', async (ctx) => {
         const context = ctx.results['gather-context']?.data as {
           doc: { id: string; title: string }
         }
-        const taggedData = ctx.results['tag-exercises']?.data as {
+        const taggedData = ctx.results['parse-and-tag-exercises']?.data as {
           taggedExercises: Array<ParsedExercise & { topicIds: string[] }>
         }
 
