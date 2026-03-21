@@ -100,6 +100,7 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
         }],
         system: 'You are a study assistant giving progressive hints. Each hint should be more specific than the last but never reveal the full answer.',
         tools: [],
+        maxTokens: 768,
         authToken: token,
         onToken: (t) => { hintText += t },
       })

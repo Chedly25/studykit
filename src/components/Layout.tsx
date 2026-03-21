@@ -3,10 +3,9 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react'
 import {
-  Menu, X, LayoutDashboard, BarChart3, Focus, MessageCircle,
-  FileText, PenTool, BookOpen, Users, Shield, FileSearch,
-  ClipboardCheck, Calendar, StickyNote, GraduationCap,
-  PanelLeftClose, PanelLeftOpen, ListChecks, Search, Settings,
+  Menu, X, BarChart3, MessageCircle,
+  BookOpen, Shield, Zap, FolderOpen,
+  PanelLeftClose, PanelLeftOpen, Search, Settings,
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
@@ -19,8 +18,11 @@ import { useSubscription } from '../hooks/useSubscription'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileMode } from '../hooks/useProfileMode'
 import { BackgroundJobsIndicator } from './BackgroundJobsIndicator'
+import { BottomNav } from './BottomNav'
+import { SyncIndicator } from './SyncIndicator'
 import { ErrorBoundary } from './ErrorBoundary'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
+import { useJobCompletionToasts } from '../hooks/useJobCompletionToasts'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
@@ -38,6 +40,9 @@ export function Layout() {
   const location = useLocation()
   const isOnline = useOnlineStatus()
   const isChatPage = location.pathname === '/session' || location.pathname.startsWith('/read/')
+
+  // Pipeline completion toasts
+  useJobCompletionToasts()
 
   const sidebarExpanded = sidebarPinned || sidebarHovered
   const collapsed = !sidebarExpanded
@@ -127,6 +132,7 @@ export function Layout() {
                 <Search size={18} />
               </button>
               <BackgroundJobsIndicator />
+              <SyncIndicator />
               <NotificationBell examProfileId={activeProfile?.id} />
               <button
                 onClick={() => setChatOpen(!chatOpen)}
@@ -185,63 +191,18 @@ export function Layout() {
               </button>
             </div>
 
-            {/* Nav links */}
-            <nav className="flex-1 px-2 py-2 space-y-4">
-              <SidebarSection label={t('nav.navigation', 'Navigation')} collapsed={collapsed}>
-                <SidebarLink to="/dashboard" icon={LayoutDashboard} label={t('nav.dashboard')} active={location.pathname === '/dashboard'} collapsed={collapsed} />
-                <SidebarLink to="/exam-profile" icon={GraduationCap} label={t('nav.projects', 'Projects')} active={location.pathname === '/exam-profile'} collapsed={collapsed} />
-                {isResearch ? (
-                  <>
-                    <SidebarLink to="/writing" icon={PenTool} label={t('research.writingSession')} active={location.pathname === '/writing'} collapsed={collapsed} />
-                    <SidebarLink to="/sources" icon={BookOpen} label={t('research.literature')} active={location.pathname === '/sources'} collapsed={collapsed} />
-                    <SidebarLink to="/notes" icon={StickyNote} label={t('research.notes')} active={location.pathname === '/notes'} collapsed={collapsed} />
-                    <SidebarLink to="/meetings" icon={Users} label={t('research.meetings')} active={location.pathname === '/meetings'} collapsed={collapsed} />
-                  </>
-                ) : (
-                  <>
-                    <SidebarLink to="/analytics" icon={BarChart3} label={t('nav.analytics')} active={location.pathname === '/analytics'} collapsed={collapsed} />
-                    <SidebarLink to="/sources" icon={FileText} label={t('sources.title', 'Sources')} active={location.pathname === '/sources'} collapsed={collapsed} />
-                  </>
-                )}
-                <SidebarLink to="/article-review" icon={FileSearch} label="Article Review" active={location.pathname === '/article-review'} collapsed={collapsed} pro />
-                <SidebarLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} collapsed={collapsed} />
-              </SidebarSection>
-
-              <SidebarSection label={t('nav.studyTools', 'Study Tools')} collapsed={collapsed}>
-                <SidebarLink to="/exercises" icon={ListChecks} label={t('exercises.title', 'Exercises')} active={location.pathname === '/exercises'} collapsed={collapsed} />
-                {!isResearch && (
-                  <>
-                    <SidebarLink to="/practice-exam" icon={ClipboardCheck} label={t('ai.practiceSession', 'Practice Exam')} active={location.pathname === '/practice-exam'} collapsed={collapsed} pro />
-                  </>
-                )}
-                {collapsed ? (
-                  <button
-                    onClick={() => setChatOpen(true)}
-                    className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors ${
-                      chatOpen
-                        ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
-                        : 'text-[var(--text-body)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)]'
-                    }`}
-                    title={isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')}
-                  >
-                    <MessageCircle size={20} />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setChatOpen(true)}
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors w-full ${
-                      chatOpen
-                        ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
-                        : 'text-[var(--text-body)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)]'
-                    }`}
-                  >
-                    <MessageCircle size={16} />
-                    <span className="flex-1 truncate text-left">{isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')}</span>
-                    <ProBadge />
-                  </button>
-                )}
-              </SidebarSection>
+            {/* Nav links — 4 focused items */}
+            <nav className="flex-1 px-2 py-2 space-y-0.5">
+              <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} collapsed={collapsed} />
+              <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} collapsed={collapsed} />
+              <SidebarLink to="/sources" icon={FolderOpen} label={isResearch ? 'Literature' : 'Library'} active={location.pathname === '/sources'} collapsed={collapsed} />
+              <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} collapsed={collapsed} />
             </nav>
+
+            {/* Settings at bottom */}
+            <div className={`px-2 py-2 border-t border-[var(--border-card)] ${collapsed ? 'flex justify-center' : ''}`}>
+              <SidebarLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} collapsed={collapsed} />
+            </div>
 
             {/* Sidebar footer — admin only */}
             {user?.primaryEmailAddress?.emailAddress === 'chedlyboukhris21@gmail.com' && (
@@ -286,48 +247,16 @@ export function Layout() {
                 </button>
               </div>
 
-              {/* Nav links */}
-              <nav className="flex-1 px-3 py-4 space-y-6">
-                <SidebarSection label={t('nav.navigation', 'Navigation')} collapsed={false}>
-                  <SidebarLink to="/dashboard" icon={LayoutDashboard} label={t('nav.dashboard')} active={location.pathname === '/dashboard'} onClick={closeSidebar} collapsed={false} />
-                  <SidebarLink to="/exam-profile" icon={GraduationCap} label={t('nav.projects', 'Projects')} active={location.pathname === '/exam-profile'} onClick={closeSidebar} collapsed={false} />
-                  {isResearch ? (
-                    <>
-                      <SidebarLink to="/writing" icon={PenTool} label={t('research.writingSession')} active={location.pathname === '/writing'} onClick={closeSidebar} collapsed={false} />
-                      <SidebarLink to="/sources" icon={BookOpen} label={t('research.literature')} active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
-                      <SidebarLink to="/notes" icon={StickyNote} label={t('research.notes')} active={location.pathname === '/notes'} onClick={closeSidebar} collapsed={false} />
-                      <SidebarLink to="/meetings" icon={Users} label={t('research.meetings')} active={location.pathname === '/meetings'} onClick={closeSidebar} collapsed={false} />
-                    </>
-                  ) : (
-                    <>
-                      <SidebarLink to="/analytics" icon={BarChart3} label={t('nav.analytics')} active={location.pathname === '/analytics'} onClick={closeSidebar} collapsed={false} />
-                      <SidebarLink to="/sources" icon={FileText} label={t('sources.title', 'Sources')} active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
-                    </>
-                  )}
-                  <SidebarLink to="/article-review" icon={FileSearch} label="Article Review" active={location.pathname === '/article-review'} onClick={closeSidebar} collapsed={false} pro />
-                  <SidebarLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} onClick={closeSidebar} collapsed={false} />
-                </SidebarSection>
+              {/* Nav links — 4 focused items */}
+              <nav className="flex-1 px-3 py-4 space-y-1">
+                <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/sources" icon={FolderOpen} label={isResearch ? 'Literature' : 'Library'} active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} onClick={closeSidebar} collapsed={false} />
 
-                <SidebarSection label={t('nav.studyTools', 'Study Tools')} collapsed={false}>
-                  <SidebarLink to="/exercises" icon={ListChecks} label={t('exercises.title', 'Exercises')} active={location.pathname === '/exercises'} onClick={closeSidebar} collapsed={false} />
-                  {!isResearch && (
-                    <>
-                      <SidebarLink to="/practice-exam" icon={ClipboardCheck} label={t('ai.practiceSession', 'Practice Exam')} active={location.pathname === '/practice-exam'} onClick={closeSidebar} collapsed={false} pro />
-                    </>
-                  )}
-                  <button
-                    onClick={() => { closeSidebar(); setChatOpen(true) }}
-                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors w-full ${
-                      chatOpen
-                        ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
-                        : 'text-[var(--text-body)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)]'
-                    }`}
-                  >
-                    <MessageCircle size={16} />
-                    <span className="flex-1 truncate text-left">{isResearch ? t('research.partner') : t('ai.chat', 'AI Chat')}</span>
-                    <ProBadge />
-                  </button>
-                </SidebarSection>
+                <div className="pt-3 mt-3 border-t border-[var(--border-card)]">
+                  <SidebarLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} onClick={closeSidebar} collapsed={false} />
+                </div>
               </nav>
 
               {/* Sidebar footer — admin only */}
@@ -347,7 +276,7 @@ export function Layout() {
         )}
 
         {/* ─── Main content ───────────────────────────────────── */}
-        <main className={isChatPage ? 'flex-1 w-full min-w-0' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0'}>
+        <main className={isChatPage ? 'flex-1 w-full min-w-0 pb-16 md:pb-0' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0 pb-16 md:pb-0'}>
           {!isOnline && (
             <div className="mb-4 px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-600 text-center">
               You're offline. Some features may not work.
@@ -380,6 +309,11 @@ export function Layout() {
           </div>
         </footer>
       )}
+
+      {/* Mobile Bottom Nav */}
+      <SignedIn>
+        <BottomNav />
+      </SignedIn>
 
       {/* Chat Panel */}
       <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} prefill={chatPrefill} onPrefillConsumed={() => setChatPrefill(null)} />

@@ -1,6 +1,7 @@
 export interface Env {
   AI: Ai
   USAGE_KV: KVNamespace
+  SYNC_KV: KVNamespace
   ALLOWED_ORIGIN?: string
   LLM_API_KEY: string
   LLM_API_URL?: string

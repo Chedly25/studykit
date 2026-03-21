@@ -225,7 +225,7 @@ export class JobRunner {
           messages: [{ role: 'user', content: prompt }],
           system: system ?? 'You are a helpful assistant. Respond with the requested format only.',
           tools: [],
-          maxTokens: 8192,
+          maxTokens: 4096,
           authToken: ctx.authToken,
           signal: controller.signal,
         })
@@ -402,7 +402,7 @@ export class JobRunner {
                 messages: [{ role: 'user', content: prompt }],
                 system: system ?? 'You are a helpful assistant. Respond with the requested format only.',
                 tools: [],
-                maxTokens: 8192,
+                maxTokens: 4096,
                 authToken: ctx.authToken,
                 signal: controller.signal,
               })

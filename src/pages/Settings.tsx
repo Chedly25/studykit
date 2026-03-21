@@ -4,9 +4,10 @@
  */
 import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell } from 'lucide-react'
+import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2 } from 'lucide-react'
 import { requestPermission, getNotificationStatus, registerServiceWorker } from '../lib/pushNotifications'
 import { useExamProfile } from '../hooks/useExamProfile'
+import { useCloudSync } from '../hooks/useCloudSync'
 import { exportProfileData, importProfileData, generateProgressReport, downloadBlob } from '../lib/dataExport'
 
 export default function Settings() {
@@ -17,6 +18,8 @@ export default function Settings() {
   const [generatingReport, setGeneratingReport] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [notifStatus, setNotifStatus] = useState(() => getNotificationStatus())
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const cloudSync = useCloudSync()
 
   const profileId = activeProfile?.id
 
@@ -196,6 +199,118 @@ export default function Settings() {
             <span className="text-xs text-emerald-500 font-medium">Active</span>
           )}
         </div>
+      </div>
+
+      {/* Cloud Sync */}
+      <div className="glass-card p-5 space-y-4 mt-4">
+        <h2 className="text-lg font-semibold text-[var(--text-heading)]">Cloud Sync</h2>
+        <p className="text-sm text-[var(--text-muted)]">
+          Sync your study data to the cloud for backup and multi-device access.
+        </p>
+
+        {!cloudSync.isPro ? (
+          <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-input)]/30">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[var(--bg-input)] flex items-center justify-center shrink-0">
+                <Cloud className="w-5 h-5 text-[var(--text-muted)]" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-[var(--text-muted)]">Cloud Sync</p>
+                <p className="text-xs text-[var(--text-faint)]">Upgrade to Pro to enable cloud sync</p>
+              </div>
+              <Link to="/pricing" className="btn-primary px-4 py-1.5 text-sm">Upgrade</Link>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* Enable/Disable toggle */}
+            <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-card)]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <Cloud className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[var(--text-heading)]">Auto Sync</p>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    {cloudSync.isEnabled
+                      ? cloudSync.lastSyncedAt
+                        ? `Last synced: ${new Date(cloudSync.lastSyncedAt).toLocaleString()}`
+                        : 'Enabled — syncing...'
+                      : 'Sync every 5 minutes when active'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => cloudSync.isEnabled ? cloudSync.disable() : cloudSync.enable()}
+                className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                  cloudSync.isEnabled
+                    ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25'
+                    : 'btn-primary'
+                }`}
+              >
+                {cloudSync.isEnabled ? 'Enabled' : 'Enable'}
+              </button>
+            </div>
+
+            {/* Sync Now */}
+            {cloudSync.isEnabled && (
+              <button
+                onClick={() => cloudSync.sync()}
+                disabled={cloudSync.status === 'syncing'}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-50 text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  {cloudSync.status === 'syncing'
+                    ? <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" />
+                    : <Cloud className="w-5 h-5 text-emerald-500" />
+                  }
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[var(--text-heading)]">Sync Now</p>
+                  <p className="text-xs text-[var(--text-muted)]">Push your latest data to the cloud</p>
+                </div>
+              </button>
+            )}
+
+            {/* Error */}
+            {cloudSync.error && (
+              <div className="flex items-center gap-2 text-sm p-3 rounded-lg bg-red-500/10 text-red-500">
+                <AlertTriangle className="w-4 h-4" />
+                {cloudSync.error}
+              </div>
+            )}
+
+            {/* Delete Cloud Data */}
+            {cloudSync.lastSyncedAt && (
+              <div className="pt-2 border-t border-[var(--border-card)]">
+                {!confirmDelete ? (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="flex items-center gap-2 text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete cloud data
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-red-500">Delete all cloud data?</span>
+                    <button
+                      onClick={async () => { await cloudSync.deleteCloud(); setConfirmDelete(false) }}
+                      className="text-xs font-medium text-red-500 hover:underline"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

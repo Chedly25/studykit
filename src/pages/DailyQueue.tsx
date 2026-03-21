@@ -165,6 +165,7 @@ function DailyQueueContent() {
               messages: [{ role: 'user', content: prompt }],
               system: 'You are a study coach giving a brief post-session debrief. Be warm, specific, and actionable. Use LaTeX $...$ for math if relevant.',
               tools: [],
+              maxTokens: 1024,
               authToken: token,
               onToken: (t) => { text += t; setAiDebrief(text) },
               signal: controller.signal,

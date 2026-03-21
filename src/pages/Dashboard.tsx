@@ -9,6 +9,9 @@ import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useTopicStats } from '../hooks/useTopicStats'
 import { SubjectGrid } from '../components/dashboard/SubjectGrid'
+import { NextStepsCard } from '../components/dashboard/NextStepsCard'
+import { LearningProfileCard } from '../components/dashboard/LearningProfileCard'
+import { CalibrationAlert } from '../components/dashboard/CalibrationAlert'
 import { useDailyQueue } from '../hooks/useDailyQueue'
 
 export default function Dashboard() {
@@ -90,6 +93,45 @@ export default function Dashboard() {
     [profileId],
   ) ?? []
 
+  // Student model for Learning Profile card
+  const studentModel = useLiveQuery(
+    () => profileId ? db.studentModels.where('examProfileId').equals(profileId).first() : undefined,
+    [profileId],
+  )
+
+  // Exercise counts for NextSteps
+  const exerciseCounts = useLiveQuery(
+    async () => {
+      if (!profileId) return { total: 0, attempts: 0 }
+      const total = await db.exercises.where('examProfileId').equals(profileId).filter(e => !e.hidden).count()
+      const attempts = await db.exerciseAttempts.where('examProfileId').equals(profileId).count()
+      return { total, attempts }
+    },
+    [profileId],
+  ) ?? { total: 0, attempts: 0 }
+
+  // Practice exam count for NextSteps
+  const practiceExamCount = useLiveQuery(
+    () => profileId ? db.practiceExamSessions.where('examProfileId').equals(profileId).count() : 0,
+    [profileId],
+  ) ?? 0
+
+  // Study plan for NextSteps
+  const hasStudyPlan = useLiveQuery(
+    async () => {
+      if (!profileId) return false
+      const plan = await db.studyPlans.where('examProfileId').equals(profileId).filter(p => p.isActive).first()
+      return !!plan
+    },
+    [profileId],
+  ) ?? false
+
+  // All documents for NextSteps
+  const allDocuments = useLiveQuery(
+    () => profileId ? db.documents.where('examProfileId').equals(profileId).toArray() : [],
+    [profileId],
+  ) ?? []
+
   // Quick stats
   const topicsWithoutMaterial = useMemo(() => {
     return topics.filter(t => {
@@ -142,6 +184,19 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {/* Next Steps */}
+      <NextStepsCard
+        topics={topics}
+        documents={allDocuments}
+        dueFlashcardCount={dueFlashcardCount}
+        dailyQueue={dailyQueue}
+        exerciseCount={exerciseCounts.total}
+        exerciseAttemptCount={exerciseCounts.attempts}
+        practiceExamCount={practiceExamCount}
+        hasStudyPlan={hasStudyPlan}
+        queueStartedToday={queueInProgress}
+      />
+
       {/* Queue CTA */}
       {topics.length > 0 && dailyQueue.length > 0 && (
         <Link
@@ -170,6 +225,9 @@ export default function Dashboard() {
         </Link>
       )}
 
+      {/* Calibration Alert */}
+      {profileId && <CalibrationAlert topics={topics} profileId={profileId} />}
+
       {/* Subjects */}
       {subjects.length > 0 && (
         <div className="mb-4">
@@ -181,6 +239,9 @@ export default function Dashboard() {
           />
         </div>
       )}
+
+      {/* AI Learning Profile */}
+      <LearningProfileCard studentModel={studentModel} />
 
       {/* Your courses */}
       {courseDocuments.length > 0 && (

@@ -1,8 +1,11 @@
 /**
  * Concept extraction tools — auto-map source content to topics.
+ * Tries embedding-based classification first (zero LLM cost),
+ * falls back to LLM approach when no embeddings exist.
  */
 import { db } from '../../db'
 import { streamChat } from '../client'
+import { classifyChunksByEmbedding } from '../../lib/topicClassifier'
 
 export async function autoMapSourceToTopics(
   examProfileId: string,
@@ -23,7 +26,31 @@ export async function autoMapSourceToTopics(
   const topics = await db.topics.where('examProfileId').equals(examProfileId).toArray()
   if (topics.length === 0) return JSON.stringify({ error: 'No topics defined. Create topics first.' })
 
-  // Send first chunks to AI for concept extraction
+  // Try embedding-based classification first (zero LLM cost)
+  try {
+    const embeddingCount = await db.chunkEmbeddings
+      .where('documentId')
+      .equals(input.documentId)
+      .count()
+
+    if (embeddingCount > 0) {
+      const mapped = await classifyChunksByEmbedding(input.documentId, examProfileId, authToken)
+      if (mapped > 0) {
+        return JSON.stringify({
+          success: true,
+          documentTitle: doc.title,
+          method: 'embedding',
+          mappingsApplied: mapped,
+          conceptsFound: [],
+          unmappedConcepts: [],
+        }, null, 2)
+      }
+    }
+  } catch {
+    // Fall through to LLM approach
+  }
+
+  // Fallback: LLM-based concept extraction
   const sampleContent = chunks.slice(0, 5).map(c => c.content).join('\n\n---\n\n')
   const topicNames = topics.map(t => t.name).join(', ')
 
@@ -49,6 +76,7 @@ Return ONLY valid JSON:
       messages: [{ role: 'user', content: prompt }],
       system: 'You are a concept extraction expert. Analyze documents and map content to study topics. Return only valid JSON.',
       tools: [],
+      maxTokens: 2048,
       authToken,
       signal,
     })
@@ -85,6 +113,7 @@ Return ONLY valid JSON:
     return JSON.stringify({
       success: true,
       documentTitle: doc.title,
+      method: 'llm',
       conceptsFound: parsed.conceptsFound,
       mappingsApplied: mapped,
       unmappedConcepts: parsed.unmappedConcepts,

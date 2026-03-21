@@ -11,6 +11,7 @@ import type { BackgroundJob, JobType } from '../db/schema'
 
 const JOB_LABELS: Record<JobType, string> = {
   'source-processing': 'Processing document',
+  'exam-exercise-processing': 'Extracting exercises',
   'article-review-batch': 'Reviewing articles',
   'article-synthesis': 'Synthesizing results',
   'practice-exam-generation': 'Generating exam',

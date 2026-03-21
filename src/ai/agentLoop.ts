@@ -257,35 +257,35 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
       if (response.reasoningContent) assistantMsg.reasoning_content = response.reasoningContent
       messages.push(assistantMsg)
 
-      // Execute tools and add results (truncate oversized results to keep payload manageable)
-      const resultBlocks: ContentBlock[] = []
-      for (const toolUse of toolUses) {
-        onToolCall?.(toolUse.name)
-        try {
-          let result = await executeToolLocally(toolUse.name, toolUse.input, examProfileId, authToken, signal)
-          if (result.length > MAX_TOOL_RESULT_CHARS) {
-            result = result.slice(0, MAX_TOOL_RESULT_CHARS) + '\n...[truncated]'
-          }
-          // Extract marker from tool result for auto-injection
+      // Execute tools in parallel and add results (truncate oversized results to keep payload manageable)
+      const resultBlocks: ContentBlock[] = await Promise.all(
+        toolUses.map(async (toolUse) => {
+          onToolCall?.(toolUse.name)
           try {
-            const parsed = JSON.parse(result)
-            if (parsed.marker) pendingMarkers.push(parsed.marker)
-          } catch { /* not JSON or no marker — fine */ }
-          resultBlocks.push({
-            type: 'tool_result',
-            tool_use_id: toolUse.id,
-            content: result,
-          } as ToolResultBlock)
-        } catch (err) {
-          if (signal?.aborted) break
-          resultBlocks.push({
-            type: 'tool_result',
-            tool_use_id: toolUse.id,
-            content: JSON.stringify({ error: err instanceof Error ? err.message : 'Tool execution failed' }),
-            is_error: true,
-          } as ToolResultBlock)
-        }
-      }
+            let result = await executeToolLocally(toolUse.name, toolUse.input, examProfileId, authToken, signal)
+            if (result.length > MAX_TOOL_RESULT_CHARS) {
+              result = result.slice(0, MAX_TOOL_RESULT_CHARS) + '\n...[truncated]'
+            }
+            // Extract marker from tool result for auto-injection
+            try {
+              const parsed = JSON.parse(result)
+              if (parsed.marker) pendingMarkers.push(parsed.marker)
+            } catch { /* not JSON or no marker — fine */ }
+            return {
+              type: 'tool_result',
+              tool_use_id: toolUse.id,
+              content: result,
+            } as ToolResultBlock
+          } catch (err) {
+            return {
+              type: 'tool_result',
+              tool_use_id: toolUse.id,
+              content: JSON.stringify({ error: err instanceof Error ? err.message : 'Tool execution failed' }),
+              is_error: true,
+            } as ToolResultBlock
+          }
+        })
+      )
       if (signal?.aborted) break
       messages.push({ role: 'user', content: resultBlocks })
       options.onMessagesUpdate?.([...messages])

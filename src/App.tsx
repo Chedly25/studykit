@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { SignIn, SignUp } from '@clerk/clerk-react'
 import { Layout } from './components/Layout'
 import { AuthLayout } from './components/AuthLayout'
@@ -144,7 +144,6 @@ export default function App() {
           <Route path="focus" element={<ProtectedRoute><FocusMode /></ProtectedRoute>} />
 
           {/* Protected — AI */}
-          <Route path="chat" element={<Navigate to="/" replace />} />
           <Route path="practice-exam" element={<ProtectedRoute><PracticeExam /></ProtectedRoute>} />
           <Route path="study-plan" element={<ProtectedRoute><StudyPlan /></ProtectedRoute>} />
           <Route path="session" element={<ProtectedRoute><StudySession /></ProtectedRoute>} />

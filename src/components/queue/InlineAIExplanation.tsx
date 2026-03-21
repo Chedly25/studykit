@@ -43,6 +43,7 @@ export function InlineAIExplanation({ content, topicName, onDismiss, examProfile
           }],
           system: 'You are a study tutor. Give a brief, clear explanation in 2-4 sentences. Be specific to the content provided. If there\'s math, use LaTeX $...$. Do not repeat the question — go straight to the explanation.',
           tools: [],
+          maxTokens: 768,
           authToken: token,
           onToken: (t) => {
             accumulated += t

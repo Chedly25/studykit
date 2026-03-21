@@ -10,7 +10,7 @@ const BATCH_SIZE = 50
 
 // ─── Base64 ↔ Float32Array ──────────────────────────────────────
 
-function base64ToFloat32Array(base64: string): Float32Array {
+export function base64ToFloat32Array(base64: string): Float32Array {
   const binary = atob(base64)
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) {

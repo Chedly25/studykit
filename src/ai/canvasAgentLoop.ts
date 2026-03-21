@@ -81,6 +81,7 @@ export async function runCanvasAgentLoop(options: CanvasAgentOptions): Promise<C
       messages,
       system: systemPrompt,
       tools: canvasTools,
+      maxTokens: 2048,
       authToken,
       onToken,
       onToolCall,
