@@ -8,7 +8,7 @@ import { useExamProfile } from '../../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../../hooks/useKnowledgeGraph'
 import { useAgent } from '../../hooks/useAgent'
 import { ChatMessageBubble } from '../chat/ChatMessage'
-import { ChatInput } from '../chat/ChatInput'
+import { ChatInput, type ContextPill } from '../chat/ChatInput'
 import { ToolCallIndicator } from '../chat/ToolCallIndicator'
 import { ChatContextProvider } from '../chat/ChatContext'
 import { UpgradePrompt } from '../subscription/UpgradePrompt'
@@ -16,17 +16,17 @@ import { UpgradePrompt } from '../subscription/UpgradePrompt'
 interface Props {
   documentId: string
   documentTitle: string
-  prefill?: string
-  onPrefillConsumed: () => void
+  selectionContext?: { text: string; pageNumber: number; documentTitle: string } | null
+  onSelectionContextConsumed: () => void
   onClose: () => void
 }
 
-export function ReaderChatPane({ documentId, documentTitle, prefill, onPrefillConsumed, onClose }: Props) {
+export function ReaderChatPane({ documentId, documentTitle, selectionContext, onSelectionContextConsumed, onClose }: Props) {
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { subjects, topics, dailyLogs } = useKnowledgeGraph(profileId)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [inputPrefill, setInputPrefill] = useState<string | undefined>()
+  const [contextPills, setContextPills] = useState<ContextPill[]>([])
 
   const agent = useAgent({
     profile: activeProfile,
@@ -50,17 +50,35 @@ export function ReaderChatPane({ documentId, documentTitle, prefill, onPrefillCo
     }
   }, [messages, streamingText])
 
-  // Handle prefill from parent
+  // Convert selection context to a context pill
   useEffect(() => {
-    if (prefill) {
-      setInputPrefill(prefill)
-      onPrefillConsumed()
+    if (selectionContext) {
+      const truncTitle = selectionContext.documentTitle.length > 20
+        ? selectionContext.documentTitle.slice(0, 17) + '...'
+        : selectionContext.documentTitle
+      const pill: ContextPill = {
+        id: crypto.randomUUID(),
+        label: `${truncTitle} · p.${selectionContext.pageNumber}`,
+        content: `From page ${selectionContext.pageNumber} of "${selectionContext.documentTitle}":\n\n"${selectionContext.text}"`,
+      }
+      setContextPills([pill])
+      onSelectionContextConsumed()
     }
-  }, [prefill, onPrefillConsumed])
+  }, [selectionContext, onSelectionContextConsumed])
 
   const handleSend = useCallback(async (message: string) => {
-    await sendMessage(message)
-  }, [sendMessage])
+    let fullMessage = message
+    if (contextPills.length > 0) {
+      const contextBlock = contextPills.map(p => p.content).join('\n\n')
+      fullMessage = `${contextBlock}\n\n${message}`
+      setContextPills([])
+    }
+    await sendMessage(fullMessage)
+  }, [sendMessage, contextPills])
+
+  const handleRemoveContextPill = useCallback((id: string) => {
+    setContextPills(prev => prev.filter(p => p.id !== id))
+  }, [])
 
   return (
     <div className="flex flex-col h-full border-l border-[var(--border-card)] bg-[var(--bg-card)]">
@@ -115,8 +133,8 @@ export function ReaderChatPane({ documentId, documentTitle, prefill, onPrefillCo
           onSend={handleSend}
           disabled={isLoading || !activeProfile || quotaExceeded}
           placeholder="Ask about this document..."
-          initialValue={inputPrefill}
-          onInitialValueConsumed={() => setInputPrefill(undefined)}
+          contextPills={contextPills}
+          onRemoveContextPill={handleRemoveContextPill}
         />
       </div>
     </div>

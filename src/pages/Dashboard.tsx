@@ -163,8 +163,6 @@ export default function Dashboard() {
     }
   }, [profileId])
 
-  const [focusTopicId, setFocusTopicId] = useState<string | null>(null)
-
   const examSources = useLiveQuery(
     async () => {
       if (!profileId) return []
@@ -278,7 +276,7 @@ export default function Dashboard() {
       )}
 
       {/* Up Next — top 3 recommendations with action-specific links */}
-      <UpNextList recommendations={recommendations} queueTopicIds={new Set(dailyQueue.map(q => q.topicId))} onTopicClick={(id) => setFocusTopicId(id)} />
+      <UpNextList recommendations={recommendations} queueTopicIds={new Set(dailyQueue.map(q => q.topicId))} />
 
       {/* Attention — proactive intelligence signals */}
       <AttentionCard signals={signals} />
@@ -316,7 +314,6 @@ export default function Dashboard() {
         getChaptersForSubject={getChaptersForSubject}
         getTopicsForChapter={getTopicsForChapter}
         examProfileId={profileId}
-        focusTopicId={focusTopicId}
       />
 
       {/* Achievements */}

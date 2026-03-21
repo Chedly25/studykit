@@ -29,7 +29,7 @@ export default function DocumentReader() {
   const [scale, setScale] = useState(1.2)
   const [chatOpen, setChatOpen] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
-  const [chatPrefill, setChatPrefill] = useState<string | undefined>()
+  const [selectionContext, setSelectionContext] = useState<{ text: string; pageNumber: number; documentTitle: string } | null>(null)
 
   // Load document metadata + PDF blob
   useEffect(() => {
@@ -101,9 +101,11 @@ export default function DocumentReader() {
 
   const handleAskAI = useCallback((text: string, pageNumber: number) => {
     setChatOpen(true)
-    setChatPrefill(
-      `From page ${pageNumber} of "${documentMeta?.title ?? 'this document'}":\n\n"${text.slice(0, 500)}"\n\nExplain this.`
-    )
+    setSelectionContext({
+      text: text.slice(0, 500),
+      pageNumber,
+      documentTitle: documentMeta?.title ?? 'this document',
+    })
   }, [documentMeta])
 
   if (loading) {
@@ -150,8 +152,8 @@ export default function DocumentReader() {
             <ReaderChatPane
               documentId={documentId!}
               documentTitle={documentMeta.title}
-              prefill={chatPrefill}
-              onPrefillConsumed={() => setChatPrefill(undefined)}
+              selectionContext={selectionContext}
+              onSelectionContextConsumed={() => setSelectionContext(null)}
               onClose={() => setChatOpen(false)}
             />
           </div>

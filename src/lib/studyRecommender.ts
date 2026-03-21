@@ -109,7 +109,7 @@ export function computeDailyRecommendations(input: RecommenderInput): StudyRecom
     } else if (dm > 0.7 && topic.questionsAttempted < 5) {
       action = 'explain-back'
       reason = 'Good mastery — test deep understanding'
-      linkTo = '/chat'
+      linkTo = sessionLink
     } else {
       action = 'review'
       reason = 'Due for spaced review'

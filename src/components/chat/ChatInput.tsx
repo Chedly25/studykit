@@ -1,10 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Send, Paperclip } from 'lucide-react'
+import { Send, Paperclip, FileText, X } from 'lucide-react'
 import { AttachmentChip } from './AttachmentChip'
 import type { ChatAttachment } from '../../hooks/useAttachments'
 
 const MAX_LENGTH = 4000
+
+export interface ContextPill {
+  id: string
+  label: string
+  content: string
+}
 
 interface Props {
   onSend: (message: string, attachments?: ChatAttachment[]) => void
@@ -16,9 +22,11 @@ interface Props {
   isParsing?: boolean
   initialValue?: string
   onInitialValueConsumed?: () => void
+  contextPills?: ContextPill[]
+  onRemoveContextPill?: (id: string) => void
 }
 
-export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFiles, onRemoveAttachment, isParsing, initialValue, onInitialValueConsumed }: Props) {
+export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFiles, onRemoveAttachment, isParsing, initialValue, onInitialValueConsumed, contextPills, onRemoveContextPill }: Props) {
   const { t } = useTranslation()
   const [text, setText] = useState('')
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -75,6 +83,27 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
               status={att.status}
               onRemove={() => onRemoveAttachment?.(i)}
             />
+          ))}
+        </div>
+      )}
+
+      {/* Context pills (e.g. PDF text selection) */}
+      {contextPills && contextPills.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 px-4 pt-3">
+          {contextPills.map(pill => (
+            <span
+              key={pill.id}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-600 border border-blue-500/20"
+            >
+              <FileText className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate max-w-[180px]">{pill.label}</span>
+              <button
+                onClick={() => onRemoveContextPill?.(pill.id)}
+                className="ml-0.5 p-0.5 rounded-full hover:bg-[var(--bg-input)] transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
           ))}
         </div>
       )}
