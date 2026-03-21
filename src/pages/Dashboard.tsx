@@ -2,126 +2,27 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Zap, ListTodo, ClipboardCheck } from 'lucide-react'
+import { ArrowRight, Zap, ListTodo, ClipboardCheck, FileText, AlertCircle } from 'lucide-react'
 import { isCramModeActive } from '../lib/cramModeEngine'
 import { db } from '../db'
-import type { StudySession } from '../db/schema'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
-import { useProfileMode } from '../hooks/useProfileMode'
-import { useMilestones } from '../hooks/useMilestones'
-import { useHabitGoals } from '../hooks/useHabitGoals'
-import { useStudentModel } from '../hooks/useStudentModel'
-// useExerciseBank removed — topic rows are now on SubjectPage
-import { MilestoneTrackerCard } from '../components/dashboard/MilestoneTrackerCard'
-import { HabitGoalsCard } from '../components/dashboard/HabitGoalsCard'
+import { useTopicStats } from '../hooks/useTopicStats'
 import { SubjectGrid } from '../components/dashboard/SubjectGrid'
-import { GettingStartedCard } from '../components/dashboard/GettingStartedCard'
-import { StatusBar } from '../components/dashboard/StatusBar'
-import { UpNextList } from '../components/dashboard/UpNextList'
-import { computeDailyRecommendations } from '../lib/studyRecommender'
-import { useIntelligence } from '../hooks/useIntelligence'
-import { AttentionCard } from '../components/dashboard/AttentionCard'
-import { AchievementsCard } from '../components/dashboard/AchievementsCard'
 import { useDailyQueue } from '../hooks/useDailyQueue'
 
 export default function Dashboard() {
   const { t } = useTranslation()
   const { activeProfile } = useExamProfile()
-  const { isResearch } = useProfileMode()
   const profileId = activeProfile?.id
-  const { milestones, doneCount, daysUntilNext, addMilestone, updateMilestone } = useMilestones(profileId)
-  const { goals: habitGoals, getTodayProgress, addGoal: addHabitGoal, logProgress: logHabitProgress, deleteGoal: deleteHabitGoal } = useHabitGoals(profileId)
-  const { subjects, chapters, topics, readiness, weakTopics, streak, freezeUsed, weeklyHours, getTopicsForSubject, getChaptersForSubject, getTopicsForChapter, dailyLogs } = useKnowledgeGraph(profileId)
-  const { studentModel } = useStudentModel(profileId)
-  const { signals } = useIntelligence(topics, subjects, profileId)
+  const { subjects, topics, getChaptersForSubject } = useKnowledgeGraph(profileId)
+  const topicStats = useTopicStats(profileId)
   const { queue: dailyQueue, typeCounts, remainingMinutes: queueMinutes } = useDailyQueue(profileId)
 
-  const sessions = useLiveQuery(
-    () => profileId
-      ? db.studySessions.where('examProfileId').equals(profileId).toArray()
-      : Promise.resolve([] as StudySession[]),
-    [profileId]
-  ) ?? []
-
-  const dueFlashcardsByTopic = useLiveQuery(async () => {
+  const dueFlashcardCount = useLiveQuery(async () => {
     const today = new Date().toISOString().slice(0, 10)
-    const dueCards = await db.flashcards.where('nextReviewDate').belowOrEqual(today).toArray()
-    const map = new Map<string, number>()
-    for (const card of dueCards) {
-      if (card.topicId) {
-        map.set(card.topicId, (map.get(card.topicId) ?? 0) + 1)
-      }
-    }
-    return map
-  }) ?? new Map()
-
-  const dueFlashcardCount = useMemo(() => {
-    let count = 0
-    for (const v of dueFlashcardsByTopic.values()) count += v
-    return count
-  }, [dueFlashcardsByTopic])
-
-  // Load today's study plan activities for recommender plan awareness
-  const todayPlanActivities = useLiveQuery(async () => {
-    if (!profileId) return undefined
-    const activePlan = await db.studyPlans
-      .where('examProfileId').equals(profileId)
-      .filter(p => p.isActive)
-      .first()
-    if (!activePlan) return undefined
-    const today = new Date().toISOString().slice(0, 10)
-    const planDayId = `${activePlan.id}:${today}`
-    const planDay = await db.studyPlanDays.get(planDayId)
-    if (!planDay) return undefined
-    try {
-      const activities = JSON.parse(planDay.activities) as Array<{ topicName: string; completed?: boolean }>
-      return activities.map(a => ({ topicName: a.topicName, completed: a.completed ?? false }))
-    } catch { return undefined }
-  }, [profileId])
-
-  const recommendations = useMemo(() => {
-    if (!activeProfile || topics.length === 0) return []
-    const daysUntilExam = activeProfile.examDate
-      ? Math.max(0, Math.ceil((new Date(activeProfile.examDate).getTime() - Date.now()) / 86400000))
-      : 30 // Default urgency for no-deadline profiles
-
-    // Parse student model common mistakes
-    let commonMistakes: string[] | undefined
-    if (studentModel?.commonMistakes) {
-      try { commonMistakes = JSON.parse(studentModel.commonMistakes) } catch { /* ignore */ }
-    }
-
-    // Build prerequisite graph and mastery map from topics
-    const prerequisiteGraph = new Map<string, string[]>()
-    const topicMasteryMap = new Map<string, number>()
-    for (const t of topics) {
-      topicMasteryMap.set(t.id, t.mastery)
-      if (t.prerequisiteTopicIds && t.prerequisiteTopicIds.length > 0) {
-        prerequisiteGraph.set(t.id, t.prerequisiteTopicIds)
-      }
-    }
-
-    return computeDailyRecommendations({
-      topics,
-      subjects,
-      daysUntilExam,
-      dueFlashcardsByTopic,
-      todayPlanActivities: todayPlanActivities ?? undefined,
-      commonMistakes,
-      prerequisiteGraph: prerequisiteGraph.size > 0 ? prerequisiteGraph : undefined,
-      topicMasteryMap,
-    })
-  }, [activeProfile, topics, subjects, dueFlashcardsByTopic, todayPlanActivities, studentModel])
-
-  const documentsCount = useLiveQuery(
-    () => profileId
-      ? db.documents.where('examProfileId').equals(profileId).count()
-      : Promise.resolve(0),
-    [profileId]
-  ) ?? 0
-
-  const hasActivity = sessions.length > 0 || topics.some(t => t.questionsAttempted > 0)
+    return db.flashcards.where('nextReviewDate').belowOrEqual(today).count()
+  }) ?? 0
 
   const daysUntilExam = activeProfile?.examDate
     ? Math.max(0, Math.ceil((new Date(activeProfile.examDate).getTime() - Date.now()) / 86400000))
@@ -147,7 +48,6 @@ export default function Dashboard() {
     }
   }
 
-  // Block 2B: Check for mid-progress queue
   const queueInProgress = useMemo(() => {
     if (!profileId) return false
     const today = new Date().toISOString().slice(0, 10)
@@ -161,6 +61,18 @@ export default function Dashboard() {
     }
   }, [profileId])
 
+  // Course documents
+  const courseDocuments = useLiveQuery(
+    async () => {
+      if (!profileId) return []
+      return db.documents.where('examProfileId').equals(profileId)
+        .filter(d => d.category === 'course')
+        .toArray()
+    },
+    [profileId],
+  ) ?? []
+
+  // Exam sources with exercise counts
   const examSources = useLiveQuery(
     async () => {
       if (!profileId) return []
@@ -178,6 +90,14 @@ export default function Dashboard() {
     [profileId],
   ) ?? []
 
+  // Quick stats
+  const topicsWithoutMaterial = useMemo(() => {
+    return topics.filter(t => {
+      const stats = topicStats.get(t.id)
+      return !stats?.docs && !stats?.exercises
+    }).length
+  }, [topics, topicStats])
+
   if (!activeProfile) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
@@ -190,13 +110,6 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
-      {/* Getting Started Card — dismissible, for new users */}
-      <GettingStartedCard
-        hasDocuments={documentsCount > 0}
-        hasTopics={topics.length > 0}
-        hasActivity={hasActivity}
-      />
-
       {/* Cram Mode Banner */}
       {showCramBanner && daysUntilExam !== undefined && (
         <div className={`flex items-center justify-between w-full px-4 py-3 mb-3 rounded-xl ${cramActive ? 'bg-red-500/15 border border-red-500/30' : 'bg-orange-500/10 border border-orange-500/20'}`}>
@@ -220,21 +133,20 @@ export default function Dashboard() {
       )}
 
       {/* Greeting */}
-      {topics.length > 0 && (
-        <div className="mb-3">
-          <h1 className="text-xl font-bold text-[var(--text-heading)]">{activeProfile.name}</h1>
-          <p className="text-sm text-[var(--text-muted)]">
-            {daysUntilExam !== undefined ? `${daysUntilExam} day${daysUntilExam !== 1 ? 's' : ''} until exam · ` : ''}
-            {topics.length} topics{dueFlashcardCount > 0 ? ` · ${dueFlashcardCount} cards due` : ''}
-          </p>
-        </div>
-      )}
+      <div className="mb-4">
+        <h1 className="text-xl font-bold text-[var(--text-heading)]">{activeProfile.name}</h1>
+        <p className="text-sm text-[var(--text-muted)]">
+          {daysUntilExam !== undefined ? `${daysUntilExam} day${daysUntilExam !== 1 ? 's' : ''} until exam · ` : ''}
+          {topics.length} topics · {courseDocuments.length} course{courseDocuments.length !== 1 ? 's' : ''} · {examSources.length} exam{examSources.length !== 1 ? 's' : ''}
+          {dueFlashcardCount > 0 ? ` · ${dueFlashcardCount} cards due` : ''}
+        </p>
+      </div>
 
-      {/* Queue CTA — suggested review */}
+      {/* Queue CTA */}
       {topics.length > 0 && dailyQueue.length > 0 && (
         <Link
           to="/queue"
-          className={`flex items-center justify-between w-full px-6 py-4 mb-3 rounded-xl font-semibold hover:opacity-90 transition-opacity ${
+          className={`flex items-center justify-between w-full px-6 py-4 mb-4 rounded-xl font-semibold hover:opacity-90 transition-opacity ${
             queueInProgress
               ? 'bg-amber-500 text-white'
               : 'bg-[var(--accent-text)] text-white'
@@ -258,26 +170,36 @@ export default function Dashboard() {
         </Link>
       )}
 
-      {/* StatusBar — only show once user has topics (metrics become meaningful) */}
-      {topics.length > 0 && (
-        <StatusBar
-          streak={streak}
-          freezeUsed={freezeUsed}
-          readiness={readiness}
-          examDate={activeProfile.examDate}
-          weeklyHours={weeklyHours}
-          weeklyTarget={activeProfile.weeklyTargetHours}
-          daysUntilExam={daysUntilExam}
-          milestoneProgress={{ done: doneCount, total: milestones.length }}
-          isResearch={isResearch}
-        />
+      {/* Subjects */}
+      {subjects.length > 0 && (
+        <div className="mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Subjects</p>
+          <SubjectGrid
+            subjects={subjects}
+            topics={topics}
+            getChaptersForSubject={getChaptersForSubject}
+          />
+        </div>
       )}
 
-      {/* Up Next — top 3 recommendations with action-specific links */}
-      <UpNextList recommendations={recommendations} queueTopicIds={new Set(dailyQueue.map(q => q.topicId))} />
-
-      {/* Attention — proactive intelligence signals */}
-      <AttentionCard signals={signals} />
+      {/* Your courses */}
+      {courseDocuments.length > 0 && (
+        <div className="glass-card p-4 mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Your courses</p>
+          <div className="space-y-1">
+            {courseDocuments.map(doc => (
+              <Link key={doc.id} to={`/read/${doc.id}`}
+                className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--bg-input)] transition-colors">
+                <FileText size={16} className="text-blue-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium text-[var(--text-heading)] truncate block">{doc.title}</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Your exams */}
       {examSources.length > 0 && (
@@ -287,7 +209,7 @@ export default function Dashboard() {
             {examSources.map(source => (
               <Link key={source.id} to={`/read/${source.documentId}`}
                 className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--bg-input)] transition-colors">
-                <ClipboardCheck size={16} className="text-[var(--text-muted)] shrink-0" />
+                <ClipboardCheck size={16} className="text-orange-500 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <span className="text-sm font-medium text-[var(--text-heading)] truncate block">
                     {source.name}{source.year ? ` ${source.year}` : ''}
@@ -303,38 +225,17 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Subject Grid — clickable subject cards */}
-      <SubjectGrid
-        subjects={subjects}
-        topics={topics}
-        getChaptersForSubject={getChaptersForSubject}
-      />
-
-      {/* Achievements */}
-      {profileId && <AchievementsCard examProfileId={profileId} />}
-
-      {/* Milestones (research) or Habit Goals */}
-      {isResearch ? (
-        <div className="mt-4">
-          <MilestoneTrackerCard
-            milestones={milestones}
-            doneCount={doneCount}
-            daysUntilNext={daysUntilNext}
-            onAdd={addMilestone}
-            onUpdate={updateMilestone}
-          />
-        </div>
-      ) : habitGoals.length > 0 ? (
-        <div className="mt-4">
-          <HabitGoalsCard
-            goals={habitGoals}
-            getTodayProgress={getTodayProgress}
-            onAdd={addHabitGoal}
-            onLog={logHabitProgress}
-            onDelete={deleteHabitGoal}
-          />
-        </div>
-      ) : null}
+      {/* Topics needing material */}
+      {topicsWithoutMaterial > 0 && (
+        <Link to="/sources" className="glass-card p-4 mb-4 flex items-center gap-3 hover:bg-[var(--bg-input)]/30 transition-colors block">
+          <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
+          <div className="flex-1">
+            <span className="text-sm font-medium text-[var(--text-heading)]">{topicsWithoutMaterial} topic{topicsWithoutMaterial !== 1 ? 's' : ''} without course material</span>
+            <span className="text-xs text-[var(--text-faint)] block">Upload documents to cover them</span>
+          </div>
+          <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+        </Link>
+      )}
     </div>
   )
 }
