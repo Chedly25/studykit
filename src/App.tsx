@@ -18,7 +18,12 @@ function lazyWithRetry(importFn: () => Promise<any>) {
       if (!sessionStorage.getItem(key)) {
         sessionStorage.setItem(key, '1')
         window.location.reload()
+        // Return a never-resolving promise to prevent React from erroring
+        // while the page reloads
+        return new Promise(() => {})
       }
+      // Already reloaded once — clear flag and retry import
+      sessionStorage.removeItem(key)
       return importFn()
     })
   )
