@@ -19,7 +19,7 @@ export class JobRunner {
   private getToken: () => Promise<string | null>
   private abortControllers = new Map<string, AbortController>()
   private activeJobs = 0
-  private readonly maxConcurrency = 2
+  private readonly maxConcurrency = 1
 
   constructor(getToken: () => Promise<string | null>) {
     this.getToken = getToken
@@ -286,7 +286,8 @@ export class JobRunner {
 
       const stepStart = Date.now()
       let stepSucceeded = false
-      for (let attempt = 0; attempt < 3; attempt++) {
+      const MAX_RETRIES = 5
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
           // Refresh token before each attempt
           if (attempt > 0) {
@@ -303,9 +304,15 @@ export class JobRunner {
           const error = err instanceof Error ? err.message : String(err)
           const isRetryable = error.includes('429') || error.includes('overloaded') || error.includes('rate limit') || error.includes('ECONNRESET') || error.includes('fetch failed') || error.includes('network error') || error.includes('Failed to fetch') || error.includes('NetworkError') || error.includes('aborted')
 
-          if (isRetryable && attempt < 2) {
-            const delay = (attempt + 1) * 5000 // 5s, 10s
-            console.warn(`[JobRunner] Step "${step.name}" got retryable error, retry ${attempt + 1}/2 in ${delay / 1000}s:`, error)
+          if (isRetryable && attempt < MAX_RETRIES - 1) {
+            // Parse "retry after N seconds" from error, fallback to exponential backoff with jitter
+            const retryAfterMatch = error.match(/after (\d+) second/)
+            const baseDelay = retryAfterMatch
+              ? parseInt(retryAfterMatch[1], 10) * 1000
+              : Math.min(2000 * Math.pow(2, attempt), 30000) // 2s, 4s, 8s, 16s, capped at 30s
+            const jitter = Math.random() * 1000 // 0-1s random jitter
+            const delay = baseDelay + jitter
+            console.warn(`[JobRunner] Step "${step.name}" rate limited, retry ${attempt + 1}/${MAX_RETRIES - 1} in ${(delay / 1000).toFixed(1)}s:`, error)
             await db.backgroundJobs.update(job.id, {
               currentStepName: `${step.name} (retry ${attempt + 1}...)`,
               updatedAt: new Date().toISOString(),
