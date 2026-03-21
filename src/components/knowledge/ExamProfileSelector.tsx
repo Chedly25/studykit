@@ -1,4 +1,4 @@
-import { ChevronDown, GraduationCap, Plus } from 'lucide-react'
+import { ChevronDown, GraduationCap, Plus, Settings } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -54,6 +54,12 @@ export function ExamProfileSelector() {
               className="w-full text-left px-3 py-2 rounded-md text-sm text-[var(--text-muted)] hover:bg-[var(--bg-input)] flex items-center gap-2"
             >
               <Plus className="w-3.5 h-3.5" /> {t('profile.create')}
+            </button>
+            <button
+              onClick={() => { navigate('/exam-profile'); setOpen(false) }}
+              className="w-full text-left px-3 py-2 rounded-md text-sm text-[var(--text-muted)] hover:bg-[var(--bg-input)] flex items-center gap-2"
+            >
+              <Settings className="w-3.5 h-3.5" /> Manage profiles
             </button>
           </div>
         </div>

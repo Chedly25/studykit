@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Search, FileText, BookOpen, ListChecks, Layers, CreditCard, Loader2, ListTodo, Upload, ClipboardCheck, BarChart3, Settings } from 'lucide-react'
+import { Search, FileText, BookOpen, ListChecks, Layers, CreditCard, Loader2, ListTodo, Upload, ClipboardCheck, BarChart3, Settings, Focus, Calendar, GraduationCap } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useSearch, type SearchResult } from '../hooks/useSearch'
 
@@ -32,6 +32,9 @@ const QUICK_ACTIONS: QuickAction[] = [
   { id: 'analytics', label: 'View analytics', keywords: ['analytics', 'progress', 'stats', 'charts'], icon: BarChart3, path: '/analytics' },
   { id: 'flashcards', label: 'Flashcard maker', keywords: ['flashcard', 'cards', 'review', 'deck'], icon: CreditCard, path: '/flashcard-maker' },
   { id: 'settings', label: 'Settings', keywords: ['settings', 'preferences', 'config', 'export'], icon: Settings, path: '/settings' },
+  { id: 'focus', label: 'Focus timer', keywords: ['focus', 'pomodoro', 'timer'], icon: Focus, path: '/focus' },
+  { id: 'plan', label: 'Study plan', keywords: ['plan', 'schedule', 'study plan'], icon: Calendar, path: '/study-plan' },
+  { id: 'profile', label: 'Manage profiles', keywords: ['profile', 'project', 'exam', 'manage'], icon: GraduationCap, path: '/exam-profile' },
 ]
 
 interface Props {

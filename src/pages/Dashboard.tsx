@@ -23,6 +23,7 @@ import { computeDailyRecommendations } from '../lib/studyRecommender'
 import { useIntelligence } from '../hooks/useIntelligence'
 import { AttentionCard } from '../components/dashboard/AttentionCard'
 import { AchievementsCard } from '../components/dashboard/AchievementsCard'
+import { useDailyQueue } from '../hooks/useDailyQueue'
 
 export default function Dashboard() {
   const { t } = useTranslation()
@@ -36,6 +37,13 @@ export default function Dashboard() {
   const { getExerciseStatsByTopic: getExerciseStatsMap } = useExerciseBank(profileId)
   const exerciseStatsByTopic = useMemo(() => getExerciseStatsMap(), [getExerciseStatsMap])
   const { signals } = useIntelligence(topics, subjects, profileId)
+  const { queue: dailyQueue, typeCounts, remainingMinutes: queueMinutes } = useDailyQueue(profileId)
+
+  const dueFlashcardCount = useMemo(() => {
+    let count = 0
+    for (const v of dueFlashcardsByTopic.values()) count += v
+    return count
+  }, [dueFlashcardsByTopic])
 
   const sessions = useLiveQuery(
     () => profileId
@@ -196,19 +204,40 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Queue CTA — unified resume/start */}
+      {/* Greeting */}
       {topics.length > 0 && (
+        <div className="mb-3">
+          <h1 className="text-xl font-bold text-[var(--text-heading)]">{activeProfile.name}</h1>
+          <p className="text-sm text-[var(--text-muted)]">
+            {daysUntilExam !== undefined ? `${daysUntilExam} day${daysUntilExam !== 1 ? 's' : ''} until exam · ` : ''}
+            {topics.length} topics{dueFlashcardCount > 0 ? ` · ${dueFlashcardCount} cards due` : ''}
+          </p>
+        </div>
+      )}
+
+      {/* Queue CTA — suggested review */}
+      {topics.length > 0 && dailyQueue.length > 0 && (
         <Link
           to="/queue"
-          className={`flex items-center justify-between w-full px-6 py-4 mb-3 rounded-xl font-semibold text-base hover:opacity-90 transition-opacity ${
+          className={`flex items-center justify-between w-full px-6 py-4 mb-3 rounded-xl font-semibold hover:opacity-90 transition-opacity ${
             queueInProgress
               ? 'bg-amber-500 text-white'
               : 'bg-[var(--accent-text)] text-white'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <ListTodo className="w-5 h-5" />
-            <span>{queueInProgress ? "Resume Today's Queue" : "Start Today's Queue"}</span>
+          <div>
+            <div className="flex items-center gap-3">
+              <ListTodo className="w-5 h-5" />
+              <span className="text-base">{queueInProgress ? "Resume today's review" : 'Suggested review'}</span>
+            </div>
+            <p className="text-xs opacity-75 ml-8">
+              {[
+                typeCounts.exercises > 0 ? `${typeCounts.exercises} exercise${typeCounts.exercises !== 1 ? 's' : ''}` : '',
+                typeCounts.flashcards > 0 ? `${typeCounts.flashcards} flashcard${typeCounts.flashcards !== 1 ? 's' : ''}` : '',
+                typeCounts.concepts > 0 ? `${typeCounts.concepts} concept${typeCounts.concepts !== 1 ? 's' : ''}` : '',
+              ].filter(Boolean).join(', ')}
+              {queueMinutes > 0 ? ` · ~${queueMinutes} min` : ''}
+            </p>
           </div>
           <ArrowRight className="w-5 h-5" />
         </Link>
@@ -230,7 +259,7 @@ export default function Dashboard() {
       )}
 
       {/* Up Next — top 3 recommendations with action-specific links */}
-      <UpNextList recommendations={recommendations} />
+      <UpNextList recommendations={recommendations} queueTopicIds={new Set(dailyQueue.map(q => q.topicId))} />
 
       {/* Attention — proactive intelligence signals */}
       <AttentionCard signals={signals} />
@@ -243,6 +272,7 @@ export default function Dashboard() {
         exerciseStatsByTopic={exerciseStatsByTopic}
         getChaptersForSubject={getChaptersForSubject}
         getTopicsForChapter={getTopicsForChapter}
+        examProfileId={profileId}
       />
 
       {/* Achievements */}

@@ -23,9 +23,11 @@ import type { ChatAttachment } from '../../hooks/useAttachments'
 interface Props {
   open: boolean
   onClose: () => void
+  prefill?: string | null
+  onPrefillConsumed?: () => void
 }
 
-export function ChatPanel({ open, onClose }: Props) {
+export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) {
   const { t } = useTranslation()
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
@@ -49,6 +51,15 @@ export function ChatPanel({ open, onClose }: Props) {
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const [pendingSaveAttachments, setPendingSaveAttachments] = useState<ChatAttachment[] | null>(null)
+  const [inputPrefill, setInputPrefill] = useState<string | undefined>()
+
+  // Handle prefill from parent
+  useEffect(() => {
+    if (prefill && open) {
+      setInputPrefill(prefill)
+      onPrefillConsumed?.()
+    }
+  }, [prefill, open, onPrefillConsumed])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -165,6 +176,8 @@ export function ChatPanel({ open, onClose }: Props) {
           onAddFiles={addFiles}
           onRemoveAttachment={removeAttachment}
           isParsing={isParsing}
+          initialValue={inputPrefill}
+          onInitialValueConsumed={() => setInputPrefill(undefined)}
         />
       </div>
 

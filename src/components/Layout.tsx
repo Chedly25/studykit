@@ -24,6 +24,7 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
+  const [chatPrefill, setChatPrefill] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false) // mobile drawer
   const [sidebarPinned, setSidebarPinned] = useState(false) // desktop pin
@@ -55,9 +56,13 @@ export function Layout() {
     return () => document.removeEventListener('keydown', handler)
   }, [])
 
-  // Open chat panel from anywhere via custom event
+  // Open chat panel from anywhere via custom event (with optional prefill)
   useEffect(() => {
-    const handler = () => setChatOpen(true)
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      setChatOpen(true)
+      if (detail?.prefill) setChatPrefill(detail.prefill)
+    }
     window.addEventListener('open-chat-panel', handler)
     return () => window.removeEventListener('open-chat-panel', handler)
   }, [])
@@ -194,7 +199,6 @@ export function Layout() {
                   </>
                 ) : (
                   <>
-                    <SidebarLink to="/focus" icon={Focus} label={t('focus.title', 'Focus')} active={location.pathname === '/focus'} collapsed={collapsed} />
                     <SidebarLink to="/analytics" icon={BarChart3} label={t('nav.analytics')} active={location.pathname === '/analytics'} collapsed={collapsed} />
                     <SidebarLink to="/sources" icon={FileText} label={t('sources.title', 'Sources')} active={location.pathname === '/sources'} collapsed={collapsed} />
                   </>
@@ -210,7 +214,6 @@ export function Layout() {
                     <SidebarLink to="/practice-exam" icon={ClipboardCheck} label={t('ai.practiceSession', 'Practice Exam')} active={location.pathname === '/practice-exam'} collapsed={collapsed} pro />
                   </>
                 )}
-                <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} collapsed={collapsed} pro />
                 {collapsed ? (
                   <button
                     onClick={() => setChatOpen(true)}
@@ -297,7 +300,6 @@ export function Layout() {
                     </>
                   ) : (
                     <>
-                      <SidebarLink to="/focus" icon={Focus} label={t('focus.title', 'Focus')} active={location.pathname === '/focus'} onClick={closeSidebar} collapsed={false} />
                       <SidebarLink to="/analytics" icon={BarChart3} label={t('nav.analytics')} active={location.pathname === '/analytics'} onClick={closeSidebar} collapsed={false} />
                       <SidebarLink to="/sources" icon={FileText} label={t('sources.title', 'Sources')} active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
                     </>
@@ -313,7 +315,6 @@ export function Layout() {
                       <SidebarLink to="/practice-exam" icon={ClipboardCheck} label={t('ai.practiceSession', 'Practice Exam')} active={location.pathname === '/practice-exam'} onClick={closeSidebar} collapsed={false} pro />
                     </>
                   )}
-                  <SidebarLink to="/study-plan" icon={Calendar} label={t('ai.studyPlan', 'Study Plan')} active={location.pathname === '/study-plan'} onClick={closeSidebar} collapsed={false} pro />
                   <button
                     onClick={() => { closeSidebar(); setChatOpen(true) }}
                     className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors w-full ${
@@ -381,7 +382,7 @@ export function Layout() {
       )}
 
       {/* Chat Panel */}
-      <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
+      <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} prefill={chatPrefill} onPrefillConsumed={() => setChatPrefill(null)} />
 
       {/* Search Modal */}
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />

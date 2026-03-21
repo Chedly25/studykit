@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ChevronDown, ChevronRight, BookOpen, ArrowRight, Lock } from 'lucide-react'
 import type { Subject, Topic, Chapter } from '../../db/schema'
 import { isTopicLocked } from '../../lib/knowledgeGraph'
+import { TopicDetailPanel } from './TopicDetailPanel'
 
 interface ExerciseStats {
   total: number
@@ -18,6 +19,7 @@ interface LevelsViewProps {
   exerciseStatsByTopic: Map<string, ExerciseStats>
   getChaptersForSubject: (subjectId: string) => Chapter[]
   getTopicsForChapter: (chapterId: string) => Topic[]
+  examProfileId?: string
 }
 
 function masteryColor(mastery: number): string {
@@ -32,7 +34,7 @@ function masteryTextColor(mastery: number): string {
   return 'text-red-500'
 }
 
-export function LevelsView({ subjects, chapters: _chapters, topics, exerciseStatsByTopic, getChaptersForSubject, getTopicsForChapter }: LevelsViewProps) {
+export function LevelsView({ subjects, chapters: _chapters, topics, exerciseStatsByTopic, getChaptersForSubject, getTopicsForChapter, examProfileId }: LevelsViewProps) {
   // Build mastery map for prerequisite checking
   const topicMasteryMap = useMemo(() => {
     return new Map(topics.map(t => [t.id, t.mastery]))
@@ -40,6 +42,7 @@ export function LevelsView({ subjects, chapters: _chapters, topics, exerciseStat
   const topicNameMap = useMemo(() => new Map(topics.map(t => [t.id, t.name])), [topics])
   const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(new Set())
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set())
+  const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null)
 
   const toggleSubject = (id: string) => {
     setExpandedSubjects(prev => {
@@ -141,34 +144,59 @@ export function LevelsView({ subjects, chapters: _chapters, topics, exerciseStat
                           ? `/session?topic=${encodeURIComponent(firstBlockingPrereq.name)}`
                           : `/session?topic=${encodeURIComponent(topic.name)}`
 
+                        const isExpTopic = expandedTopicId === topic.id
+
                         return (
-                          <div key={topic.id} className={`flex items-center gap-3 px-10 py-2.5 border-b border-[var(--border-card)]/30 hover:bg-[var(--bg-input)]/20 ${lockInfo.locked ? 'opacity-60' : ''}`}>
-                            {lockInfo.locked ? (
-                              <Lock className="w-3 h-3 text-[var(--text-faint)] flex-shrink-0" />
-                            ) : (
-                              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${masteryColor(topic.mastery)}`} />
-                            )}
-                            <span className="flex-1 text-xs text-[var(--text-body)]" title={lockInfo.locked ? `Master ${prereqNames.join(', ')} first` : undefined}>
-                              {topic.name}
-                            </span>
-                            {stats && stats.total > 0 && (
-                              <span className="text-[10px] text-[var(--text-muted)]">
-                                {stats.completed}/{stats.total} ex.
-                              </span>
-                            )}
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
-                              <div className={`w-12 h-1 rounded-full bg-[var(--bg-input)] overflow-hidden ${lockInfo.locked ? 'opacity-50' : ''}`}>
-                                <div className={`h-full rounded-full ${masteryColor(topic.mastery)}`} style={{ width: `${topicPct}%` }} />
-                              </div>
-                              <span className="text-[10px] text-[var(--text-muted)] w-6 text-right">{topicPct}%</span>
-                            </div>
-                            <Link
-                              to={linkTarget}
-                              className="p-1 rounded hover:bg-[var(--accent-bg)] text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
-                              title={lockInfo.locked ? `Go to prerequisite: ${prereqNames[0]}` : undefined}
+                          <div key={topic.id}>
+                            <div
+                              onClick={() => !lockInfo.locked && setExpandedTopicId(prev => prev === topic.id ? null : topic.id)}
+                              className={`flex items-center gap-3 px-10 py-2.5 border-b border-[var(--border-card)]/30 hover:bg-[var(--bg-input)]/20 ${lockInfo.locked ? 'opacity-60' : 'cursor-pointer'}`}
                             >
-                              <ArrowRight className="w-3.5 h-3.5" />
-                            </Link>
+                              {lockInfo.locked ? (
+                                <Lock className="w-3 h-3 text-[var(--text-faint)] flex-shrink-0" />
+                              ) : (
+                                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${masteryColor(topic.mastery)}`} />
+                              )}
+                              <span className="flex-1 text-xs text-[var(--text-body)]" title={lockInfo.locked ? `Master ${prereqNames.join(', ')} first` : undefined}>
+                                {topic.name}
+                              </span>
+                              {stats && stats.total > 0 && (
+                                <span className="text-[10px] text-[var(--text-muted)]">
+                                  {stats.completed}/{stats.total} ex.
+                                </span>
+                              )}
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <div className={`w-12 h-1 rounded-full bg-[var(--bg-input)] overflow-hidden ${lockInfo.locked ? 'opacity-50' : ''}`}>
+                                  <div className={`h-full rounded-full ${masteryColor(topic.mastery)}`} style={{ width: `${topicPct}%` }} />
+                                </div>
+                                <span className="text-[10px] text-[var(--text-muted)] w-6 text-right">{topicPct}%</span>
+                              </div>
+                              {lockInfo.locked ? (
+                                <Link
+                                  to={linkTarget}
+                                  onClick={e => e.stopPropagation()}
+                                  className="p-1 rounded hover:bg-[var(--accent-bg)] text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
+                                  title={`Go to prerequisite: ${prereqNames[0]}`}
+                                >
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </Link>
+                              ) : (
+                                isExpTopic
+                                  ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                                  : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                              )}
+                            </div>
+                            {isExpTopic && examProfileId && (
+                              <TopicDetailPanel
+                                topicId={topic.id}
+                                topicName={topic.name}
+                                subjectName={subject.name}
+                                mastery={topic.mastery}
+                                examProfileId={examProfileId}
+                                questionsAttempted={topic.questionsAttempted}
+                                questionsCorrect={topic.questionsCorrect}
+                              />
+                            )}
                           </div>
                         )
                       })}

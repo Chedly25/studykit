@@ -165,6 +165,16 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
   const totalCount = queue.length
   const remainingMinutes = activeQueue.reduce((sum, item) => sum + item.estimatedMinutes, 0)
 
+  const typeCounts = useMemo(() => {
+    const counts = { flashcards: 0, exercises: 0, concepts: 0 }
+    for (const item of queue) {
+      if (item.type === 'flashcard-review') counts.flashcards++
+      else if (item.type === 'exercise') counts.exercises++
+      else if (item.type === 'concept-quiz') counts.concepts++
+    }
+    return counts
+  }, [queue])
+
   const completeItem = useCallback((itemId: string) => {
     setProgress(prev => ({
       ...prev,
@@ -194,6 +204,7 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
     completedCount,
     totalCount,
     remainingMinutes,
+    typeCounts,
     completeItem,
     skipItem,
     reset,

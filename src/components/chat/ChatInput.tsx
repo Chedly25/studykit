@@ -14,13 +14,24 @@ interface Props {
   onAddFiles?: (files: File[]) => void
   onRemoveAttachment?: (index: number) => void
   isParsing?: boolean
+  initialValue?: string
+  onInitialValueConsumed?: () => void
 }
 
-export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFiles, onRemoveAttachment, isParsing }: Props) {
+export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFiles, onRemoveAttachment, isParsing, initialValue, onInitialValueConsumed }: Props) {
   const { t } = useTranslation()
   const [text, setText] = useState('')
   const ref = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Accept pre-filled text from parent
+  useEffect(() => {
+    if (initialValue !== undefined && initialValue !== '') {
+      setText(initialValue)
+      onInitialValueConsumed?.()
+      setTimeout(() => ref.current?.focus(), 50)
+    }
+  }, [initialValue, onInitialValueConsumed])
 
   useEffect(() => {
     if (ref.current) {

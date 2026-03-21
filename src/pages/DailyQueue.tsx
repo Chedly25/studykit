@@ -655,6 +655,11 @@ function ExerciseInline({
     [item.exerciseId]
   )
 
+  const examSource = useLiveQuery(
+    () => exercise ? db.examSources.get(exercise.examSourceId) : undefined,
+    [exercise?.examSourceId]
+  )
+
   if (!exercise) return <p className="text-sm text-[var(--text-muted)]">Loading exercise...</p>
 
   const handleRate = async (score: number) => {
@@ -686,7 +691,7 @@ function ExerciseInline({
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-xs font-medium text-[var(--text-muted)]">Exercise #{exercise.exerciseNumber}</span>
+        <span className="text-xs font-medium text-[var(--text-muted)]">{examSource ? `${examSource.name}${examSource.year ? ' ' + examSource.year : ''} · ` : ''}Ex. {exercise.exerciseNumber}</span>
         <span className="text-xs text-[var(--text-faint)]">· Difficulty: {'★'.repeat(exercise.difficulty)}{'☆'.repeat(5 - exercise.difficulty)}</span>
         <span className="flex-1" />
         <button

@@ -4,6 +4,7 @@ import type { StudyRecommendation } from '../../lib/studyRecommender'
 
 interface UpNextListProps {
   recommendations: StudyRecommendation[]
+  queueTopicIds?: Set<string>
 }
 
 const ACTION_ICONS: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -14,7 +15,7 @@ const ACTION_ICONS: Record<string, React.ComponentType<{ size?: number; classNam
   'flashcards': Layers,
 }
 
-export function UpNextList({ recommendations }: UpNextListProps) {
+export function UpNextList({ recommendations, queueTopicIds }: UpNextListProps) {
   const { t } = useTranslation()
 
   if (recommendations.length === 0) return null
@@ -42,6 +43,9 @@ export function UpNextList({ recommendations }: UpNextListProps) {
               <span className="text-xs font-medium text-[var(--text-muted)] shrink-0">
                 {Math.round(rec.decayedMastery * 100)}%
               </span>
+              {queueTopicIds?.has(rec.topicId) && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--accent-bg)] text-[var(--accent-text)] shrink-0">In queue</span>
+              )}
             </div>
           )
         })}
