@@ -16,6 +16,7 @@ export interface QueueItem {
   subjectName: string
   priority: number
   estimatedMinutes: number
+  reason?: string
   // Type-specific
   flashcardIds?: string[]
   exerciseId?: string
@@ -71,6 +72,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
         subjectName: info?.subjectName ?? '',
         priority: 100,
         estimatedMinutes: Math.ceil(batch.length * 0.3),
+        reason: `${batch.length} card${batch.length > 1 ? 's' : ''} due for review`,
         flashcardIds: batch.map(c => c.id),
       })
     }
@@ -95,6 +97,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
             subjectName: info?.subjectName ?? '',
             priority: 80 + action.priority,
             estimatedMinutes: 3,
+            reason: action.reason,
             conceptCardId: card.id,
             conceptCardTitle: card.title,
           })
@@ -114,6 +117,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
             subjectName: info?.subjectName ?? '',
             priority: 80 + action.priority,
             estimatedMinutes: 5,
+            reason: action.reason,
             exerciseId: exercise.id,
           })
         }
@@ -137,6 +141,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
           subjectName: rec.subjectName,
           priority: 60,
           estimatedMinutes: 5,
+          reason: rec.reason,
           exerciseId: exercise.id,
         })
       }
@@ -151,6 +156,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
           subjectName: rec.subjectName,
           priority: 50,
           estimatedMinutes: 3,
+          reason: rec.reason,
           conceptCardId: card.id,
           conceptCardTitle: card.title,
         })
@@ -183,6 +189,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
       subjectName: info?.subjectName ?? '',
       priority: 30,
       estimatedMinutes: 5,
+      reason: `Low mastery (${Math.round((info?.mastery ?? 0) * 100)}%) — needs practice`,
       exerciseId: exercise.id,
     })
   }
@@ -236,6 +243,7 @@ function buildCramQueue(input: BuildQueueInput): QueueItem[] {
         subjectName: info.subjectName,
         priority: 100 + (1 - info.mastery) * 50,
         estimatedMinutes: Math.ceil(batch.length * 0.3),
+        reason: 'Cram mode — review all cards',
         flashcardIds: batch.map(c => c.id),
       })
     }
@@ -259,6 +267,7 @@ function buildCramQueue(input: BuildQueueInput): QueueItem[] {
         subjectName: info.subjectName,
         priority: 80 + (1 - info.mastery) * 20,
         estimatedMinutes: 5,
+        reason: `Weak topic (${Math.round(info.mastery * 100)}%) — exam prep`,
         exerciseId: exercise.id,
       })
     }
@@ -277,6 +286,7 @@ function buildCramQueue(input: BuildQueueInput): QueueItem[] {
         subjectName: info.subjectName,
         priority: 60,
         estimatedMinutes: 3,
+        reason: 'Low mastery — refresh concepts',
         conceptCardId: card.id,
         conceptCardTitle: card.title,
       })

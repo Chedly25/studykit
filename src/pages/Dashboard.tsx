@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Rocket, Zap, ListTodo } from 'lucide-react'
+import { ArrowRight, Zap, ListTodo } from 'lucide-react'
 import { isCramModeActive } from '../lib/cramModeEngine'
 import { db } from '../db'
 import type { StudySession } from '../db/schema'
@@ -18,9 +18,7 @@ import { HabitGoalsCard } from '../components/dashboard/HabitGoalsCard'
 import { LevelsView } from '../components/dashboard/LevelsView'
 import { GettingStartedCard } from '../components/dashboard/GettingStartedCard'
 import { StatusBar } from '../components/dashboard/StatusBar'
-import { HeroFocusCard } from '../components/dashboard/HeroFocusCard'
 import { UpNextList } from '../components/dashboard/UpNextList'
-import { QuickAccessRow } from '../components/dashboard/QuickAccessRow'
 import { computeDailyRecommendations } from '../lib/studyRecommender'
 import { useIntelligence } from '../hooks/useIntelligence'
 import { AttentionCard } from '../components/dashboard/AttentionCard'
@@ -45,13 +43,6 @@ export default function Dashboard() {
       : Promise.resolve([] as StudySession[]),
     [profileId]
   ) ?? []
-
-  const dueFlashcards = useLiveQuery(
-    () => {
-      const today = new Date().toISOString().slice(0, 10)
-      return db.flashcards.where('nextReviewDate').belowOrEqual(today).count()
-    }
-  ) ?? 0
 
   const dueFlashcardsByTopic = useLiveQuery(async () => {
     const today = new Date().toISOString().slice(0, 10)
@@ -230,29 +221,6 @@ export default function Dashboard() {
         </Link>
       )}
 
-      {/* Hero CTA — secondary when queue exists */}
-      {recommendations.length > 0 && (
-        <Link
-          to={recommendations[0].linkTo}
-          className="flex items-center justify-between w-full px-6 py-4 mb-4 rounded-xl bg-[var(--bg-input)] text-[var(--text-heading)] font-semibold text-sm hover:bg-[var(--bg-card)] transition-colors border border-[var(--border-card)]"
-        >
-          <div className="flex items-center gap-3">
-            {!hasActivity ? (
-              <Rocket className="w-5 h-5" />
-            ) : (
-              <ArrowRight className="w-5 h-5" />
-            )}
-            <span>
-              {!hasActivity
-                ? t('dashboard.startFirstSession', 'Start your first session')
-                : `${t('dashboard.continueStudying', 'Continue studying')}: ${recommendations[0].topicName}`
-              }
-            </span>
-          </div>
-          <ArrowRight className="w-5 h-5 text-[var(--text-muted)]" />
-        </Link>
-      )}
-
       {/* StatusBar — only show once user has topics (metrics become meaningful) */}
       {topics.length > 0 && (
         <StatusBar
@@ -267,9 +235,6 @@ export default function Dashboard() {
           isResearch={isResearch}
         />
       )}
-
-      {/* Block 4D: Achievements */}
-      {profileId && <AchievementsCard examProfileId={profileId} />}
 
       {/* Up Next — top 3 recommendations with action-specific links */}
       <UpNextList recommendations={recommendations} />
@@ -287,7 +252,8 @@ export default function Dashboard() {
         getTopicsForChapter={getTopicsForChapter}
       />
 
-      <QuickAccessRow isResearch={isResearch} dueFlashcardCount={dueFlashcards} />
+      {/* Achievements */}
+      {profileId && <AchievementsCard examProfileId={profileId} />}
 
       {/* Milestones (research) or Habit Goals */}
       {isResearch ? (

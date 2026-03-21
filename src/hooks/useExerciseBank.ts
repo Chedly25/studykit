@@ -12,9 +12,11 @@ interface ExerciseStats {
 
 export function useExerciseBank(examProfileId: string | undefined) {
   const exercises = useLiveQuery(
-    () => examProfileId
-      ? db.exercises.where('examProfileId').equals(examProfileId).toArray()
-      : [],
+    async () => {
+      if (!examProfileId) return []
+      const all = await db.exercises.where('examProfileId').equals(examProfileId).toArray()
+      return all.filter(e => !e.hidden)
+    },
     [examProfileId],
     [],
   )

@@ -258,6 +258,8 @@ export class StudiesKitDB extends Dexie {
     this.version(19).stores({
       achievements: 'id, examProfileId, achievementId, [examProfileId+achievementId]',
     })
+
+    this.version(20).stores({})
   }
 }
 

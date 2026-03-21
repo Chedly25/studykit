@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { BookOpen, ClipboardCheck, RotateCcw, Lightbulb, Layers, ChevronRight } from 'lucide-react'
+import { BookOpen, ClipboardCheck, RotateCcw, Lightbulb, Layers } from 'lucide-react'
 import type { StudyRecommendation } from '../../lib/studyRecommender'
 
 interface UpNextListProps {
@@ -29,21 +28,21 @@ export function UpNextList({ recommendations }: UpNextListProps) {
         {recommendations.slice(0, 3).map(rec => {
           const Icon = ACTION_ICONS[rec.action] ?? BookOpen
           return (
-            <Link
+            <div
               key={rec.topicId}
-              to={rec.linkTo}
-              className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--bg-input)] transition-colors group"
+              className="flex items-center gap-3 px-2 py-2 rounded-lg"
             >
               <Icon size={18} className="text-[var(--text-muted)] shrink-0" />
-              <span className="text-sm font-medium text-[var(--text-heading)] truncate flex-1">
-                {rec.topicName}
-              </span>
-              <span className="text-xs text-[var(--text-faint)] hidden sm:inline">{rec.subjectName}</span>
-              <span className="text-xs font-medium text-[var(--text-muted)]">
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-[var(--text-heading)] truncate block">
+                  {rec.topicName}
+                </span>
+                <span className="text-xs text-[var(--text-faint)] truncate block">{rec.reason}</span>
+              </div>
+              <span className="text-xs font-medium text-[var(--text-muted)] shrink-0">
                 {Math.round(rec.decayedMastery * 100)}%
               </span>
-              <ChevronRight size={14} className="text-[var(--text-faint)] group-hover:text-[var(--accent-text)] transition-colors shrink-0" />
-            </Link>
+            </div>
           )
         })}
       </div>

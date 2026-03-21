@@ -4,21 +4,26 @@
  */
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@clerk/clerk-react'
-import { Sparkles, Loader2, X } from 'lucide-react'
+import { Sparkles, Loader2, X, Bookmark, Check } from 'lucide-react'
+import { toast } from 'sonner'
 import { streamChat } from '../../ai/client'
+import { db } from '../../db'
 import { MathText } from '../MathText'
 
 interface Props {
   content: string
   topicName: string
   onDismiss: () => void
+  examProfileId?: string
+  topicId?: string
 }
 
-export function InlineAIExplanation({ content, topicName, onDismiss }: Props) {
+export function InlineAIExplanation({ content, topicName, onDismiss, examProfileId, topicId }: Props) {
   const { getToken } = useAuth()
   const [text, setText] = useState('')
   const [isStreaming, setIsStreaming] = useState(true)
   const [error, setError] = useState(false)
+  const [saved, setSaved] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -59,6 +64,42 @@ export function InlineAIExplanation({ content, topicName, onDismiss }: Props) {
     }
   }, [content, topicName, getToken])
 
+  const handleSave = async () => {
+    if (!examProfileId || saved) return
+    try {
+      let deck = await db.flashcardDecks.where('examProfileId').equals(examProfileId)
+        .filter(d => d.name === 'AI Explanations').first()
+      if (!deck) {
+        const deckId = crypto.randomUUID()
+        deck = {
+          id: deckId,
+          examProfileId,
+          topicId,
+          name: 'AI Explanations',
+          createdAt: new Date().toISOString(),
+        }
+        await db.flashcardDecks.put(deck)
+      }
+      await db.flashcards.put({
+        id: crypto.randomUUID(),
+        deckId: deck.id,
+        topicId,
+        front: content,
+        back: text,
+        source: 'ai-generated',
+        easeFactor: 2.5,
+        interval: 0,
+        repetitions: 0,
+        nextReviewDate: new Date().toISOString().slice(0, 10),
+        lastRating: 0,
+      })
+      setSaved(true)
+      toast.success('Saved as flashcard')
+    } catch {
+      toast.error('Failed to save')
+    }
+  }
+
   if (error) return null
 
   return (
@@ -80,13 +121,28 @@ export function InlineAIExplanation({ content, topicName, onDismiss }: Props) {
       ) : (
         <p className="text-xs text-[var(--text-muted)]">Thinking...</p>
       )}
-      {!isStreaming && (
-        <button
-          onClick={onDismiss}
-          className="mt-2 text-xs font-medium text-[var(--accent-text)] hover:underline"
-        >
-          Got it — continue
-        </button>
+      {!isStreaming && text && (
+        <div className="flex items-center gap-3 mt-2">
+          <button
+            onClick={onDismiss}
+            className="text-xs font-medium text-[var(--accent-text)] hover:underline"
+          >
+            Got it — continue
+          </button>
+          {examProfileId && !saved && (
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-1 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--accent-text)]"
+            >
+              <Bookmark className="w-3 h-3" /> Save as flashcard
+            </button>
+          )}
+          {saved && (
+            <span className="flex items-center gap-1 text-xs text-emerald-500">
+              <Check className="w-3 h-3" /> Saved
+            </span>
+          )}
+        </div>
       )}
     </div>
   )

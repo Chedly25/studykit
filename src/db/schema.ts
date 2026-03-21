@@ -620,6 +620,7 @@ export interface Exercise {
   status: ExerciseStatus
   lastAttemptScore?: number
   attemptCount: number
+  hidden?: boolean
   createdAt: string
 }
 

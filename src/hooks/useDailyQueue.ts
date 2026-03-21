@@ -75,9 +75,9 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
   }, [examProfileId, cramMode, today]) ?? []
 
   const exercises = useLiveQuery(
-    () => examProfileId
-      ? db.exercises.where('examProfileId').equals(examProfileId).toArray()
-      : Promise.resolve([] as Exercise[]),
+    async () => examProfileId
+      ? (await db.exercises.where('examProfileId').equals(examProfileId).toArray()).filter(e => !e.hidden)
+      : [] as Exercise[],
     [examProfileId]
   ) ?? []
 

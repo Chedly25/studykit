@@ -11,7 +11,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
-import { ArrowRight, SkipForward, CheckCircle2, BookOpen, ListChecks, Brain, Zap, Loader2, X } from 'lucide-react'
+import { ArrowRight, SkipForward, CheckCircle2, BookOpen, ListChecks, Brain, Zap, Loader2, X, Flag } from 'lucide-react'
+import { toast } from 'sonner'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
@@ -63,6 +64,18 @@ export default function DailyQueue() {
   // Block E: Session results tracking + nudges
   const sessionResults = useRef<SessionResult[]>([])
   const [currentNudge, setCurrentNudge] = useState<Nudge | null>(null)
+
+  // Feature 5: Elapsed time
+  const [elapsedMinutes, setElapsedMinutes] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (sessionStartRef.current > 0) {
+        setElapsedMinutes(Math.floor((Date.now() - sessionStartRef.current) / 60000))
+      }
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   const cramMode = profileId ? localStorage.getItem(CRAM_KEY(profileId)) === 'true' : false
 
@@ -268,6 +281,7 @@ export default function DailyQueue() {
           </h1>
           <p className="text-sm text-[var(--text-muted)]">
             {completedCount}/{totalCount} completed · ~{remainingMinutes} min left
+            {elapsedMinutes > 0 && <span> · {elapsedMinutes}m elapsed</span>}
           </p>
         </div>
       </div>
@@ -306,6 +320,9 @@ export default function DailyQueue() {
           </div>
 
           <h2 className="text-lg font-semibold text-[var(--text-heading)] mb-1">{currentItem.topicName}</h2>
+          {currentItem.reason && (
+            <p className="text-xs text-[var(--text-faint)] mb-1 italic">{currentItem.reason}</p>
+          )}
           <p className="text-sm text-[var(--text-muted)] mb-4">~{currentItem.estimatedMinutes} min</p>
 
           {currentItem.type === 'flashcard-review' && (
@@ -314,6 +331,7 @@ export default function DailyQueue() {
               profileId={profileId}
               onComplete={handleComplete}
               onRated={recordResult}
+              examProfileId={profileId}
             />
           )}
 
@@ -323,6 +341,7 @@ export default function DailyQueue() {
               profileId={profileId}
               onComplete={handleComplete}
               onRated={recordResult}
+              examProfileId={profileId}
             />
           )}
 
@@ -334,6 +353,7 @@ export default function DailyQueue() {
               onReveal={() => setConceptRevealed(true)}
               onComplete={handleComplete}
               onRated={recordResult}
+              examProfileId={profileId}
             />
           )}
 
@@ -402,19 +422,20 @@ function ItemTypeIcon({ type }: { type: string }) {
 // ─── Flashcard review (one card at a time + inline AI on "Again") ──────
 
 const RATING_BUTTONS = [
-  { quality: 1, label: 'Again', color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
-  { quality: 3, label: 'Hard', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
-  { quality: 4, label: 'Good', color: 'bg-blue-500/15 text-blue-600 hover:bg-blue-500/25' },
-  { quality: 5, label: 'Easy', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
+  { quality: 1, label: 'Again', key: '1', color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
+  { quality: 3, label: 'Hard', key: '2', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
+  { quality: 4, label: 'Good', key: '3', color: 'bg-blue-500/15 text-blue-600 hover:bg-blue-500/25' },
+  { quality: 5, label: 'Easy', key: '4', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
 ]
 
 function FlashcardReviewInline({
-  item, profileId, onComplete, onRated,
+  item, profileId, onComplete, onRated, examProfileId,
 }: {
   item: QueueItem
   profileId: string | undefined
   onComplete: (itemId: string) => void
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
+  examProfileId?: string
 }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
@@ -422,6 +443,8 @@ function FlashcardReviewInline({
   const [reviewedCount, setReviewedCount] = useState(0)
   // Block B: AI explanation after "Again"
   const [explanationCtx, setExplanationCtx] = useState<{ front: string; back: string } | null>(null)
+  // Feature 6: Next review interval
+  const [nextInterval, setNextInterval] = useState<number | null>(null)
 
   const cards = useLiveQuery(async () => {
     if (!item.flashcardIds?.length) return []
@@ -479,12 +502,41 @@ function FlashcardReviewInline({
       if (quality === 1) {
         setExplanationCtx({ front: card.front, back: card.back })
       } else {
-        advanceCard()
+        // Feature 6: Show interval before advancing
+        setNextInterval(result.interval)
+        setTimeout(() => {
+          setNextInterval(null)
+          advanceCard()
+        }, 1500)
       }
     } finally {
       setIsSubmitting(false)
     }
   }
+
+  // Feature 1: Keyboard shortcuts ref
+  const handleRateRef = useRef(handleRate)
+  handleRateRef.current = handleRate
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.key === ' ' && !flipped && !explanationCtx) {
+        e.preventDefault()
+        setFlipped(true)
+        return
+      }
+      if (!flipped || explanationCtx || isSubmitting || nextInterval !== null) return
+      const keyMap: Record<string, number> = { '1': 1, '2': 3, '3': 4, '4': 5 }
+      const quality = keyMap[e.key]
+      if (quality) {
+        e.preventDefault()
+        handleRateRef.current(quality)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [flipped, explanationCtx, isSubmitting, nextInterval])
 
   return (
     <div className="space-y-3">
@@ -508,11 +560,11 @@ function FlashcardReviewInline({
               </p>
             </div>
           ) : (
-            <p className="text-xs text-[var(--text-faint)] mt-3">Tap to reveal answer</p>
+            <p className="text-xs text-[var(--text-faint)] mt-3">Tap or press Space to reveal</p>
           )}
         </div>
 
-        {flipped && !explanationCtx && (
+        {flipped && !explanationCtx && nextInterval === null && (
           <div className="flex gap-1.5 mt-4 pt-3 border-t border-[var(--border-card)]">
             {RATING_BUTTONS.map(btn => (
               <button
@@ -521,10 +573,17 @@ function FlashcardReviewInline({
                 disabled={isSubmitting}
                 className={`flex-1 px-2 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
               >
-                {btn.label}
+                <span className="text-[10px] opacity-50 mr-1">{btn.key}</span>{btn.label}
               </button>
             ))}
           </div>
+        )}
+
+        {/* Feature 6: Next review interval feedback */}
+        {nextInterval !== null && (
+          <p className="text-center text-xs text-[var(--text-muted)] mt-3 animate-fade-in">
+            Next review in {nextInterval} day{nextInterval !== 1 ? 's' : ''}
+          </p>
         )}
 
         {/* Block B: Inline AI explanation after "Again" */}
@@ -533,6 +592,8 @@ function FlashcardReviewInline({
             content={`Question: ${explanationCtx.front}\nAnswer: ${explanationCtx.back}`}
             topicName={item.topicName}
             onDismiss={advanceCard}
+            examProfileId={examProfileId}
+            topicId={item.topicId}
           />
         )}
       </div>
@@ -558,12 +619,13 @@ const EXERCISE_RATINGS = [
 ]
 
 function ExerciseInline({
-  item, profileId, onComplete, onRated,
+  item, profileId, onComplete, onRated, examProfileId,
 }: {
   item: QueueItem
   profileId: string | undefined
   onComplete: (itemId: string) => void
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
+  examProfileId?: string
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [explanationCtx, setExplanationCtx] = useState<string | null>(null)
@@ -606,6 +668,20 @@ function ExerciseInline({
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xs font-medium text-[var(--text-muted)]">Exercise #{exercise.exerciseNumber}</span>
         <span className="text-xs text-[var(--text-faint)]">· Difficulty: {'★'.repeat(exercise.difficulty)}{'☆'.repeat(5 - exercise.difficulty)}</span>
+        <span className="flex-1" />
+        <button
+          onClick={async () => {
+            if (item.exerciseId) {
+              await db.exercises.update(item.exerciseId, { hidden: true })
+              toast.success('Exercise hidden')
+              onComplete(item.id)
+            }
+          }}
+          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10"
+          title="Hide this exercise"
+        >
+          <Flag className="w-3.5 h-3.5" />
+        </button>
       </div>
       <div className="glass-card p-4 text-sm text-[var(--text-body)] whitespace-pre-wrap mb-4">
         <MathText>{exercise.text}</MathText>
@@ -634,6 +710,8 @@ function ExerciseInline({
           content={explanationCtx}
           topicName={item.topicName}
           onDismiss={() => { setExplanationCtx(null); onComplete(item.id) }}
+          examProfileId={examProfileId}
+          topicId={item.topicId}
         />
       )}
     </div>
@@ -649,7 +727,7 @@ const CONCEPT_RATINGS = [
 ]
 
 function ConceptQuizInline({
-  item, profileId, revealed, onReveal, onComplete, onRated,
+  item, profileId, revealed, onReveal, onComplete, onRated, examProfileId,
 }: {
   item: QueueItem
   profileId: string | undefined
@@ -657,6 +735,7 @@ function ConceptQuizInline({
   onReveal: () => void
   onComplete: (itemId: string) => void
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
+  examProfileId?: string
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [explanationCtx, setExplanationCtx] = useState<string | null>(null)
@@ -734,6 +813,8 @@ function ConceptQuizInline({
               content={explanationCtx}
               topicName={item.topicName}
               onDismiss={() => { setExplanationCtx(null); onComplete(item.id) }}
+              examProfileId={examProfileId}
+              topicId={item.topicId}
             />
           )}
         </>
