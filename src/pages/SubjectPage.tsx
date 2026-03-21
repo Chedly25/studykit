@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Search, ChevronDown, ChevronRight, Lock, ArrowRight } from 'lucide-react'
+import { ArrowLeft, Search, ChevronDown, ChevronRight, Lock, ArrowRight, ArrowUpDown } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
-import { useTopicStats } from '../hooks/useTopicStats'
+import { useTopicStats, type TopicContentStats } from '../hooks/useTopicStats'
 import { useExerciseBank } from '../hooks/useExerciseBank'
 import { isTopicLocked } from '../lib/knowledgeGraph'
 import { TopicDetailPanel } from '../components/dashboard/TopicDetailPanel'
 import type { Topic } from '../db/schema'
 
 type FilterType = 'has-course' | 'has-exam' | 'not-started' | 'in-progress' | 'mastered'
+type SortType = 'default' | 'mastery-asc' | 'mastery-desc' | 'docs' | 'exercises'
 
 const FILTER_LABELS: Record<FilterType, string> = {
   'has-course': 'Has course',
@@ -43,6 +44,7 @@ export default function SubjectPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilters, setActiveFilters] = useState<Set<FilterType>>(new Set())
   const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<SortType>('default')
 
   const subject = subjects.find(s => s.id === subjectId)
   const subjectChapters = subjectId ? getChaptersForSubject(subjectId) : []
@@ -63,6 +65,14 @@ export default function SubjectPage() {
     })
   }
 
+  const handleSort = (key: string) => {
+    setSortBy(prev => {
+      if (prev === key) return (key + '-desc') as SortType
+      if (prev === key + '-desc') return 'default'
+      return key as SortType
+    })
+  }
+
   const matchesTopic = (topic: Topic): boolean => {
     if (searchQuery && !topic.name.toLowerCase().includes(searchQuery.toLowerCase())) return false
     if (activeFilters.size === 0) return true
@@ -75,17 +85,50 @@ export default function SubjectPage() {
     return true
   }
 
-  const filteredChapters = subjectChapters.map(ch => ({
-    chapter: ch,
-    topics: getTopicsForChapter(ch.id).filter(matchesTopic),
-  })).filter(({ topics: t }) => t.length > 0)
+  // Build table rows: either grouped by chapter (default sort) or flat (sorted)
+  type TableRow = { type: 'chapter'; name: string; mastery: number; topicCount: number } | { type: 'topic'; topic: Topic }
 
-  // Orphan topics (no chapterId)
-  const orphanTopics = allSubjectTopics.filter(t => !t.chapterId && matchesTopic(t))
+  const tableRows = useMemo((): TableRow[] => {
+    const filtered = allSubjectTopics.filter(matchesTopic)
+
+    if (sortBy !== 'default') {
+      // Flat sorted view — no chapter headers
+      const sorted = [...filtered].sort((a, b) => {
+        const sa = topicStats.get(a.id)
+        const sb = topicStats.get(b.id)
+        switch (sortBy) {
+          case 'mastery-asc': return a.mastery - b.mastery
+          case 'mastery-desc': return b.mastery - a.mastery
+          case 'docs': return (sb?.docs ?? 0) - (sa?.docs ?? 0)
+          case 'exercises': return (sb?.exercises ?? 0) - (sa?.exercises ?? 0)
+          default: return 0
+        }
+      })
+      return sorted.map(t => ({ type: 'topic' as const, topic: t }))
+    }
+
+    // Default: grouped by chapter
+    const rows: TableRow[] = []
+    for (const ch of subjectChapters) {
+      const chTopics = getTopicsForChapter(ch.id).filter(matchesTopic)
+      if (chTopics.length === 0) continue
+      const chMastery = chTopics.reduce((s, t) => s + t.mastery, 0) / chTopics.length
+      rows.push({ type: 'chapter', name: ch.name, mastery: chMastery, topicCount: chTopics.length })
+      for (const t of chTopics) rows.push({ type: 'topic', topic: t })
+    }
+    // Orphan topics
+    const orphans = allSubjectTopics.filter(t => !t.chapterId && matchesTopic(t))
+    if (orphans.length > 0) {
+      rows.push({ type: 'chapter', name: 'General', mastery: orphans.reduce((s, t) => s + t.mastery, 0) / orphans.length, topicCount: orphans.length })
+      for (const t of orphans) rows.push({ type: 'topic', topic: t })
+    }
+    return rows
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allSubjectTopics, subjectChapters, sortBy, searchQuery, activeFilters, topicStats])
 
   if (!subject) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
+      <div className="max-w-4xl mx-auto px-4 py-12 text-center">
         <p className="text-sm text-[var(--text-muted)] mb-4">Subject not found.</p>
         <Link to="/dashboard" className="btn-primary px-4 py-2 text-sm">Back to Dashboard</Link>
       </div>
@@ -93,7 +136,7 @@ export default function SubjectPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
+    <div className="max-w-4xl mx-auto px-4 py-6 animate-fade-in">
       {/* Back */}
       <Link to="/dashboard" className="flex items-center gap-1 text-sm text-[var(--text-muted)] hover:text-[var(--accent-text)] mb-4 w-fit">
         <ArrowLeft className="w-4 h-4" /> Dashboard
@@ -139,74 +182,130 @@ export default function SubjectPage() {
         ))}
       </div>
 
-      {/* Chapters + Topics */}
-      <div className="space-y-3">
-        {filteredChapters.map(({ chapter, topics: chapterTopics }) => {
-          const chapterMastery = chapterTopics.length > 0
-            ? chapterTopics.reduce((s, t) => s + t.mastery, 0) / chapterTopics.length
-            : 0
-          const chapterPct = Math.round(chapterMastery * 100)
-
-          return (
-            <div key={chapter.id} className="glass-card overflow-hidden">
-              {/* Chapter header */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-card)]/50">
-                <span className="flex-1 text-xs font-semibold text-[var(--text-heading)]">{chapter.name}</span>
-                <span className="text-xs text-[var(--text-muted)]">{chapterTopics.length} topic{chapterTopics.length !== 1 ? 's' : ''}</span>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <div className="w-16 h-1.5 rounded-full bg-[var(--bg-input)] overflow-hidden">
-                    <div className={`h-full rounded-full ${masteryColor(chapterMastery)} transition-all`} style={{ width: `${chapterPct}%` }} />
-                  </div>
-                  <span className={`text-[10px] font-semibold w-7 text-right ${masteryTextColor(chapterMastery)}`}>{chapterPct}%</span>
-                </div>
-              </div>
-
-              {/* Topic rows */}
-              {chapterTopics.map(topic => (
-                <TopicRow
-                  key={topic.id}
-                  topic={topic}
-                  stats={topicStats.get(topic.id)}
-                  exerciseStats={exerciseStatsByTopic.get(topic.id)}
-                  topicMasteryMap={topicMasteryMap}
-                  topicNameMap={topicNameMap}
-                  isExpanded={expandedTopicId === topic.id}
-                  onToggle={() => setExpandedTopicId(prev => prev === topic.id ? null : topic.id)}
-                  examProfileId={profileId}
-                  subjectName={subject.name}
-                />
-              ))}
-            </div>
-          )
-        })}
-
-        {/* Orphan topics (no chapter) */}
-        {orphanTopics.length > 0 && (
-          <div className="glass-card overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-card)]/50">
-              <span className="flex-1 text-xs font-semibold text-[var(--text-heading)]">General</span>
-              <span className="text-xs text-[var(--text-muted)]">{orphanTopics.length} topic{orphanTopics.length !== 1 ? 's' : ''}</span>
-            </div>
-            {orphanTopics.map(topic => (
-              <TopicRow
-                key={topic.id}
-                topic={topic}
-                stats={topicStats.get(topic.id)}
-                exerciseStats={exerciseStatsByTopic.get(topic.id)}
-                topicMasteryMap={topicMasteryMap}
-                topicNameMap={topicNameMap}
-                isExpanded={expandedTopicId === topic.id}
-                onToggle={() => setExpandedTopicId(prev => prev === topic.id ? null : topic.id)}
-                examProfileId={profileId}
-                subjectName={subject.name}
-              />
-            ))}
+      {/* Table */}
+      {tableRows.length > 0 ? (
+        <div className="glass-card overflow-hidden">
+          {/* Column headers */}
+          <div className="flex items-center px-3 py-2 border-b border-[var(--border-card)] bg-[var(--bg-input)]/30">
+            <div className="w-5" />
+            <span className="flex-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Topic</span>
+            <SortHeader label="Docs" sortKey="docs" currentSort={sortBy} onSort={handleSort} width="w-14" />
+            <SortHeader label="Ex." sortKey="exercises" currentSort={sortBy} onSort={handleSort} width="w-14" />
+            <span className="w-14 text-center text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Cards</span>
+            <SortHeader label="Mastery" sortKey="mastery-asc" currentSort={sortBy} onSort={handleSort} width="w-20" align="right" />
+            <div className="w-5" />
           </div>
-        )}
-      </div>
 
-      {/* Empty filter state */}
-      {filteredChapters.length === 0 && orphanTopics.length === 0 && (
+          {/* Rows */}
+          {tableRows.map((row, i) => {
+            if (row.type === 'chapter') {
+              const pct = Math.round(row.mastery * 100)
+              return (
+                <div key={`ch-${i}`} className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-input)]/40 border-b border-[var(--border-card)]/50">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] flex-1">
+                    {row.name}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-faint)]">{row.topicCount} topic{row.topicCount !== 1 ? 's' : ''}</span>
+                  <div className="w-12 h-1 rounded-full bg-[var(--bg-input)] overflow-hidden">
+                    <div className={`h-full rounded-full ${masteryColor(row.mastery)}`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className={`text-[10px] font-semibold w-7 text-right ${masteryTextColor(row.mastery)}`}>{pct}%</span>
+                </div>
+              )
+            }
+
+            const { topic } = row
+            const stats = topicStats.get(topic.id)
+            const exStats = exerciseStatsByTopic.get(topic.id)
+            const lockInfo = isTopicLocked(topic, topicMasteryMap)
+            const isExpanded = expandedTopicId === topic.id
+            const pct = Math.round(topic.mastery * 100)
+
+            return (
+              <div key={topic.id} data-topic-id={topic.id}>
+                <div
+                  onClick={() => !lockInfo.locked && setExpandedTopicId(prev => prev === topic.id ? null : topic.id)}
+                  className={`flex items-center px-3 py-1.5 border-b border-[var(--border-card)]/20 hover:bg-[var(--bg-input)]/20 ${lockInfo.locked ? 'opacity-50' : 'cursor-pointer'}`}
+                >
+                  {/* Mastery dot / lock */}
+                  <div className="w-5 flex justify-center">
+                    {lockInfo.locked
+                      ? <Lock className="w-3 h-3 text-[var(--text-faint)]" />
+                      : <div className={`w-1.5 h-1.5 rounded-full ${masteryColor(topic.mastery)}`} />
+                    }
+                  </div>
+
+                  {/* Topic name */}
+                  <span className="flex-1 text-xs text-[var(--text-body)] truncate min-w-0 pr-2">
+                    {topic.name}
+                  </span>
+
+                  {/* Docs */}
+                  <div className="w-14 flex justify-center">
+                    {(stats?.docs ?? 0) > 0 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 font-medium">{stats!.docs}</span>
+                    )}
+                  </div>
+
+                  {/* Exercises */}
+                  <div className="w-14 flex justify-center">
+                    {(stats?.exercises ?? 0) > 0 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 font-medium">
+                        {exStats ? `${exStats.completed}/${exStats.total}` : stats!.exercises}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Cards */}
+                  <div className="w-14 flex justify-center">
+                    {(stats?.cards ?? 0) > 0 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 font-medium">{stats!.cards}</span>
+                    )}
+                  </div>
+
+                  {/* Mastery bar + % */}
+                  <div className="w-20 flex items-center gap-1.5 justify-end">
+                    <div className={`w-10 h-1 rounded-full bg-[var(--bg-input)] overflow-hidden ${lockInfo.locked ? 'opacity-50' : ''}`}>
+                      <div className={`h-full rounded-full ${masteryColor(topic.mastery)}`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className={`text-[10px] font-semibold w-7 text-right ${masteryTextColor(topic.mastery)}`}>{pct}%</span>
+                  </div>
+
+                  {/* Chevron / prereq link */}
+                  <div className="w-5 flex justify-center">
+                    {lockInfo.locked ? (
+                      <Link
+                        to={`/session?topic=${encodeURIComponent(topicNameMap.get(lockInfo.blockingPrereqs[0]) ?? '')}`}
+                        onClick={e => e.stopPropagation()}
+                        className="text-[var(--text-muted)] hover:text-[var(--accent-text)]"
+                        title={`Go to prerequisite`}
+                      >
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    ) : (
+                      isExpanded
+                        ? <ChevronDown className="w-3 h-3 text-[var(--text-muted)]" />
+                        : <ChevronRight className="w-3 h-3 text-[var(--text-muted)]" />
+                    )}
+                  </div>
+                </div>
+
+                {isExpanded && profileId && (
+                  <TopicDetailPanel
+                    topicId={topic.id}
+                    topicName={topic.name}
+                    subjectName={subject.name}
+                    mastery={topic.mastery}
+                    examProfileId={profileId}
+                    questionsAttempted={topic.questionsAttempted}
+                    questionsCorrect={topic.questionsCorrect}
+                  />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ) : (
         <div className="text-center py-12">
           <Search className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-3" />
           <p className="text-sm text-[var(--text-muted)]">No topics match your search.</p>
@@ -221,100 +320,21 @@ export default function SubjectPage() {
   )
 }
 
-// ─── Topic Row ──────
+// ─── Sort Header ──────
 
-interface TopicRowProps {
-  topic: Topic
-  stats?: { docs: number; exercises: number; flashcards: number; cards: number; dueFlashcards: number }
-  exerciseStats?: { total: number; completed: number }
-  topicMasteryMap: Map<string, number>
-  topicNameMap: Map<string, string>
-  isExpanded: boolean
-  onToggle: () => void
-  examProfileId?: string
-  subjectName: string
-}
-
-function TopicRow({ topic, stats, exerciseStats, topicMasteryMap, topicNameMap, isExpanded, onToggle, examProfileId, subjectName }: TopicRowProps) {
-  const topicPct = Math.round(topic.mastery * 100)
-  const lockInfo = isTopicLocked(topic, topicMasteryMap)
-  const prereqNames = lockInfo.blockingPrereqs.map(id => topicNameMap.get(id) ?? 'Unknown')
-
+function SortHeader({ label, sortKey, currentSort, onSort, width, align }: {
+  label: string; sortKey: string; currentSort: string; onSort: (key: string) => void
+  width: string; align?: 'right'
+}) {
+  const isActive = currentSort === sortKey || currentSort === sortKey.replace('-asc', '-desc')
+  const isDesc = currentSort.endsWith('-desc')
   return (
-    <div data-topic-id={topic.id}>
-      <div
-        onClick={() => !lockInfo.locked && onToggle()}
-        className={`flex items-center gap-3 px-4 py-2.5 border-b border-[var(--border-card)]/30 hover:bg-[var(--bg-input)]/20 ${lockInfo.locked ? 'opacity-60' : 'cursor-pointer'}`}
-      >
-        {lockInfo.locked ? (
-          <Lock className="w-3 h-3 text-[var(--text-faint)] flex-shrink-0" />
-        ) : (
-          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${masteryColor(topic.mastery)}`} />
-        )}
-
-        <span className="flex-1 text-xs text-[var(--text-body)] min-w-0 truncate" title={lockInfo.locked ? `Master ${prereqNames.join(', ')} first` : undefined}>
-          {topic.name}
-        </span>
-
-        {/* Stat chips */}
-        <div className="flex items-center gap-1 shrink-0">
-          {(stats?.docs ?? 0) > 0 && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 font-medium">
-              {stats!.docs} doc{stats!.docs !== 1 ? 's' : ''}
-            </span>
-          )}
-          {(stats?.exercises ?? 0) > 0 && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600 font-medium">
-              {exerciseStats ? `${exerciseStats.completed}/${exerciseStats.total}` : stats!.exercises} ex.
-            </span>
-          )}
-          {(stats?.cards ?? 0) > 0 && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 font-medium">
-              {stats!.cards} card{stats!.cards !== 1 ? 's' : ''}
-            </span>
-          )}
-          {(stats?.dueFlashcards ?? 0) > 0 && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-medium">
-              {stats!.dueFlashcards} due
-            </span>
-          )}
-        </div>
-
-        {/* Mastery bar */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <div className={`w-12 h-1 rounded-full bg-[var(--bg-input)] overflow-hidden ${lockInfo.locked ? 'opacity-50' : ''}`}>
-            <div className={`h-full rounded-full ${masteryColor(topic.mastery)}`} style={{ width: `${topicPct}%` }} />
-          </div>
-          <span className="text-[10px] text-[var(--text-muted)] w-6 text-right">{topicPct}%</span>
-        </div>
-
-        {lockInfo.locked ? (
-          <Link
-            to={`/session?topic=${encodeURIComponent(prereqNames[0] ?? '')}`}
-            onClick={e => e.stopPropagation()}
-            className="p-1 rounded hover:bg-[var(--accent-bg)] text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
-            title={`Go to prerequisite: ${prereqNames[0]}`}
-          >
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        ) : (
-          isExpanded
-            ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-            : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-        )}
-      </div>
-
-      {isExpanded && examProfileId && (
-        <TopicDetailPanel
-          topicId={topic.id}
-          topicName={topic.name}
-          subjectName={subjectName}
-          mastery={topic.mastery}
-          examProfileId={examProfileId}
-          questionsAttempted={topic.questionsAttempted}
-          questionsCorrect={topic.questionsCorrect}
-        />
-      )}
-    </div>
+    <button
+      onClick={() => onSort(sortKey)}
+      className={`${width} flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors ${align === 'right' ? 'justify-end' : 'justify-center'} ${isActive ? 'text-[var(--accent-text)]' : 'text-[var(--text-muted)] hover:text-[var(--text-body)]'}`}
+    >
+      {label}
+      {isActive && <ArrowUpDown className="w-2.5 h-2.5" />}
+    </button>
   )
 }
