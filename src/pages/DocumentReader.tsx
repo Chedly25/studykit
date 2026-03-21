@@ -30,7 +30,7 @@ export default function DocumentReader() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [scale, setScale] = useState(1.2)
-  const [scaleInitialized, setScaleInitialized] = useState(false)
+  const manualZoom = useRef(false)
   const [chatOpen, setChatOpen] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectionContext, setSelectionContext] = useState<{ text: string; pageNumber: number; documentTitle: string } | null>(null)
@@ -143,20 +143,19 @@ export default function DocumentReader() {
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) return
       if (e.key === 'Escape') navigate(-1)
-      else if (e.key === '+' || e.key === '=') setScale(s => Math.min(3, s + 0.2))
-      else if (e.key === '-') setScale(s => Math.max(0.5, s - 0.2))
+      else if (e.key === '+' || e.key === '=') { manualZoom.current = true; setScale(s => Math.min(3, s + 0.2)) }
+      else if (e.key === '-') { manualZoom.current = true; setScale(s => Math.max(0.5, s - 0.2)) }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [navigate])
 
-  // Fix 2: Auto-fit scale callback
+  // Auto-fit scale — respects manual zoom
   const handleAutoScale = useCallback((fitScale: number) => {
-    if (!scaleInitialized) {
+    if (!manualZoom.current) {
       setScale(fitScale)
-      setScaleInitialized(true)
     }
-  }, [scaleInitialized])
+  }, [])
 
   const handleAskAI = useCallback((text: string, pageNumber: number) => {
     setChatOpen(true)
@@ -234,8 +233,8 @@ export default function DocumentReader() {
         currentPage={currentPage}
         totalPages={pdfDoc?.numPages ?? 0}
         scale={scale}
-        onZoomIn={() => setScale(s => Math.min(3, s + 0.2))}
-        onZoomOut={() => setScale(s => Math.max(0.5, s - 0.2))}
+        onZoomIn={() => { manualZoom.current = true; setScale(s => Math.min(3, s + 0.2)) }}
+        onZoomOut={() => { manualZoom.current = true; setScale(s => Math.max(0.5, s - 0.2)) }}
         chatOpen={chatOpen}
         onToggleChat={() => setChatOpen(prev => !prev)}
         onClose={() => navigate(-1)}

@@ -29,7 +29,6 @@ export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, onAutoSc
   const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set([1]))
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map())
   const observerRef = useRef<IntersectionObserver | null>(null)
-  const autoScaleFired = useRef(false)
 
   const { highlights, addHighlight, updateNote, deleteHighlight, createFlashcardFromHighlight, getHighlightsForPage } = usePdfHighlights(documentId, examProfileId)
 
@@ -52,15 +51,20 @@ export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, onAutoSc
     return () => { cancelled = true }
   }, [pdfDoc])
 
-  // Auto-fit scale on first load
+  // Auto-fit scale using ResizeObserver — fires on layout changes (chat resize, window resize)
   useEffect(() => {
-    if (autoScaleFired.current || pageDimensions.length === 0 || !containerRef.current || !onAutoScale) return
-    const containerWidth = containerRef.current.clientWidth
-    if (containerWidth > 0 && pageDimensions[0]) {
-      const fitScale = (containerWidth - 32) / pageDimensions[0].width
-      onAutoScale(Math.min(fitScale, 2.5)) // cap at 2.5x
-      autoScaleFired.current = true
-    }
+    if (pageDimensions.length === 0 || !containerRef.current || !onAutoScale) return
+    const el = containerRef.current
+
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width
+      if (width > 0 && pageDimensions[0]) {
+        const fitScale = (width - 32) / pageDimensions[0].width
+        onAutoScale(Math.min(fitScale, 2.5))
+      }
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
   }, [pageDimensions, onAutoScale])
 
   // Setup IntersectionObserver
