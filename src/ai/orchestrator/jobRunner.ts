@@ -171,6 +171,29 @@ export class JobRunner {
 
     const workflow = reconstructWorkflow(job.type, config)
     await this.runWorkflowWithCheckpoints(job, workflow)
+
+    // Auto-enqueue exam exercise processing after source processing for exam documents
+    if (job.type === 'source-processing' && config.documentId) {
+      try {
+        const doc = await db.documents.get(config.documentId as string)
+        if (doc?.category === 'exam') {
+          // Check if exercises already extracted for this document
+          const existingSource = await db.examSources
+            .where('documentId').equals(doc.id)
+            .first()
+          if (!existingSource) {
+            await this.enqueue(
+              'exam-exercise-processing',
+              job.examProfileId,
+              { documentId: doc.id, isPro: config.isPro ?? false },
+              4,
+            )
+          }
+        }
+      } catch {
+        // Non-critical — don't fail the source processing job
+      }
+    }
   }
 
   private async runWorkflowWithCheckpoints(
