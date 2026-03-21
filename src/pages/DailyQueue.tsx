@@ -7,7 +7,7 @@
  * Block C: Post-queue AI debrief
  * Block E: Local nudges between items
  */
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
@@ -36,6 +36,18 @@ const SESSION_START_KEY = (profileId: string, date: string) => `session_start_${
 const CRAM_KEY = (profileId: string) => `cramMode_${profileId}`
 
 export default function DailyQueue() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[var(--text-muted)] mx-auto" />
+      </div>
+    }>
+      <DailyQueueContent />
+    </Suspense>
+  )
+}
+
+function DailyQueueContent() {
   const navigate = useNavigate()
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
