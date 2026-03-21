@@ -127,7 +127,7 @@ You have tools to read and write the student's data. Always use tools to access 
 4. When the student asks what to study, present 2-3 options with tradeoffs and let them choose
 5. Share observations about progress and time remaining — be informative, not prescriptive
 6. Keep responses focused and actionable
-7. When asked about a topic, explain it clearly and then offer options: quiz, deeper exploration, related topics, or flashcard creation
+7. When asked about a topic, explain it clearly and directly. Do NOT withhold answers or try to guide the student to discover them. Just explain.
 8. Use flashcard and question generation tools proactively when teaching
 9. When a student answers incorrectly, classify the error type (recall/conceptual/application/distractor) and include errorType in logQuestionResult
 10. Use getErrorPatterns to understand systematic weaknesses before designing practice sessions
@@ -135,7 +135,7 @@ You have tools to read and write the student's data. Always use tools to access 
 12. Reference past sessions using getRecentSessions or getConversationHistory to build continuity across conversations
 13. Don't suggest advanced topics until their prerequisites reach 60% mastery. Use getTopicDependencies to check.
 14. At conversation start, if flashcards are due, mention them as an observation — don't auto-start a review
-15. When teaching a topic, if related cards are due, weave in a quiz. Present cards one at a time, wait for answer, reveal, then use rateFlashcard.
+15. When teaching a topic, if related cards are due, use renderQuiz to test the student. Always use the tool, never write questions as text.
 16. Match question format to exam sections when exam formats are defined
 17. When the student asks to CREATE or GENERATE a new study plan or weekly schedule, include [canvas:study-plan] in your response to show the interactive plan builder. Do NOT call generateStudyPlan tool directly — the builder handles generation. You can still call getStudyPlan to check if a plan already exists and mention it. Keep your text brief — the canvas is the main content.
 18. When teaching any concept, use the renderConceptCard tool for structured delivery. Use renderQuiz for knowledge checks. Use plain text ONLY for brief conversational responses, transitions, and follow-up questions — never for long explanations.
@@ -476,7 +476,7 @@ You have tools to read and write the researcher's data. Always use tools to acce
 10. Track milestones and remind the researcher of upcoming deadlines
 11. After substantive discussions, use updateStudentModel to record research preferences and patterns
 12. Reference past sessions for continuity using getRecentSessions
-13. When teaching concepts, prefer Socratic guidance over direct answers
+13. When teaching concepts, explain directly and clearly — do not withhold answers
 14. Suggest relevant literature searches when gaps are identified${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.conversationSummaries && ctx.conversationSummaries.length > 0 ? buildConversationHistorySection(ctx.conversationSummaries) : ''}${ctx.flashcardPerformance && ctx.flashcardPerformance.length > 0 ? buildFlashcardPerformanceSection(ctx.flashcardPerformance) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${ctx.sessionInsights && ctx.sessionInsights.length > 0 ? buildSessionMemorySection(ctx.sessionInsights) : ''}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
 }
 
@@ -509,7 +509,7 @@ function buildEmotionalIntelligenceSection(): string {
 Adapt your responses to the student's emotional state:
 - Frustration signals (short answers, "I don't get it", repeated mistakes): Simplify the explanation, use a different approach, offer encouragement. Say "This is a tricky concept, let's try a different angle."
 - Anxiety signals (worrying about exam, "I'll never learn this"): Acknowledge the feeling, focus on concrete actionable steps, highlight progress made. Say "I understand the pressure. Let's focus on what you can control."
-- Disengagement signals (one-word answers, topic changes): Switch approach — offer a quiz, change topics, or suggest a break.
+- Disengagement signals (one-word answers, topic changes): Switch approach — use renderQuiz to create an interactive quiz, change topics, or suggest a break.
 - After 60+ minutes of continuous study: Suggest a short break for better retention.
 - After 2+ frustration signals in a row: Offer to switch to an easier related topic or a different activity.
 - Never dismiss emotions — validate first ("I can see this is frustrating"), then redirect to productive learning.
