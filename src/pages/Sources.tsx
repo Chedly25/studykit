@@ -349,7 +349,7 @@ export default function Sources() {
       <SourceList
         documents={categoryFilter === '' ? documents : documents.filter(d => categoryFilter === 'course' ? d.category !== 'exam' : d.category === 'exam')}
         onView={setViewDoc}
-        onViewPdf={setPdfViewDoc}
+        onViewPdf={(doc: Document) => navigate(`/read/${doc.id}`)}
         onDelete={handleDelete}
         onSummarize={handleSummarize}
         onGenerateFlashcards={handleGenerateFlashcards}

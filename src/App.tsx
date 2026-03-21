@@ -27,6 +27,7 @@ const StudySession = lazy(() => import('./pages/StudySession'))
 const Exercises = lazy(() => import('./pages/Exercises'))
 const MockExam = lazy(() => import('./pages/MockExam'))
 const DailyQueue = lazy(() => import('./pages/DailyQueue'))
+const DocumentReader = lazy(() => import('./pages/DocumentReader'))
 const Settings = lazy(() => import('./pages/Settings'))
 
 // Admin
@@ -130,6 +131,7 @@ export default function App() {
           <Route path="queue" element={<ProtectedRoute><DailyQueue /></ProtectedRoute>} />
           <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="sources" element={<ProtectedRoute><Sources /></ProtectedRoute>} />
+          <Route path="read/:documentId" element={<ProtectedRoute><DocumentReader /></ProtectedRoute>} />
           <Route path="writing" element={<ProtectedRoute><Writing /></ProtectedRoute>} />
           <Route path="meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
           <Route path="notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />

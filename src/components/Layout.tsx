@@ -37,7 +37,7 @@ export function Layout() {
   const { t } = useTranslation()
   const location = useLocation()
   const isOnline = useOnlineStatus()
-  const isChatPage = location.pathname === '/session'
+  const isChatPage = location.pathname === '/session' || location.pathname.startsWith('/read/')
 
   const sidebarExpanded = sidebarPinned || sidebarHovered
   const collapsed = !sidebarExpanded
