@@ -7,6 +7,7 @@
 import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
+import { checkCostLimits } from '../lib/costProtection'
 
 const RATE_LIMIT = 120
 const RATE_WINDOW_SECONDS = 3600
@@ -70,6 +71,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     if (!rl.allowed) {
       return new Response(
         JSON.stringify({ error: 'Embedding rate limit exceeded. Try again later.' }),
+        { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
+  // Daily cap + global kill switch
+  {
+    const costCheck = await checkCostLimits(env, userId, 'embed')
+    if (!costCheck.allowed) {
+      return new Response(
+        JSON.stringify({ error: costCheck.reason }),
         { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }

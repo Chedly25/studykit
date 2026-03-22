@@ -7,6 +7,7 @@
 import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
+import { checkCostLimits } from '../lib/costProtection'
 
 const DEFAULT_MODEL = 'kimi-k2.5'
 const DEFAULT_API_URL = 'https://api.moonshot.ai/v1/chat/completions'
@@ -125,6 +126,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     if (newCount > PRO_DAILY_LIMIT) {
       return new Response(
         JSON.stringify({ error: 'Daily safety limit reached (500 requests). Resets at midnight UTC.' }),
+        { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
+      )
+    }
+  }
+
+  // Global kill switch — if total daily chat calls exceed threshold, block everyone
+  {
+    const costCheck = await checkCostLimits(env, userId, 'chat')
+    if (!costCheck.allowed) {
+      return new Response(
+        JSON.stringify({ error: costCheck.reason }),
         { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }

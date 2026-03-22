@@ -6,6 +6,7 @@
 import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
+import { checkCostLimits } from '../lib/costProtection'
 
 const MODEL = 'claude-haiku-4-5-20251001'
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
@@ -45,7 +46,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const token = authHeader.slice(7)
     const jwt = await verifyClerkJWT(token, env.CLERK_ISSUER_URL)
 
-    // Rate limit (separate from chat)
+    // Pro-only: pipeline tasks use Anthropic API at our cost
+    if (jwt.metadata?.plan !== 'pro') {
+      return new Response(JSON.stringify({ error: 'This feature requires a Pro plan' }), {
+        status: 403, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Rate limit (hourly)
     const rateLimitKey = `fast_rate:${jwt.sub}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
     const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
     if (currentCount >= RATE_LIMIT) {
@@ -54,6 +62,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
     await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
+
+    // Daily cap + global kill switch
+    const costCheck = await checkCostLimits(env, jwt.sub, 'fast')
+    if (!costCheck.allowed) {
+      return new Response(JSON.stringify({ error: costCheck.reason }), {
+        status: 429, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
 
     // Parse request (with size limit)
     const rawBody = await context.request.text()
@@ -96,8 +112,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     if (!llmResponse.ok) {
       const errText = await llmResponse.text()
+      console.error('[fast] Anthropic error:', llmResponse.status, errText.slice(0, 500))
       return new Response(
-        JSON.stringify({ error: `AI service error: ${llmResponse.status}: ${errText.slice(0, 300)}` }),
+        JSON.stringify({ error: 'AI service temporarily unavailable. Please try again.' }),
         { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } },
       )
     }
