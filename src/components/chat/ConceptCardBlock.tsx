@@ -16,18 +16,30 @@ interface ConceptCardBlockProps {
 // ─── Section color mapping ─────────────────────────────────
 
 const SECTION_STYLES: Record<string, { border: string; bg: string }> = {
+  // Core — works for any subject
   'definition':      { border: 'border-blue-400 dark:border-blue-500',      bg: 'bg-blue-50/60 dark:bg-blue-500/5' },
   'définition':      { border: 'border-blue-400 dark:border-blue-500',      bg: 'bg-blue-50/60 dark:bg-blue-500/5' },
-  'theorem':         { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
-  'théorème':        { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
-  'key properties':  { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
-  'properties':      { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
-  'propriétés':      { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
+  'key points':      { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
+  'points clés':     { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
+  'how it works':    { border: 'border-cyan-400 dark:border-cyan-500',      bg: 'bg-cyan-50/60 dark:bg-cyan-500/5' },
+  'fonctionnement':  { border: 'border-cyan-400 dark:border-cyan-500',      bg: 'bg-cyan-50/60 dark:bg-cyan-500/5' },
   'example':         { border: 'border-emerald-400 dark:border-emerald-500', bg: 'bg-emerald-50/60 dark:bg-emerald-500/5' },
   'exemple':         { border: 'border-emerald-400 dark:border-emerald-500', bg: 'bg-emerald-50/60 dark:bg-emerald-500/5' },
+  'important rules': { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
+  'règles':          { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
+  'common mistakes': { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
   'common pitfalls': { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
-  'pitfalls':        { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
+  'erreurs':         { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
   'pièges':          { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
+  'comparison':      { border: 'border-pink-400 dark:border-pink-500',      bg: 'bg-pink-50/60 dark:bg-pink-500/5' },
+  'comparaison':     { border: 'border-pink-400 dark:border-pink-500',      bg: 'bg-pink-50/60 dark:bg-pink-500/5' },
+  'summary':         { border: 'border-slate-400 dark:border-slate-500',    bg: 'bg-slate-50/60 dark:bg-slate-500/5' },
+  'résumé':          { border: 'border-slate-400 dark:border-slate-500',    bg: 'bg-slate-50/60 dark:bg-slate-500/5' },
+  // Domain-specific (still useful when they appear)
+  'theorem':         { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
+  'théorème':        { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
+  'properties':      { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
+  'propriétés':      { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
   'source':          { border: 'border-[var(--border-card)]',               bg: '' },
 }
 
