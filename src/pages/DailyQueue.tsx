@@ -8,6 +8,7 @@
  * Block E: Local nudges between items
  */
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
@@ -52,6 +53,7 @@ export default function DailyQueue() {
 }
 
 function DailyQueueContent() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
@@ -185,7 +187,7 @@ function DailyQueueContent() {
               tools: [],
               maxTokens: 1024,
               authToken: token,
-              onToken: (t) => { text += t; setAiDebrief(text) },
+              onToken: (tok) => { text += tok; setAiDebrief(text) },
               signal: controller.signal,
             })
           } catch { /* non-critical — includes AbortError */ }
@@ -222,8 +224,8 @@ function DailyQueueContent() {
   }, [profileId])
 
   const masteryDropTopics = topics
-    .filter(t => t.mastery >= 0.4 && decayedMastery(t) < t.mastery - 0.05)
-    .map(t => ({ name: t.name, drop: Math.round((t.mastery - decayedMastery(t)) * 100) }))
+    .filter(tp => tp.mastery >= 0.4 && decayedMastery(tp) < tp.mastery - 0.05)
+    .map(tp => ({ name: tp.name, drop: Math.round((tp.mastery - decayedMastery(tp)) * 100) }))
     .slice(0, 3)
 
   // Block E: Record a rating result and compute nudge
@@ -237,9 +239,9 @@ function DailyQueueContent() {
       totalCount,
       sessionResults: sessionResults.current,
       streak,
-    })
+    }, t)
     setCurrentNudge(nudge)
-  }, [completedCount, totalCount, streak])
+  }, [completedCount, totalCount, streak, t])
 
   const handleStartSession = useCallback((minutes: number) => {
     if (profileId) {
@@ -264,7 +266,7 @@ function DailyQueueContent() {
   if (!activeProfile) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-        <p className="text-[var(--text-muted)]">Create a profile to start your daily queue.</p>
+        <p className="text-[var(--text-muted)]">{t('queue.createProfile')}</p>
       </div>
     )
   }
@@ -273,8 +275,8 @@ function DailyQueueContent() {
   const nextRecommendation = struggled.length > 0
     ? {
         topicName: struggled[0].topicName,
-        action: 'Chat with AI',
-        reason: `You struggled with ${struggled[0].topicName} — get help to solidify this concept`,
+        action: t('queue.chatWithAI'),
+        reason: t('queue.struggledReason', { topic: struggled[0].topicName }),
         linkTo: '#open-chat',
       }
     : undefined
@@ -364,16 +366,16 @@ function DailyQueueContent() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-bold text-[var(--text-heading)] flex items-center gap-2">
-            Today's Session
+            {t('queue.todaysSession')}
             {cramMode && (
               <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Zap className="w-3 h-3" /> CRAM MODE
+                <Zap className="w-3 h-3" /> {t('queue.cramMode')}
               </span>
             )}
           </h1>
           <p className="text-sm text-[var(--text-muted)]">
-            {completedCount}/{totalCount} covered · ~{remainingMinutes} min left
-            {elapsedMinutes > 0 && <span> · {elapsedMinutes}m elapsed</span>}
+            {completedCount}/{totalCount} {t('queue.covered')} · ~{remainingMinutes} {t('queue.minLeft')}
+            {elapsedMinutes > 0 && <span> · {elapsedMinutes}{t('queue.mElapsed')}</span>}
           </p>
         </div>
       </div>
@@ -456,7 +458,7 @@ function DailyQueueContent() {
               className="btn-secondary py-2 text-sm px-4 flex items-center gap-2"
             >
               <SkipForward className="w-4 h-4" />
-              Skip
+              {t('common.skip')}
             </button>
           </div>
         </div>
@@ -464,16 +466,16 @@ function DailyQueueContent() {
         <div className="glass-card p-8 text-center">
           <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
           <h2 className="text-lg font-bold text-[var(--text-heading)] mb-2">
-            {completedCount > 0 ? 'Beautiful session!' : "You're all caught up!"}
+            {completedCount > 0 ? t('queue.beautifulSession') : t('queue.allCaughtUp')}
           </h2>
           <p className="text-sm text-[var(--text-muted)] mb-4">
             {completedCount > 0
-              ? `You covered ${completedCount} item${completedCount !== 1 ? 's' : ''} today. Well done!`
-              : 'Take a well-deserved break, or upload new materials to keep growing.'
+              ? t('queue.coveredItems', { count: completedCount })
+              : t('queue.takeABreak')
             }
           </p>
           <button onClick={() => navigate('/dashboard')} className="btn-primary px-6 py-2 text-sm">
-            Back to Dashboard
+            {t('queue.backToDashboard')}
           </button>
         </div>
       ) : null}
@@ -482,7 +484,7 @@ function DailyQueueContent() {
       {queue.length > 1 && currentItem && (
         <details className="glass-card overflow-hidden">
           <summary className="px-4 py-3 text-sm font-medium text-[var(--text-muted)] cursor-pointer hover:bg-[var(--bg-input)]/30">
-            Up next ({queue.length - completedCount - 1} remaining)
+            {t('queue.upNext', { count: queue.length - completedCount - 1 })}
           </summary>
           <div className="border-t border-[var(--border-card)]">
             {queue.slice(0, 8).map(item => {
@@ -514,10 +516,10 @@ function ItemTypeIcon({ type }: { type: string }) {
 // ─── Flashcard review (one card at a time + inline AI on "Again") ──────
 
 const RATING_BUTTONS = [
-  { quality: 1, label: 'Again', key: '1', color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
-  { quality: 3, label: 'Hard', key: '2', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
-  { quality: 4, label: 'Good', key: '3', color: 'bg-blue-500/15 text-blue-600 hover:bg-blue-500/25' },
-  { quality: 5, label: 'Easy', key: '4', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
+  { quality: 1, labelKey: 'queue.ratingAgain', key: '1', color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
+  { quality: 3, labelKey: 'queue.ratingHard', key: '2', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
+  { quality: 4, labelKey: 'queue.ratingGood', key: '3', color: 'bg-blue-500/15 text-blue-600 hover:bg-blue-500/25' },
+  { quality: 5, labelKey: 'queue.ratingEasy', key: '4', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
 ]
 
 function FlashcardReviewInline({
@@ -529,6 +531,7 @@ function FlashcardReviewInline({
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
   examProfileId?: string
 }) {
+  const { t } = useTranslation()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -622,13 +625,13 @@ function FlashcardReviewInline({
   }, [flipped, explanationCtx, isSubmitting, nextInterval])
 
   // Early returns AFTER all hooks to respect Rules of Hooks
-  if (cards.length === 0) return <p className="text-sm text-[var(--text-muted)]">Loading cards...</p>
+  if (cards.length === 0) return <p className="text-sm text-[var(--text-muted)]">{t('queue.loadingCards')}</p>
 
   if (!currentCard) {
     return (
       <div className="text-center py-4">
         <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-        <p className="text-sm font-medium text-[var(--text-heading)]">All {reviewedCount} cards reviewed!</p>
+        <p className="text-sm font-medium text-[var(--text-heading)]">{t('queue.allCardsReviewed', { count: reviewedCount })}</p>
       </div>
     )
   }
@@ -636,8 +639,8 @@ function FlashcardReviewInline({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
-        <span>Card {currentIndex + 1} of {cards.length}</span>
-        <span>{reviewedCount} reviewed</span>
+        <span>{t('queue.cardOf', { current: currentIndex + 1, total: cards.length })}</span>
+        <span>{t('queue.reviewedCount', { count: reviewedCount })}</span>
       </div>
       <div className="w-full h-1 rounded-full bg-[var(--bg-input)] overflow-hidden">
         <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${(currentIndex / cards.length) * 100}%` }} />
@@ -655,7 +658,7 @@ function FlashcardReviewInline({
               </p>
             </div>
           ) : (
-            <p className="text-xs text-[var(--text-faint)] mt-3">Tap or press Space to reveal</p>
+            <p className="text-xs text-[var(--text-faint)] mt-3">{t('queue.tapToReveal')}</p>
           )}
         </div>
 
@@ -668,7 +671,7 @@ function FlashcardReviewInline({
                 disabled={isSubmitting}
                 className={`flex-1 px-2 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
               >
-                <span className="text-[10px] opacity-50 mr-1">{btn.key}</span>{btn.label}
+                <span className="text-[10px] opacity-50 mr-1">{btn.key}</span>{t(btn.labelKey)}
               </button>
             ))}
           </div>
@@ -677,7 +680,7 @@ function FlashcardReviewInline({
         {/* Feature 6: Next review interval feedback */}
         {nextInterval !== null && (
           <p className="text-center text-xs text-[var(--text-muted)] mt-3 animate-fade-in">
-            Next review in {nextInterval} day{nextInterval !== 1 ? 's' : ''}
+            {t('queue.nextReviewIn', { count: nextInterval })}
           </p>
         )}
 
@@ -698,7 +701,7 @@ function FlashcardReviewInline({
           onClick={() => onComplete(item.id)}
           className="w-full text-xs text-[var(--text-muted)] hover:text-[var(--text-body)] py-2 transition-colors"
         >
-          Finish early ({reviewedCount}/{cards.length} reviewed)
+          {t('queue.finishEarly', { reviewed: reviewedCount, total: cards.length })}
         </button>
       )}
     </div>
@@ -708,9 +711,9 @@ function FlashcardReviewInline({
 // ─── Exercise with self-assessment + inline AI on "Didn't Get It" ──────
 
 const EXERCISE_RATINGS = [
-  { score: 0.2, label: "Didn't Get It", color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
-  { score: 0.5, label: 'Partially', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
-  { score: 0.9, label: 'Got It', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
+  { score: 0.2, labelKey: 'queue.ratingDidntGetIt', color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
+  { score: 0.5, labelKey: 'queue.ratingPartially', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
+  { score: 0.9, labelKey: 'queue.ratingGotIt', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
 ]
 
 function ExerciseInline({
@@ -722,6 +725,7 @@ function ExerciseInline({
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
   examProfileId?: string
 }) {
+  const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [explanationCtx, setExplanationCtx] = useState<string | null>(null)
   const [rated, setRated] = useState(false)
@@ -737,7 +741,7 @@ function ExerciseInline({
     [exercise?.examSourceId]
   )
 
-  if (!exercise) return <p className="text-sm text-[var(--text-muted)]">Loading exercise...</p>
+  if (!exercise) return <p className="text-sm text-[var(--text-muted)]">{t('queue.loadingExercise')}</p>
 
   const dispatchAI = (prefill: string) => {
     window.dispatchEvent(new CustomEvent('open-chat-panel', {
@@ -795,18 +799,18 @@ function ExerciseInline({
     <div>
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xs font-medium text-[var(--text-muted)]">{examSource ? `${examSource.name}${examSource.year ? ' ' + examSource.year : ''} · ` : ''}Ex. {exercise.exerciseNumber}</span>
-        <span className="text-xs text-[var(--text-faint)]">· Difficulty: {'★'.repeat(exercise.difficulty)}{'☆'.repeat(5 - exercise.difficulty)}</span>
+        <span className="text-xs text-[var(--text-faint)]">· {t('queue.difficulty')}: {'★'.repeat(exercise.difficulty)}{'☆'.repeat(5 - exercise.difficulty)}</span>
         <span className="flex-1" />
         <button
           onClick={async () => {
             if (item.exerciseId) {
               await db.exercises.update(item.exerciseId, { hidden: true })
-              toast.success('Exercise hidden')
+              toast.success(t('queue.exerciseHidden'))
               onComplete(item.id)
             }
           }}
           className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10"
-          title="Hide this exercise"
+          title={t('queue.hideExercise')}
         >
           <Flag className="w-3.5 h-3.5" />
         </button>
@@ -817,7 +821,7 @@ function ExerciseInline({
 
       {!explanationCtx && !rated && (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-[var(--text-muted)]">How did you do?</p>
+          <p className="text-xs font-medium text-[var(--text-muted)]">{t('queue.howDidYouDo')}</p>
           <div className="flex gap-2">
             {EXERCISE_RATINGS.map(btn => (
               <button
@@ -826,7 +830,7 @@ function ExerciseInline({
                 disabled={isSubmitting}
                 className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
               >
-                {btn.label}
+                {t(btn.labelKey)}
               </button>
             ))}
           </div>
@@ -841,7 +845,7 @@ function ExerciseInline({
                 onClick={() => setShowSolution(!showSolution)}
                 className="text-xs text-[var(--accent-text)] hover:underline"
               >
-                {showSolution ? 'Hide correction' : 'Show correction'}
+                {showSolution ? t('queue.hideCorrection') : t('queue.showCorrection')}
               </button>
               {showSolution && (
                 <div className="glass-card p-3 mt-1 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-emerald-500">
@@ -856,21 +860,21 @@ function ExerciseInline({
                 to={`/read/${examSource.documentId}`}
                 className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-text)] flex items-center gap-1"
               >
-                <ExternalLink className="w-3 h-3" /> View in exam
+                <ExternalLink className="w-3 h-3" /> {t('queue.viewInExam')}
               </Link>
             )}
             <button
               onClick={() => dispatchAI(`Help me understand this exercise:\n${exercise.text.slice(0, 500)}`)}
               className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-text)] flex items-center gap-1"
             >
-              <MessageCircle className="w-3 h-3" /> Discuss with AI
+              <MessageCircle className="w-3 h-3" /> {t('queue.discussWithAI')}
             </button>
           </div>
           <button
             onClick={() => onComplete(item.id)}
             className="btn-primary text-sm px-4 py-2 mt-2"
           >
-            Continue
+            {t('common.continue')}
           </button>
         </div>
       )}
@@ -891,9 +895,9 @@ function ExerciseInline({
 // ─── Concept quiz with self-assessment + inline AI on "Couldn't Explain" ──────
 
 const CONCEPT_RATINGS = [
-  { quality: 1, label: "Couldn't Explain", color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
-  { quality: 3, label: 'Struggled', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
-  { quality: 5, label: 'Could Explain', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
+  { quality: 1, labelKey: 'queue.ratingCouldntExplain', color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
+  { quality: 3, labelKey: 'queue.ratingStruggled', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
+  { quality: 5, labelKey: 'queue.ratingCouldExplain', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
 ]
 
 function ConceptQuizInline({
@@ -907,6 +911,7 @@ function ConceptQuizInline({
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
   examProfileId?: string
 }) {
+  const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [explanationCtx, setExplanationCtx] = useState<string | null>(null)
 
@@ -915,7 +920,7 @@ function ConceptQuizInline({
     [item.conceptCardId]
   )
 
-  if (!card) return <p className="text-sm text-[var(--text-muted)]">Loading concept...</p>
+  if (!card) return <p className="text-sm text-[var(--text-muted)]">{t('queue.loadingConcept')}</p>
 
   let keyPoints: string[] = []
   try { keyPoints = JSON.parse(card.keyPoints) } catch { /* ignore */ }
@@ -945,10 +950,10 @@ function ConceptQuizInline({
   return (
     <div>
       <h3 className="font-medium text-[var(--text-heading)] mb-2"><MathText>{card.title}</MathText></h3>
-      <p className="text-sm text-[var(--text-muted)] mb-3">Can you explain this concept?</p>
+      <p className="text-sm text-[var(--text-muted)] mb-3">{t('queue.canYouExplain')}</p>
       {!revealed ? (
         <button onClick={onReveal} className="btn-secondary text-sm px-4 py-2">
-          Reveal Key Points
+          {t('queue.revealKeyPoints')}
         </button>
       ) : (
         <>
@@ -958,14 +963,14 @@ function ConceptQuizInline({
             ))}
             {card.example && (
               <p className="text-sm text-[var(--text-muted)] mt-2 pt-2 border-t border-[var(--border-card)]">
-                Example: <MathText>{card.example}</MathText>
+                {t('queue.example')} <MathText>{card.example}</MathText>
               </p>
             )}
           </div>
 
           {!explanationCtx && (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-[var(--text-muted)]">How well could you explain it?</p>
+              <p className="text-xs font-medium text-[var(--text-muted)]">{t('queue.howWellExplain')}</p>
               <div className="flex gap-2">
                 {CONCEPT_RATINGS.map(btn => (
                   <button
@@ -974,7 +979,7 @@ function ConceptQuizInline({
                     disabled={isSubmitting}
                     className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
                   >
-                    {btn.label}
+                    {t(btn.labelKey)}
                   </button>
                 ))}
               </div>

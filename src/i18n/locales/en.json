@@ -30,7 +30,11 @@
     "signUp": "Sign Up",
     "upgrade": "Upgrade",
     "dataLocal": "Your data stays in your browser.",
-    "pro": "PRO"
+    "pro": "PRO",
+    "createProfile": "Create Profile",
+    "previous": "Previous",
+    "continue": "Continue",
+    "saving": "Saving..."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -137,7 +141,7 @@
     "breakthroughs": "Breakthroughs",
     "yourFocus": "Your focus",
     "upNext": "Up next",
-    "startSession": "Start",
+    "startSession": "Start Today's Session",
     "allCaughtUp": "You're all caught up!",
     "allCaughtUpDesc": "Great work. Here are some things you can explore:",
     "flashcardsDueAlso": "Also: {{count}} flashcards due",
@@ -246,7 +250,91 @@
       "building": "Building",
       "deepening": "Deepening",
       "strong": "Strong"
-    }
+    },
+    "greetingMorning": "Good morning, {{name}}.",
+    "greetingAfternoon": "Good afternoon, {{name}}.",
+    "greetingEvening": "Good evening, {{name}}.",
+    "cramModeActive": "Cram Mode Active",
+    "examInDays": "Exam in {{count}} day",
+    "examInDays_plural": "Exam in {{count}} days",
+    "deactivate": "Deactivate",
+    "activateCramMode": "Activate Cram Mode",
+    "talkToTutor": "Talk to a Tutor",
+    "yourTutors": "Your Tutors",
+    "myCourses": "My Courses",
+    "myExams": "My Exams",
+    "exercisesCompleted": "{{completed}}/{{total}} exercises completed",
+    "topicsWithoutMaterial": "{{count}} topic without course material",
+    "topicsWithoutMaterial_plural": "{{count}} topics without course material",
+    "uploadDocuments": "Upload documents to cover them",
+    "daysToGo": "{{count}} day to go",
+    "daysToGo_plural": "{{count}} days to go",
+    "nextStepsTitle": "Next steps",
+    "nextSteps": {
+      "uploadFirst": "Upload your first course materials",
+      "upload": "Upload",
+      "documentsNeedProcessing": "{{count}} document needs processing",
+      "documentsNeedProcessing_plural": "{{count}} documents need processing",
+      "upgradeToProcess": "Upgrade to process documents with AI",
+      "processNow": "Process now",
+      "flashcardsDue": "{{count}} flashcard due for review",
+      "flashcardsDue_plural": "{{count}} flashcards due for review",
+      "reviewNow": "Review now",
+      "dailyQueueItems": "Your daily queue has {{count}} item",
+      "dailyQueueItems_plural": "Your daily queue has {{count}} items",
+      "exercisesWaiting": "{{count}} exercise waiting — start practicing",
+      "exercisesWaiting_plural": "{{count}} exercises waiting — start practicing",
+      "testYourself": "Test yourself with a practice exam",
+      "takeExam": "Take exam",
+      "needsAttention": "{{name}} needs attention ({{percent}}%)",
+      "study": "Study",
+      "createStudyPlan": "Create a study plan to stay on track",
+      "plan": "Plan",
+      "practice": "Practice"
+    },
+    "profileTitle": "Your AI Tutor Knows",
+    "profileFullProfile": "Full profile",
+    "profileCommonMistakes": "Common mistakes",
+    "profileWhatWorks": "What works for you",
+    "profileUpdated": "Updated {{time}}",
+    "profileTimeMinutes": "{{count}}m ago",
+    "profileTimeHours": "{{count}}h ago",
+    "profileTimeDays": "{{count}}d ago"
+  },
+  "tutor": {
+    "topics": "{{count}} topic",
+    "topics_plural": "{{count}} topics",
+    "viewTopics": "View topics",
+    "askTutor": "Ask tutor"
+  },
+  "celebrate": {
+    "milestone": "Milestone",
+    "masteryTitle": "{{name}} mastery reached 80%!",
+    "masterySubtitle": "You've built a strong foundation. Keep going.",
+    "streak7Title": "7-day study streak!",
+    "streak7Subtitle": "A full week of consistent work. That dedication shows.",
+    "streak14Title": "14-day study streak!",
+    "streak14Subtitle": "Two weeks strong. Your consistency is building real results.",
+    "streak30Title": "30-day study streak!",
+    "streak30Subtitle": "A full month. That's the kind of discipline that passes exams.",
+    "subjectCoverageTitle": "All topics in {{name}} above 60%!",
+    "subjectCoverageSubtitle": "Solid coverage across the board.",
+    "firstExamTitle": "First practice exam completed!",
+    "firstExamSubtitle": "Now you know where you stand. Each exam makes you sharper."
+  },
+  "scout": {
+    "title": "Resources Found",
+    "resourceCount": "{{count}} resource for {{examName}}",
+    "resourceCount_plural": "{{count}} resources for {{examName}}",
+    "pastExams": "Past Exams",
+    "studyGuides": "Study Guides",
+    "practiceQuestions": "Practice Questions",
+    "outlines": "Outlines",
+    "otherResources": "Other Resources"
+  },
+  "calibration": {
+    "overconfident": "You might be overconfident about {{name}} — you rated yourself {{confidence}}% but scored {{mastery}}%",
+    "underconfident": "You're better at {{name}} than you think — {{mastery}}% actual vs {{confidence}}% self-rated"
   },
   "ai": {
     "chat": "AI Chat",
@@ -433,7 +521,7 @@
   },
   "analytics": {
     "title": "Your Progress",
-    "subtitle": "Track your study progress and performance",
+    "subtitle": "Here's how your preparation is coming along",
     "studyTime": "Study Time",
     "questionsAnswered": "Questions Answered",
     "accuracy": "Accuracy",
@@ -448,7 +536,15 @@
     "averageAccuracy": "Average Accuracy",
     "studySessions": "Study Sessions",
     "insights": "Insights",
-    "knowledgeMap": "Knowledge Map"
+    "knowledgeMap": "Knowledge Map",
+    "subjectBalance": "Subject Balance",
+    "sessionTypes": "Session Types",
+    "scoreTrend": "Score Trend",
+    "masteryTrend": "Mastery Trend",
+    "selectTopic": "Select topic...",
+    "calibration": "Confidence Calibration",
+    "errorPatterns": "Error Patterns",
+    "coachInsights": "Coach Insights"
   },
   "focus": {
     "title": "Focus Mode",
@@ -721,5 +817,60 @@
     "chatHint1": "No Wednesdays",
     "chatHint2": "More practice exams",
     "chatHint3": "Focus on weakest topics"
+  },
+  "roadmap": {
+    "title": "Study Roadmap",
+    "subtitle": "Generate a multi-phase strategic plan for your entire prep",
+    "generating": "Generating...",
+    "generate": "Generate",
+    "current": "Current:",
+    "focus": "Focus:",
+    "milestones": "Milestones:",
+    "targetMastery": "Target mastery:"
+  },
+  "cards": {
+    "titlePlaceholder": "Card title",
+    "keyPoints": "Key Points",
+    "pointPlaceholder": "Point {{n}}",
+    "addPoint": "+ Add point",
+    "exampleLabel": "Example (optional)",
+    "examplePlaceholder": "An example or application...",
+    "viewFiche": "View full fiche",
+    "quizMe": "Quiz me",
+    "conceptCards": "Concept Cards",
+    "newCard": "New card",
+    "groupNew": "New",
+    "groupLearning": "Learning",
+    "groupMastered": "Mastered",
+    "noCards": "No concept cards yet.",
+    "noCardsHint": "Create your own cards or they'll be generated when documents are processed.",
+    "createFirst": "Create your first card",
+    "example": "Example",
+    "gotIt": "Got it"
+  },
+  "fiche": {
+    "mastery": "Mastery:"
+  },
+  "onboarding": {
+    "examPlaceholder": "e.g., California Bar Exam, MCAT, Organic Chemistry...",
+    "noDeadline": "No fixed deadline",
+    "looksGood": "Looks good",
+    "planReady": "Your study plan is ready",
+    "exam": "Exam",
+    "date": "Date",
+    "subjects": "Subjects",
+    "weeklyTarget": "Weekly target",
+    "hoursPerWeek": "hours/week",
+    "planGenerating": "Your first study plan is being generated. Your queue will be ready when you arrive.",
+    "goToDashboard": "Go to Dashboard",
+    "startStudying": "Start Studying"
+  },
+  "nudge": {
+    "revisited": "You've revisited {{topic}} {{count}} times now — that's how deep understanding forms",
+    "halfway": "You're halfway through — nice momentum! {{remaining}} more to go",
+    "threeInARow": "Three strong answers in a row — you're in the zone",
+    "dayOfStreak": "Day {{streak}} of your streak — that consistency is really paying off",
+    "almostDone": "One more to go — you've almost wrapped up today's session",
+    "connection": "Nice — {{topic1}} connects well with {{topic2}}. Seeing those links strengthens both."
   }
 }

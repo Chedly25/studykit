@@ -2,6 +2,7 @@
  * Session start ritual — shows once per day with context + time picker.
  */
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Flame, Clock, BookOpen, AlertTriangle, ArrowRight } from 'lucide-react'
 import type { DailyStudyLog } from '../db/schema'
 import { requestPermission, registerServiceWorker } from '../lib/pushNotifications'
@@ -22,6 +23,7 @@ export function SessionStartOverlay({
   streak, dueFlashcardCount, masteryDropTopics,
   topRecommendation, yesterdayStats, onStart, onDismiss,
 }: Props) {
+  const { t } = useTranslation()
   const [customMinutes, setCustomMinutes] = useState<number | null>(null)
 
   const handleStart = (minutes: number) => {
@@ -37,15 +39,15 @@ export function SessionStartOverlay({
       <div className="glass-card p-6 max-w-md w-full mx-4 space-y-5 animate-scale-in">
         {/* Header */}
         <div className="text-center">
-          <h2 className="text-xl font-bold text-[var(--text-heading)]">Welcome back</h2>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Here's what we have lined up for you</p>
+          <h2 className="text-xl font-bold text-[var(--text-heading)]">{t('session.welcomeBack')}</h2>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{t('session.linedUpForYou')}</p>
         </div>
 
         {/* Streak */}
         {streak > 0 && (
           <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-orange-500/10">
             <Flame className="w-5 h-5 text-orange-500" />
-            <span className="font-bold text-[var(--text-heading)]">{streak} day streak {streak >= 7 ? '— impressive consistency!' : '— keep it going!'}</span>
+            <span className="font-bold text-[var(--text-heading)]">{streak >= 7 ? t('session.streakImpressive', { streak }) : t('session.streakKeepGoing', { streak })}</span>
           </div>
         )}
 
@@ -56,9 +58,9 @@ export function SessionStartOverlay({
             <div className="flex items-start gap-2 text-sm">
               <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
               <div>
-                <span className="text-[var(--text-body)]">Mastery dropped: </span>
+                <span className="text-[var(--text-body)]">{t('session.masteryDropped')} </span>
                 <span className="text-[var(--text-muted)]">
-                  {masteryDropTopics.map(t => `${t.name} (-${t.drop}%)`).join(', ')}
+                  {masteryDropTopics.map(topic => `${topic.name} (-${topic.drop}%)`).join(', ')}
                 </span>
               </div>
             </div>
@@ -68,7 +70,7 @@ export function SessionStartOverlay({
           {dueFlashcardCount > 0 && (
             <div className="flex items-center gap-2 text-sm">
               <BookOpen className="w-4 h-4 text-[var(--accent-text)] shrink-0" />
-              <span className="text-[var(--text-body)]">{dueFlashcardCount} flashcard{dueFlashcardCount !== 1 ? 's' : ''} due for review</span>
+              <span className="text-[var(--text-body)]">{t('session.flashcardsDue', { count: dueFlashcardCount })}</span>
             </div>
           )}
 
@@ -77,7 +79,7 @@ export function SessionStartOverlay({
             <div className="flex items-center gap-2 text-sm">
               <ArrowRight className="w-4 h-4 text-[var(--accent-text)] shrink-0" />
               <div>
-                <span className="text-[var(--text-body)]">Focus: </span>
+                <span className="text-[var(--text-body)]">{t('session.focus')} </span>
                 <span className="font-medium text-[var(--text-heading)]">{topRecommendation.topicName}</span>
                 <span className="text-[var(--text-muted)]"> — {topRecommendation.reason}</span>
               </div>
@@ -89,11 +91,13 @@ export function SessionStartOverlay({
             <div className="flex items-center gap-2 text-sm">
               <Clock className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
               <span className="text-[var(--text-muted)]">
-                Yesterday: {Math.round(yesterdayStats.totalSeconds / 60)}min,{' '}
-                {yesterdayStats.questionsAnswered} questions,{' '}
-                {yesterdayStats.questionsAnswered > 0
-                  ? Math.round((yesterdayStats.questionsCorrect / yesterdayStats.questionsAnswered) * 100)
-                  : 0}% accuracy
+                {t('session.yesterdayStats', {
+                  mins: Math.round(yesterdayStats.totalSeconds / 60),
+                  questions: yesterdayStats.questionsAnswered,
+                  accuracy: yesterdayStats.questionsAnswered > 0
+                    ? Math.round((yesterdayStats.questionsCorrect / yesterdayStats.questionsAnswered) * 100)
+                    : 0,
+                })}
               </span>
             </div>
           )}
@@ -101,7 +105,7 @@ export function SessionStartOverlay({
 
         {/* Time picker */}
         <div>
-          <p className="text-sm font-medium text-[var(--text-heading)] mb-2">How much time do you have?</p>
+          <p className="text-sm font-medium text-[var(--text-heading)] mb-2">{t('session.timeQuestion')}</p>
           <div className="flex flex-wrap gap-2">
             {TIME_PRESETS.map(m => (
               <button
@@ -118,7 +122,7 @@ export function SessionStartOverlay({
               type="number"
               min={5}
               max={240}
-              placeholder="Custom..."
+              placeholder={t('session.custom')}
               className="w-24 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg text-[var(--text-body)]"
               onChange={e => setCustomMinutes(parseInt(e.target.value) || null)}
             />
@@ -127,7 +131,7 @@ export function SessionStartOverlay({
                 onClick={() => handleStart(customMinutes)}
                 className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--accent-text)] text-white hover:opacity-90"
               >
-                Start ({customMinutes}min)
+                {t('session.startWith', { mins: customMinutes })}
               </button>
             )}
           </div>
@@ -139,13 +143,13 @@ export function SessionStartOverlay({
             onClick={() => handleStart(30)}
             className="flex-1 btn-primary py-2.5 text-sm font-semibold"
           >
-            Let's Go
+            {t('session.letsGo')}
           </button>
           <button
             onClick={onDismiss}
             className="btn-secondary py-2.5 text-sm px-4"
           >
-            Skip
+            {t('common.skip')}
           </button>
         </div>
       </div>

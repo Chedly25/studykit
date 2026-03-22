@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useTranslation } from 'react-i18next'
 import { BookOpen, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { db } from '../db'
 import type { ScoutResult, ScoutResource } from '../ai/agents/resourceScout'
@@ -8,18 +9,19 @@ interface Props {
   examProfileId: string
 }
 
-const TYPE_LABELS: Record<ScoutResource['type'], string> = {
-  'past-exam': 'Past Exams',
-  'study-guide': 'Study Guides',
-  'practice-questions': 'Practice Questions',
-  'outline': 'Outlines',
-  'other': 'Other Resources',
-}
-
 const TYPE_ORDER: ScoutResource['type'][] = ['past-exam', 'practice-questions', 'study-guide', 'outline', 'other']
 
 export function ResourceScoutCard({ examProfileId }: Props) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
+
+  const TYPE_LABELS: Record<ScoutResource['type'], string> = {
+    'past-exam': t('scout.pastExams'),
+    'study-guide': t('scout.studyGuides'),
+    'practice-questions': t('scout.practiceQuestions'),
+    'outline': t('scout.outlines'),
+    'other': t('scout.otherResources'),
+  }
 
   const scoutResult = useLiveQuery(async () => {
     const insight = await db.agentInsights.get(`resource-scout:${examProfileId}`)
@@ -50,10 +52,10 @@ export function ResourceScoutCard({ examProfileId }: Props) {
         <div className="flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-[var(--accent-text)]" />
           <span className="text-sm font-semibold text-[var(--text-heading)]">
-            Resources Found
+            {t('scout.title')}
           </span>
           <span className="text-xs text-[var(--text-muted)]">
-            {totalCount} resource{totalCount !== 1 ? 's' : ''} for {scoutResult.examName}
+            {t('scout.resourceCount', { count: totalCount, examName: scoutResult.examName })}
           </span>
         </div>
         {expanded ? <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" /> : <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />}

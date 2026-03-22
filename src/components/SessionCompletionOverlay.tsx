@@ -29,12 +29,12 @@ interface Props {
 }
 
 const MILESTONES = [7, 14, 30, 60, 100]
-const MILESTONE_LABELS: Record<number, string> = {
-  7: '1 Week!',
-  14: '2 Weeks!',
-  30: '1 Month!',
-  60: '2 Months!',
-  100: '100 Days!',
+const MILESTONE_KEYS: Record<number, string> = {
+  7: 'session.milestone1Week',
+  14: 'session.milestone2Weeks',
+  30: 'session.milestone1Month',
+  60: 'session.milestone2Months',
+  100: 'session.milestone100Days',
 }
 
 const activityIcons = {
@@ -73,7 +73,7 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 flex items-center justify-center mx-auto mb-3">
             <CheckCircle2 className="w-8 h-8 text-emerald-500" />
           </div>
-          <h2 className="text-xl font-bold text-[var(--text-heading)]">Great work today!</h2>
+          <h2 className="text-xl font-bold text-[var(--text-heading)]">{t('session.greatWork')}</h2>
         </div>
 
         {/* Stats row */}
@@ -83,12 +83,12 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
               <Clock className="w-4 h-4" />
               <span className="text-lg font-bold">{formatDuration(data.timeSpentSeconds)}</span>
             </div>
-            <span className="text-xs text-[var(--text-muted)]">Time</span>
+            <span className="text-xs text-[var(--text-muted)]">{t('session.statTime')}</span>
           </div>
           {data.flashcardStats && (
             <div>
               <div className="text-lg font-bold text-[var(--text-heading)]">{data.flashcardStats.cardsReviewed}</div>
-              <span className="text-xs text-[var(--text-muted)]">Cards</span>
+              <span className="text-xs text-[var(--text-muted)]">{t('session.statCards')}</span>
             </div>
           )}
           {data.examStats && (
@@ -97,18 +97,18 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
                 <div className={`text-lg font-bold ${data.examStats.passed ? 'text-emerald-500' : 'text-orange-500'}`}>
                   {data.examStats.percentage}%
                 </div>
-                <span className="text-xs text-[var(--text-muted)]">Score</span>
+                <span className="text-xs text-[var(--text-muted)]">{t('session.statScore')}</span>
               </div>
               <div>
                 <div className="text-lg font-bold text-[var(--text-heading)]">{data.examStats.score}/{data.examStats.maxScore}</div>
-                <span className="text-xs text-[var(--text-muted)]">Points</span>
+                <span className="text-xs text-[var(--text-muted)]">{t('session.statPoints')}</span>
               </div>
             </>
           )}
           {data.focusStats && (
             <div>
               <div className="text-lg font-bold text-[var(--text-heading)]">{data.focusStats.sessionsCompleted}</div>
-              <span className="text-xs text-[var(--text-muted)]">Sessions</span>
+              <span className="text-xs text-[var(--text-muted)]">{t('session.statSessions')}</span>
             </div>
           )}
         </div>
@@ -118,14 +118,14 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
           <div className="flex justify-center gap-6 text-center">
             <div>
               <div className="text-lg font-bold text-[var(--text-heading)]">{data.questionsAnswered}</div>
-              <span className="text-xs text-[var(--text-muted)]">Questions</span>
+              <span className="text-xs text-[var(--text-muted)]">{t('session.statQuestions')}</span>
             </div>
             {data.questionsCorrect !== undefined && (
               <div>
                 <div className={`text-lg font-bold ${data.questionsCorrect / data.questionsAnswered >= 0.7 ? 'text-emerald-500' : 'text-orange-500'}`}>
                   {Math.round((data.questionsCorrect / data.questionsAnswered) * 100)}%
                 </div>
-                <span className="text-xs text-[var(--text-muted)]">Accuracy</span>
+                <span className="text-xs text-[var(--text-muted)]">{t('session.statAccuracy')}</span>
               </div>
             )}
           </div>
@@ -141,7 +141,7 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
         {/* Mastery deltas */}
         {data.masteryDeltas && data.masteryDeltas.length > 0 && (
           <div className="space-y-2">
-            <h3 className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Mastery Changes</h3>
+            <h3 className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">{t('session.masteryChanges')}</h3>
             {data.masteryDeltas.map((delta, i) => {
               const change = delta.after - delta.before
               const isPositive = change >= 0
@@ -169,13 +169,13 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
           <div className="text-sm bg-[var(--bg-input)] p-3 rounded-lg">
             <div className="flex items-center gap-1.5 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-[var(--accent-text)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">Your coach's notes</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">{t('session.coachNotes')}</span>
               {isDebriefStreaming && <Loader2 className="w-3 h-3 text-[var(--accent-text)] animate-spin" />}
             </div>
             {aiDebrief ? (
               <p className="text-[var(--text-body)] leading-relaxed"><MathText>{aiDebrief}</MathText></p>
             ) : (
-              <p className="text-[var(--text-muted)]">Your coach is reviewing your session...</p>
+              <p className="text-[var(--text-muted)]">{t('session.coachReviewing')}</p>
             )}
           </div>
         )}
@@ -184,10 +184,10 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
         {data.streak > 0 && (
           <div className={`flex items-center justify-center gap-2 py-2 rounded-lg ${milestone ? 'bg-orange-500/10' : 'bg-[var(--bg-input)]'}`}>
             <Flame className={`w-5 h-5 text-orange-500 ${milestone ? 'animate-pulse' : ''}`} />
-            <span className="font-bold text-[var(--text-heading)]">{data.streak} day streak</span>
+            <span className="font-bold text-[var(--text-heading)]">{t('session.dayStreak', { count: data.streak })}</span>
             {milestone && (
               <span className="text-xs font-bold text-orange-500 bg-orange-500/20 px-2 py-0.5 rounded-full">
-                {MILESTONE_LABELS[milestone]}
+                {t(MILESTONE_KEYS[milestone])}
               </span>
             )}
           </div>
@@ -216,14 +216,14 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
         <div className="flex gap-3 pt-1">
           <button onClick={onDismiss} className="btn-secondary flex-1 py-2.5 text-sm flex items-center justify-center gap-2">
             <RotateCcw className="w-4 h-4" />
-            Continue
+            {t('common.continue')}
           </button>
           <button
             onClick={() => { onDismiss(); navigate('/') }}
             className="btn-secondary flex-1 py-2.5 text-sm flex items-center justify-center gap-2"
           >
             <Home className="w-4 h-4" />
-            Dashboard
+            {t('common.dashboard')}
           </button>
         </div>
       </div>

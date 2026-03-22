@@ -2,6 +2,7 @@
  * Small dismissible alert when significant calibration gaps exist.
  */
 import { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AlertTriangle, TrendingUp, X } from 'lucide-react'
 import type { Topic } from '../../db/schema'
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function CalibrationAlert({ topics, profileId }: Props) {
+  const { t } = useTranslation()
   const today = new Date().toISOString().slice(0, 10)
   const dismissKey = `calibration_dismissed_${profileId}_${today}`
   // Re-read localStorage every render so it resets when the date changes
@@ -60,8 +62,8 @@ export function CalibrationAlert({ topics, profileId }: Props) {
       <div className="flex-1 min-w-0">
         <p className="text-sm text-[var(--text-body)]">
           {isOverconfident
-            ? `You might be overconfident about ${alert.name} — you rated yourself ${Math.round(alert.confidence * 100)}% but scored ${Math.round(alert.mastery * 100)}%`
-            : `You're better at ${alert.name} than you think — ${Math.round(alert.mastery * 100)}% actual vs ${Math.round(alert.confidence * 100)}% self-rated`
+            ? t('calibration.overconfident', { name: alert.name, confidence: Math.round(alert.confidence * 100), mastery: Math.round(alert.mastery * 100) })
+            : t('calibration.underconfident', { name: alert.name, mastery: Math.round(alert.mastery * 100), confidence: Math.round(alert.confidence * 100) })
           }
         </p>
       </div>

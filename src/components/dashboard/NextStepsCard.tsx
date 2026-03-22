@@ -3,6 +3,7 @@
  * Shows max 3 priority-ordered suggestions based on current state.
  */
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Upload, BookOpen, ListChecks, ClipboardCheck, AlertTriangle, Calendar, ArrowRight } from 'lucide-react'
 import type { Topic, Document as Doc } from '../../db/schema'
 import type { QueueItem } from '../../lib/dailyQueueEngine'
@@ -28,12 +29,13 @@ interface Step {
 }
 
 export function NextStepsCard(props: Props) {
-  const steps = computeSteps(props)
+  const { t } = useTranslation()
+  const steps = computeSteps(props, t)
   if (steps.length === 0) return null
 
   return (
     <div className="glass-card p-4 mb-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Next steps</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">{t('dashboard.nextStepsTitle')}</p>
       <div className="space-y-1">
         {steps.map((step, i) => (
           <Link
@@ -56,15 +58,15 @@ export function NextStepsCard(props: Props) {
   )
 }
 
-function computeSteps(props: Props): Step[] {
+function computeSteps(props: Props, t: (key: string, options?: Record<string, unknown>) => string): Step[] {
   const steps: Step[] = []
 
   // 1. No documents
   if (props.documents.length === 0) {
     steps.push({
       icon: <Upload size={16} />,
-      text: 'Upload your first course materials',
-      cta: 'Upload',
+      text: t('dashboard.nextSteps.uploadFirst'),
+      cta: t('dashboard.nextSteps.upload'),
       link: '/sources',
     })
   }
@@ -75,9 +77,9 @@ function computeSteps(props: Props): Step[] {
     steps.push({
       icon: <ListChecks size={16} />,
       text: props.isPro
-        ? `${unprocessed.length} document${unprocessed.length > 1 ? 's' : ''} need processing`
-        : 'Upgrade to process documents with AI',
-      cta: props.isPro ? 'Process now' : 'Upgrade',
+        ? t('dashboard.nextSteps.documentsNeedProcessing', { count: unprocessed.length })
+        : t('dashboard.nextSteps.upgradeToProcess'),
+      cta: props.isPro ? t('dashboard.nextSteps.processNow') : t('common.upgrade'),
       link: props.isPro ? '/sources' : '/pricing',
     })
   }
@@ -86,8 +88,8 @@ function computeSteps(props: Props): Step[] {
   if (props.dueFlashcardCount > 0) {
     steps.push({
       icon: <BookOpen size={16} />,
-      text: `${props.dueFlashcardCount} flashcard${props.dueFlashcardCount > 1 ? 's' : ''} due for review`,
-      cta: 'Review now',
+      text: t('dashboard.nextSteps.flashcardsDue', { count: props.dueFlashcardCount }),
+      cta: t('dashboard.nextSteps.reviewNow'),
       link: '/queue',
     })
   }
@@ -96,8 +98,8 @@ function computeSteps(props: Props): Step[] {
   if (props.dailyQueue.length > 0 && !props.queueStartedToday) {
     steps.push({
       icon: <ListChecks size={16} />,
-      text: `Your daily queue has ${props.dailyQueue.length} items`,
-      cta: 'Start',
+      text: t('dashboard.nextSteps.dailyQueueItems', { count: props.dailyQueue.length }),
+      cta: t('common.start'),
       link: '/queue',
     })
   }
@@ -106,8 +108,8 @@ function computeSteps(props: Props): Step[] {
   if (props.exerciseCount > 0 && props.exerciseAttemptCount === 0) {
     steps.push({
       icon: <ListChecks size={16} />,
-      text: `${props.exerciseCount} exercises waiting — start practicing`,
-      cta: 'Practice',
+      text: t('dashboard.nextSteps.exercisesWaiting', { count: props.exerciseCount }),
+      cta: t('dashboard.nextSteps.practice'),
       link: '/queue',
     })
   }
@@ -116,20 +118,20 @@ function computeSteps(props: Props): Step[] {
   if (props.practiceExamCount === 0 && props.topics.length >= 3) {
     steps.push({
       icon: <ClipboardCheck size={16} />,
-      text: 'Test yourself with a practice exam',
-      cta: 'Take exam',
+      text: t('dashboard.nextSteps.testYourself'),
+      cta: t('dashboard.nextSteps.takeExam'),
       link: '/practice-exam',
     })
   }
 
   // 7. Weak topics
-  const weakTopics = props.topics.filter(t => t.mastery < 0.3 && t.questionsAttempted > 0)
+  const weakTopics = props.topics.filter(tp => tp.mastery < 0.3 && tp.questionsAttempted > 0)
   if (weakTopics.length > 0) {
     const worst = weakTopics.sort((a, b) => a.mastery - b.mastery)[0]
     steps.push({
       icon: <AlertTriangle size={16} />,
-      text: `${worst.name} needs attention (${Math.round(worst.mastery * 100)}%)`,
-      cta: 'Study',
+      text: t('dashboard.nextSteps.needsAttention', { name: worst.name, percent: Math.round(worst.mastery * 100) }),
+      cta: t('dashboard.nextSteps.study'),
       link: `/session?topic=${worst.id}`,
     })
   }
@@ -138,8 +140,8 @@ function computeSteps(props: Props): Step[] {
   if (!props.hasStudyPlan && props.topics.length >= 3) {
     steps.push({
       icon: <Calendar size={16} />,
-      text: 'Create a study plan to stay on track',
-      cta: 'Plan',
+      text: t('dashboard.nextSteps.createStudyPlan'),
+      cta: t('dashboard.nextSteps.plan'),
       link: '/study-plan',
     })
   }

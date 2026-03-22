@@ -18,11 +18,11 @@ import { ResourceScoutCard } from '../components/ResourceScoutCard'
 import { useSubscription } from '../hooks/useSubscription'
 import { useDailyQueue } from '../hooks/useDailyQueue'
 
-function getGreeting(name: string): string {
+function getGreetingKey(): string {
   const hour = new Date().getHours()
-  if (hour < 12) return `Good morning, ${name}.`
-  if (hour < 18) return `Good afternoon, ${name}.`
-  return `Good evening, ${name}.`
+  if (hour < 12) return 'dashboard.greetingMorning'
+  if (hour < 18) return 'dashboard.greetingAfternoon'
+  return 'dashboard.greetingEvening'
 }
 
 export default function Dashboard() {
@@ -182,7 +182,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <Zap className={`w-4 h-4 ${cramActive ? 'text-red-500' : 'text-orange-500'}`} />
             <span className="text-sm font-medium text-[var(--text-heading)]">
-              {cramActive ? 'Cram Mode Active' : `Exam in ${daysUntilExam} day${daysUntilExam !== 1 ? 's' : ''}`}
+              {cramActive ? t('dashboard.cramModeActive') : t('dashboard.examInDays', { count: daysUntilExam })}
             </span>
           </div>
           <button
@@ -193,7 +193,7 @@ export default function Dashboard() {
                 : 'bg-orange-500/20 text-orange-600 hover:bg-orange-500/30'
             }`}
           >
-            {cramActive ? 'Deactivate' : 'Activate Cram Mode'}
+            {cramActive ? t('dashboard.deactivate') : t('dashboard.activateCramMode')}
           </button>
         </div>
       )}
@@ -204,11 +204,11 @@ export default function Dashboard() {
       {/* Welcome Header */}
       <div className="mb-6">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-heading)]">
-          {getGreeting(user?.firstName || activeProfile.name)}
+          {t(getGreetingKey(), { name: user?.firstName || activeProfile.name })}
         </h1>
         <p className="text-sm text-[var(--text-muted)] mt-1">
           {activeProfile.name}
-          {daysUntilExam !== undefined && ` — ${daysUntilExam} day${daysUntilExam !== 1 ? 's' : ''} to go`}
+          {daysUntilExam !== undefined && ` — ${t('dashboard.daysToGo', { count: daysUntilExam })}`}
         </p>
         {activePhase && (
           <p className="text-xs text-[var(--accent-text)] mt-1 font-medium">
@@ -217,13 +217,13 @@ export default function Dashboard() {
         )}
         <div className="flex gap-3 mt-4">
           <Link to="/queue" className="btn-primary flex-1 py-3 text-sm text-center flex items-center justify-center gap-2">
-            Start Today's Session <ArrowRight className="w-4 h-4" />
+            {t('dashboard.startSession')} <ArrowRight className="w-4 h-4" />
           </Link>
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel', { detail: {} }))}
             className="btn-secondary flex-1 py-3 text-sm text-center flex items-center justify-center gap-2"
           >
-            <MessageCircle className="w-4 h-4" /> Talk to a Tutor
+            <MessageCircle className="w-4 h-4" /> {t('dashboard.talkToTutor')}
           </button>
         </div>
       </div>
@@ -251,7 +251,7 @@ export default function Dashboard() {
       {/* Subjects */}
       {subjects.length > 0 && (
         <div className="mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Your Tutors</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">{t('dashboard.yourTutors')}</p>
           <TutorDirectory subjects={subjects} topics={topics} />
         </div>
       )}
@@ -262,7 +262,7 @@ export default function Dashboard() {
       {/* Your courses */}
       {courseDocuments.length > 0 && (
         <div className="glass-card p-4 mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">My Courses</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">{t('dashboard.myCourses')}</p>
           <div className="space-y-1">
             {courseDocuments.map(doc => (
               <Link key={doc.id} to={`/read/${doc.id}`}
@@ -281,7 +281,7 @@ export default function Dashboard() {
       {/* Your exams */}
       {examSources.length > 0 && (
         <div className="glass-card p-4 mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">My Exams</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">{t('dashboard.myExams')}</p>
           <div className="space-y-1">
             {examSources.map(source => (
               <Link key={source.id} to={`/read/${source.documentId}`}
@@ -292,7 +292,7 @@ export default function Dashboard() {
                     {source.name}{source.year ? ` ${source.year}` : ''}
                   </span>
                   <span className="text-xs text-[var(--text-faint)]">
-                    {source.completedCount}/{source.exerciseCount} exercises completed
+                    {t('dashboard.exercisesCompleted', { completed: source.completedCount, total: source.exerciseCount })}
                   </span>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
@@ -307,8 +307,8 @@ export default function Dashboard() {
         <Link to="/sources" className="glass-card p-4 mb-4 flex items-center gap-3 hover:bg-[var(--bg-input)]/30 transition-colors block">
           <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
           <div className="flex-1">
-            <span className="text-sm font-medium text-[var(--text-heading)]">{topicsWithoutMaterial} topic{topicsWithoutMaterial !== 1 ? 's' : ''} without course material</span>
-            <span className="text-xs text-[var(--text-faint)] block">Upload documents to cover them</span>
+            <span className="text-sm font-medium text-[var(--text-heading)]">{t('dashboard.topicsWithoutMaterial', { count: topicsWithoutMaterial })}</span>
+            <span className="text-xs text-[var(--text-faint)] block">{t('dashboard.uploadDocuments')}</span>
           </div>
           <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
         </Link>

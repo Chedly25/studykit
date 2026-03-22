@@ -4,6 +4,7 @@
  */
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { ArrowRight, Upload, ChevronDown, ChevronUp, Check } from 'lucide-react'
 import { useOnboarding } from '../hooks/useOnboarding'
 import { useExamProfile } from '../hooks/useExamProfile'
@@ -55,6 +56,7 @@ function MessageBubble({ message }: { message: OnboardingMessage }) {
 // ─── Input widgets ────────────────────────────────────────
 
 function ExamInputWidget({ onSubmit, disabled }: { onSubmit: (text: string) => void; disabled: boolean }) {
+  const { t } = useTranslation()
   const [value, setValue] = useState('')
   const handleSubmit = () => { if (value.trim()) { onSubmit(value.trim()); setValue('') } }
 
@@ -65,7 +67,7 @@ function ExamInputWidget({ onSubmit, disabled }: { onSubmit: (text: string) => v
         value={value}
         onChange={e => setValue(e.target.value)}
         onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }}
-        placeholder="e.g., California Bar Exam, MCAT, Organic Chemistry..."
+        placeholder={t('onboarding.examPlaceholder')}
         className="flex-1 px-4 py-3 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-xl text-sm text-[var(--text-body)] placeholder:text-[var(--text-faint)]"
         disabled={disabled}
         autoFocus
@@ -78,6 +80,7 @@ function ExamInputWidget({ onSubmit, disabled }: { onSubmit: (text: string) => v
 }
 
 function DateInputWidget({ onSubmit, disabled }: { onSubmit: (date: string) => void; disabled: boolean }) {
+  const { t } = useTranslation()
   const [date, setDate] = useState('')
   const [noDeadline, setNoDeadline] = useState(false)
   const today = new Date().toISOString().slice(0, 10)
@@ -103,13 +106,14 @@ function DateInputWidget({ onSubmit, disabled }: { onSubmit: (date: string) => v
       </div>
       <label className="flex items-center gap-2 text-sm text-[var(--text-muted)] cursor-pointer">
         <input type="checkbox" checked={noDeadline} onChange={e => setNoDeadline(e.target.checked)} className="rounded" />
-        No fixed deadline
+        {t('onboarding.noDeadline')}
       </label>
     </div>
   )
 }
 
 function TextAreaWidget({ onSubmit, disabled, placeholder }: { onSubmit: (text: string) => void; disabled: boolean; placeholder: string }) {
+  const { t } = useTranslation()
   const [value, setValue] = useState('')
   const handleSubmit = () => { if (value.trim()) { onSubmit(value.trim()); setValue('') } }
 
@@ -125,7 +129,7 @@ function TextAreaWidget({ onSubmit, disabled, placeholder }: { onSubmit: (text: 
         autoFocus
       />
       <button onClick={handleSubmit} disabled={disabled || !value.trim()} className="btn-primary w-full py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
-        Continue <ArrowRight className="w-4 h-4" />
+        {t('common.continue')} <ArrowRight className="w-4 h-4" />
       </button>
     </div>
   )
@@ -158,6 +162,7 @@ function SliderWidget({ min, max, step, unit, defaultValue, onSubmit, disabled }
   min: number; max: number; step: number; unit: string; defaultValue: number
   onSubmit: (value: number) => void; disabled: boolean
 }) {
+  const { t } = useTranslation()
   const [value, setValue] = useState(defaultValue)
 
   return (
@@ -179,13 +184,14 @@ function SliderWidget({ min, max, step, unit, defaultValue, onSubmit, disabled }
         <span>{max} {unit}</span>
       </div>
       <button onClick={() => onSubmit(value)} disabled={disabled} className="btn-primary w-full py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
-        Continue <ArrowRight className="w-4 h-4" />
+        {t('common.continue')} <ArrowRight className="w-4 h-4" />
       </button>
     </div>
   )
 }
 
 function TopicPreviewWidget({ subjects, onConfirm, disabled }: { subjects: ExtractedSubject[]; onConfirm: () => void; disabled: boolean }) {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState<string | null>(null)
 
   return (
@@ -215,7 +221,7 @@ function TopicPreviewWidget({ subjects, onConfirm, disabled }: { subjects: Extra
         </div>
       ))}
       <button onClick={onConfirm} disabled={disabled} className="btn-primary w-full py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
-        <Check className="w-4 h-4" /> Looks good
+        <Check className="w-4 h-4" /> {t('onboarding.looksGood')}
       </button>
     </div>
   )
@@ -224,42 +230,43 @@ function TopicPreviewWidget({ subjects, onConfirm, disabled }: { subjects: Extra
 function SummaryWidget({ data, onDashboard, onStudy, disabled }: {
   data: OnboardingSummary; onDashboard: () => void; onStudy: () => void; disabled: boolean
 }) {
+  const { t } = useTranslation()
   return (
     <div className="space-y-4">
       <div className="glass-card p-5 space-y-3">
-        <h3 className="font-semibold text-[var(--text-heading)]">Your study plan is ready</h3>
+        <h3 className="font-semibold text-[var(--text-heading)]">{t('onboarding.planReady')}</h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-[var(--text-muted)]">Exam</span>
+            <span className="text-[var(--text-muted)]">{t('onboarding.exam')}</span>
             <span className="text-[var(--text-body)] font-medium">{data.examName}</span>
           </div>
           {data.examDate && (
             <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Date</span>
+              <span className="text-[var(--text-muted)]">{t('onboarding.date')}</span>
               <span className="text-[var(--text-body)] font-medium">{new Date(data.examDate + 'T12:00:00').toLocaleDateString()}</span>
             </div>
           )}
           {data.subjectCount > 0 && (
             <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Subjects</span>
+              <span className="text-[var(--text-muted)]">{t('onboarding.subjects')}</span>
               <span className="text-[var(--text-body)] font-medium">{data.subjectCount} subjects, {data.topicCount} topics</span>
             </div>
           )}
           <div className="flex justify-between">
-            <span className="text-[var(--text-muted)]">Weekly target</span>
-            <span className="text-[var(--text-body)] font-medium">{data.weeklyHours} hours/week</span>
+            <span className="text-[var(--text-muted)]">{t('onboarding.weeklyTarget')}</span>
+            <span className="text-[var(--text-body)] font-medium">{data.weeklyHours} {t('onboarding.hoursPerWeek')}</span>
           </div>
         </div>
         <p className="text-xs text-[var(--text-muted)] pt-2 border-t border-[var(--border-card)]">
-          Your first study plan is being generated. Your queue will be ready when you arrive.
+          {t('onboarding.planGenerating')}
         </p>
       </div>
       <div className="flex gap-3">
         <button onClick={onDashboard} disabled={disabled} className="btn-secondary flex-1 py-3 text-sm font-semibold rounded-xl">
-          Go to Dashboard
+          {t('onboarding.goToDashboard')}
         </button>
         <button onClick={onStudy} disabled={disabled} className="btn-primary flex-1 py-3 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
-          Start Studying <ArrowRight className="w-4 h-4" />
+          {t('onboarding.startStudying')} <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useAuth } from '@clerk/clerk-react'
+import { useTranslation } from 'react-i18next'
 import { Map, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import { db } from '../../db'
 import { generateMacroRoadmap } from '../../lib/macroRoadmap'
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function RoadmapTimeline({ examProfileId }: Props) {
+  const { t } = useTranslation()
   const { getToken } = useAuth()
   const [isGenerating, setIsGenerating] = useState(false)
   const [expandedPhase, setExpandedPhase] = useState<string | null>(null)
@@ -38,8 +40,8 @@ export function RoadmapTimeline({ examProfileId }: Props) {
         <div className="flex items-center gap-2">
           <Map className="w-4 h-4 text-[var(--accent-text)]" />
           <div>
-            <p className="text-sm font-medium text-[var(--text-heading)]">Study Roadmap</p>
-            <p className="text-xs text-[var(--text-muted)]">Generate a multi-phase strategic plan for your entire prep</p>
+            <p className="text-sm font-medium text-[var(--text-heading)]">{t('roadmap.title')}</p>
+            <p className="text-xs text-[var(--text-muted)]">{t('roadmap.subtitle')}</p>
           </div>
         </div>
         <button
@@ -48,7 +50,7 @@ export function RoadmapTimeline({ examProfileId }: Props) {
           className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5"
         >
           {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Map className="w-3 h-3" />}
-          {isGenerating ? 'Generating...' : 'Generate'}
+          {isGenerating ? t('roadmap.generating') : t('roadmap.generate')}
         </button>
       </div>
     )
@@ -64,7 +66,7 @@ export function RoadmapTimeline({ examProfileId }: Props) {
     <div className="glass-card p-4 mb-4 animate-fade-in">
       <div className="flex items-center gap-2 mb-3">
         <Map className="w-4 h-4 text-[var(--accent-text)]" />
-        <span className="text-sm font-semibold text-[var(--text-heading)]">Study Roadmap</span>
+        <span className="text-sm font-semibold text-[var(--text-heading)]">{t('roadmap.title')}</span>
       </div>
 
       {/* Timeline bar */}
@@ -108,7 +110,7 @@ export function RoadmapTimeline({ examProfileId }: Props) {
       {/* Active phase indicator */}
       {activeIndex >= 0 && (
         <p className="text-xs text-[var(--text-muted)] mb-2">
-          Current: <span className="font-medium text-[var(--text-body)]">{phases[activeIndex].name}</span>
+          {t('roadmap.current')} <span className="font-medium text-[var(--text-body)]">{phases[activeIndex].name}</span>
           {phases[activeIndex].startDate && phases[activeIndex].endDate && (
             <span> ({phases[activeIndex].startDate} — {phases[activeIndex].endDate})</span>
           )}
@@ -130,13 +132,13 @@ export function RoadmapTimeline({ examProfileId }: Props) {
             <p className="text-xs text-[var(--text-muted)] mb-2">{phase.description}</p>
             {phase.focusAreas.length > 0 && (
               <div className="mb-2">
-                <span className="text-xs font-medium text-[var(--text-muted)]">Focus: </span>
+                <span className="text-xs font-medium text-[var(--text-muted)]">{t('roadmap.focus')} </span>
                 <span className="text-xs text-[var(--text-body)]">{phase.focusAreas.join(', ')}</span>
               </div>
             )}
             {phase.milestones.length > 0 && (
               <div>
-                <span className="text-xs font-medium text-[var(--text-muted)]">Milestones:</span>
+                <span className="text-xs font-medium text-[var(--text-muted)]">{t('roadmap.milestones')}</span>
                 <ul className="mt-1 space-y-0.5">
                   {phase.milestones.map((m, i) => (
                     <li key={i} className="text-xs text-[var(--text-body)] flex items-start gap-1.5">
@@ -147,7 +149,7 @@ export function RoadmapTimeline({ examProfileId }: Props) {
               </div>
             )}
             <div className="mt-2 text-xs text-[var(--text-faint)]">
-              Target mastery: {Math.round(phase.targetMastery * 100)}%
+              {t('roadmap.targetMastery')} {Math.round(phase.targetMastery * 100)}%
             </div>
           </div>
         )

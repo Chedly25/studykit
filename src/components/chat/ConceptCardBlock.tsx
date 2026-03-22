@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BookOpen, Check, HelpCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -98,6 +99,7 @@ function FicheSection({ heading, body }: { heading: string; body: string }) {
 // ─── Main component ────────────────────────────────────────
 
 export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
+  const { t } = useTranslation()
   const [card, setCard] = useState<ConceptCard | null>(null)
   const [mastered, setMastered] = useState(false)
   const [subjectColor, setSubjectColor] = useState<string | null>(null)
@@ -189,7 +191,7 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
 
             {card.example && (
               <div className="rounded-lg border-l-4 border-emerald-400 bg-emerald-50/60 dark:bg-emerald-500/5 px-3 py-2 mb-3">
-                <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">Example</h3>
+                <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">{t('cards.example')}</h3>
                 <p className="text-xs text-[var(--text-body)]"><MathText>{card.example}</MathText></p>
               </div>
             )}
@@ -217,7 +219,7 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
               onClick={handleGotIt}
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-colors"
             >
-              <Check className="w-3 h-3" /> Got it
+              <Check className="w-3 h-3" /> {t('cards.gotIt')}
             </button>
           )}
           {onQuizMe && (
@@ -225,7 +227,7 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
               onClick={() => onQuizMe(card.title)}
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--bg-input)] text-[var(--text-muted)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-colors"
             >
-              <HelpCircle className="w-3 h-3" /> Quiz me
+              <HelpCircle className="w-3 h-3" /> {t('cards.quizMe')}
             </button>
           )}
         </div>

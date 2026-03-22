@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ChevronDown, ChevronUp, ArrowRight } from 'lucide-react'
 import { db } from '../../db'
@@ -10,14 +11,15 @@ interface Props {
   onBeginSession: () => void
 }
 
-function getGreeting(name: string): string {
+function getGreetingKey(): string {
   const hour = new Date().getHours()
-  if (hour < 12) return `Good morning, ${name}.`
-  if (hour < 18) return `Good afternoon, ${name}.`
-  return `Good evening, ${name}.`
+  if (hour < 12) return 'queue.greetingMorning'
+  if (hour < 18) return 'queue.greetingAfternoon'
+  return 'queue.greetingEvening'
 }
 
 export function DailyCoachingBrief({ examProfileId, profileName, onBeginSession }: Props) {
+  const { t } = useTranslation()
   const today = new Date().toISOString().slice(0, 10)
   const storageKey = `coaching_brief_collapsed_${examProfileId}_${today}`
 
@@ -52,7 +54,7 @@ export function DailyCoachingBrief({ examProfileId, profileName, onBeginSession 
     } catch { return [] }
   }, [examProfileId]) ?? []
 
-  const greeting = getGreeting(profileName)
+  const greeting = t(getGreetingKey(), { name: profileName })
   const suggestCount = priorities.length
 
   const handleCollapse = () => {
@@ -77,7 +79,7 @@ export function DailyCoachingBrief({ examProfileId, profileName, onBeginSession 
         className="w-full glass-card p-3 mb-4 flex items-center justify-between text-left animate-fade-in"
       >
         <span className="text-sm text-[var(--text-body)]">
-          {greeting}{suggestCount > 0 ? ` ${suggestCount} items suggested.` : ''}
+          {greeting}{suggestCount > 0 ? ` ${t('queue.itemsSuggested', { count: suggestCount })}` : ''}
         </span>
         <ChevronDown className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
       </button>
@@ -97,18 +99,17 @@ export function DailyCoachingBrief({ examProfileId, profileName, onBeginSession 
       {/* Yesterday recap */}
       {yesterdayLog && yesterdayLog.totalSeconds > 0 && (
         <p className="text-sm text-[var(--text-muted)] mb-3">
-          Yesterday you studied for {Math.round(yesterdayLog.totalSeconds / 60)} min
+          {t('queue.yesterdayStudied', { mins: Math.round(yesterdayLog.totalSeconds / 60) })}
           {yesterdayLog.questionsAnswered > 0 && (
-            <> and covered {yesterdayLog.questionsAnswered} item{yesterdayLog.questionsAnswered !== 1 ? 's' : ''}
-            {yesterdayLog.questionsAnswered > 0 && ` with ${Math.round((yesterdayLog.questionsCorrect / yesterdayLog.questionsAnswered) * 100)}% accuracy`}</>
-          )}. Nice work.
+            <> {t('queue.yesterdayCovered', { count: yesterdayLog.questionsAnswered, accuracy: Math.round((yesterdayLog.questionsCorrect / yesterdayLog.questionsAnswered) * 100) })}</>
+          )} {t('queue.niceWork')}
         </p>
       )}
 
       {/* Suggestions */}
       {priorities.length > 0 ? (
         <div className="mb-4">
-          <p className="text-sm font-medium text-[var(--text-body)] mb-2">Today I'd suggest:</p>
+          <p className="text-sm font-medium text-[var(--text-body)] mb-2">{t('queue.todaySuggest')}</p>
           <ul className="space-y-1.5">
             {priorities.map((p, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
@@ -116,7 +117,7 @@ export function DailyCoachingBrief({ examProfileId, profileName, onBeginSession 
                   {p.urgency === 'critical' ? '🔴' : p.urgency === 'high' ? '🟠' : '🔵'}
                 </span>
                 <span className="text-[var(--text-body)]">
-                  {p.suggestedAction === 'review' ? 'Review' : p.suggestedAction === 'practice' ? 'Practice' : p.suggestedAction === 'relearn' ? 'Revisit' : 'Assess'}{' '}
+                  {p.suggestedAction === 'review' ? t('queue.actionReview') : p.suggestedAction === 'practice' ? t('queue.actionPractice') : p.suggestedAction === 'relearn' ? t('queue.actionRevisit') : t('queue.actionAssess')}{' '}
                   <span className="font-medium text-[var(--text-heading)]">{p.topicName}</span>
                   {' — '}{p.reason}
                 </span>
@@ -125,7 +126,7 @@ export function DailyCoachingBrief({ examProfileId, profileName, onBeginSession 
           </ul>
         </div>
       ) : (
-        <p className="text-sm text-[var(--text-muted)] mb-4">Your queue is ready. Let's get started.</p>
+        <p className="text-sm text-[var(--text-muted)] mb-4">{t('queue.readyToStart')}</p>
       )}
 
       {/* Begin Session CTA */}
@@ -133,7 +134,7 @@ export function DailyCoachingBrief({ examProfileId, profileName, onBeginSession 
         onClick={handleBegin}
         className="w-full btn-primary py-2.5 text-sm font-semibold flex items-center justify-center gap-2"
       >
-        Begin Session
+        {t('queue.beginSession')}
         <ArrowRight className="w-4 h-4" />
       </button>
     </div>

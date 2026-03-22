@@ -123,7 +123,7 @@ export default function Analytics() {
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
         <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('analytics.title')}</h1>
         <p className="text-[var(--text-muted)]">{t('analytics.noData')}</p>
-        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</Link>
+        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">{t('common.createProfile')}</Link>
       </div>
     )
   }
@@ -135,7 +135,7 @@ export default function Analytics() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 animate-fade-in">
       <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-1">{t('analytics.title')}</h1>
-      <p className="text-sm text-[var(--text-muted)] mb-2">Here's how your preparation is coming along</p>
+      <p className="text-sm text-[var(--text-muted)] mb-2">{t('analytics.subtitle')}</p>
 
       {/* Section navigation */}
       <nav className="flex gap-3 mb-6 text-sm overflow-x-auto pb-1">
@@ -167,7 +167,7 @@ export default function Analytics() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Subject Balance */}
         <div className="glass-card p-4">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">Subject Balance</h2>
+          <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.subjectBalance')}</h2>
           {subjectBalance.length === 0 ? (
             <p className="text-sm text-[var(--text-muted)]">{t('analytics.noData')}</p>
           ) : (
@@ -199,7 +199,7 @@ export default function Analytics() {
 
         {/* Session Distribution */}
         <div className="glass-card p-4">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">Session Types</h2>
+          <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.sessionTypes')}</h2>
           {sessionDistribution.length === 0 ? (
             <p className="text-sm text-[var(--text-muted)]">{t('analytics.noData')}</p>
           ) : (
@@ -216,7 +216,7 @@ export default function Analytics() {
 
         {/* Score Trend */}
         <div className="glass-card p-4 md:col-span-2">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">Score Trend</h2>
+          <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.scoreTrend')}</h2>
           {scoreTrend.length === 0 ? (
             <p className="text-sm text-[var(--text-muted)]">{t('analytics.noData')}</p>
           ) : (
@@ -236,13 +236,13 @@ export default function Analytics() {
         {/* Mastery Trend */}
         <div className="glass-card p-4 md:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-[var(--text-heading)]">Mastery Trend</h2>
+            <h2 className="font-semibold text-[var(--text-heading)]">{t('analytics.masteryTrend')}</h2>
             <select
               value={selectedTrendTopic}
               onChange={e => setSelectedTrendTopic(e.target.value)}
               className="text-sm bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-2 py-1 text-[var(--text-body)]"
             >
-              <option value="">Select topic...</option>
+              <option value="">{t('analytics.selectTopic')}</option>
               {topics.map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
@@ -256,13 +256,13 @@ export default function Analytics() {
 
         {/* Confidence Calibration */}
         <div className="glass-card p-4 md:col-span-2">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">Confidence Calibration</h2>
+          <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.calibration')}</h2>
           <CalibrationChart data={calibrationData} />
         </div>
 
         {/* Error Patterns */}
         <div className="glass-card p-4 md:col-span-2">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">Error Patterns</h2>
+          <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.errorPatterns')}</h2>
           <ErrorPatternChart
             data={errorPatterns}
             onDrillDown={(topicName, errorType) => {
@@ -379,6 +379,7 @@ export default function Analytics() {
 // ─── Coach Insights from agent swarm ──────────────────────────
 
 function CoachInsightsSection({ examProfileId }: { examProfileId: string | undefined }) {
+  const { t } = useTranslation()
   const insights = useLiveQuery(async () => {
     if (!examProfileId) return []
     const insight = await db.agentInsights.get(`progress-monitor:${examProfileId}`)
@@ -394,7 +395,7 @@ function CoachInsightsSection({ examProfileId }: { examProfileId: string | undef
   return (
     <div className="mt-4 glass-card p-5">
       <h3 className="text-sm font-bold text-[var(--text-heading)] mb-3 flex items-center gap-2">
-        <span className="text-base">💡</span> Coach Insights
+        <span className="text-base">💡</span> {t('analytics.coachInsights')}
       </h3>
       <div className="space-y-2">
         {insights.map((insight, i) => (

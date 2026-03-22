@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { MessageCircle, ArrowRight } from 'lucide-react'
 import type { Subject, Topic } from '../db/schema'
 
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function TutorDirectory({ subjects, topics }: Props) {
+  const { t } = useTranslation()
   if (subjects.length === 0) return null
 
   return (
@@ -40,7 +42,7 @@ export function TutorDirectory({ subjects, topics }: Props) {
               </div>
               <div className="flex items-center justify-between mt-1.5">
                 <span className="text-xs text-[var(--text-muted)]">
-                  {subjectTopics.length} topic{subjectTopics.length !== 1 ? 's' : ''}
+                  {t('tutor.topics', { count: subjectTopics.length })}
                 </span>
                 <span className="text-xs font-semibold" style={{ color: subject.color }}>
                   {masteryPct}%
@@ -54,7 +56,7 @@ export function TutorDirectory({ subjects, topics }: Props) {
                 to={`/subject/${subject.id}`}
                 className="flex-1 text-center text-xs font-medium py-2 rounded-lg bg-[var(--bg-input)] text-[var(--text-body)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-colors flex items-center justify-center gap-1.5"
               >
-                View topics <ArrowRight className="w-3 h-3" />
+                {t('tutor.viewTopics')} <ArrowRight className="w-3 h-3" />
               </Link>
               <button
                 onClick={() => {
@@ -64,7 +66,7 @@ export function TutorDirectory({ subjects, topics }: Props) {
                 }}
                 className="flex-1 text-center text-xs font-medium py-2 rounded-lg bg-[var(--accent-bg)] text-[var(--accent-text)] hover:opacity-80 transition-opacity flex items-center justify-center gap-1.5"
               >
-                <MessageCircle className="w-3 h-3" /> Ask tutor
+                <MessageCircle className="w-3 h-3" /> {t('tutor.askTutor')}
               </button>
             </div>
           </div>

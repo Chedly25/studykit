@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BookOpen, Check, HelpCircle, Plus, Pencil, Trash2, X, FileText } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -26,6 +27,7 @@ interface CardFormProps {
 }
 
 function CardForm({ initialTitle, initialKeyPoints, initialExample, onSave, onCancel }: CardFormProps) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState(initialTitle ?? '')
   const [keyPoints, setKeyPoints] = useState<string[]>(initialKeyPoints?.length ? initialKeyPoints : [''])
   const [example, setExample] = useState(initialExample ?? '')
@@ -50,13 +52,13 @@ function CardForm({ initialTitle, initialKeyPoints, initialExample, onSave, onCa
         <input
           value={title}
           onChange={e => setTitle(e.target.value)}
-          placeholder="Card title"
+          placeholder={t('cards.titlePlaceholder')}
           className="w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-card)] text-sm text-[var(--text-body)] placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-text)]"
           autoFocus
         />
 
         <div>
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Key Points</label>
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1 block">{t('cards.keyPoints')}</label>
           <div className="space-y-1.5">
             {keyPoints.map((point, i) => (
               <div key={i} className="flex items-center gap-1.5">
@@ -68,7 +70,7 @@ function CardForm({ initialTitle, initialKeyPoints, initialExample, onSave, onCa
                     next[i] = e.target.value
                     setKeyPoints(next)
                   }}
-                  placeholder={`Point ${i + 1}`}
+                  placeholder={t('cards.pointPlaceholder', { n: i + 1 })}
                   className="flex-1 px-2 py-1.5 rounded bg-[var(--bg-input)] border border-[var(--border-card)] text-xs text-[var(--text-body)] placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-text)]"
                 />
                 {keyPoints.length > 1 && (
@@ -86,16 +88,16 @@ function CardForm({ initialTitle, initialKeyPoints, initialExample, onSave, onCa
             onClick={() => setKeyPoints([...keyPoints, ''])}
             className="text-[10px] text-[var(--accent-text)] hover:underline mt-1.5"
           >
-            + Add point
+            {t('cards.addPoint')}
           </button>
         </div>
 
         <div>
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Example (optional)</label>
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1 block">{t('cards.exampleLabel')}</label>
           <textarea
             value={example}
             onChange={e => setExample(e.target.value)}
-            placeholder="An example or application..."
+            placeholder={t('cards.examplePlaceholder')}
             rows={2}
             className="w-full px-3 py-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-card)] text-xs text-[var(--text-body)] placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-text)] resize-none"
           />
@@ -107,13 +109,13 @@ function CardForm({ initialTitle, initialKeyPoints, initialExample, onSave, onCa
             disabled={!canSave || isSaving}
             className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[var(--accent-text)] text-white hover:opacity-90 transition-opacity disabled:opacity-40"
           >
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSaving ? t('common.saving') : t('common.save')}
           </button>
           <button
             onClick={onCancel}
             className="px-3 py-1.5 rounded-lg text-xs text-[var(--text-muted)] hover:bg-[var(--bg-input)] transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       </div>
@@ -130,6 +132,7 @@ function CardItem({ card, onQuizMe, onEdit, onDelete, onViewFiche }: {
   onDelete: () => void
   onViewFiche: () => void
 }) {
+  const { t } = useTranslation()
   const mastered = card.mastery >= 0.8
   let keyPoints: string[] = []
   try { keyPoints = JSON.parse(card.keyPoints) } catch { /* empty */ }
@@ -200,14 +203,14 @@ function CardItem({ card, onQuizMe, onEdit, onDelete, onViewFiche }: {
             onClick={onViewFiche}
             className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-[var(--bg-input)] text-[var(--text-muted)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-colors"
           >
-            <FileText className="w-3 h-3" /> View full fiche
+            <FileText className="w-3 h-3" /> {t('cards.viewFiche')}
           </button>
           {onQuizMe && (
             <button
               onClick={() => onQuizMe(card.title)}
               className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-[var(--bg-input)] text-[var(--text-muted)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-colors"
             >
-              <HelpCircle className="w-3 h-3" /> Quiz me
+              <HelpCircle className="w-3 h-3" /> {t('cards.quizMe')}
             </button>
           )}
         </div>
@@ -219,6 +222,7 @@ function CardItem({ card, onQuizMe, onEdit, onDelete, onViewFiche }: {
 // ─── Cards View ──────
 
 export function CardsView({ examProfileId, topicId, onQuizMe }: CardsViewProps) {
+  const { t } = useTranslation()
   const { cards } = useConceptCards(examProfileId, topicId)
   const [isCreating, setIsCreating] = useState(false)
   const [editingCardId, setEditingCardId] = useState<string | null>(null)
@@ -313,14 +317,14 @@ export function CardsView({ examProfileId, topicId, onQuizMe }: CardsViewProps) 
         {/* Header with New card button */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-[var(--text-heading)]">
-            Concept Cards{cards.length > 0 ? ` (${cards.length})` : ''}
+            {t('cards.conceptCards')}{cards.length > 0 ? ` (${cards.length})` : ''}
           </h3>
           {!isCreating && (
             <button
               onClick={() => setIsCreating(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent-text)] text-white hover:opacity-90 transition-opacity"
             >
-              <Plus className="w-3.5 h-3.5" /> New card
+              <Plus className="w-3.5 h-3.5" /> {t('cards.newCard')}
             </button>
           )}
         </div>
@@ -335,20 +339,20 @@ export function CardsView({ examProfileId, topicId, onQuizMe }: CardsViewProps) 
         {/* Card groups */}
         {cards.length > 0 ? (
           <>
-            {renderGroup('New', grouped.newCards, 'bg-red-500')}
-            {renderGroup('Learning', grouped.learning, 'bg-yellow-500')}
-            {renderGroup('Mastered', grouped.mastered, 'bg-green-500')}
+            {renderGroup(t('cards.groupNew'), grouped.newCards, 'bg-red-500')}
+            {renderGroup(t('cards.groupLearning'), grouped.learning, 'bg-yellow-500')}
+            {renderGroup(t('cards.groupMastered'), grouped.mastered, 'bg-green-500')}
           </>
         ) : !isCreating ? (
           <div className="text-center py-12">
             <BookOpen className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
-            <p className="text-sm text-[var(--text-muted)]">No concept cards yet.</p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">Create your own cards or they'll be generated when documents are processed.</p>
+            <p className="text-sm text-[var(--text-muted)]">{t('cards.noCards')}</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{t('cards.noCardsHint')}</p>
             <button
               onClick={() => setIsCreating(true)}
               className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-lg text-xs font-medium bg-[var(--accent-text)] text-white hover:opacity-90 transition-opacity"
             >
-              <Plus className="w-3.5 h-3.5" /> Create your first card
+              <Plus className="w-3.5 h-3.5" /> {t('cards.createFirst')}
             </button>
           </div>
         ) : null}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { db } from '../db'
 
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function CelebrationBanner({ examProfileId, streak }: Props) {
+  const { t } = useTranslation()
   const [dismissed, setDismissed] = useState(0) // increment to re-check
 
   const topics = useLiveQuery(
@@ -40,15 +42,15 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
     const result: CelebrationMilestone[] = []
 
     // Topic mastery >= 80%
-    for (const t of topics) {
-      if (t.mastery >= 0.8) {
-        const id = `mastery80_${t.id}`
+    for (const tp of topics) {
+      if (tp.mastery >= 0.8) {
+        const id = `mastery80_${tp.id}`
         if (!isCelebrated(id)) {
           result.push({
             id,
             icon: '🎯',
-            title: `${t.name} mastery reached 80%!`,
-            subtitle: "You've built a strong foundation. Keep going.",
+            title: t('celebrate.masteryTitle', { name: tp.name }),
+            subtitle: t('celebrate.masterySubtitle'),
           })
         }
       }
@@ -56,9 +58,9 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
 
     // Streak milestones
     const streakMilestones = [
-      { threshold: 7, icon: '🔥', title: '7-day study streak!', subtitle: 'A full week of consistent work. That dedication shows.' },
-      { threshold: 14, icon: '🔥', title: '14-day study streak!', subtitle: 'Two weeks strong. Your consistency is building real results.' },
-      { threshold: 30, icon: '💪', title: '30-day study streak!', subtitle: "A full month. That's the kind of discipline that passes exams." },
+      { threshold: 7, icon: '🔥', title: t('celebrate.streak7Title'), subtitle: t('celebrate.streak7Subtitle') },
+      { threshold: 14, icon: '🔥', title: t('celebrate.streak14Title'), subtitle: t('celebrate.streak14Subtitle') },
+      { threshold: 30, icon: '💪', title: t('celebrate.streak30Title'), subtitle: t('celebrate.streak30Subtitle') },
     ]
     for (const m of streakMilestones) {
       if (streak >= m.threshold) {
@@ -78,8 +80,8 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
           result.push({
             id,
             icon: '📚',
-            title: `All topics in ${s.name} above 60%!`,
-            subtitle: 'Solid coverage across the board.',
+            title: t('celebrate.subjectCoverageTitle', { name: s.name }),
+            subtitle: t('celebrate.subjectCoverageSubtitle'),
           })
         }
       }
@@ -92,14 +94,14 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
         result.push({
           id,
           icon: '🏆',
-          title: 'First practice exam completed!',
-          subtitle: 'Now you know where you stand. Each exam makes you sharper.',
+          title: t('celebrate.firstExamTitle'),
+          subtitle: t('celebrate.firstExamSubtitle'),
         })
       }
     }
 
     return result
-  }, [topics, subjects, streak, gradedExamCount, examProfileId, dismissed])
+  }, [topics, subjects, streak, gradedExamCount, examProfileId, dismissed, t])
 
   const current = milestones[0] ?? null
 
@@ -123,7 +125,7 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
     <div className="w-full bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-4 flex items-start gap-3 animate-fade-in">
       <span className="text-2xl shrink-0">{current.icon}</span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[var(--text-heading)]">Milestone: {current.title}</p>
+        <p className="text-sm font-semibold text-[var(--text-heading)]">{t('celebrate.milestone')}: {current.title}</p>
         <p className="text-xs text-[var(--text-muted)] mt-0.5">{current.subtitle}</p>
       </div>
       <button

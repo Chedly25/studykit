@@ -2,6 +2,7 @@
  * Compact card showing what the AI tutor has learned about the student.
  */
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Brain, ArrowRight } from 'lucide-react'
 import type { StudentModel } from '../../db/schema'
 
@@ -15,6 +16,7 @@ function safeParse<T>(json: string | undefined | null, fallback: T): T {
 }
 
 export function LearningProfileCard({ studentModel }: Props) {
+  const { t } = useTranslation()
   if (!studentModel) return null
 
   const commonMistakes: string[] = safeParse(studentModel.commonMistakes, [])
@@ -25,7 +27,7 @@ export function LearningProfileCard({ studentModel }: Props) {
   if (!hasData) return null
 
   const updatedAt = studentModel.updatedAt
-    ? formatRelativeTime(new Date(studentModel.updatedAt))
+    ? formatRelativeTime(new Date(studentModel.updatedAt), t)
     : null
 
   return (
@@ -33,20 +35,20 @@ export function LearningProfileCard({ studentModel }: Props) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Brain className="w-4 h-4 text-purple-500" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">Your AI Tutor Knows</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">{t('dashboard.profileTitle')}</span>
         </div>
         <Link
           to="/analytics#insights"
           className="text-xs text-[var(--accent-text)] hover:underline flex items-center gap-1"
         >
-          Full profile <ArrowRight className="w-3 h-3" />
+          {t('dashboard.profileFullProfile')} <ArrowRight className="w-3 h-3" />
         </Link>
       </div>
 
       <div className="space-y-2">
         {commonMistakes.length > 0 && (
           <div>
-            <span className="text-[10px] font-medium text-[var(--text-faint)] uppercase tracking-wider">Common mistakes</span>
+            <span className="text-[10px] font-medium text-[var(--text-faint)] uppercase tracking-wider">{t('dashboard.profileCommonMistakes')}</span>
             <ul className="mt-0.5">
               {commonMistakes.slice(0, 3).map((m, i) => (
                 <li key={i} className="text-xs text-[var(--text-body)] truncate">- {m}</li>
@@ -57,7 +59,7 @@ export function LearningProfileCard({ studentModel }: Props) {
 
         {preferredExplanations.length > 0 && (
           <div>
-            <span className="text-[10px] font-medium text-[var(--text-faint)] uppercase tracking-wider">What works for you</span>
+            <span className="text-[10px] font-medium text-[var(--text-faint)] uppercase tracking-wider">{t('dashboard.profileWhatWorks')}</span>
             <ul className="mt-0.5">
               {preferredExplanations.slice(0, 2).map((p, i) => (
                 <li key={i} className="text-xs text-[var(--text-body)] truncate">- {p}</li>
@@ -78,19 +80,19 @@ export function LearningProfileCard({ studentModel }: Props) {
       </div>
 
       {updatedAt && (
-        <p className="text-[10px] text-[var(--text-faint)] mt-2">Updated {updatedAt}</p>
+        <p className="text-[10px] text-[var(--text-faint)] mt-2">{t('dashboard.profileUpdated', { time: updatedAt })}</p>
       )}
     </div>
   )
 }
 
-function formatRelativeTime(date: Date): string {
+function formatRelativeTime(date: Date, t: (key: string, options?: Record<string, unknown>) => string): string {
   const diff = Date.now() - date.getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 60) return t('dashboard.profileTimeMinutes', { count: mins })
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) return t('dashboard.profileTimeHours', { count: hours })
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
+  if (days < 7) return t('dashboard.profileTimeDays', { count: days })
   return date.toLocaleDateString()
 }

@@ -21,7 +21,7 @@ interface NudgeInput {
   streak: number
 }
 
-export function computeNudge(input: NudgeInput): Nudge | null {
+export function computeNudge(input: NudgeInput, t: (key: string, opts?: Record<string, unknown>) => string): Nudge | null {
   const { completedTopicName, completedCount, totalCount, sessionResults, streak } = input
 
   // 40% chance of returning null to avoid fatigue
@@ -31,7 +31,7 @@ export function computeNudge(input: NudgeInput): Nudge | null {
   const topicCount = sessionResults.filter(r => r.topicName === completedTopicName).length
   if (topicCount >= 2) {
     return {
-      text: `You've revisited ${completedTopicName} ${topicCount} times now — that's how deep understanding forms`,
+      text: t('nudge.revisited', { topic: completedTopicName, count: topicCount }),
       type: 'reinforcement',
     }
   }
@@ -39,7 +39,7 @@ export function computeNudge(input: NudgeInput): Nudge | null {
   // Halfway encouragement
   if (completedCount === Math.floor(totalCount / 2) && totalCount >= 4) {
     return {
-      text: `You're halfway through — nice momentum! ${totalCount - completedCount} more to go`,
+      text: t('nudge.halfway', { remaining: totalCount - completedCount }),
       type: 'progress',
     }
   }
@@ -49,7 +49,7 @@ export function computeNudge(input: NudgeInput): Nudge | null {
     const last3 = sessionResults.slice(-3)
     if (last3.every(r => r.rating === 'good')) {
       return {
-        text: 'Three strong answers in a row — you\'re in the zone',
+        text: t('nudge.threeInARow'),
         type: 'encouragement',
       }
     }
@@ -58,7 +58,7 @@ export function computeNudge(input: NudgeInput): Nudge | null {
   // Streak reference (first item only)
   if (streak >= 7 && completedCount === 1) {
     return {
-      text: `Day ${streak} of your streak — that consistency is really paying off`,
+      text: t('nudge.dayOfStreak', { streak }),
       type: 'encouragement',
     }
   }
@@ -66,7 +66,7 @@ export function computeNudge(input: NudgeInput): Nudge | null {
   // Almost done
   if (completedCount === totalCount - 1 && totalCount >= 3) {
     return {
-      text: 'One more to go — you\'ve almost wrapped up today\'s session',
+      text: t('nudge.almostDone'),
       type: 'progress',
     }
   }
@@ -76,7 +76,7 @@ export function computeNudge(input: NudgeInput): Nudge | null {
     const lastTwo = sessionResults.slice(-2)
     if (lastTwo[0].topicName !== lastTwo[1].topicName && Math.random() < 0.2) {
       return {
-        text: `Nice — ${lastTwo[1].topicName} connects well with ${lastTwo[0].topicName}. Seeing those links strengthens both.`,
+        text: t('nudge.connection', { topic1: lastTwo[1].topicName, topic2: lastTwo[0].topicName }),
         type: 'connection',
       }
     }

@@ -2,6 +2,7 @@
  * Full-page/modal markdown renderer for a single concept card fiche.
  * Renders card.content (rich markdown) or falls back to legacy keyPoints + example.
  */
+import { useTranslation } from 'react-i18next'
 import { X, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -20,6 +21,7 @@ interface FicheViewerProps {
 }
 
 export function FicheViewer({ card, onClose, onPrev, onNext, onQuizMe, hasPrev, hasNext }: FicheViewerProps) {
+  const { t } = useTranslation()
   // Build display content: prefer rich markdown, fall back to legacy
   let displayContent: string
   let hasStructuredSections = false
@@ -100,7 +102,7 @@ export function FicheViewer({ card, onClose, onPrev, onNext, onQuizMe, hasPrev, 
                 onClick={() => onQuizMe(card.title)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent-bg)] text-[var(--accent-text)] hover:opacity-80 transition-opacity"
               >
-                <HelpCircle className="w-3.5 h-3.5" /> Quiz me
+                <HelpCircle className="w-3.5 h-3.5" /> {t('cards.quizMe')}
               </button>
             )}
             <button
@@ -172,17 +174,17 @@ export function FicheViewer({ card, onClose, onPrev, onNext, onQuizMe, hasPrev, 
             disabled={!hasPrev}
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-body)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
           >
-            <ChevronLeft className="w-4 h-4" /> Previous
+            <ChevronLeft className="w-4 h-4" /> {t('common.previous')}
           </button>
           <span className="text-xs text-[var(--text-faint)]">
-            Mastery: {Math.round(card.mastery * 100)}%
+            {t('fiche.mastery')} {Math.round(card.mastery * 100)}%
           </span>
           <button
             onClick={onNext}
             disabled={!hasNext}
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-body)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-30 disabled:pointer-events-none"
           >
-            Next <ChevronRight className="w-4 h-4" />
+            {t('common.next')} <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
