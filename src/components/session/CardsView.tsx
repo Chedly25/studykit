@@ -1,5 +1,9 @@
 import { useState, useMemo } from 'react'
 import { BookOpen, Check, HelpCircle, Plus, Pencil, Trash2, X, FileText } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 import { useConceptCards } from '../../hooks/useConceptCards'
 import { db } from '../../db'
 import { FicheViewer } from './FicheViewer'
@@ -130,9 +134,20 @@ function CardItem({ card, onQuizMe, onEdit, onDelete, onViewFiche }: {
   let keyPoints: string[] = []
   try { keyPoints = JSON.parse(card.keyPoints) } catch { /* empty */ }
 
+  // Extract first section from rich content for preview
+  const firstSection = useMemo(() => {
+    if (!card.content) return null
+    const parts = card.content.split(/^## /m).filter(p => p.trim())
+    if (parts.length === 0) return null
+    const first = parts[0]
+    const newlineIdx = first.indexOf('\n')
+    if (newlineIdx === -1) return null
+    return { heading: first.slice(0, newlineIdx).trim(), body: first.slice(newlineIdx + 1).trim() }
+  }, [card.content])
+
   return (
     <div className={`glass-card overflow-hidden transition-all ${mastered ? 'ring-1 ring-green-500/20' : ''}`}>
-      <div className="h-1 bg-[var(--accent-text)]" />
+      <div className="h-1.5 bg-[var(--accent-text)]" />
       <div className="p-4">
         <div className="flex items-start gap-2 mb-2">
           <BookOpen className="w-4 h-4 text-[var(--accent-text)] mt-0.5 flex-shrink-0" />
@@ -148,23 +163,36 @@ function CardItem({ card, onQuizMe, onEdit, onDelete, onViewFiche }: {
           </div>
         </div>
 
-        <ul className="space-y-1 mb-3">
-          {keyPoints.slice(0, 4).map((p, i) => (
-            <li key={i} className="flex items-start gap-1.5 text-xs text-[var(--text-body)]">
-              <span className="w-1 h-1 rounded-full bg-[var(--accent-text)] mt-1.5 flex-shrink-0" />
-              {p}
-            </li>
-          ))}
-        </ul>
+        {/* Rich content preview (first section) */}
+        {firstSection ? (
+          <div className="rounded-lg border-l-4 border-blue-400 dark:border-blue-500 bg-blue-50/60 dark:bg-blue-500/5 p-2.5 mb-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">{firstSection.heading}</p>
+            <div className="text-xs text-[var(--text-body)] line-clamp-3 prose-sm max-w-none prose-p:my-0.5">
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                {firstSection.body.slice(0, 300)}
+              </ReactMarkdown>
+            </div>
+          </div>
+        ) : (
+          /* Legacy bullet point preview */
+          <ul className="space-y-1 mb-3">
+            {keyPoints.slice(0, 4).map((p, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-xs text-[var(--text-body)]">
+                <span className="w-1 h-1 rounded-full bg-[var(--accent-text)] mt-1.5 flex-shrink-0" />
+                {p}
+              </li>
+            ))}
+          </ul>
+        )}
 
-        {card.example && (
-          <div className="rounded bg-[var(--accent-bg)]/50 px-2.5 py-1.5 mb-3">
+        {!firstSection && card.example && (
+          <div className="rounded-lg border-l-4 border-emerald-400 bg-emerald-50/60 dark:bg-emerald-500/5 px-2.5 py-1.5 mb-3">
             <p className="text-[11px] text-[var(--text-body)] line-clamp-2">{card.example}</p>
           </div>
         )}
 
         {card.sourceReference && (
-          <p className="text-[10px] text-[var(--text-muted)] mb-2">{card.sourceReference}</p>
+          <p className="text-[10px] text-[var(--text-faint)] mb-2 italic">{card.sourceReference}</p>
         )}
 
         <div className="flex items-center gap-1.5">

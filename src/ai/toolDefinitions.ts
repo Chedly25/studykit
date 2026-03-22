@@ -502,17 +502,18 @@ export const agentTools: ToolDefinition[] = [
   // ─── Rich UI Rendering ─────────────────────────────────────
   {
     name: 'renderConceptCard',
-    description: 'Render a structured concept card inline. Use this INSTEAD of long text explanations when teaching a concept. The card will be saved to the student\'s knowledge board.',
+    description: 'Render a focused concept card. Create ONE card per sub-concept (definition, theorem, example set, or comparison). Use the content field with structured markdown sections (## Definition, ## Key Properties, ## Theorem, ## Example, ## Common Pitfalls). Use LaTeX ($...$) for math. Do NOT create one giant card for an entire topic — decompose into 2-4 focused cards.',
     input_schema: {
       type: 'object',
       properties: {
-        title: { type: 'string', description: 'Concept name/title' },
+        title: { type: 'string', description: 'Focused concept name (e.g., "Definition: Vector Space", not "Vector Spaces and Linear Maps")' },
+        content: { type: 'string', description: 'Rich markdown fiche with structured sections (## Definition, ## Key Properties, ## Theorem, ## Example, ## Common Pitfalls) and LaTeX math ($...$). This is the PRIMARY content field — always use it.' },
         keyPoints: {
           type: 'array',
           items: { type: 'string' },
-          description: '3-5 key bullet points about this concept',
+          description: 'Fallback key points if content is not used. Prefer content field instead.',
         },
-        example: { type: 'string', description: 'A concrete example illustrating the concept' },
+        example: { type: 'string', description: 'Fallback example if not included in content field' },
         connections: {
           type: 'array',
           items: { type: 'string' },

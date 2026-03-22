@@ -1,5 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { BookOpen, Check, HelpCircle } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 import { db } from '../../db'
 import { MathText } from '../MathText'
 import type { ConceptCard } from '../../db/schema'
@@ -9,18 +13,105 @@ interface ConceptCardBlockProps {
   onQuizMe?: (topic: string) => void
 }
 
+// ─── Section color mapping ─────────────────────────────────
+
+const SECTION_STYLES: Record<string, { border: string; bg: string }> = {
+  'definition':      { border: 'border-blue-400 dark:border-blue-500',      bg: 'bg-blue-50/60 dark:bg-blue-500/5' },
+  'définition':      { border: 'border-blue-400 dark:border-blue-500',      bg: 'bg-blue-50/60 dark:bg-blue-500/5' },
+  'theorem':         { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
+  'théorème':        { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
+  'key properties':  { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
+  'properties':      { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
+  'propriétés':      { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
+  'example':         { border: 'border-emerald-400 dark:border-emerald-500', bg: 'bg-emerald-50/60 dark:bg-emerald-500/5' },
+  'exemple':         { border: 'border-emerald-400 dark:border-emerald-500', bg: 'bg-emerald-50/60 dark:bg-emerald-500/5' },
+  'common pitfalls': { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
+  'pitfalls':        { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
+  'pièges':          { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
+  'source':          { border: 'border-[var(--border-card)]',               bg: '' },
+}
+
+function getSectionStyle(heading: string) {
+  const lower = heading.toLowerCase()
+  for (const [key, style] of Object.entries(SECTION_STYLES)) {
+    if (lower.startsWith(key)) return style
+  }
+  return null
+}
+
+function splitIntoSections(content: string): Array<{ heading: string; body: string }> {
+  const sections: Array<{ heading: string; body: string }> = []
+  const parts = content.split(/^## /m)
+  for (const part of parts) {
+    if (!part.trim()) continue
+    const newlineIdx = part.indexOf('\n')
+    if (newlineIdx === -1) {
+      sections.push({ heading: part.trim(), body: '' })
+    } else {
+      sections.push({ heading: part.slice(0, newlineIdx).trim(), body: part.slice(newlineIdx + 1).trim() })
+    }
+  }
+  return sections
+}
+
+// ─── Section renderer ──────────────────────────────────────
+
+function FicheSection({ heading, body }: { heading: string; body: string }) {
+  const style = getSectionStyle(heading)
+  const isSource = heading.toLowerCase().startsWith('source')
+
+  if (isSource) {
+    return (
+      <p className="text-[10px] text-[var(--text-faint)] mt-2 italic">{body}</p>
+    )
+  }
+
+  return (
+    <div className={`rounded-lg p-3 mb-2.5 ${style ? `border-l-4 ${style.border} ${style.bg}` : 'bg-[var(--bg-input)]/50'}`}>
+      <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">{heading}</h3>
+      <div className="text-sm text-[var(--text-body)] leading-relaxed prose-sm max-w-none
+        prose-p:my-1.5 prose-ul:my-1.5 prose-li:my-0.5
+        prose-strong:text-[var(--text-heading)]
+        prose-blockquote:border-[var(--text-faint)] prose-blockquote:text-[var(--text-body)] prose-blockquote:not-italic prose-blockquote:font-medium
+        prose-code:text-[var(--accent-text)] prose-code:bg-[var(--accent-bg)] prose-code:px-1 prose-code:rounded prose-code:text-xs
+      ">
+        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+          {body}
+        </ReactMarkdown>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main component ────────────────────────────────────────
+
 export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
   const [card, setCard] = useState<ConceptCard | null>(null)
   const [mastered, setMastered] = useState(false)
+  const [subjectColor, setSubjectColor] = useState<string | null>(null)
 
   useEffect(() => {
     db.conceptCards.get(cardId).then(c => {
       if (c) {
         setCard(c)
         setMastered(c.mastery >= 0.8)
+        // Load subject color
+        db.topics.get(c.topicId).then(topic => {
+          if (topic) {
+            db.subjects.get(topic.subjectId).then(subject => {
+              if (subject) setSubjectColor(subject.color)
+            })
+          }
+        })
       }
     })
   }, [cardId])
+
+  const sections = useMemo(() => {
+    if (!card?.content) return null
+    const result = splitIntoSections(card.content)
+    return result.length > 0 ? result : null
+  }, [card?.content])
 
   if (!card) {
     return (
@@ -32,6 +123,7 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
     )
   }
 
+  // Legacy data
   let keyPoints: string[] = []
   let connections: string[] = []
   try { keyPoints = JSON.parse(card.keyPoints) } catch { /* empty */ }
@@ -42,41 +134,54 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
     await db.conceptCards.update(cardId, { mastery: 1, updatedAt: new Date().toISOString() })
   }
 
+  const accentColor = subjectColor || 'var(--accent-text)'
+
   return (
     <div className={`my-3 glass-card overflow-hidden transition-all ${mastered ? 'ring-1 ring-green-500/30' : ''}`}>
-      {/* Accent bar */}
-      <div className="h-1 bg-[var(--accent-text)]" />
+      {/* Subject-colored accent bar */}
+      <div className="h-1.5" style={{ backgroundColor: accentColor }} />
 
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start gap-2 mb-3">
-          <div className="p-1.5 rounded-lg bg-[var(--accent-bg)] flex-shrink-0">
-            <BookOpen className="w-4 h-4 text-[var(--accent-text)]" />
+          <div className="p-1.5 rounded-lg flex-shrink-0" style={{ backgroundColor: `${accentColor}15` }}>
+            <BookOpen className="w-4 h-4" style={{ color: accentColor }} />
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="text-sm font-semibold text-[var(--text-heading)]">{card.title}</h4>
             {card.sourceReference && (
-              <span className="text-[10px] text-[var(--text-muted)]">{card.sourceReference}</span>
+              <span className="text-[10px] text-[var(--text-faint)]">{card.sourceReference}</span>
             )}
           </div>
           {mastered && <Check className="w-4 h-4 text-green-500 flex-shrink-0" />}
         </div>
 
-        {/* Key points */}
-        <ul className="space-y-1.5 mb-3">
-          {keyPoints.map((point, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-[var(--text-body)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-text)] mt-1.5 flex-shrink-0" />
-              <MathText>{point}</MathText>
-            </li>
-          ))}
-        </ul>
-
-        {/* Example */}
-        {card.example && (
-          <div className="rounded-lg bg-[var(--accent-bg)]/50 border border-[var(--accent-text)]/10 px-3 py-2 mb-3">
-            <p className="text-xs text-[var(--text-body)]"><MathText>{card.example}</MathText></p>
+        {/* Rich content (new cards with content field) */}
+        {sections ? (
+          <div className="mb-3">
+            {sections.map((section, i) => (
+              <FicheSection key={i} heading={section.heading} body={section.body} />
+            ))}
           </div>
+        ) : (
+          /* Legacy fallback: bullet points */
+          <>
+            <ul className="space-y-1.5 mb-3">
+              {keyPoints.map((point, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-[var(--text-body)]">
+                  <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: accentColor }} />
+                  <MathText>{point}</MathText>
+                </li>
+              ))}
+            </ul>
+
+            {card.example && (
+              <div className="rounded-lg border-l-4 border-emerald-400 bg-emerald-50/60 dark:bg-emerald-500/5 px-3 py-2 mb-3">
+                <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">Example</h3>
+                <p className="text-xs text-[var(--text-body)]"><MathText>{card.example}</MathText></p>
+              </div>
+            )}
+          </>
         )}
 
         {/* Connections */}

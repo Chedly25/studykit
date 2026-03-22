@@ -22,8 +22,10 @@ interface FicheViewerProps {
 export function FicheViewer({ card, onClose, onPrev, onNext, onQuizMe, hasPrev, hasNext }: FicheViewerProps) {
   // Build display content: prefer rich markdown, fall back to legacy
   let displayContent: string
+  let hasStructuredSections = false
   if (card.content) {
     displayContent = card.content
+    hasStructuredSections = /^## /m.test(card.content)
   } else {
     // Legacy card → build readable markdown from keyPoints + example
     let keyPoints: string[] = []
@@ -43,6 +45,37 @@ export function FicheViewer({ card, onClose, onPrev, onNext, onQuizMe, hasPrev, 
       parts.push(card.sourceReference)
     }
     displayContent = parts.join('\n')
+    hasStructuredSections = true
+  }
+
+  // Split into sections for colored rendering
+  const sections = hasStructuredSections ? splitSections(displayContent) : null
+
+  function splitSections(content: string): Array<{ heading: string; body: string }> | null {
+    const result: Array<{ heading: string; body: string }> = []
+    const parts = content.split(/^## /m)
+    for (const part of parts) {
+      if (!part.trim()) continue
+      const nlIdx = part.indexOf('\n')
+      if (nlIdx === -1) { result.push({ heading: part.trim(), body: '' }); continue }
+      result.push({ heading: part.slice(0, nlIdx).trim(), body: part.slice(nlIdx + 1).trim() })
+    }
+    return result.length > 0 ? result : null
+  }
+
+  const FICHE_SECTION_STYLES: Record<string, { border: string; bg: string }> = {
+    'definition':      { border: 'border-blue-400',    bg: 'bg-blue-50/60 dark:bg-blue-500/5' },
+    'définition':      { border: 'border-blue-400',    bg: 'bg-blue-50/60 dark:bg-blue-500/5' },
+    'theorem':         { border: 'border-purple-400',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
+    'théorème':        { border: 'border-purple-400',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
+    'key properties':  { border: 'border-indigo-400',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
+    'properties':      { border: 'border-indigo-400',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
+    'propriétés':      { border: 'border-indigo-400',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
+    'example':         { border: 'border-emerald-400', bg: 'bg-emerald-50/60 dark:bg-emerald-500/5' },
+    'exemple':         { border: 'border-emerald-400', bg: 'bg-emerald-50/60 dark:bg-emerald-500/5' },
+    'common pitfalls': { border: 'border-amber-400',   bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
+    'pitfalls':        { border: 'border-amber-400',   bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
+    'pièges':          { border: 'border-amber-400',   bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
   }
 
   return (
@@ -71,23 +104,55 @@ export function FicheViewer({ card, onClose, onPrev, onNext, onQuizMe, hasPrev, 
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
-          <div className="prose prose-sm max-w-none text-[var(--text-body)]
-            prose-headings:text-[var(--text-heading)] prose-headings:font-bold
-            prose-h2:text-base prose-h2:mt-6 prose-h2:mb-2
-            prose-h3:text-sm prose-h3:mt-4
-            prose-p:text-sm prose-p:leading-relaxed
-            prose-li:text-sm
-            prose-strong:text-[var(--text-heading)]
-            prose-code:text-[var(--accent-text)] prose-code:bg-[var(--accent-bg)] prose-code:px-1 prose-code:rounded
-            prose-blockquote:border-[var(--accent-text)] prose-blockquote:text-[var(--text-muted)]
-          ">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeKatex]}
-            >
-              {displayContent}
-            </ReactMarkdown>
-          </div>
+          {sections ? (
+            <div className="space-y-4">
+              {sections.map((section, i) => {
+                const lower = section.heading.toLowerCase()
+                const isSource = lower.startsWith('source')
+                const isTitle = !section.body && i === 0
+
+                if (isTitle) return null
+                if (isSource) {
+                  return <p key={i} className="text-xs text-[var(--text-faint)] italic">{section.body}</p>
+                }
+
+                const styleKey = Object.keys(FICHE_SECTION_STYLES).find(k => lower.startsWith(k))
+                const style = styleKey ? FICHE_SECTION_STYLES[styleKey] : null
+
+                return (
+                  <div key={i} className={`rounded-xl p-4 ${style ? `border-l-4 ${style.border} ${style.bg}` : 'bg-[var(--bg-input)]/50'}`}>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">{section.heading}</h3>
+                    <div className="prose prose-sm max-w-none text-[var(--text-body)]
+                      prose-p:text-sm prose-p:leading-relaxed prose-p:my-1.5
+                      prose-ul:my-2 prose-li:text-sm prose-li:my-0.5
+                      prose-strong:text-[var(--text-heading)]
+                      prose-blockquote:border-[var(--text-faint)] prose-blockquote:text-[var(--text-body)] prose-blockquote:not-italic prose-blockquote:font-medium
+                      prose-code:text-[var(--accent-text)] prose-code:bg-[var(--accent-bg)] prose-code:px-1 prose-code:rounded prose-code:text-xs
+                    ">
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                        {section.body}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="prose prose-sm max-w-none text-[var(--text-body)]
+              prose-headings:text-[var(--text-heading)] prose-headings:font-bold
+              prose-h2:text-base prose-h2:mt-6 prose-h2:mb-2
+              prose-h3:text-sm prose-h3:mt-4
+              prose-p:text-sm prose-p:leading-relaxed
+              prose-li:text-sm
+              prose-strong:text-[var(--text-heading)]
+              prose-code:text-[var(--accent-text)] prose-code:bg-[var(--accent-bg)] prose-code:px-1 prose-code:rounded
+              prose-blockquote:border-[var(--accent-text)] prose-blockquote:text-[var(--text-muted)]
+            ">
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                {displayContent}
+              </ReactMarkdown>
+            </div>
+          )}
         </div>
 
         {/* Footer navigation */}
