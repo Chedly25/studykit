@@ -60,6 +60,7 @@ export function createExamExerciseProcessingWorkflow(
         id: 'parse-and-tag-exercises',
         name: 'Extracting exercises',
         async execute(_input: unknown, ctx: WorkflowContext) {
+          await ctx.updateProgress?.('Parsing exam exercises...')
           const context = ctx.results['gather-context']?.data as {
             doc: { title: string }
             fullContent: string
@@ -146,6 +147,7 @@ Respond ONLY with valid JSON.`
             })
           }
 
+          await ctx.updateProgress?.(`Found ${taggedExercises.length} exercises, saving...`)
           return { taggedExercises }
         },
       },
@@ -181,7 +183,8 @@ Respond ONLY with valid JSON.`
           parsedAt: now,
         })
 
-        // Create Exercise records
+        // Create Exercise records with SRS defaults
+        const today = new Date().toISOString().slice(0, 10)
         const exercises = taggedData.taggedExercises.map(e => ({
           id: crypto.randomUUID(),
           examSourceId,
@@ -195,6 +198,10 @@ Respond ONLY with valid JSON.`
           status: 'not_attempted' as const,
           attemptCount: 0,
           createdAt: now,
+          easeFactor: 2.5,
+          interval: 0,
+          repetitions: 0,
+          nextReviewDate: today,
         }))
 
         await db.exercises.bulkPut(exercises)

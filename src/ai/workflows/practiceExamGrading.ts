@@ -20,6 +20,7 @@ interface QuestionGrade {
   earnedPoints: number
   feedback: string
   errorType?: 'recall' | 'conceptual' | 'application' | 'distractor' | null
+  misconception?: string | null
 }
 
 interface GradingData {
@@ -106,7 +107,7 @@ export function createGradingWorkflow(config: GradingConfig): WorkflowDefinition
               points: q.points,
             }))
 
-            return `Grade the following student answers. For each question, determine if the answer is correct (partial credit allowed for essays), assign earned points (0 to max), provide brief feedback, and classify the error type if incorrect.
+            return `Grade the following student answers. For each question, determine if the answer is correct (partial credit allowed for essays), assign earned points (0 to max), provide brief feedback, classify the error type if incorrect, and identify the specific misconception if applicable.
 
 Error types:
 - "recall": Student couldn't remember the information
@@ -126,10 +127,13 @@ Return ONLY a JSON object:
       "isCorrect": true,
       "earnedPoints": 2,
       "feedback": "Good explanation of...",
-      "errorType": null
+      "errorType": null,
+      "misconception": null
     }
   ]
-}`
+}
+
+For "misconception": if incorrect, describe the specific misunderstanding in one sentence (e.g., "Confuses marginal and conditional probability"). null if correct or if it's a simple recall error.`
           },
           'You are a fair and thorough exam grader. Grade based on accuracy and completeness. Return ONLY valid JSON.',
         ),
@@ -211,6 +215,9 @@ Return ONLY a JSON object:
         const subjectiveGrades = (ctx.results['gradeSubjective']?.data as { grades: QuestionGrade[] })?.grades ?? []
         const allGrades = [...objectiveGrades, ...subjectiveGrades]
 
+        const topics = await db.topics.where('examProfileId').equals(ctx.examProfileId).toArray()
+        const topicByName = new Map(topics.map(t => [t.name.toLowerCase(), t]))
+
         for (const q of questions) {
           const grade = allGrades.find(g => g.questionId === q.id)
           if (!grade) continue
@@ -225,6 +232,40 @@ Return ONLY a JSON object:
             explanation: q.explanation,
             errorType: grade.errorType ?? undefined,
           })
+
+          // Save misconceptions
+          if (grade.misconception && !grade.isCorrect) {
+            const topic = topicByName.get(q.topicName.toLowerCase())
+            if (topic) {
+              const existing = await db.misconceptions
+                .where('[examProfileId+topicId]')
+                .equals([ctx.examProfileId, topic.id])
+                .filter(m => m.description.toLowerCase() === grade.misconception!.toLowerCase())
+                .first()
+
+              const now = new Date().toISOString()
+              if (existing) {
+                const qIds: string[] = JSON.parse(existing.questionResultIds || '[]')
+                await db.misconceptions.update(existing.id, {
+                  occurrenceCount: existing.occurrenceCount + 1,
+                  lastSeenAt: now,
+                  questionResultIds: JSON.stringify([...new Set([...qIds, q.id])].slice(-20)),
+                })
+              } else {
+                await db.misconceptions.put({
+                  id: crypto.randomUUID(),
+                  examProfileId: ctx.examProfileId,
+                  topicId: topic.id,
+                  description: grade.misconception,
+                  occurrenceCount: 1,
+                  firstSeenAt: now,
+                  lastSeenAt: now,
+                  exerciseIds: '[]',
+                  questionResultIds: JSON.stringify([q.id]),
+                })
+              }
+            }
+          }
         }
       }),
     ],

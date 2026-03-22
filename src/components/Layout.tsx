@@ -23,6 +23,7 @@ import { SyncIndicator } from './SyncIndicator'
 import { ErrorBoundary } from './ErrorBoundary'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useJobCompletionToasts } from '../hooks/useJobCompletionToasts'
+import { useWeeklyDigest } from '../hooks/useWeeklyDigest'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
@@ -41,8 +42,9 @@ export function Layout() {
   const isOnline = useOnlineStatus()
   const isChatPage = location.pathname === '/session' || location.pathname.startsWith('/read/')
 
-  // Pipeline completion toasts
+  // Pipeline completion toasts + weekly email digest
   useJobCompletionToasts()
+  useWeeklyDigest()
 
   const sidebarExpanded = sidebarPinned || sidebarHovered
   const collapsed = !sidebarExpanded

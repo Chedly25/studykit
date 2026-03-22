@@ -220,6 +220,13 @@ export class JobRunner {
       signal: controller.signal,
       results,
 
+      async updateProgress(substep: string): Promise<void> {
+        await db.backgroundJobs.update(job.id, {
+          currentStepName: substep,
+          updatedAt: new Date().toISOString(),
+        })
+      },
+
       async llm(prompt: string, system?: string): Promise<string> {
         return callFastModel(
           prompt,

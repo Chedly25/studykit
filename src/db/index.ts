@@ -49,6 +49,7 @@ import type {
   PdfHighlight,
   AchievementRecord,
   TopicEmbedding,
+  Misconception,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -101,6 +102,7 @@ export class StudiesKitDB extends Dexie {
   pdfHighlights!: Table<PdfHighlight>
   achievements!: Table<AchievementRecord>
   topicEmbeddings!: Table<TopicEmbedding>
+  misconceptions!: Table<Misconception>
 
   constructor() {
     super('studieskit')
@@ -265,6 +267,20 @@ export class StudiesKitDB extends Dexie {
 
     this.version(21).stores({
       topicEmbeddings: 'id, topicId, examProfileId',
+    })
+
+    this.version(22).stores({
+      exercises: 'id, examSourceId, examProfileId, nextReviewDate, [examProfileId+status]',
+      misconceptions: 'id, examProfileId, topicId, [examProfileId+topicId]',
+    }).upgrade(tx => {
+      // Add SRS defaults to existing exercises
+      const today = new Date().toISOString().slice(0, 10)
+      return tx.table('exercises').toCollection().modify(exercise => {
+        if (exercise.easeFactor === undefined) exercise.easeFactor = 2.5
+        if (exercise.interval === undefined) exercise.interval = 0
+        if (exercise.repetitions === undefined) exercise.repetitions = 0
+        if (exercise.nextReviewDate === undefined) exercise.nextReviewDate = today
+      })
     })
   }
 }

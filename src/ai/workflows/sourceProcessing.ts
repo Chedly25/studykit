@@ -75,6 +75,7 @@ export function createSourceProcessingWorkflow(
             if (alreadyEmbedded) {
               embedResult = { skipped: true }
             } else {
+              await ctx.updateProgress?.('Embedding document chunks...')
               const chunks = await getChunksByDocumentId(config.documentId)
               await embedAndStoreChunks(chunks, ctx.authToken)
               embedResult = { embedded: chunks.length }
@@ -83,6 +84,7 @@ export function createSourceProcessingWorkflow(
             embedResult = { error: 'embedding failed' }
           }
 
+          await ctx.updateProgress?.('Analyzing content with AI...')
           // Single combined LLM call: summary + concepts + flashcards in one prompt
           const includeFlashcards = config.isPro
           const prompt = `Analyze this document and produce a JSON response.
@@ -122,6 +124,8 @@ Respond ONLY with valid JSON.`
           const flashcardResult = parsed.flashcards && parsed.flashcards.length > 0
             ? { cards: parsed.flashcards }
             : null
+
+          await ctx.updateProgress?.(`Found ${parsed.concepts?.length ?? 0} concepts${flashcardResult ? `, ${flashcardResult.cards.length} flashcards` : ''}`)
 
           return { embedResult, extractResult, flashcardResult }
         },
@@ -202,6 +206,7 @@ Respond ONLY with valid JSON.`
         }
 
         // Classify remaining unclassified chunks via embeddings (zero LLM cost)
+        await ctx.updateProgress?.(`Mapped ${mappingsApplied} chunks, classifying rest...`)
         try {
           const extraClassified = await classifyChunksByEmbedding(
             config.documentId, ctx.examProfileId, ctx.authToken
@@ -283,8 +288,11 @@ Respond ONLY with valid JSON.`
 
           let cardsGenerated = 0
 
+          await ctx.updateProgress?.(`Generating concept cards (${matchedConcepts.length} concepts)...`)
+
           const batchResults = await Promise.all(
-            batches.map(async (batch) => {
+            batches.map(async (batch, batchIdx) => {
+              await ctx.updateProgress?.(`Generating concept cards (batch ${batchIdx + 1}/${batches.length})...`)
               const conceptList = batch.map((c, i) => {
                 return `Concept ${i + 1}: "${c.name}"\nSource material:\n${c.relevantContent.slice(0, 3000)}`
               }).join('\n\n===\n\n')

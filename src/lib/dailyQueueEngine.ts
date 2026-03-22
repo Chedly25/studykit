@@ -78,6 +78,28 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
     }
   }
 
+  // 1.5. Due exercises (SRS-scheduled, priority 90)
+  const today = new Date().toISOString().slice(0, 10)
+  const dueExercises = input.exercises.filter(e =>
+    !e.hidden && e.nextReviewDate && e.nextReviewDate <= today && e.status !== 'not_attempted'
+  )
+  for (const exercise of dueExercises) {
+    const topicIds: string[] = JSON.parse(exercise.topicIds || '[]')
+    const tid = topicIds[0] ?? ''
+    const info = input.topicMap.get(tid)
+    queue.push({
+      id: `srs-exercise-${exercise.id}`,
+      type: 'exercise',
+      topicId: tid,
+      topicName: info?.name ?? 'Unknown',
+      subjectName: info?.subjectName ?? '',
+      priority: 90,
+      estimatedMinutes: 5,
+      reason: 'Due for review — spaced repetition',
+      exerciseId: exercise.id,
+    })
+  }
+
   // 2. Feedback loop actions
   if (input.feedbackActions) {
     for (const action of input.feedbackActions) {
@@ -249,12 +271,12 @@ function buildCramQueue(input: BuildQueueInput): QueueItem[] {
     }
   }
 
-  // Unattempted exercises for weak topics (mastery < 0.6)
+  // All non-completed exercises for weak topics (mastery < 0.6) — override SRS in cram
   for (const [topicId, info] of sortedTopics) {
     if (info.mastery >= 0.6) continue
     const topicExercises = input.exercises.filter(e => {
       const tids: string[] = JSON.parse(e.topicIds || '[]')
-      return tids.includes(topicId) && e.status !== 'completed'
+      return tids.includes(topicId) && e.status !== 'completed' && !e.hidden
     }).slice(0, 3)
 
     for (const exercise of topicExercises) {

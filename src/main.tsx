@@ -9,6 +9,11 @@ import './styles/globals.css'
 import App from './App'
 import { BackgroundJobsProvider } from './components/BackgroundJobsProvider'
 
+// Register service worker for offline caching + push
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {})
+}
+
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
 if (!CLERK_KEY) {
   throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY environment variable')

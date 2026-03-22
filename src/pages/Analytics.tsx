@@ -28,6 +28,8 @@ import { InsightCard } from '../components/dashboard/InsightCard'
 import { IntelligenceBriefCard } from '../components/dashboard/IntelligenceBriefCard'
 import { SessionInsightsCard } from '../components/dashboard/SessionInsightsCard'
 import { AIProfileCard } from '../components/analytics/AIProfileCard'
+import { ExamPatternsCard } from '../components/analytics/ExamPatternsCard'
+import { MisconceptionCard } from '../components/analytics/MisconceptionCard'
 import { LandscapeCard } from '../components/dashboard/LandscapeCard'
 import { ResearchThreadsCard } from '../components/dashboard/ResearchThreadsCard'
 import { WeakTopicsCard } from '../components/dashboard/WeakTopicsCard'
@@ -300,6 +302,18 @@ export default function Analytics() {
       {profileId && (
         <div className="mt-4">
           <AIProfileCard studentModel={studentModel} profileId={profileId} />
+        </div>
+      )}
+
+      {profileId && (
+        <div className="mt-4">
+          <MisconceptionCard examProfileId={profileId} />
+        </div>
+      )}
+
+      {profileId && (
+        <div className="mt-4">
+          <ExamPatternsCard examProfileId={profileId} />
         </div>
       )}
 

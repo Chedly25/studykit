@@ -697,9 +697,26 @@ function ExerciseInline({
         id: crypto.randomUUID(), exerciseId: item.exerciseId,
         examProfileId: profileId, score, createdAt: new Date().toISOString(),
       })
+
+      // Advance exercise SRS
+      const quality = score <= 0.3 ? 1 : score <= 0.6 ? 3 : 5
+      const { calculateSM2 } = await import('../lib/spacedRepetition')
+      const srs = calculateSM2(quality, {
+        id: exercise.id, front: '', back: '',
+        easeFactor: exercise.easeFactor ?? 2.5,
+        interval: exercise.interval ?? 0,
+        repetitions: exercise.repetitions ?? 0,
+        nextReviewDate: exercise.nextReviewDate ?? new Date().toISOString().slice(0, 10),
+        lastRating: quality,
+      })
+
       await db.exercises.update(item.exerciseId, {
         status: score >= 0.7 ? 'completed' : 'attempted',
         lastAttemptScore: score, attemptCount: exercise.attemptCount + 1,
+        easeFactor: srs.easeFactor,
+        interval: srs.interval,
+        repetitions: srs.repetitions,
+        nextReviewDate: srs.nextReviewDate,
       })
       if (item.topicId) await recomputeTopicMastery(item.topicId)
 

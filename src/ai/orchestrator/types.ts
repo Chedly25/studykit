@@ -27,6 +27,8 @@ export interface WorkflowContext {
   llm: (prompt: string, system?: string) => Promise<string>
   searchSources: (query: string, topN?: number) => Promise<string>
   searchWeb: (query: string) => Promise<string>
+  /** Update the visible progress message for the current step */
+  updateProgress?: (substep: string) => Promise<void>
 }
 
 export interface WorkflowDefinition<TResult = unknown> {

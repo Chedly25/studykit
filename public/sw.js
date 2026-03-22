@@ -1,7 +1,67 @@
 /**
- * Service worker for push + local scheduled notifications.
+ * Service worker — offline caching + push + local scheduled notifications.
  */
 
+const CACHE_NAME = 'studieskit-v2'
+const SHELL_ASSETS = [
+  '/',
+  '/index.html',
+  '/favicon-48x48.png',
+  '/icon-192.png',
+]
+
+// ─── Install: precache shell ─────────────────────────────────────
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL_ASSETS))
+  )
+  self.skipWaiting()
+})
+
+// ─── Activate: clean old caches ──────────────────────────────────
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
+  )
+  self.clients.claim()
+})
+
+// ─── Fetch: caching strategies ───────────────────────────────────
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url)
+
+  // API calls: network only (data is in IndexedDB, not cache)
+  if (url.pathname.startsWith('/api/')) return
+
+  // Static assets (JS, CSS, images, fonts): stale-while-revalidate
+  if (url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|gif|woff2?|ttf|eot)$/)) {
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        const fetched = fetch(event.request).then(response => {
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone))
+          }
+          return response
+        }).catch(() => cached)
+        return cached || fetched
+      })
+    )
+    return
+  }
+
+  // HTML navigation: network-first, fallback to cached shell
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('/index.html'))
+    )
+    return
+  }
+})
+
+// ─── Push notifications ──────────────────────────────────────────
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {}
   const title = data.title || 'StudiesKit'
@@ -30,17 +90,11 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
-// Local scheduled notifications via postMessage.
-// Note: setTimeout in a SW may not survive browser suspension for long delays.
-// For short delays (< 5 min) this works reliably. For longer delays (e.g. next-day
-// reminders), the notification may not fire if the SW is killed. This is a best-effort
-// approach; a server-side push solution would be needed for guaranteed delivery.
+// ─── Local scheduled notifications ───────────────────────────────
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SCHEDULE_NOTIFICATION') {
     const { title, body, delayMs, url } = event.data
-    // Cap delay to avoid issues with SW suspension — for long delays,
-    // the client-side localStorage dedup + next-visit check handles it
-    const safeDelay = Math.min(delayMs || 0, 5 * 60 * 1000) // max 5 minutes
+    const safeDelay = Math.min(delayMs || 0, 5 * 60 * 1000)
     if (safeDelay > 0) {
       setTimeout(() => {
         self.registration.showNotification(title || 'StudiesKit', {
@@ -51,7 +105,6 @@ self.addEventListener('message', (event) => {
         })
       }, safeDelay)
     } else {
-      // Immediate notification
       self.registration.showNotification(title || 'StudiesKit', {
         body: body || 'Time to study!',
         icon: '/icon-192.png',

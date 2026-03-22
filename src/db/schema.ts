@@ -334,6 +334,7 @@ export interface NotificationPreferences {
   streakWarnings: boolean
   planSuggestions: boolean
   milestones: boolean
+  weeklyDigest?: boolean
 }
 
 // ─── Exam Formats ───────────────────────────────────────────────
@@ -632,6 +633,11 @@ export interface Exercise {
   attemptCount: number
   hidden?: boolean
   createdAt: string
+  // SRS fields (spaced repetition for exercises)
+  easeFactor: number        // default 2.5
+  interval: number          // days, default 0
+  repetitions: number       // default 0
+  nextReviewDate: string    // YYYY-MM-DD
 }
 
 export interface ExerciseAttempt {
@@ -641,6 +647,21 @@ export interface ExerciseAttempt {
   score: number // 0-1
   feedback?: string
   createdAt: string
+}
+
+// ─── Misconceptions ─────────────────────────────────────────────
+export interface Misconception {
+  id: string
+  examProfileId: string
+  topicId: string
+  description: string
+  rootCauseTopicId?: string
+  occurrenceCount: number
+  resolvedAt?: string
+  firstSeenAt: string
+  lastSeenAt: string
+  exerciseIds: string       // JSON string[]
+  questionResultIds: string // JSON string[]
 }
 
 // ─── Background Jobs ────────────────────────────────────────────

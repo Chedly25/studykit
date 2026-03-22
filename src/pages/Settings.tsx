@@ -2,12 +2,13 @@
  * Settings page — Data Management (export/import/progress report).
  * Route: /settings
  */
-import { useState, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2, Mail } from 'lucide-react'
 import { requestPermission, getNotificationStatus, registerServiceWorker } from '../lib/pushNotifications'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useCloudSync } from '../hooks/useCloudSync'
+import { db } from '../db'
 import { exportProfileData, importProfileData, generateProgressReport, downloadBlob } from '../lib/dataExport'
 
 export default function Settings() {
@@ -19,9 +20,32 @@ export default function Settings() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [notifStatus, setNotifStatus] = useState(() => getNotificationStatus())
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [digestEnabled, setDigestEnabled] = useState(true)
   const cloudSync = useCloudSync()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const profileId = activeProfile?.id
+
+  // Handle unsubscribe URL param
+  useEffect(() => {
+    if (searchParams.get('unsubscribe') === 'weekly' && profileId) {
+      db.notificationPreferences.where('examProfileId').equals(profileId).first().then(prefs => {
+        if (prefs) {
+          db.notificationPreferences.update(prefs.id, { weeklyDigest: false })
+        }
+        setDigestEnabled(false)
+        setSearchParams({}, { replace: true })
+      })
+    }
+  }, [searchParams, profileId, setSearchParams])
+
+  // Load digest preference
+  useEffect(() => {
+    if (!profileId) return
+    db.notificationPreferences.where('examProfileId').equals(profileId).first().then(prefs => {
+      setDigestEnabled(prefs?.weeklyDigest !== false) // default true
+    })
+  }, [profileId])
 
   const handleExport = async () => {
     if (!profileId) return
@@ -198,6 +222,48 @@ export default function Settings() {
           {notifStatus === 'granted' && (
             <span className="text-xs text-emerald-500 font-medium">Active</span>
           )}
+        </div>
+
+        {/* Weekly digest toggle */}
+        <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-card)]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+              <Mail className="w-5 h-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--text-heading)]">Weekly Email Digest</p>
+              <p className="text-xs text-[var(--text-muted)]">Receive a summary of your study progress every week</p>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              if (!profileId) return
+              const newValue = !digestEnabled
+              setDigestEnabled(newValue)
+              const prefs = await db.notificationPreferences.where('examProfileId').equals(profileId).first()
+              if (prefs) {
+                await db.notificationPreferences.update(prefs.id, { weeklyDigest: newValue })
+              } else {
+                await db.notificationPreferences.put({
+                  id: profileId,
+                  examProfileId: profileId,
+                  studyReminders: true,
+                  reviewDue: true,
+                  streakWarnings: true,
+                  planSuggestions: true,
+                  milestones: true,
+                  weeklyDigest: newValue,
+                })
+              }
+            }}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              digestEnabled
+                ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25'
+                : 'bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--text-body)]'
+            }`}
+          >
+            {digestEnabled ? 'Enabled' : 'Disabled'}
+          </button>
         </div>
       </div>
 
