@@ -37,15 +37,15 @@ export function SessionStartOverlay({
       <div className="glass-card p-6 max-w-md w-full mx-4 space-y-5 animate-scale-in">
         {/* Header */}
         <div className="text-center">
-          <h2 className="text-xl font-bold text-[var(--text-heading)]">Ready to study?</h2>
-          <p className="text-sm text-[var(--text-muted)] mt-1">Here's what's on your plate today</p>
+          <h2 className="text-xl font-bold text-[var(--text-heading)]">Welcome back</h2>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Here's what we have lined up for you</p>
         </div>
 
         {/* Streak */}
         {streak > 0 && (
           <div className="flex items-center justify-center gap-2 py-2 rounded-lg bg-orange-500/10">
             <Flame className="w-5 h-5 text-orange-500" />
-            <span className="font-bold text-[var(--text-heading)]">{streak} day streak</span>
+            <span className="font-bold text-[var(--text-heading)]">{streak} day streak {streak >= 7 ? '— impressive consistency!' : '— keep it going!'}</span>
           </div>
         )}
 

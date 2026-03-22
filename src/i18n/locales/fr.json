@@ -35,7 +35,7 @@
   "nav": {
     "dashboard": "Tableau de bord",
     "focus": "Concentration",
-    "analytics": "Statistiques",
+    "analytics": "Progrès",
     "sources": "Sources",
     "features": "Fonctionnalites",
     "allTools": "Tous les outils",
@@ -432,7 +432,7 @@
     "goToDashboard": "Aller au tableau de bord"
   },
   "analytics": {
-    "title": "Statistiques",
+    "title": "Vos Progrès",
     "subtitle": "Suivez vos progres et performances",
     "studyTime": "Temps d'etude",
     "questionsAnswered": "Questions repondues",

@@ -177,3 +177,142 @@ Rules:
 
   return { subjects, examName }
 }
+
+// ─── Known exam patterns ────────────────────────────────
+
+const KNOWN_EXAM_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
+  // US exams
+  { pattern: /bar\s*(exam)?/i, label: 'Bar Exam' },
+  { pattern: /\bmcat\b/i, label: 'MCAT' },
+  { pattern: /\blsat\b/i, label: 'LSAT' },
+  { pattern: /\bgre\b/i, label: 'GRE' },
+  { pattern: /\bgmat\b/i, label: 'GMAT' },
+  { pattern: /\bcpa\b/i, label: 'CPA Exam' },
+  { pattern: /\bcfa\b/i, label: 'CFA' },
+  { pattern: /\busmle\b/i, label: 'USMLE' },
+  { pattern: /\bnclex\b/i, label: 'NCLEX' },
+  { pattern: /\bpe\s*exam\b/i, label: 'PE Exam' },
+  { pattern: /\bfe\s*exam\b/i, label: 'FE Exam' },
+  { pattern: /\bap\s+\w/i, label: 'AP Exam' },
+  // Language exams
+  { pattern: /\bdelf\b/i, label: 'DELF' },
+  { pattern: /\bdalf\b/i, label: 'DALF' },
+  { pattern: /\btoefl\b/i, label: 'TOEFL' },
+  { pattern: /\bielts\b/i, label: 'IELTS' },
+  { pattern: /\btoeic\b/i, label: 'TOEIC' },
+  { pattern: /\bhsk\b/i, label: 'HSK' },
+  { pattern: /\bjlpt\b/i, label: 'JLPT' },
+  // French exams — Baccalauréat
+  { pattern: /\bbac(calauréat|calaureat)?\b/i, label: 'Baccalauréat' },
+  { pattern: /\bbac\s*(s|es|l|stmg|sti2d|st2s|pro)\b/i, label: 'Baccalauréat' },
+  // French exams — Concours & grandes écoles
+  { pattern: /concours\s*(commun|communs)?\s*(mines|centrale|ccp|e3a|x|polytechnique)/i, label: 'Concours Grandes Écoles' },
+  { pattern: /\bcpge\b|prépa\s*(hec|scientifique|littéraire|litteraire|ecs|ece|ecg|mpsi|pcsi|mp|pc|psi)/i, label: 'CPGE' },
+  { pattern: /concours\s*(sciences\s*po|iep)/i, label: 'Concours Sciences Po' },
+  { pattern: /concours\s*(médecine|medecine|pass|las|paces)/i, label: 'Concours Médecine' },
+  { pattern: /\b(pass|las)\b/i, label: 'PASS/LAS Médecine' },
+  // French exams — Professional & legal
+  { pattern: /\bcrfpa\b|examen\s*d['']?(accès|acces)\s*(au\s*)?barreau/i, label: 'CRFPA (Examen du Barreau)' },
+  { pattern: /\benm\b|école\s*nationale\s*(de\s*la\s*)?magistrature/i, label: 'Concours ENM' },
+  { pattern: /\bdscg\b/i, label: 'DSCG' },
+  { pattern: /\bdcg\b/i, label: 'DCG' },
+  { pattern: /\bdec\b.*comptab|expert[- ]comptable/i, label: 'DEC (Expert-Comptable)' },
+  // French exams — Medical & health
+  { pattern: /\becn\b|edn|examen\s*(national\s*)?(classant|dénominalisant)/i, label: 'ECN/EDN Médecine' },
+  // French exams — Civil service
+  { pattern: /concours\s*(administratif|fonction\s*publique|ena|insp)/i, label: 'Concours Fonction Publique' },
+  { pattern: /\binsp\b|institut\s*national\s*du\s*service\s*public/i, label: 'Concours INSP (ex-ENA)' },
+  { pattern: /\bcapes\b/i, label: 'CAPES' },
+  { pattern: /\bagrégation\b|\bagregation\b|\bagreg\b/i, label: 'Agrégation' },
+  { pattern: /\bcapeps\b/i, label: 'CAPEPS' },
+  { pattern: /\bcapet\b/i, label: 'CAPET' },
+  // French exams — BTS & DUT
+  { pattern: /\bbts\b/i, label: 'BTS' },
+  { pattern: /\bbut\b|dut\b/i, label: 'BUT/DUT' },
+  // French exams — Brevet
+  { pattern: /\bbrevet\b|dnb\b/i, label: 'Brevet des Collèges' },
+]
+
+/**
+ * Generate topic tree for well-known exams using LLM general knowledge.
+ * Returns null if the exam is unknown or too specific.
+ */
+export async function generateKnownExamLandscape(
+  examName: string,
+  jurisdiction?: string,
+  authToken?: string,
+): Promise<ExtractionResult | null> {
+  // Check if this is a known exam
+  const isKnown = KNOWN_EXAM_PATTERNS.some(p => p.pattern.test(examName))
+  if (!isKnown) return null
+  if (!authToken) return null
+
+  try {
+    const { callFastModel } = await import('./fastClient')
+
+    const jurisdictionCtx = jurisdiction ? ` in ${jurisdiction}` : ''
+    const prompt = `Generate the complete subject and topic structure for the ${examName}${jurisdictionCtx}.
+
+You are an expert on this exam's official content. Generate the standard subjects and topics as they appear on the official exam blueprint.
+
+Return ONLY valid JSON:
+{
+  "examName": "${examName}",
+  "subjects": [
+    {
+      "name": "Subject Name",
+      "weight": 30,
+      "chapters": [
+        {
+          "name": "Chapter Name",
+          "topics": [
+            { "name": "Topic Name" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Include ALL standard subjects for this exam
+- Weights should reflect official exam weighting and sum to 100
+- Use official terminology
+- 2-8 chapters per subject, 2-10 topics per chapter
+- Be comprehensive — this structures the student's entire study plan`
+
+    const raw = await callFastModel(
+      prompt,
+      'You are a curriculum expert. Generate exam topic structures. Return only valid JSON with English key names.',
+      authToken,
+      { maxTokens: 8192 },
+    )
+
+    const clean = raw.replace(/```json\s*/g, '').replace(/```\s*/g, '')
+    const jsonMatch = clean.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return null
+
+    const parsed = JSON.parse(jsonMatch[0])
+    const subjects = parsed.subjects ?? []
+    if (!Array.isArray(subjects) || subjects.length === 0) return null
+
+    // Normalize (same logic as extractLandscapeFromText)
+    for (const s of subjects) {
+      const raw = s as Record<string, unknown>
+      if (!s.chapters && raw.chapitres) s.chapters = raw.chapitres as ExtractedSubject['chapters']
+      if (s.chapters && Array.isArray(s.chapters) && s.chapters.length > 0) {
+        s.topics = s.chapters.flatMap((ch: ExtractedChapter) => ch.topics ?? [])
+      }
+      if (!s.chapters || s.chapters.length === 0) {
+        if (s.topics && s.topics.length > 0) {
+          s.chapters = [{ name: 'General', topics: s.topics }]
+        }
+      }
+      if (!s.topics) s.topics = []
+    }
+
+    return { examName: parsed.examName ?? examName, subjects }
+  } catch {
+    return null
+  }
+}

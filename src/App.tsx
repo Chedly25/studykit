@@ -36,6 +36,7 @@ const NotFound = lazyWithRetry(() => import('./pages/NotFound'))
 
 // Command Center
 const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'))
+const Onboarding = lazyWithRetry(() => import('./pages/Onboarding'))
 const ExamProfile = lazyWithRetry(() => import('./pages/ExamProfile'))
 const Analytics = lazyWithRetry(() => import('./pages/Analytics'))
 const FocusMode = lazyWithRetry(() => import('./pages/FocusMode'))
@@ -137,6 +138,7 @@ export default function App() {
           <Route path="subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
 
           {/* Protected — Command Center */}
+          <Route path="welcome" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="subject/:subjectId" element={<ProtectedRoute><SubjectPage /></ProtectedRoute>} />
           <Route path="exam-profile" element={<ProtectedRoute><ExamProfile /></ProtectedRoute>} />

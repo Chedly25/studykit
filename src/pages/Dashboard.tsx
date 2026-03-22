@@ -2,24 +2,35 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Zap, ListTodo, ClipboardCheck, FileText, AlertCircle } from 'lucide-react'
+import { ArrowRight, Zap, ListTodo, ClipboardCheck, FileText, AlertCircle, MessageCircle } from 'lucide-react'
+import { useUser } from '@clerk/clerk-react'
 import { isCramModeActive } from '../lib/cramModeEngine'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useTopicStats } from '../hooks/useTopicStats'
-import { SubjectGrid } from '../components/dashboard/SubjectGrid'
+import { TutorDirectory } from '../components/TutorDirectory'
 import { NextStepsCard } from '../components/dashboard/NextStepsCard'
 import { LearningProfileCard } from '../components/dashboard/LearningProfileCard'
 import { CalibrationAlert } from '../components/dashboard/CalibrationAlert'
+import { CelebrationBanner } from '../components/CelebrationBanner'
+import { ResourceScoutCard } from '../components/ResourceScoutCard'
 import { useSubscription } from '../hooks/useSubscription'
 import { useDailyQueue } from '../hooks/useDailyQueue'
 
+function getGreeting(name: string): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return `Good morning, ${name}.`
+  if (hour < 18) return `Good afternoon, ${name}.`
+  return `Good evening, ${name}.`
+}
+
 export default function Dashboard() {
   const { t } = useTranslation()
+  const { user } = useUser()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
-  const { subjects, topics, getChaptersForSubject } = useKnowledgeGraph(profileId)
+  const { subjects, topics, getChaptersForSubject, streak } = useKnowledgeGraph(profileId)
   const topicStats = useTopicStats(profileId)
   const { queue: dailyQueue, typeCounts, remainingMinutes: queueMinutes } = useDailyQueue(profileId)
   const { isPro } = useSubscription()
@@ -134,6 +145,17 @@ export default function Dashboard() {
     [profileId],
   ) ?? []
 
+  // Macro roadmap active phase
+  const activePhase = useLiveQuery(async () => {
+    if (!profileId) return null
+    try {
+      const roadmap = await db.macroRoadmaps.get(profileId)
+      if (!roadmap) return null
+      const phases = JSON.parse(roadmap.phases) as Array<{ name: string; status: string; startDate: string; endDate: string }>
+      return phases.find(p => p.status === 'active') ?? null
+    } catch { return null }
+  }, [profileId]) ?? null
+
   // Quick stats
   const topicsWithoutMaterial = useMemo(() => {
     return topics.filter(t => {
@@ -176,14 +198,34 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Greeting */}
-      <div className="mb-4">
-        <h1 className="text-xl font-bold text-[var(--text-heading)]">{activeProfile.name}</h1>
-        <p className="text-sm text-[var(--text-muted)]">
-          {daysUntilExam !== undefined ? `${daysUntilExam} day${daysUntilExam !== 1 ? 's' : ''} until exam · ` : ''}
-          {topics.length} topics · {courseDocuments.length} course{courseDocuments.length !== 1 ? 's' : ''} · {examSources.length} exam{examSources.length !== 1 ? 's' : ''}
-          {dueFlashcardCount > 0 ? ` · ${dueFlashcardCount} cards due` : ''}
+      {/* Celebration Banner */}
+      {profileId && <CelebrationBanner examProfileId={profileId} streak={streak} />}
+
+      {/* Welcome Header */}
+      <div className="mb-6">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-heading)]">
+          {getGreeting(user?.firstName || activeProfile.name)}
+        </h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
+          {activeProfile.name}
+          {daysUntilExam !== undefined && ` — ${daysUntilExam} day${daysUntilExam !== 1 ? 's' : ''} to go`}
         </p>
+        {activePhase && (
+          <p className="text-xs text-[var(--accent-text)] mt-1 font-medium">
+            {activePhase.name}
+          </p>
+        )}
+        <div className="flex gap-3 mt-4">
+          <Link to="/queue" className="btn-primary flex-1 py-3 text-sm text-center flex items-center justify-center gap-2">
+            Start Today's Session <ArrowRight className="w-4 h-4" />
+          </Link>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel', { detail: {} }))}
+            className="btn-secondary flex-1 py-3 text-sm text-center flex items-center justify-center gap-2"
+          >
+            <MessageCircle className="w-4 h-4" /> Talk to a Tutor
+          </button>
+        </div>
       </div>
 
       {/* Next Steps */}
@@ -200,33 +242,8 @@ export default function Dashboard() {
         isPro={isPro}
       />
 
-      {/* Queue CTA */}
-      {topics.length > 0 && dailyQueue.length > 0 && (
-        <Link
-          to="/queue"
-          className={`flex items-center justify-between w-full px-6 py-4 mb-4 rounded-xl font-semibold hover:opacity-90 transition-opacity ${
-            queueInProgress
-              ? 'bg-amber-500 text-white'
-              : 'bg-[var(--accent-text)] text-white'
-          }`}
-        >
-          <div>
-            <div className="flex items-center gap-3">
-              <ListTodo className="w-5 h-5" />
-              <span className="text-base">{queueInProgress ? "Resume today's review" : 'Suggested review'}</span>
-            </div>
-            <p className="text-xs opacity-75 ml-8">
-              {[
-                typeCounts.exercises > 0 ? `${typeCounts.exercises} exercise${typeCounts.exercises !== 1 ? 's' : ''}` : '',
-                typeCounts.flashcards > 0 ? `${typeCounts.flashcards} flashcard${typeCounts.flashcards !== 1 ? 's' : ''}` : '',
-                typeCounts.concepts > 0 ? `${typeCounts.concepts} concept${typeCounts.concepts !== 1 ? 's' : ''}` : '',
-              ].filter(Boolean).join(', ')}
-              {queueMinutes > 0 ? ` · ~${queueMinutes} min` : ''}
-            </p>
-          </div>
-          <ArrowRight className="w-5 h-5" />
-        </Link>
-      )}
+      {/* Resource Scout */}
+      {profileId && <ResourceScoutCard examProfileId={profileId} />}
 
       {/* Calibration Alert */}
       {profileId && <CalibrationAlert topics={topics} profileId={profileId} />}
@@ -234,12 +251,8 @@ export default function Dashboard() {
       {/* Subjects */}
       {subjects.length > 0 && (
         <div className="mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Subjects</p>
-          <SubjectGrid
-            subjects={subjects}
-            topics={topics}
-            getChaptersForSubject={getChaptersForSubject}
-          />
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Your Tutors</p>
+          <TutorDirectory subjects={subjects} topics={topics} />
         </div>
       )}
 
@@ -249,7 +262,7 @@ export default function Dashboard() {
       {/* Your courses */}
       {courseDocuments.length > 0 && (
         <div className="glass-card p-4 mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Your courses</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">My Courses</p>
           <div className="space-y-1">
             {courseDocuments.map(doc => (
               <Link key={doc.id} to={`/read/${doc.id}`}
@@ -268,7 +281,7 @@ export default function Dashboard() {
       {/* Your exams */}
       {examSources.length > 0 && (
         <div className="glass-card p-4 mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Your exams</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">My Exams</p>
           <div className="space-y-1">
             {examSources.map(source => (
               <Link key={source.id} to={`/read/${source.documentId}`}

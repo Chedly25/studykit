@@ -29,6 +29,8 @@ import { identify } from '../lib/analytics'
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
   const [chatPrefill, setChatPrefill] = useState<string | null>(null)
+  const [chatSubjectId, setChatSubjectId] = useState<string | null>(null)
+  const [chatSubjectName, setChatSubjectName] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false) // mobile drawer
   const [sidebarPinned, setSidebarPinned] = useState(false) // desktop pin
@@ -77,6 +79,8 @@ export function Layout() {
       const detail = (e as CustomEvent).detail
       setChatOpen(true)
       setChatPrefill(detail?.prefill ?? null)
+      setChatSubjectId(detail?.subjectId ?? null)
+      setChatSubjectName(detail?.subjectName ?? null)
     }
     window.addEventListener('open-chat-panel', handler)
     return () => window.removeEventListener('open-chat-panel', handler)
@@ -203,10 +207,10 @@ export function Layout() {
 
             {/* Nav links — 4 focused items */}
             <nav className="flex-1 px-2 py-2 space-y-0.5">
-              <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} collapsed={collapsed} />
-              <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} collapsed={collapsed} />
-              <SidebarLink to="/sources" icon={FolderOpen} label={isResearch ? 'Literature' : 'Library'} active={location.pathname === '/sources'} collapsed={collapsed} />
-              <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} collapsed={collapsed} />
+              <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'My Tasks' : "Today's Session"} active={location.pathname === '/queue'} collapsed={collapsed} />
+              <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'My Research' : 'My Studies'} active={location.pathname === '/dashboard' || location.pathname === '/'} collapsed={collapsed} />
+              <SidebarLink to="/sources" icon={FolderOpen} label={isResearch ? 'My Sources' : 'My Materials'} active={location.pathname === '/sources'} collapsed={collapsed} />
+              <SidebarLink to="/analytics" icon={BarChart3} label="My Progress" active={location.pathname === '/analytics'} collapsed={collapsed} />
             </nav>
 
             {/* Settings at bottom */}
@@ -259,10 +263,10 @@ export function Layout() {
 
               {/* Nav links — 4 focused items */}
               <nav className="flex-1 px-3 py-4 space-y-1">
-                <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/sources" icon={FolderOpen} label={isResearch ? 'Literature' : 'Library'} active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'My Tasks' : "Today's Session"} active={location.pathname === '/queue'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'My Research' : 'My Studies'} active={location.pathname === '/dashboard' || location.pathname === '/'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/sources" icon={FolderOpen} label={isResearch ? 'My Sources' : 'My Materials'} active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/analytics" icon={BarChart3} label="My Progress" active={location.pathname === '/analytics'} onClick={closeSidebar} collapsed={false} />
 
                 <div className="pt-3 mt-3 border-t border-[var(--border-card)]">
                   <SidebarLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} onClick={closeSidebar} collapsed={false} />
@@ -326,7 +330,7 @@ export function Layout() {
       </SignedIn>
 
       {/* Chat Panel */}
-      <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} prefill={chatPrefill} onPrefillConsumed={() => setChatPrefill(null)} />
+      <ChatPanel open={chatOpen} onClose={() => { setChatOpen(false); setChatSubjectId(null); setChatSubjectName(null) }} prefill={chatPrefill} onPrefillConsumed={() => setChatPrefill(null)} subjectId={chatSubjectId} subjectName={chatSubjectName} />
 
       {/* Search Modal */}
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
@@ -336,25 +340,6 @@ export function Layout() {
 
 // ─── Sidebar sub-components ─────────────────────────────────────
 
-function SidebarSection({ label, children, collapsed }: { label: string; children: React.ReactNode; collapsed: boolean }) {
-  if (collapsed) {
-    return (
-      <div className="space-y-0.5">
-        {children}
-      </div>
-    )
-  }
-  return (
-    <div>
-      <span className="px-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-        {label}
-      </span>
-      <div className="mt-1.5 space-y-0.5">
-        {children}
-      </div>
-    </div>
-  )
-}
 
 function SidebarLink({
   to, icon: Icon, label, active, onClick, pro, collapsed,

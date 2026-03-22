@@ -89,6 +89,19 @@ export const strategistAgent: AgentDefinition = {
       return { success: true, summary: 'Plan on track', episodes: [] }
     }
 
+    // Load macro roadmap phase context
+    let macroPhaseContext = ''
+    try {
+      const roadmap = await db.macroRoadmaps.get(examProfileId)
+      if (roadmap) {
+        const phases = JSON.parse(roadmap.phases) as Array<{ name: string; status: string; targetMastery: number; focusAreas: string[] }>
+        const activePhase = phases.find(p => p.status === 'active')
+        if (activePhase) {
+          macroPhaseContext = `\n- Current macro phase: "${activePhase.name}" (target: ${Math.round(activePhase.targetMastery * 100)}% mastery, focus: ${activePhase.focusAreas.join(', ')})`
+        }
+      }
+    } catch { /* ignore */ }
+
     // Generate suggestion via LLM
     try {
       const raw = await ctx.llm(
@@ -96,7 +109,7 @@ export const strategistAgent: AgentDefinition = {
 - Planned activities: ${totalPlanned}
 - Completed: ${totalCompleted} (${Math.round((1 - divergence) * 100)}% completion)
 - Topics in plan: ${[...topicsInPlan].join(', ')}
-${criticalPriorities.length > 0 ? `- Critical topics NOT in plan: ${criticalPriorities.join(', ')}` : ''}
+${criticalPriorities.length > 0 ? `- Critical topics NOT in plan: ${criticalPriorities.join(', ')}` : ''}${macroPhaseContext}
 
 Suggest ONE specific, actionable adjustment to the study plan in 1-2 sentences. Be concrete.
 

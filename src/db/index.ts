@@ -113,6 +113,7 @@ export class StudiesKitDB extends Dexie {
   agentInsights!: Table<AgentInsight>
   contentEffectiveness!: Table<ContentEffectiveness>
   strategyEffectiveness!: Table<StrategyEffectiveness>
+  macroRoadmaps!: Table<import('./schema').MacroRoadmap>
 
   constructor() {
     super('studieskit')
@@ -310,6 +311,10 @@ export class StudiesKitDB extends Dexie {
     })
 
     this.version(24).stores({}) // contextPrefix added to DocumentChunk (optional field, no index change)
+
+    this.version(25).stores({
+      macroRoadmaps: 'id, examProfileId',
+    })
   }
 }
 

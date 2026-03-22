@@ -125,6 +125,11 @@ async function executeToolLocally(
       return getDocumentContentTool(examProfileId, input.documentId as string)
     case 'listSources':
       return listSourcesTool(examProfileId)
+    case 'searchWeb': {
+      if (!authToken) return JSON.stringify({ error: 'Authentication required for web search' })
+      const { searchWeb } = await import('./tools/webSearchTool')
+      return searchWeb(input.query as string, authToken, (input.maxResults as number) ?? 5)
+    }
     case 'getCalibrationData':
       return getCalibrationData(examProfileId, (input.threshold as number) ?? 0.2)
     case 'getErrorPatterns':

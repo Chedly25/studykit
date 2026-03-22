@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
@@ -11,14 +11,19 @@ import Dashboard from './Dashboard'
 export default function Home() {
   const { t } = useTranslation()
   const { isSignedIn } = useAuth()
-  const { activeProfile } = useExamProfile()
+  const { activeProfile, profiles, profilesLoaded } = useExamProfile()
 
   // Signed in with profile → show dashboard
   if (isSignedIn && activeProfile) {
     return <Dashboard />
   }
 
-  // Signed in without profile → show onboarding CTA
+  // Signed in, no profiles at all → auto-redirect to conversational onboarding
+  if (isSignedIn && profilesLoaded && profiles.length === 0) {
+    return <Navigate to="/welcome" replace />
+  }
+
+  // Signed in without active profile (has profiles but none active) → show CTA
   if (isSignedIn && !activeProfile) {
     return (
       <>
@@ -33,7 +38,7 @@ export default function Home() {
           <p className="text-[var(--text-muted)] text-lg mb-8">
             {t('home.onboardingSubtitle')}
           </p>
-          <Link to="/exam-profile" className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-lg">
+          <Link to="/welcome" className="btn-primary inline-flex items-center gap-2 px-6 py-3 text-lg">
             {t('home.createProfile')}
           </Link>
         </div>

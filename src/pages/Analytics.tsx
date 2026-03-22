@@ -134,7 +134,8 @@ export default function Analytics() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-2">{t('analytics.title')}</h1>
+      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-1">{t('analytics.title')}</h1>
+      <p className="text-sm text-[var(--text-muted)] mb-2">Here's how your preparation is coming along</p>
 
       {/* Section navigation */}
       <nav className="flex gap-3 mb-6 text-sm overflow-x-auto pb-1">

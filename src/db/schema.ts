@@ -778,3 +778,24 @@ export interface BackgroundJob {
   startedAt?: string
   completedAt?: string
 }
+
+// ─── Macro Roadmap ──────────────────────────────────────────
+
+export interface MacroRoadmap {
+  id: string                // same as examProfileId (1:1)
+  examProfileId: string
+  phases: string            // JSON: MacroPhase[]
+  generatedAt: string
+  updatedAt: string
+}
+
+export interface MacroPhase {
+  name: string
+  description: string
+  startDate: string         // YYYY-MM-DD or '' for no-deadline
+  endDate: string
+  targetMastery: number     // 0-1
+  focusAreas: string[]
+  milestones: string[]
+  status: 'upcoming' | 'active' | 'completed'
+}

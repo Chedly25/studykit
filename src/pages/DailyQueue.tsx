@@ -18,6 +18,8 @@ import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useDailyQueue } from '../hooks/useDailyQueue'
 import { useStudySession } from '../hooks/useStudySession'
+import { DailyCoachingBrief } from '../components/queue/DailyCoachingBrief'
+import { CelebrationBanner } from '../components/CelebrationBanner'
 import { SessionStartOverlay } from '../components/SessionStartOverlay'
 import { SessionCompletionOverlay, type SessionCompletionData } from '../components/SessionCompletionOverlay'
 import { InlineAIExplanation } from '../components/queue/InlineAIExplanation'
@@ -294,6 +296,7 @@ function DailyQueueContent() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
+      {profileId && <CelebrationBanner examProfileId={profileId} streak={streak} />}
       {showStartOverlay && (
         <SessionStartOverlay
           streak={streak}
@@ -348,11 +351,20 @@ function DailyQueueContent() {
         </div>
       )}
 
+      {/* Daily Coaching Brief */}
+      {!showStartOverlay && !showCompletion && profileId && activeProfile && (
+        <DailyCoachingBrief
+          examProfileId={profileId}
+          profileName={activeProfile.name}
+          onBeginSession={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-bold text-[var(--text-heading)] flex items-center gap-2">
-            Today's Queue
+            Today's Session
             {cramMode && (
               <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Zap className="w-3 h-3" /> CRAM MODE
@@ -360,7 +372,7 @@ function DailyQueueContent() {
             )}
           </h1>
           <p className="text-sm text-[var(--text-muted)]">
-            {completedCount}/{totalCount} completed · ~{remainingMinutes} min left
+            {completedCount}/{totalCount} covered · ~{remainingMinutes} min left
             {elapsedMinutes > 0 && <span> · {elapsedMinutes}m elapsed</span>}
           </p>
         </div>
@@ -378,7 +390,7 @@ function DailyQueueContent() {
       {currentNudge && (
         <div className="glass-card p-3 mb-4 flex items-center gap-2 text-sm animate-fade-in">
           <span className="text-base">
-            {currentNudge.type === 'reinforcement' ? '🔄' : currentNudge.type === 'progress' ? '📊' : '✨'}
+            {currentNudge.type === 'reinforcement' ? '🔄' : currentNudge.type === 'progress' ? '📊' : currentNudge.type === 'connection' ? '🔗' : '✨'}
           </span>
           <span className="text-[var(--text-body)] flex-1">{currentNudge.text}</span>
           <button onClick={() => setCurrentNudge(null)} className="text-[var(--text-muted)] hover:text-[var(--text-body)]">
@@ -452,12 +464,12 @@ function DailyQueueContent() {
         <div className="glass-card p-8 text-center">
           <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
           <h2 className="text-lg font-bold text-[var(--text-heading)] mb-2">
-            {completedCount > 0 ? 'All done for today!' : 'No items in queue'}
+            {completedCount > 0 ? 'Beautiful session!' : "You're all caught up!"}
           </h2>
           <p className="text-sm text-[var(--text-muted)] mb-4">
             {completedCount > 0
-              ? `You completed ${completedCount} items. Great work!`
-              : 'Add flashcards, exercises, or concept cards to build your queue.'
+              ? `You covered ${completedCount} item${completedCount !== 1 ? 's' : ''} today. Well done!`
+              : 'Take a well-deserved break, or upload new materials to keep growing.'
             }
           </p>
           <button onClick={() => navigate('/dashboard')} className="btn-primary px-6 py-2 text-sm">

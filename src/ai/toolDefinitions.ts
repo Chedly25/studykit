@@ -486,6 +486,19 @@ export const agentTools: ToolDefinition[] = [
     description: 'List all uploaded documents with metadata (title, type, word count).',
     input_schema: { type: 'object', properties: {} },
   },
+  // ─── Web Search ────────────────────────────────────────────
+  {
+    name: 'searchWeb',
+    description: 'Search the internet for information not found in the student\'s uploaded documents. Use when: (1) the student asks about something not in their sources, (2) you need current/recent information, (3) you need to verify a fact, (4) the student asks for additional resources. Always cite the source URL in your response.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query — be specific and include relevant context (exam name, jurisdiction, topic)' },
+        maxResults: { type: 'number', description: 'Number of results to return (default 5)' },
+      },
+      required: ['query'],
+    },
+  },
   // ─── Rich UI Rendering ─────────────────────────────────────
   {
     name: 'renderConceptCard',

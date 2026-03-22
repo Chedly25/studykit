@@ -10,6 +10,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Target } from 'lucide-react'
 import { db } from '../db'
 import { generateICS, downloadICS } from '../lib/calendarExport'
+import { RoadmapTimeline } from '../components/plan/RoadmapTimeline'
 
 interface StudyActivity {
   topicName: string
@@ -189,6 +190,9 @@ export default function StudyPlan() {
           </button>
         </div>
       )}
+
+      {/* Macro Roadmap Timeline */}
+      {profileId && <RoadmapTimeline examProfileId={profileId} />}
 
       {/* Strategist agent suggestion */}
       {strategistInsight && !replanSuggestion && (

@@ -13,6 +13,7 @@ export type AgentId =
   | 'retrieval'
   | 'misconception-hunter'
   | 'progress-monitor'
+  | 'resource-scout'
 
 export type AgentTrigger = 'event' | 'schedule' | 'app-open' | 'manual'
 

@@ -18,6 +18,7 @@ interface HybridSearchOptions {
   rerank?: boolean
   semanticWeight?: number
   keywordWeight?: number
+  subjectId?: string
 }
 
 type ChunkResult = DocumentChunk & { score: number; documentTitle?: string }
@@ -88,6 +89,22 @@ export async function hybridSearch(
 
   fused.sort((a, b) => b.score - a.score)
   let candidates = fused.slice(0, Math.max(topN * 2, 20))
+
+  // Subject scoping (post-fusion, pre-rerank)
+  if (options?.subjectId) {
+    const { db } = await import('../db')
+    const subjectTopics = await db.topics
+      .where('subjectId').equals(options.subjectId)
+      .toArray()
+    const subjectTopicIds = new Set(subjectTopics.map(t => t.id))
+    const scoped = candidates.filter(c => {
+      const chunk = chunkMap.get(c.id)
+      return chunk?.topicId && subjectTopicIds.has(chunk.topicId)
+    })
+    if (scoped.length > 0) {
+      candidates = scoped
+    }
+  }
 
   // LLM re-ranking (optional)
   if (rerank && authToken && candidates.length > topN) {

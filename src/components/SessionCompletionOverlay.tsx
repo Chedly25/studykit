@@ -73,7 +73,7 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 flex items-center justify-center mx-auto mb-3">
             <CheckCircle2 className="w-8 h-8 text-emerald-500" />
           </div>
-          <h2 className="text-xl font-bold text-[var(--text-heading)]">Session Complete!</h2>
+          <h2 className="text-xl font-bold text-[var(--text-heading)]">Great work today!</h2>
         </div>
 
         {/* Stats row */}
@@ -169,13 +169,13 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
           <div className="text-sm bg-[var(--bg-input)] p-3 rounded-lg">
             <div className="flex items-center gap-1.5 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-[var(--accent-text)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">AI Summary</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Your coach's notes</span>
               {isDebriefStreaming && <Loader2 className="w-3 h-3 text-[var(--accent-text)] animate-spin" />}
             </div>
             {aiDebrief ? (
               <p className="text-[var(--text-body)] leading-relaxed"><MathText>{aiDebrief}</MathText></p>
             ) : (
-              <p className="text-[var(--text-muted)]">Generating debrief...</p>
+              <p className="text-[var(--text-muted)]">Your coach is reviewing your session...</p>
             )}
           </div>
         )}

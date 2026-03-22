@@ -31,7 +31,7 @@ export function computeNudge(input: NudgeInput): Nudge | null {
   const topicCount = sessionResults.filter(r => r.topicName === completedTopicName).length
   if (topicCount >= 2) {
     return {
-      text: `You've reviewed "${completedTopicName}" ${topicCount} times — building strong recall`,
+      text: `You've revisited ${completedTopicName} ${topicCount} times now — that's how deep understanding forms`,
       type: 'reinforcement',
     }
   }
@@ -39,7 +39,7 @@ export function computeNudge(input: NudgeInput): Nudge | null {
   // Halfway encouragement
   if (completedCount === Math.floor(totalCount / 2) && totalCount >= 4) {
     return {
-      text: `Halfway there! ${totalCount - completedCount} items to go`,
+      text: `You're halfway through — nice momentum! ${totalCount - completedCount} more to go`,
       type: 'progress',
     }
   }
@@ -49,7 +49,7 @@ export function computeNudge(input: NudgeInput): Nudge | null {
     const last3 = sessionResults.slice(-3)
     if (last3.every(r => r.rating === 'good')) {
       return {
-        text: 'Three in a row — you\'re in the zone',
+        text: 'Three strong answers in a row — you\'re in the zone',
         type: 'encouragement',
       }
     }
@@ -58,7 +58,7 @@ export function computeNudge(input: NudgeInput): Nudge | null {
   // Streak reference (first item only)
   if (streak >= 7 && completedCount === 1) {
     return {
-      text: `Day ${streak} of your streak — consistency pays off`,
+      text: `Day ${streak} of your streak — that consistency is really paying off`,
       type: 'encouragement',
     }
   }
@@ -66,8 +66,19 @@ export function computeNudge(input: NudgeInput): Nudge | null {
   // Almost done
   if (completedCount === totalCount - 1 && totalCount >= 3) {
     return {
-      text: 'Last one! You\'re almost done for today',
+      text: 'One more to go — you\'ve almost wrapped up today\'s session',
       type: 'progress',
+    }
+  }
+
+  // Connection nudge: link topics that share context
+  if (sessionResults.length >= 2) {
+    const lastTwo = sessionResults.slice(-2)
+    if (lastTwo[0].topicName !== lastTwo[1].topicName && Math.random() < 0.2) {
+      return {
+        text: `Nice — ${lastTwo[1].topicName} connects well with ${lastTwo[0].topicName}. Seeing those links strengthens both.`,
+        type: 'connection',
+      }
     }
   }
 

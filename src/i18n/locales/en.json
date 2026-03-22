@@ -35,7 +35,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "focus": "Focus",
-    "analytics": "Analytics",
+    "analytics": "Progress",
     "sources": "Sources",
     "features": "Features",
     "allTools": "All Tools",
@@ -432,7 +432,7 @@
     "goToDashboard": "Go to Dashboard"
   },
   "analytics": {
-    "title": "Analytics",
+    "title": "Your Progress",
     "subtitle": "Track your study progress and performance",
     "studyTime": "Study Time",
     "questionsAnswered": "Questions Answered",

@@ -29,9 +29,11 @@ interface Props {
   onClose: () => void
   prefill?: string | null
   onPrefillConsumed?: () => void
+  subjectId?: string | null
+  subjectName?: string | null
 }
 
-export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) {
+export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId, subjectName }: Props) {
   const { t } = useTranslation()
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
@@ -51,7 +53,7 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) 
     messages, isLoading, currentToolCall, streamingText, error,
     conversationId, quotaExceeded, messagesUsedToday,
     sendMessage, cancel, loadConversation, newConversation,
-  } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences })
+  } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences, subjectId, subjectName })
 
   // Voice mode
   const { isPro } = useSubscription()
@@ -123,7 +125,7 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) 
         <div className="flex items-center gap-2">
           <Brain className="w-5 h-5 text-[var(--accent-text)]" />
           <span className="font-semibold text-[var(--text-heading)] text-sm">
-            {t('ai.chat')}
+            {subjectName ? `${subjectName} Tutor` : t('ai.chat')}
           </span>
           <SourcesToggle enabled={sourcesEnabled} onToggle={setSourcesEnabled} documentCount={documentCount} />
           <button

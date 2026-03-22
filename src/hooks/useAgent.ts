@@ -54,10 +54,12 @@ interface UseAgentOptions {
   conversationSummaries?: ConversationSummary[]
   sessionContext?: SessionContext
   customSystemPrompt?: string
+  subjectId?: string | null
+  subjectName?: string | null
 }
 
 export function useAgent(options: UseAgentOptions) {
-  const { profile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, customSystemPrompt } = options
+  const { profile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, customSystemPrompt, subjectId, subjectName } = options
   const { getToken } = useAuth()
   const { i18n } = useTranslation()
   const { isPro } = useSubscription()
@@ -136,7 +138,7 @@ export function useAgent(options: UseAgentOptions) {
           .equals(profile.id)
           .count()
         if (docCount > 0) {
-          const relevant = await hybridSearch(profile.id, userMessage, authToken ?? undefined, { topN: 5 })
+          const relevant = await hybridSearch(profile.id, userMessage, authToken ?? undefined, { topN: 5, subjectId: subjectId ?? undefined })
           let preRetrievedChunks: string | undefined
           if (relevant.length > 0) {
             preRetrievedChunks = relevant
@@ -251,6 +253,11 @@ export function useAgent(options: UseAgentOptions) {
             }
           } catch { /* non-fatal — use base adaptive prompt */ }
         }
+
+        // Subject specialist context
+        if (subjectId && subjectName) {
+          systemPrompt += `\n\n## Subject Focus\nYou are the student's ${subjectName} specialist. Focus your answers on ${subjectName}. Reference the student's ${subjectName} materials. When searching sources, prioritize ${subjectName} content.`
+        }
       }
 
       // Run agent loop
@@ -302,7 +309,7 @@ export function useAgent(options: UseAgentOptions) {
     } finally {
       setIsLoading(false)
     }
-  }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, customSystemPrompt, i18n.language])
+  }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, customSystemPrompt, subjectId, subjectName, i18n.language])
 
   // Track conversation state in refs for beforeunload handler
   const messagesRef = useRef(messages)
