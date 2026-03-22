@@ -304,8 +304,14 @@ export class JobRunner {
           stepSucceeded = true
           break
         } catch (err) {
+          // If deliberately cancelled, don't retry — break immediately
+          if (controller.signal.aborted) {
+            results[step.id] = { status: 'failed', error: 'Cancelled', durationMs: Date.now() - stepStart }
+            break
+          }
+
           const error = err instanceof Error ? err.message : String(err)
-          const isRetryable = error.includes('429') || error.includes('overloaded') || error.includes('rate limit') || error.includes('ECONNRESET') || error.includes('fetch failed') || error.includes('network error') || error.includes('Failed to fetch') || error.includes('NetworkError') || error.includes('aborted')
+          const isRetryable = error.includes('429') || error.includes('overloaded') || error.includes('rate limit') || error.includes('ECONNRESET') || error.includes('fetch failed') || error.includes('network error') || error.includes('Failed to fetch') || error.includes('NetworkError')
 
           if (isRetryable && attempt < MAX_RETRIES - 1) {
             // Parse "retry after N seconds" from error, fallback to exponential backoff with jitter

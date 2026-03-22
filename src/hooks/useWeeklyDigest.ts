@@ -12,6 +12,10 @@ import { decayedMastery } from '../lib/knowledgeGraph'
 const DIGEST_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 const LAST_SENT_KEY = (pid: string) => `weekly_digest_sent_${pid}`
 
+function escHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 export function useWeeklyDigest() {
   const { getToken } = useAuth()
   const { user } = useUser()
@@ -159,12 +163,12 @@ function buildDigestHtml(profileName: string, stats: WeeklyStats): string {
 
   const masteryLines = stats.masteryChanges.map(m =>
     m.delta > 0
-      ? `<li style="color:#10b981">&uarr; ${m.name} +${m.delta}%</li>`
-      : `<li style="color:#ef4444">&darr; ${m.name} ${m.delta}%</li>`
+      ? `<li style="color:#10b981">&uarr; ${escHtml(m.name)} +${m.delta}%</li>`
+      : `<li style="color:#ef4444">&darr; ${escHtml(m.name)} ${m.delta}%</li>`
   ).join('')
 
   const weakLines = stats.weakTopics.map(t =>
-    `<li>${t.name} (${t.mastery}%)</li>`
+    `<li>${escHtml(t.name)} (${t.mastery}%)</li>`
   ).join('')
 
   return `
@@ -172,7 +176,7 @@ function buildDigestHtml(profileName: string, stats: WeeklyStats): string {
   <div style="text-align:center;margin-bottom:24px">
     <img src="https://studieskit.com/favicon-48x48.png" width="32" height="32" style="border-radius:8px" />
     <h2 style="margin:8px 0 0;font-size:18px">Weekly Study Report</h2>
-    <p style="color:#666;font-size:13px;margin:4px 0">${profileName}</p>
+    <p style="color:#666;font-size:13px;margin:4px 0">${escHtml(profileName)}</p>
   </div>
 
   <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin-bottom:16px">

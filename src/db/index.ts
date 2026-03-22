@@ -274,12 +274,20 @@ export class StudiesKitDB extends Dexie {
       misconceptions: 'id, examProfileId, topicId, [examProfileId+topicId]',
     }).upgrade(tx => {
       // Add SRS defaults to existing exercises
+      // Already-attempted exercises get a future review date to avoid flooding the queue
       const today = new Date().toISOString().slice(0, 10)
+      const threeDaysOut = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10)
+      const weekOut = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
       return tx.table('exercises').toCollection().modify(exercise => {
         if (exercise.easeFactor === undefined) exercise.easeFactor = 2.5
         if (exercise.interval === undefined) exercise.interval = 0
         if (exercise.repetitions === undefined) exercise.repetitions = 0
-        if (exercise.nextReviewDate === undefined) exercise.nextReviewDate = today
+        if (exercise.nextReviewDate === undefined) {
+          // Completed exercises review in a week, attempted in 3 days, new ones today
+          exercise.nextReviewDate = exercise.status === 'completed' ? weekOut
+            : exercise.status === 'attempted' ? threeDaysOut
+            : today
+        }
       })
     })
   }

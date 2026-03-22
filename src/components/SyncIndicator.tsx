@@ -10,20 +10,22 @@ export function SyncIndicator() {
 
   if (status === 'disabled') return null
 
-  const iconMap = {
+  const iconMap: Record<string, React.ReactNode> = {
     idle: <Cloud size={18} className="text-[var(--text-muted)]" />,
     syncing: <Loader2 size={18} className="text-[var(--accent-text)] animate-spin" />,
     synced: <Check size={14} className="text-emerald-500" />,
     error: <AlertCircle size={18} className="text-amber-500" />,
     offline: <CloudOff size={18} className="text-[var(--text-muted)]" />,
+    disabled: null,
   }
 
-  const titleMap = {
+  const titleMap: Record<string, string> = {
     idle: 'Cloud sync enabled',
     syncing: 'Syncing...',
     synced: lastSyncedAt ? `Synced ${formatRelative(lastSyncedAt)}` : 'Synced',
     error: 'Sync error — click to retry',
     offline: 'Offline — will sync when connected',
+    disabled: '',
   }
 
   return (

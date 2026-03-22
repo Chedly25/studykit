@@ -48,8 +48,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const rateLimitKey = `fast_rate:${jwt.sub}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
     const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
     if (currentCount >= RATE_LIMIT) {
-      return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again after 60 seconds' }), {
-        status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
+      return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later' }), {
+        status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '30' },
       })
     }
     await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
