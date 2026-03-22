@@ -16,9 +16,11 @@ import {
 } from '../lib/sources'
 import { parsePdf } from '../lib/pdfParser'
 import { processFile } from '../lib/fileProcessor'
-import { semanticSearch, deleteEmbeddings, embedAndStoreChunks } from '../lib/embeddings'
+import { deleteEmbeddings, embedAndStoreChunks } from '../lib/embeddings'
+import { hybridSearch } from '../lib/hybridSearch'
 import { getChunksByDocumentId } from '../lib/sources'
 import type { DocumentChunk } from '../db/schema'
+import { track } from '../lib/analytics'
 import type { BatchUploadProgressState } from '../components/sources/BatchUploadProgress'
 
 export function useSources(examProfileId: string | undefined) {
@@ -75,6 +77,7 @@ export function useSources(examProfileId: string | undefined) {
         // Non-blocking — workflow will retry if needed
       }
       setProcessingStatus('')
+      track('document_uploaded', { type: 'pdf', pageCount })
       toast.success(`"${title}" uploaded`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Upload failed')
@@ -188,7 +191,7 @@ export function useSources(examProfileId: string | undefined) {
   const searchSources = useCallback(async (query: string, topN = 5): Promise<(DocumentChunk & { score: number; documentTitle?: string })[]> => {
     if (!examProfileId) return []
     const token = await getToken()
-    return semanticSearch(examProfileId, query, token ?? undefined, topN)
+    return hybridSearch(examProfileId, query, token ?? undefined, { topN })
   }, [examProfileId, getToken])
 
   const documentCount = useMemo(() => documents?.length ?? 0, [documents])

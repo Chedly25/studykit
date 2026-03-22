@@ -311,6 +311,9 @@ export default function Analytics() {
         </div>
       )}
 
+      {/* Coach Insights from Progress Monitor agent */}
+      <CoachInsightsSection examProfileId={profileId} />
+
       {profileId && (
         <div className="mt-4">
           <ExamPatternsCard examProfileId={profileId} />
@@ -368,6 +371,50 @@ export default function Analytics() {
           <Link to="/sources" className="text-xs text-[var(--accent-text)] hover:underline">{t('dashboard.viewSources')}</Link>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Coach Insights from agent swarm ──────────────────────────
+
+function CoachInsightsSection({ examProfileId }: { examProfileId: string | undefined }) {
+  const insights = useLiveQuery(async () => {
+    if (!examProfileId) return []
+    const insight = await db.agentInsights.get(`progress-monitor:${examProfileId}`)
+    if (!insight) return []
+    try {
+      const all = JSON.parse(insight.data) as Array<{ type: string; urgency: string; title: string; message: string; surface: string; action?: { label: string; route: string } }>
+      return all.filter(i => i.surface === 'analytics')
+    } catch { return [] }
+  }, [examProfileId]) ?? []
+
+  if (insights.length === 0) return null
+
+  return (
+    <div className="mt-4 glass-card p-5">
+      <h3 className="text-sm font-bold text-[var(--text-heading)] mb-3 flex items-center gap-2">
+        <span className="text-base">💡</span> Coach Insights
+      </h3>
+      <div className="space-y-2">
+        {insights.map((insight, i) => (
+          <div
+            key={i}
+            className={`flex items-start gap-2 text-xs p-2 rounded-lg ${
+              insight.urgency === 'urgent' ? 'bg-red-500/5 text-[var(--text-body)]' :
+              insight.urgency === 'attention' ? 'bg-amber-500/5 text-[var(--text-body)]' :
+              'bg-blue-500/5 text-[var(--text-muted)]'
+            }`}
+          >
+            <span className="mt-0.5 shrink-0">
+              {insight.urgency === 'urgent' ? '🚨' : insight.urgency === 'attention' ? '📊' : '✨'}
+            </span>
+            <div className="flex-1 min-w-0">
+              <span className="font-medium text-[var(--text-heading)]">{insight.title}</span>
+              <span className="text-[var(--text-muted)] ml-1">{insight.message}</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

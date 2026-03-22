@@ -50,9 +50,7 @@ export default function Chat() {
   const {
     messages, isLoading, currentToolCall, streamingText, error,
     conversationId, quotaExceeded, messagesUsedToday,
-    isSocratic, isExplainBack, socraticTopic, explainBackTopic,
     sendMessage, cancel, loadConversation, newConversation,
-    startSocraticMode, startExplainBackMode,
   } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences, sessionInsights: recentInsights, studentModel, conversationSummaries })
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -70,18 +68,14 @@ export default function Chat() {
   }, [messages, streamingText])
 
   const handleSend = useCallback(async (message: string, sentAttachments?: ChatAttachment[]) => {
-    // Intercept Socratic/Explain-Back mode triggers
+    // Convert legacy mode triggers to natural messages (router handles approach automatically)
+    let actualMessage = message
     if (message.startsWith('__socratic__:')) {
       const topicName = message.slice('__socratic__:'.length)
-      startSocraticMode(topicName)
-      await sendMessage(`I want to learn about ${topicName} through Socratic questioning.`)
-      return
-    }
-    if (message.startsWith('__explainback__:')) {
+      actualMessage = `Quiz me on ${topicName} — test my understanding with questions.`
+    } else if (message.startsWith('__explainback__:')) {
       const topicName = message.slice('__explainback__:'.length)
-      startExplainBackMode(topicName)
-      await sendMessage(`I'll try to explain ${topicName} to you. Let me know if my understanding is correct.`)
-      return
+      actualMessage = `Let me explain what I know about ${topicName}. Check if my understanding is correct.`
     }
 
     let attachmentContext: { chunks: Array<{ content: string; documentTitle: string; chunkIndex: number }> } | undefined
@@ -95,8 +89,8 @@ export default function Chat() {
       clearAttachments()
     }
 
-    await sendMessage(message, attachmentContext)
-  }, [sendMessage, getRelevantChunks, clearAttachments, startSocraticMode, startExplainBackMode])
+    await sendMessage(actualMessage, attachmentContext)
+  }, [sendMessage, getRelevantChunks, clearAttachments])
 
   // Drag-and-drop handlers
   const dragCounter = useRef(0)
@@ -236,16 +230,6 @@ export default function Chat() {
               {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
             </button>
             <span className="text-sm font-medium text-[var(--text-heading)]">{t('ai.chat')}</span>
-            {isSocratic && socraticTopic && (
-              <span className="text-xs font-medium text-purple-400 bg-purple-500/15 px-2 py-0.5 rounded-full">
-                Socratic: {socraticTopic}
-              </span>
-            )}
-            {isExplainBack && explainBackTopic && (
-              <span className="text-xs font-medium text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-full">
-                Explain Back: {explainBackTopic}
-              </span>
-            )}
           </div>
           <div className="flex items-center gap-2">
             <SourcesToggle enabled={sourcesEnabled} onToggle={setSourcesEnabled} documentCount={documentCount} />

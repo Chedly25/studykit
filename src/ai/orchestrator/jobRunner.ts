@@ -11,7 +11,7 @@ import { db } from '../../db'
 import type { BackgroundJob, JobType, JobStatus } from '../../db/schema'
 import type { WorkflowContext, WorkflowDefinition, StepResult } from './types'
 import { callFastModel } from '../fastClient'
-import { semanticSearch } from '../../lib/embeddings'
+import { hybridSearch } from '../../lib/hybridSearch'
 import { searchWeb as searchWebClient } from '../tools/webSearchTool'
 import { reconstructWorkflow, reconstructArticleWorkflow } from './jobTypes'
 
@@ -237,7 +237,7 @@ export class JobRunner {
       },
 
       async searchSources(query: string, topN = 5): Promise<string> {
-        const chunks = await semanticSearch(job.examProfileId, query, ctx.authToken, topN)
+        const chunks = await hybridSearch(job.examProfileId, query, ctx.authToken, { topN })
         if (chunks.length === 0) return ''
         return chunks.map((c: { documentTitle?: string; content: string }) =>
           `[${c.documentTitle ?? 'Source'}]\n${c.content}`
@@ -422,7 +422,7 @@ export class JobRunner {
               )
             },
             async searchSources(query: string, topN = 5): Promise<string> {
-              const chunks = await semanticSearch(job.examProfileId, query, ctx.authToken, topN)
+              const chunks = await hybridSearch(job.examProfileId, query, ctx.authToken, { topN })
               if (chunks.length === 0) return ''
               return chunks.map((c: { documentTitle?: string; content: string }) =>
                 `[${c.documentTitle ?? 'Source'}]\n${c.content}`

@@ -2,7 +2,7 @@
  * AI tool implementations for source retrieval.
  */
 import { getChunksByDocumentId } from '../../lib/sources'
-import { semanticSearch } from '../../lib/embeddings'
+import { hybridSearch } from '../../lib/hybridSearch'
 import { db } from '../../db'
 
 export async function searchSourcesTool(
@@ -11,7 +11,7 @@ export async function searchSourcesTool(
   topN = 5,
   authToken?: string,
 ): Promise<string> {
-  const results = await semanticSearch(examProfileId, query, authToken, topN)
+  const results = await hybridSearch(examProfileId, query, authToken, { topN })
   if (results.length === 0) {
     return JSON.stringify({ results: [], message: 'No matching content found in uploaded sources.' })
   }

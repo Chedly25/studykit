@@ -144,6 +144,60 @@ For "misconception": if incorrect, describe the specific misunderstanding in one
         },
       },
 
+      // Step 2.5: Verify ambiguous grades via reflection loop
+      {
+        id: 'verifyGrades',
+        name: 'Verifying grades',
+        optional: true,
+        async execute(_input: unknown, ctx: WorkflowContext) {
+          const subjectiveResult = ctx.results['gradeSubjective']?.data as { grades: QuestionGrade[] } | undefined
+          const subjectiveGrades = subjectiveResult?.grades ?? []
+
+          const questions = await db.generatedQuestions
+            .where('sessionId').equals(config.sessionId)
+            .toArray()
+
+          // Only verify grades in the ambiguous zone (partial credit)
+          const ambiguous = subjectiveGrades.filter(g => {
+            const q = questions.find(q => q.id === g.questionId)
+            return q && g.earnedPoints > 0 && g.earnedPoints < q.points * 0.7
+          })
+
+          if (ambiguous.length === 0) return { verified: 0, fixed: 0 }
+
+          let fixed = 0
+          const { reflect } = await import('../reflection/reflectionLoop')
+          const { gradeValidator } = await import('../reflection/validators')
+
+          for (const grade of ambiguous.slice(0, 5)) {
+            const q = questions.find(q => q.id === grade.questionId)
+            if (!q) continue
+
+            try {
+              const result = await reflect(
+                {
+                  exerciseText: q.text,
+                  studentAnswer: q.userAnswer ?? '',
+                  score: q.points > 0 ? grade.earnedPoints / q.points : 0,
+                  feedback: grade.feedback,
+                  correctAnswer: q.correctAnswer,
+                },
+                gradeValidator,
+                (prompt: string, system?: string) => ctx.llm(prompt, system),
+              )
+
+              if (result.wasFixed) {
+                grade.earnedPoints = Math.round(result.content.score * q.points)
+                grade.feedback = result.content.feedback
+                fixed++
+              }
+            } catch { /* non-fatal — keep original grade */ }
+          }
+
+          return { verified: ambiguous.length, fixed }
+        },
+      },
+
       // Step 3: Generate overall feedback
       llmJsonStep<{ overallFeedback: string; topicBreakdown: Array<{ topic: string; score: number; maxScore: number; advice: string }> }>(
         'generateFeedback',
@@ -205,7 +259,7 @@ Return ONLY a JSON object:
         'You are an encouraging but honest tutor providing exam feedback. Return ONLY valid JSON.',
       ),
 
-      // Step 4: Update mastery stats
+      // Step 4: Update mastery stats + auto-enqueue misconception exercises
       localStep('updateMastery', 'Updating your knowledge graph', async (ctx) => {
         const questions = await db.generatedQuestions
           .where('sessionId').equals(config.sessionId)
@@ -265,6 +319,35 @@ Return ONLY a JSON object:
                 })
               }
             }
+          }
+        }
+
+        // Auto-enqueue misconception exercise generation if new misconceptions were found
+        const newMisconceptions = allGrades.filter(g => g.misconception && !g.isCorrect)
+        if (newMisconceptions.length > 0) {
+          // Check for existing queued/running job to avoid duplicates
+          const existingJob = await db.backgroundJobs
+            .where('examProfileId')
+            .equals(ctx.examProfileId)
+            .filter(j => j.type === 'misconception-exercise' && (j.status === 'queued' || j.status === 'running'))
+            .first()
+
+          if (!existingJob) {
+            const now = new Date().toISOString()
+            await db.backgroundJobs.put({
+              id: crypto.randomUUID(),
+              examProfileId: ctx.examProfileId,
+              type: 'misconception-exercise',
+              status: 'queued',
+              config: JSON.stringify({ examProfileId: ctx.examProfileId, maxMisconceptions: 3 }),
+              completedStepIds: '[]',
+              stepResults: '{}',
+              totalSteps: 3,
+              completedStepCount: 0,
+              currentStepName: '',
+              createdAt: now,
+              updatedAt: now,
+            })
           }
         }
       }),

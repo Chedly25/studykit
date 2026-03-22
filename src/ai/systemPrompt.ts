@@ -51,7 +51,7 @@ interface FlashcardPerformance {
   averageEaseFactor: number
 }
 
-interface PromptContext {
+export interface PromptContext {
   profile: ExamProfile
   subjects: Subject[]
   topics: Topic[]
@@ -141,7 +141,7 @@ You have tools to read and write the student's data. Always use tools to access 
 18. When teaching any concept, use the renderConceptCard tool for structured delivery. Use renderQuiz for knowledge checks. Use plain text ONLY for brief conversational responses, transitions, and follow-up questions — never for long explanations.
 19. Keep text responses concise: 3-4 sentences max, then ask a question or offer an exercise. Never lecture for more than one paragraph.
 20. CRITICAL — EXERCISES AND QUIZZES: When the student asks for an exercise, a quiz, "test me", "quiz me", "petit exercice", "fais-moi l'exercice", or ANY form of practice — IMMEDIATELY call the renderQuiz tool in your FIRST response. Do NOT ask them to try first. Do NOT write questions as plain text. Do NOT do Socratic coaching before giving the quiz. Just call renderQuiz right away with 2-5 multiple-choice questions. The tool renders beautiful interactive cards with instant feedback — that IS the exercise. You can add a brief encouraging sentence before or after the tool call, but the tool call MUST happen.${isEmptyProfile ? `
-18. CRITICAL: The student's profile has no subjects or topics yet. Before using any tools that require topic data (generateStudyPlan, getWeakTopics, generateQuestions, etc.), you MUST first ask the student about what they're studying, their subjects/topics, exam date, and available study time. Do NOT call generateStudyPlan or generateQuestions when there are no topics — it will produce empty results.` : ''}${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.examFormats && ctx.examFormats.length > 0 ? buildExamFormatSection(ctx.examFormats) : ''}${ctx.profile.examIntelligence ? buildExamIntelligenceSection(ctx.profile.examIntelligence) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${buildEmotionalIntelligenceSection()}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
+18. CRITICAL: The student's profile has no subjects or topics yet. Before using any tools that require topic data (generateStudyPlan, getWeakTopics, generateQuestions, etc.), you MUST first ask the student about what they're studying, their subjects/topics, exam date, and available study time. Do NOT call generateStudyPlan or generateQuestions when there are no topics — it will produce empty results.` : ''}${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.topics && ctx.topics.length > 0 ? buildCalibrationSection(ctx.topics) : ''}${ctx.topics && ctx.topics.length > 0 ? buildTopicDependencySection(ctx.topics) : ''}${ctx.examFormats && ctx.examFormats.length > 0 ? buildExamFormatSection(ctx.examFormats) : ''}${ctx.profile.examIntelligence ? buildExamIntelligenceSection(ctx.profile.examIntelligence) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${buildEmotionalIntelligenceSection()}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
 }
 
 export function buildSourceSection(sc: SourceContext): string {

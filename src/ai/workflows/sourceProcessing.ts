@@ -5,8 +5,11 @@
  */
 import { db } from '../../db'
 import { getChunksByDocumentId } from '../../lib/sources'
-import { embedAndStoreChunks, hasEmbeddings } from '../../lib/embeddings'
+import { embedAndStoreChunks, hasEmbeddings, deleteEmbeddings } from '../../lib/embeddings'
 import { classifyChunksByEmbedding } from '../../lib/topicClassifier'
+import { enrichChunksWithContext } from '../../lib/contextualRetrieval'
+import { evaluateFlashcardBatch } from '../evaluation/evaluator'
+import { trackContentCreation } from '../../lib/effectivenessTracker'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { dbQueryStep, localStep } from '../orchestrator/steps'
 
@@ -131,6 +134,40 @@ Respond ONLY with valid JSON.`
         },
       },
 
+      // Step 2.5: Contextual enrichment (optional, Pro only)
+      {
+        id: 'enrich-chunks',
+        name: 'Enriching chunks with context',
+        optional: true,
+        shouldRun: () => config.isPro,
+        async execute(_input: unknown, ctx: WorkflowContext) {
+          const context = ctx.results['gather-context']?.data as {
+            doc: { title: string }
+            chunks: Array<{ id: string; content: string; documentId: string; examProfileId: string; chunkIndex: number; keywords: string }>
+          }
+          const parallelData = ctx.results['parallel-process']?.data as {
+            extractResult?: { summary?: string }
+          } | undefined
+          const summary = parallelData?.extractResult?.summary ?? ''
+
+          await ctx.updateProgress?.('Generating context prefixes...')
+          await enrichChunksWithContext(
+            context.chunks,
+            context.doc.title,
+            summary,
+            ctx.authToken,
+          )
+
+          // Re-embed with contextPrefix for better vectors
+          await ctx.updateProgress?.('Re-embedding with context...')
+          const enrichedChunks = await getChunksByDocumentId(config.documentId)
+          await deleteEmbeddings(config.documentId)
+          await embedAndStoreChunks(enrichedChunks, ctx.authToken)
+
+          return { enriched: true }
+        },
+      },
+
       // Step 3: Save results
       localStep('save-results', 'Saving results', async (ctx) => {
         const parallelData = ctx.results['parallel-process']?.data as {
@@ -180,29 +217,50 @@ Respond ONLY with valid JSON.`
         let flashcardCount = 0
 
         if (flashcardData?.cards && flashcardData.cards.length > 0) {
-          const deckId = crypto.randomUUID()
-          await db.flashcardDecks.put({
-            id: deckId,
-            examProfileId: ctx.examProfileId,
-            name: `${context.doc.title} Cards`,
-            createdAt: new Date().toISOString(),
-          })
+          // Evaluate flashcard quality before saving
+          let keptCards = flashcardData.cards
+          try {
+            const evaluations = await evaluateFlashcardBatch(
+              flashcardData.cards,
+              [], // no existing cards yet for this new deck
+              (prompt: string, system?: string) => ctx.llm(prompt, system),
+            )
+            keptCards = flashcardData.cards.filter((_, i) => {
+              const ev = evaluations.find(e => e.index === i)
+              return !ev || ev.action !== 'discard'
+            })
+          } catch { /* evaluation failed — keep all cards */ }
 
-          const cards = flashcardData.cards.map(c => ({
-            id: crypto.randomUUID(),
-            deckId,
-            front: c.front,
-            back: c.back,
-            source: 'ai-generated' as const,
-            easeFactor: 2.5,
-            interval: 0,
-            repetitions: 0,
-            nextReviewDate: new Date().toISOString().slice(0, 10),
-            lastRating: 0,
-          }))
-          await db.flashcards.bulkPut(cards)
-          flashcardDeckId = deckId
-          flashcardCount = cards.length
+          if (keptCards.length > 0) {
+            const deckId = crypto.randomUUID()
+            await db.flashcardDecks.put({
+              id: deckId,
+              examProfileId: ctx.examProfileId,
+              name: `${context.doc.title} Cards`,
+              createdAt: new Date().toISOString(),
+            })
+
+            const cards = keptCards.map(c => ({
+              id: crypto.randomUUID(),
+              deckId,
+              front: c.front,
+              back: c.back,
+              source: 'ai-generated' as const,
+              easeFactor: 2.5,
+              interval: 0,
+              repetitions: 0,
+              nextReviewDate: new Date().toISOString().slice(0, 10),
+              lastRating: 0,
+            }))
+            await db.flashcards.bulkPut(cards)
+            flashcardDeckId = deckId
+            flashcardCount = cards.length
+
+            // Track effectiveness
+            for (const card of cards) {
+              await trackContentCreation('flashcard', card.id, ctx.examProfileId, 'source-processing', 0.7).catch(() => {})
+            }
+          }
         }
 
         // Classify remaining unclassified chunks via embeddings (zero LLM cost)
@@ -299,18 +357,43 @@ Respond ONLY with valid JSON.`
 
               try {
                 const text = await ctx.llm(
-                  `Generate concept cards for the following ${batch.length} concepts.
+                  `Generate comprehensive study fiches (concept cards) for the following ${batch.length} concepts.
 
 ${conceptList}
 
+For each concept, create a rich markdown "content" field following this structure:
+## Definition
+[Precise definition with notation]
+
+## Key Points
+- [Point 1]
+- [Point 2]
+
+## Nuances & Edge Cases
+- [Important subtlety]
+
+## Worked Example
+[Step-by-step example]
+
+## Common Mistakes
+- [Mistake and why it's wrong]
+
+## Connections
+→ [Related concept] (relationship)
+
+## Source
+[Page/chapter reference]
+
+Use LaTeX $...$ for math. Be thorough — this is a reference document, not a flashcard.
+
 Return a JSON array with one object per concept:
 [
-  { "title": "concept name", "keyPoints": ["point 1", "point 2", "point 3"], "example": "a concrete example", "sourceReference": "source reference like Ch.3 p.12" }
+  { "title": "concept name", "content": "full markdown fiche", "keyPoints": ["point 1", "point 2", "point 3"], "example": "a concrete example", "sourceReference": "source reference like Ch.3 p.12" }
 ]
 
 Return EXACTLY ${batch.length} cards in the array, one per concept above, in the same order.
 Respond ONLY with valid JSON (an array).`,
-                  'You are an expert at creating concise study concept cards.',
+                  'You are an expert at creating comprehensive study reference fiches.',
                 )
 
                 const jsonMatch = text.match(/\[[\s\S]*\]/)
@@ -318,6 +401,7 @@ Respond ONLY with valid JSON (an array).`,
 
                 const parsed = JSON.parse(jsonMatch[0]) as Array<{
                   title?: string
+                  content?: string
                   keyPoints?: string[]
                   example?: string
                   sourceReference?: string
@@ -344,6 +428,7 @@ Respond ONLY with valid JSON (an array).`,
                   examProfileId: ctx.examProfileId,
                   topicId: concept.topicId,
                   title: card.title ?? concept.name,
+                  content: card.content,
                   keyPoints: JSON.stringify(card.keyPoints ?? []),
                   example: card.example ?? '',
                   sourceChunkIds: JSON.stringify(concept.chunkIds),

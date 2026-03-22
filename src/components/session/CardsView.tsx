@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
-import { BookOpen, Check, HelpCircle, Plus, Pencil, Trash2, X } from 'lucide-react'
+import { BookOpen, Check, HelpCircle, Plus, Pencil, Trash2, X, FileText } from 'lucide-react'
 import { useConceptCards } from '../../hooks/useConceptCards'
 import { db } from '../../db'
+import { FicheViewer } from './FicheViewer'
 import type { ConceptCard } from '../../db/schema'
 
 interface CardsViewProps {
@@ -118,11 +119,12 @@ function CardForm({ initialTitle, initialKeyPoints, initialExample, onSave, onCa
 
 // ─── Card Item ──────
 
-function CardItem({ card, onQuizMe, onEdit, onDelete }: {
+function CardItem({ card, onQuizMe, onEdit, onDelete, onViewFiche }: {
   card: ConceptCard
   onQuizMe?: (t: string) => void
   onEdit: () => void
   onDelete: () => void
+  onViewFiche: () => void
 }) {
   const mastered = card.mastery >= 0.8
   let keyPoints: string[] = []
@@ -165,14 +167,22 @@ function CardItem({ card, onQuizMe, onEdit, onDelete }: {
           <p className="text-[10px] text-[var(--text-muted)] mb-2">{card.sourceReference}</p>
         )}
 
-        {onQuizMe && (
+        <div className="flex items-center gap-1.5">
           <button
-            onClick={() => onQuizMe(card.title)}
+            onClick={onViewFiche}
             className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-[var(--bg-input)] text-[var(--text-muted)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-colors"
           >
-            <HelpCircle className="w-3 h-3" /> Quiz me
+            <FileText className="w-3 h-3" /> View full fiche
           </button>
-        )}
+          {onQuizMe && (
+            <button
+              onClick={() => onQuizMe(card.title)}
+              className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-[var(--bg-input)] text-[var(--text-muted)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-colors"
+            >
+              <HelpCircle className="w-3 h-3" /> Quiz me
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -184,6 +194,7 @@ export function CardsView({ examProfileId, topicId, onQuizMe }: CardsViewProps) 
   const { cards } = useConceptCards(examProfileId, topicId)
   const [isCreating, setIsCreating] = useState(false)
   const [editingCardId, setEditingCardId] = useState<string | null>(null)
+  const [ficheCardIndex, setFicheCardIndex] = useState<number | null>(null)
 
   const grouped = useMemo(() => {
     const newCards = cards.filter(c => c.mastery < 0.3)
@@ -248,6 +259,7 @@ export function CardsView({ examProfileId, topicId, onQuizMe }: CardsViewProps) 
         onQuizMe={onQuizMe}
         onEdit={() => setEditingCardId(card.id)}
         onDelete={() => handleDelete(card.id)}
+        onViewFiche={() => setFicheCardIndex(cards.indexOf(card))}
       />
     )
   }
@@ -312,6 +324,19 @@ export function CardsView({ examProfileId, topicId, onQuizMe }: CardsViewProps) 
             </button>
           </div>
         ) : null}
+
+        {/* Fiche Viewer Modal */}
+        {ficheCardIndex !== null && cards[ficheCardIndex] && (
+          <FicheViewer
+            card={cards[ficheCardIndex]}
+            onClose={() => setFicheCardIndex(null)}
+            onPrev={() => setFicheCardIndex(i => i !== null && i > 0 ? i - 1 : i)}
+            onNext={() => setFicheCardIndex(i => i !== null && i < cards.length - 1 ? i + 1 : i)}
+            hasPrev={ficheCardIndex > 0}
+            hasNext={ficheCardIndex < cards.length - 1}
+            onQuizMe={onQuizMe}
+          />
+        )}
       </div>
     </div>
   )

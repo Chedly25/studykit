@@ -11,7 +11,7 @@ import type { GeneratedQuestion } from '../../db/schema'
 import { dbQueryStep, webSearchStep, llmJsonStep } from '../orchestrator/steps'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { getKnowledgeGraph, getWeakTopicsTool, getErrorPatterns } from '../tools/knowledgeState'
-import { semanticSearch } from '../../lib/embeddings'
+import { hybridSearch } from '../../lib/hybridSearch'
 
 export interface PracticeExamConfig {
   sessionId: string
@@ -153,7 +153,7 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
           type SearchChunk = Awaited<ReturnType<typeof semanticSearch>>[number] & { query: string }
           const searchResults = await Promise.all(
             queries.map(query =>
-              semanticSearch(ctx.examProfileId, query, ctx.authToken, 15)
+              hybridSearch(ctx.examProfileId, query, ctx.authToken, { topN: 15, rerank: true })
                 .then(chunks => chunks.map(c => ({ ...c, query })))
                 .catch((err): SearchChunk[] => {
                   console.warn(`[practiceExam] semantic search failed for "${query}":`, err)

@@ -2,16 +2,20 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { runAgentLoop } from '../ai/agentLoop'
-import { buildSystemPrompt, buildSocraticPrompt, buildExplainBackPrompt, buildSessionPrompt, buildSourceSection } from '../ai/systemPrompt'
+import { buildSessionPrompt, buildSourceSection } from '../ai/systemPrompt'
 import type { SessionContext, SourceContext } from '../ai/systemPrompt'
+import { buildAdaptivePrompt } from '../ai/adaptivePrompt'
+import { routeChat } from '../ai/agents/chatRouter'
+import { recallEpisodes } from '../ai/memory/episodicMemory'
 import { createConversation, loadMessages, saveMessages } from '../ai/messageStore'
 import { QuotaExceededError } from '../ai/client'
 import { generateSessionInsight } from '../ai/insightGenerator'
 import { useSubscription } from './useSubscription'
+import { track } from '../lib/analytics'
 import type { Message } from '../ai/types'
 import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPreferences, SessionInsight, StudentModel, ConversationSummary, ExamFormat } from '../db/schema'
 import { db } from '../db'
-import { semanticSearch } from '../lib/embeddings'
+import { hybridSearch } from '../lib/hybridSearch'
 
 const FREE_DAILY_LIMIT = 5
 
@@ -63,14 +67,8 @@ export function useAgent(options: UseAgentOptions) {
   const [streamingText, setStreamingText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(null)
-  const [isSocratic, setIsSocratic] = useState(false)
-  const [socraticTopic, setSocraticTopic] = useState<string>('')
-  const [isExplainBack, setIsExplainBack] = useState(false)
-  const [explainBackTopic, setExplainBackTopic] = useState<string>('')
   const [quotaExceeded, setQuotaExceeded] = useState(false)
   const [messagesUsedToday, setMessagesUsedToday] = useState(getMessagesUsedToday)
-  // Block 5C: Socratic attempt counter — use ref to avoid stale closure
-  const socraticAttemptsRef = useRef(0)
   const abortRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -138,7 +136,7 @@ export function useAgent(options: UseAgentOptions) {
           .equals(profile.id)
           .count()
         if (docCount > 0) {
-          const relevant = await semanticSearch(profile.id, userMessage, authToken ?? undefined, 5)
+          const relevant = await hybridSearch(profile.id, userMessage, authToken ?? undefined, { topN: 5 })
           let preRetrievedChunks: string | undefined
           if (relevant.length > 0) {
             preRetrievedChunks = relevant
@@ -203,33 +201,57 @@ export function useAgent(options: UseAgentOptions) {
         examFormats: examFormats.length > 0 ? examFormats : undefined,
       }
 
-      // Build system prompt based on mode
+      // Refresh token before prompt building (needed for goal decomposition + routing)
+      const freshToken = await getToken() ?? authToken
+
+      // Build system prompt — adaptive by default, with auto-routing
       let systemPrompt: string
       if (customSystemPrompt) {
         systemPrompt = customSystemPrompt
-        // Append source context so semantic search / attachment chunks are included
         if (sourceContext) {
           systemPrompt += buildSourceSection(sourceContext)
         }
       } else if (options.sessionContext) {
         systemPrompt = buildSessionPrompt(ctx, options.sessionContext)
-      } else if (isExplainBack && explainBackTopic) {
-        systemPrompt = buildExplainBackPrompt(ctx, explainBackTopic)
-      } else if (isSocratic && socraticTopic) {
-        systemPrompt = buildSocraticPrompt(ctx, socraticTopic)
-        socraticAttemptsRef.current += 1
-        const attemptNum = socraticAttemptsRef.current
-        if (attemptNum >= 3) {
-          systemPrompt += `\n\nStudent attempt #${attemptNum}. Reveal the answer now and explain thoroughly.`
-        } else {
-          systemPrompt += `\n\nStudent attempt #${attemptNum}. Continue guiding with questions, do not reveal the answer yet.`
-        }
       } else {
-        systemPrompt = buildSystemPrompt(ctx)
-      }
+        // Adaptive prompt: base + student model + episodes + calibration + misconceptions
+        const userId = profile.userId ?? ''
+        systemPrompt = await buildAdaptivePrompt({
+          ...ctx,
+          userId,
+          currentTopicId: undefined,
+        })
 
-      // Refresh token right before API call to avoid JWT expiry
-      const freshToken = await getToken() ?? authToken
+        // Goal decomposition for complex requests (first message only)
+        const userMsgCount = newMessages.filter(m => m.role === 'user').length
+        if (userMsgCount === 1 && freshToken) {
+          try {
+            const { decomposeGoal, formatPlanForPrompt } = await import('../ai/planner/goalDecomposer')
+            const { callFastModel } = await import('../ai/fastClient')
+            const diagnosticInsight = await db.agentInsights.get(`diagnostician:${profile.id}`)
+            const report = diagnosticInsight ? JSON.parse(diagnosticInsight.data) : null
+            const plan = await decomposeGoal(
+              userMessage, topics, report,
+              (prompt: string, system?: string) => callFastModel(prompt, system ?? '', freshToken, { maxTokens: 512 }),
+            )
+            if (plan && plan.isComplex) {
+              systemPrompt += formatPlanForPrompt(plan)
+            }
+          } catch { /* non-fatal */ }
+        }
+
+        // Auto-route teaching approach (only after 3+ user messages for enough context)
+        if (userMsgCount >= 3 && freshToken) {
+          try {
+            const sm = await db.studentModels.get(profile.id)
+            const episodes = userId ? await recallEpisodes({ userId, limit: 5 }) : []
+            const routing = await routeChat(newMessages, sm, null, episodes, freshToken)
+            if (routing.addendum) {
+              systemPrompt += `\n\n## Teaching Approach\n${routing.addendum}`
+            }
+          } catch { /* non-fatal — use base adaptive prompt */ }
+        }
+      }
 
       // Run agent loop
       const result = await runAgentLoop({
@@ -259,27 +281,7 @@ export function useAgent(options: UseAgentOptions) {
       setCurrentToolCall(null)
       await saveMessages(convId, result.messages)
 
-      // Block 5D: Explain-Back scoring — parse scores from assistant response
-      if (isExplainBack && explainBackTopic) {
-        const lastAssistant = result.messages.filter(m => m.role === 'assistant').pop()
-        if (lastAssistant && typeof lastAssistant.content === 'string') {
-          const scoreRegex = /(?:Completeness|Accuracy|Clarity)\s*[:=]\s*(\d(?:\.\d)?)\s*\/\s*5/gi
-          const scores: number[] = []
-          let match
-          while ((match = scoreRegex.exec(lastAssistant.content)) !== null) {
-            scores.push(parseFloat(match[1]))
-          }
-          if (scores.length >= 2) {
-            const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length
-            const confidence = Math.min(1, avgScore / 5)
-            // Find topic by name and update confidence
-            const matchingTopic = topics.find(t => t.name.toLowerCase() === explainBackTopic.toLowerCase())
-            if (matchingTopic) {
-              db.topics.update(matchingTopic.id, { confidence }).catch(() => {})
-            }
-          }
-        }
-      }
+      track('chat_message_sent')
 
       // Track usage for free users
       if (!isPro) {
@@ -300,7 +302,7 @@ export function useAgent(options: UseAgentOptions) {
     } finally {
       setIsLoading(false)
     }
-  }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, isSocratic, socraticTopic, isExplainBack, explainBackTopic, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, customSystemPrompt, i18n.language])
+  }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, customSystemPrompt, i18n.language])
 
   // Track conversation state in refs for beforeunload handler
   const messagesRef = useRef(messages)
@@ -355,38 +357,11 @@ export function useAgent(options: UseAgentOptions) {
     setConversationId(null)
     setStreamingText('')
     setError(null)
-    setIsSocratic(false)
-    setSocraticTopic('')
-    setIsExplainBack(false)
-    setExplainBackTopic('')
   }, [messages, conversationId, profile, getToken])
 
   const cancel = useCallback(() => {
     abortRef.current = true
     abortControllerRef.current?.abort()
-  }, [])
-
-  const startSocraticMode = useCallback((topicName: string) => {
-    setIsSocratic(true)
-    setSocraticTopic(topicName)
-    socraticAttemptsRef.current = 0
-    setMessages([])
-    setConversationId(null)
-    setStreamingText('')
-    setError(null)
-    setIsExplainBack(false)
-    setExplainBackTopic('')
-  }, [])
-
-  const startExplainBackMode = useCallback((topicName: string) => {
-    setIsExplainBack(true)
-    setExplainBackTopic(topicName)
-    setMessages([])
-    setConversationId(null)
-    setStreamingText('')
-    setError(null)
-    setIsSocratic(false)
-    setSocraticTopic('')
   }, [])
 
   return {
@@ -396,17 +371,11 @@ export function useAgent(options: UseAgentOptions) {
     streamingText,
     error,
     conversationId,
-    isSocratic,
-    isExplainBack,
-    socraticTopic,
-    explainBackTopic,
     quotaExceeded,
     messagesUsedToday,
     sendMessage,
     cancel,
     loadConversation,
     newConversation,
-    startSocraticMode,
-    startExplainBackMode,
   }
 }

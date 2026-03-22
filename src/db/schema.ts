@@ -131,6 +131,7 @@ export interface DocumentChunk {
   topicId?: string
   chunkIndex: number
   keywords: string // comma-separated lowercase terms for search
+  contextPrefix?: string // Generated context sentence for retrieval enrichment
 }
 
 export interface DocumentFile {
@@ -256,8 +257,9 @@ export interface ConceptCard {
   examProfileId: string
   topicId: string
   title: string
-  keyPoints: string       // JSON string[]
-  example: string
+  content?: string        // Rich markdown fiche (new cards use this)
+  keyPoints: string       // JSON string[] (legacy, kept for backward compat)
+  example: string         // Legacy (kept for backward compat)
   sourceChunkIds: string  // JSON string[]
   sourceReference: string
   relatedCardIds: string  // JSON string[]
@@ -664,6 +666,78 @@ export interface Misconception {
   questionResultIds: string // JSON string[]
 }
 
+// ─── Agentic AI Infrastructure ──────────────────────────────────
+
+export type EpisodeType =
+  | 'breakthrough'
+  | 'struggle-pattern'
+  | 'misconception-detected'
+  | 'mastery-change'
+  | 'strategy-effective'
+  | 'strategy-ineffective'
+  | 'preference-observed'
+
+export interface TutoringEpisode {
+  id: string
+  userId: string              // cross-profile (per user)
+  examProfileId?: string
+  topicId?: string
+  topicName?: string
+  type: EpisodeType
+  description: string
+  context: string             // JSON — agent-specific payload
+  effectiveness: number       // 0-1, updated based on outcomes
+  tags: string                // JSON string[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AgentRun {
+  id: string
+  agentId: string
+  examProfileId: string
+  trigger: string             // JSON — AgentTrigger that caused this run
+  status: 'success' | 'error' | 'skipped'
+  summary: string
+  durationMs: number
+  episodesRecorded: number
+  createdAt: string
+}
+
+export interface AgentInsight {
+  id: string                  // composite: `${agentId}:${examProfileId}`
+  agentId: string
+  examProfileId: string
+  data: string                // JSON — agent-specific structured insight
+  summary: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ContentEffectiveness {
+  id: string
+  contentType: string         // 'flashcard' | 'concept-card' | 'exercise' | 'question'
+  contentId: string
+  examProfileId: string
+  generationStrategy: string
+  generationScore: number     // 0-1, reflection loop score at creation
+  interactionCount: number
+  successRate: number         // 0-1, running average
+  lastRating: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface StrategyEffectiveness {
+  id: string                  // strategy name (primary key)
+  contentType: string
+  totalGenerated: number
+  avgGenerationScore: number
+  avgSuccessRate: number
+  avgInteractionCount: number
+  updatedAt: string
+}
+
 // ─── Background Jobs ────────────────────────────────────────────
 
 export type JobType =
@@ -676,6 +750,7 @@ export type JobType =
   | 'session-insight'
   | 'exam-research'
   | 'exam-exercise-processing'
+  | 'misconception-exercise'
 
 export interface BackgroundJob {
   id: string

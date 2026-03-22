@@ -5,7 +5,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { db } from '../db'
-import { semanticSearch } from '../lib/embeddings'
+import { hybridSearch } from '../lib/hybridSearch'
 
 export interface SearchResult {
   type: 'document' | 'topic' | 'exercise' | 'concept-card' | 'flashcard'
@@ -40,7 +40,7 @@ export function useSearch(examProfileId: string | undefined) {
         (async (): Promise<SearchResult[]> => {
           try {
             const token = await getToken() ?? undefined
-            const chunks = await semanticSearch(examProfileId, query, token, 8)
+            const chunks = await hybridSearch(examProfileId, query, token, { topN: 8 })
             return chunks.map(c => ({
               type: 'document' as const,
               id: c.id,

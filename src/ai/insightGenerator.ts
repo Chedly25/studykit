@@ -39,6 +39,11 @@ export async function generateSessionInsight(
   - personalityNotes: string[] - interaction style observations
   - preferredExplanations: string[] - what explanation types worked best
   - motivationTriggers: string[] - what motivated or discouraged the student
+- episodes: array - tutoring episodes to remember for future sessions, each with:
+  - type: "breakthrough" | "struggle-pattern" | "strategy-effective" | "strategy-ineffective" | "preference-observed"
+  - description: string - specific, actionable description (e.g. "The rows-as-functions analogy helped understand matrix multiplication")
+  - topicName: string - topic name if identifiable
+  - tags: string[] - relevant tags for searchability
 
 Return ONLY valid JSON, no markdown or explanation.
 
@@ -79,6 +84,12 @@ ${transcript}`
         preferredExplanations?: string[]
         motivationTriggers?: string[]
       }
+      episodes?: Array<{
+        type?: string
+        description?: string
+        topicName?: string
+        tags?: string[]
+      }>
     }
 
     const insight: SessionInsight = {
@@ -149,6 +160,35 @@ ${transcript}`
         updatedAt: new Date().toISOString(),
       }
       await db.studentModels.put(model)
+    }
+
+    // Record tutoring episodes to episodic memory
+    if (parsed.episodes && Array.isArray(parsed.episodes)) {
+      try {
+        const { recordEpisode } = await import('./memory/episodicMemory')
+        const profile = await db.examProfiles.get(examProfileId)
+        const userId = profile?.userId ?? ''
+        if (userId) {
+          for (const ep of parsed.episodes.slice(0, 5)) {
+            if (ep.description) {
+              const validTypes = ['breakthrough', 'struggle-pattern', 'strategy-effective', 'strategy-ineffective', 'preference-observed', 'misconception-detected', 'mastery-change'] as const
+              const epType = validTypes.includes(ep.type as typeof validTypes[number])
+                ? (ep.type as typeof validTypes[number])
+                : 'breakthrough'
+              await recordEpisode({
+                userId,
+                examProfileId,
+                topicName: ep.topicName,
+                type: epType,
+                description: ep.description,
+                context: JSON.stringify({ conversationId, source: 'insight-generator' }),
+                effectiveness: 0.5,
+                tags: JSON.stringify(ep.tags ?? []),
+              }).catch(() => {})
+            }
+          }
+        }
+      } catch { /* non-fatal */ }
     }
 
     return insight

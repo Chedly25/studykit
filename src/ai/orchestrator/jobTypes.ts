@@ -11,6 +11,7 @@ import { createPracticeExamWorkflow } from '../workflows/practiceExam'
 import { createGradingWorkflow } from '../workflows/practiceExamGrading'
 import { createExamResearchWorkflow } from '../workflows/examResearch'
 import { createExamExerciseProcessingWorkflow } from '../workflows/examExerciseProcessing'
+import { createMisconceptionExerciseWorkflow } from '../workflows/misconceptionExercise'
 
 /**
  * Reconstruct a WorkflowDefinition from a job type and its serialized config.
@@ -69,6 +70,12 @@ export function reconstructWorkflow(type: JobType, config: Record<string, unknow
       return createExamExerciseProcessingWorkflow({
         documentId: config.documentId as string,
         isPro: config.isPro as boolean,
+      })
+
+    case 'misconception-exercise':
+      return createMisconceptionExerciseWorkflow({
+        examProfileId: config.examProfileId as string,
+        maxMisconceptions: config.maxMisconceptions as number | undefined,
       })
 
     default:

@@ -50,6 +50,11 @@ import type {
   AchievementRecord,
   TopicEmbedding,
   Misconception,
+  TutoringEpisode,
+  AgentRun,
+  AgentInsight,
+  ContentEffectiveness,
+  StrategyEffectiveness,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -103,6 +108,11 @@ export class StudiesKitDB extends Dexie {
   achievements!: Table<AchievementRecord>
   topicEmbeddings!: Table<TopicEmbedding>
   misconceptions!: Table<Misconception>
+  tutoringEpisodes!: Table<TutoringEpisode>
+  agentRuns!: Table<AgentRun>
+  agentInsights!: Table<AgentInsight>
+  contentEffectiveness!: Table<ContentEffectiveness>
+  strategyEffectiveness!: Table<StrategyEffectiveness>
 
   constructor() {
     super('studieskit')
@@ -290,6 +300,16 @@ export class StudiesKitDB extends Dexie {
         }
       })
     })
+
+    this.version(23).stores({
+      tutoringEpisodes: 'id, userId, [userId+topicId], [userId+type]',
+      agentRuns: 'id, [examProfileId+agentId], createdAt',
+      agentInsights: 'id, [examProfileId+agentId]',
+      contentEffectiveness: 'id, contentId, [examProfileId+contentType], generationStrategy',
+      strategyEffectiveness: 'id, contentType',
+    })
+
+    this.version(24).stores({}) // contextPrefix added to DocumentChunk (optional field, no index change)
   }
 }
 

@@ -15,6 +15,7 @@ import { useExamProfile } from '../hooks/useExamProfile'
 import { PdfScrollViewer } from '../components/reader/PdfScrollViewer'
 import { ReaderChatPane } from '../components/reader/ReaderChatPane'
 import { ReaderToolbar } from '../components/reader/ReaderToolbar'
+import { RecallSuggestion } from '../components/reader/RecallSuggestion'
 import type { Document } from '../db/schema'
 
 export default function DocumentReader() {
@@ -34,6 +35,35 @@ export default function DocumentReader() {
   const [chatOpen, setChatOpen] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectionContext, setSelectionContext] = useState<{ text: string; pageNumber: number; documentTitle: string } | null>(null)
+
+  // Active recall suggestion
+  const [showRecallSuggestion, setShowRecallSuggestion] = useState(false)
+  const lastQuizPageRef = useRef(0)
+  const PAGE_INTERVAL = 5
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page)
+    if (page - lastQuizPageRef.current >= PAGE_INTERVAL) {
+      setShowRecallSuggestion(true)
+    }
+  }, [])
+
+  const handleRecallQuiz = useCallback(() => {
+    setShowRecallSuggestion(false)
+    const fromPage = Math.max(1, currentPage - PAGE_INTERVAL + 1)
+    lastQuizPageRef.current = currentPage
+    setChatOpen(true)
+    setSelectionContext({
+      text: `Quick recall check: generate a 2-question quiz about what I just read (pages ${fromPage} to ${currentPage}).`,
+      pageNumber: currentPage,
+      documentTitle: documentMeta?.title ?? 'this document',
+    })
+  }, [currentPage, documentMeta])
+
+  const handleRecallDismiss = useCallback(() => {
+    setShowRecallSuggestion(false)
+    lastQuizPageRef.current = currentPage
+  }, [currentPage])
 
   // Fix 1: Resizable chat panel
   const [chatWidth, setChatWidth] = useState(400)
@@ -194,16 +224,24 @@ export default function DocumentReader() {
       <div className="flex-1 flex min-h-0">
         {/* PDF viewer */}
         {pdfDoc && (
-          <PdfScrollViewer
-            pdfDoc={pdfDoc}
-            scale={scale}
-            onPageChange={setCurrentPage}
-            onAskAI={handleAskAI}
-            onAutoScale={handleAutoScale}
-            documentId={documentId!}
-            examProfileId={profileId}
-            topicHighlightTexts={topicChunkTexts}
-          />
+          <div className="flex-1 relative min-w-0">
+            <PdfScrollViewer
+              pdfDoc={pdfDoc}
+              scale={scale}
+              onPageChange={handlePageChange}
+              onAskAI={handleAskAI}
+              onAutoScale={handleAutoScale}
+              documentId={documentId!}
+              examProfileId={profileId}
+              topicHighlightTexts={topicChunkTexts}
+            />
+            {showRecallSuggestion && (
+              <RecallSuggestion
+                onQuizMe={handleRecallQuiz}
+                onDismiss={handleRecallDismiss}
+              />
+            )}
+          </div>
         )}
 
         {/* Drag handle */}

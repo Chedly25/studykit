@@ -3,7 +3,7 @@
  * reporting progress at the step level with LLM streaming indicators.
  */
 import { streamChat } from '../client'
-import { semanticSearch } from '../../lib/embeddings'
+import { hybridSearch } from '../../lib/hybridSearch'
 import { searchWeb as searchWebClient } from '../tools/webSearchTool'
 import type {
   WorkflowContext,
@@ -69,7 +69,7 @@ export async function runWorkflow<T>(
     },
 
     async searchSources(query: string, topN = 5): Promise<string> {
-      const chunks = await semanticSearch(config.examProfileId, query, config.authToken, topN)
+      const chunks = await hybridSearch(config.examProfileId, query, config.authToken, { topN })
       if (chunks.length === 0) return ''
       return chunks.map(c => `[${c.documentTitle ?? 'Source'}]\n${c.content}`).join('\n\n---\n\n')
     },

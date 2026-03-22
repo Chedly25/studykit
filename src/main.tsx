@@ -8,6 +8,10 @@ import './i18n'
 import './styles/globals.css'
 import App from './App'
 import { BackgroundJobsProvider } from './components/BackgroundJobsProvider'
+import { initAnalytics } from './lib/analytics'
+
+// Initialize PostHog analytics (no-op if VITE_POSTHOG_KEY not set)
+initAnalytics()
 
 // Register service worker for offline caching + push
 if ('serviceWorker' in navigator) {

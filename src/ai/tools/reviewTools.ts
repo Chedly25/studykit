@@ -2,7 +2,7 @@
  * Chat tools for article review — search, compare, summarize.
  */
 import { db } from '../../db'
-import { semanticSearch } from '../../lib/embeddings'
+import { hybridSearch } from '../../lib/hybridSearch'
 
 export async function searchReviewArticles(
   examProfileId: string,
@@ -30,7 +30,7 @@ export async function searchReviewArticles(
   }
 
   // Semantic search across project documents
-  const results = await semanticSearch(examProfileId, input.query, authToken, 10)
+  const results = await hybridSearch(examProfileId, input.query, authToken, { topN: 10 })
   const projectResults = results.filter(r => documentIds.includes(r.documentId))
 
   return JSON.stringify({

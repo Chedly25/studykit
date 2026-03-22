@@ -547,4 +547,26 @@ export const agentTools: ToolDefinition[] = [
       required: ['code', 'language', 'instructions'],
     },
   },
+  {
+    name: 'executeSequence',
+    description: 'Execute a sequence of tools where each step runs after the previous completes. Use when you need to chain operations like search then generate content based on what you found. More efficient than separate tool calls across multiple turns.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        steps: {
+          type: 'array',
+          description: 'Ordered list of tool calls to execute sequentially (max 5)',
+          items: {
+            type: 'object',
+            properties: {
+              toolName: { type: 'string', description: 'Name of the tool to call' },
+              input: { type: 'object', description: 'Input for the tool' },
+            },
+            required: ['toolName', 'input'],
+          },
+        },
+      },
+      required: ['steps'],
+    },
+  },
 ]

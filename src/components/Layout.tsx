@@ -24,6 +24,7 @@ import { ErrorBoundary } from './ErrorBoundary'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { useJobCompletionToasts } from '../hooks/useJobCompletionToasts'
 import { useWeeklyDigest } from '../hooks/useWeeklyDigest'
+import { identify } from '../lib/analytics'
 
 export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
@@ -45,6 +46,13 @@ export function Layout() {
   // Pipeline completion toasts + weekly email digest
   useJobCompletionToasts()
   useWeeklyDigest()
+
+  // Identify user for analytics on auth
+  useEffect(() => {
+    if (user?.id) {
+      identify(user.id, { plan: isPro ? 'pro' : 'free', profileCount: activeProfile ? 1 : 0 })
+    }
+  }, [user?.id, isPro, activeProfile])
 
   const sidebarExpanded = sidebarPinned || sidebarHovered
   const collapsed = !sidebarExpanded

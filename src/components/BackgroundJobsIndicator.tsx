@@ -19,6 +19,7 @@ const JOB_LABELS: Record<JobType, string> = {
   'study-plan': 'Generating study plan',
   'session-insight': 'Analyzing session',
   'exam-research': 'Researching exam format',
+  'misconception-exercise': 'Generating targeted exercises',
 }
 
 export function BackgroundJobsIndicator() {

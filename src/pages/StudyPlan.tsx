@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Calendar, Check, Loader2, RefreshCw, Play } from 'lucide-react'
+import { Calendar, Check, Loader2, RefreshCw, Play, Download } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useSubscription } from '../hooks/useSubscription'
 import { useStudyPlan } from '../hooks/useStudyPlan'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { Target } from 'lucide-react'
+import { db } from '../db'
+import { generateICS, downloadICS } from '../lib/calendarExport'
 
 interface StudyActivity {
   topicName: string
@@ -43,6 +47,17 @@ export default function StudyPlan() {
     generatePlan, markActivityCompleted, deactivatePlan,
     replanPlan, replanSuggestion,
   } = useStudyPlan(profileId)
+
+  // Strategist agent insight
+  const strategistInsight = useLiveQuery(async () => {
+    if (!profileId) return null
+    const insight = await db.agentInsights.get(`strategist:${profileId}`)
+    if (!insight) return null
+    try {
+      const data = JSON.parse(insight.data) as { suggestion?: string | null; planOnTrack?: boolean }
+      return data.suggestion ?? null
+    } catch { return null }
+  }, [profileId]) ?? null
 
   const [confirmDismiss, setConfirmDismiss] = useState(false)
   useEffect(() => {
@@ -121,6 +136,16 @@ export default function StudyPlan() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => {
+              const ics = generateICS(planDays, activeProfile.name)
+              downloadICS(ics, 'study-plan.ics')
+            }}
+            className="btn-secondary px-3 py-1.5 text-sm flex items-center gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export to Calendar
+          </button>
+          <button
             onClick={handleGenerate}
             disabled={isGenerating}
             className="btn-secondary px-3 py-1.5 text-sm flex items-center gap-1.5"
@@ -162,6 +187,19 @@ export default function StudyPlan() {
             <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
             {t('studyPlan.replan')}
           </button>
+        </div>
+      )}
+
+      {/* Strategist agent suggestion */}
+      {strategistInsight && !replanSuggestion && (
+        <div className="glass-card p-4 mb-4 border-l-4 border-blue-500 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-blue-500 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-[var(--text-heading)]">Strategy suggestion</p>
+              <p className="text-xs text-[var(--text-muted)]">{strategistInsight}</p>
+            </div>
+          </div>
         </div>
       )}
 

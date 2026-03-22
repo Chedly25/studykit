@@ -84,7 +84,9 @@ export async function embedAndStoreChunks(
 ): Promise<void> {
   if (chunks.length === 0) return
 
-  const texts = chunks.map(c => c.content)
+  const texts = chunks.map(c =>
+    c.contextPrefix ? `${c.contextPrefix}\n${c.content}` : c.content
+  )
   const embeddings = await generateEmbeddings(texts, authToken)
 
   const rows: ChunkEmbedding[] = chunks.map((chunk, i) => ({

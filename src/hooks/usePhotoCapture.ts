@@ -4,6 +4,7 @@
  */
 import { useState, useCallback } from 'react'
 import { useAuth } from '@clerk/clerk-react'
+import { track } from '../lib/analytics'
 
 const MAX_IMAGE_DIMENSION = 2048
 
@@ -97,6 +98,7 @@ export function usePhotoCapture() {
 
       const data = await res.json() as { text?: string; error?: string }
       if (data.error) { setError(data.error); return '' }
+      track('photo_used')
       return data.text ?? ''
     } catch {
       setError('Text extraction failed')

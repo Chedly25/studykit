@@ -30,6 +30,8 @@ import { showAchievementToast } from '../components/AchievementToast'
 import { computeNudge, type SessionResult, type Nudge } from '../lib/queueNudges'
 import { streamChat } from '../ai/client'
 import { MathText } from '../components/MathText'
+import { track } from '../lib/analytics'
+import { trackContentInteraction } from '../lib/effectivenessTracker'
 import type { QueueItem } from '../lib/dailyQueueEngine'
 
 const SESSION_START_KEY = (profileId: string, date: string) => `session_start_${profileId}_${date}`
@@ -60,6 +62,18 @@ function DailyQueueContent() {
   const [timeAvailable, setTimeAvailable] = useState<number | undefined>(undefined)
   const [showCompletion, setShowCompletion] = useState(false)
   const [conceptRevealed, setConceptRevealed] = useState(false)
+  const [coachDismissed, setCoachDismissed] = useState(false)
+
+  // Coach insight from Progress Monitor agent
+  const coachInsight = useLiveQuery(async () => {
+    if (!profileId || coachDismissed) return null
+    const insight = await db.agentInsights.get(`progress-monitor:${profileId}`)
+    if (!insight) return null
+    try {
+      const insights = JSON.parse(insight.data) as Array<{ type: string; urgency: string; title: string; message: string; surface: string; action?: { label: string; route: string } }>
+      return insights.find(i => i.surface === 'queue') ?? null
+    } catch { return null }
+  }, [profileId, coachDismissed]) ?? null
 
   // Block A: Session tracking — refs ensure session starts regardless of overlay
   const sessionStartRef = useRef<number>(0)
@@ -134,6 +148,8 @@ function DailyQueueContent() {
         endSession().catch(() => {})
         sessionStartedRef.current = false
       }
+
+      track('queue_completed', { completedCount, timeSpent: Math.round((Date.now() - sessionStartRef.current) / 1000) })
 
       if (profileId) {
         generateNotifications(profileId).catch(() => {})
@@ -211,6 +227,8 @@ function DailyQueueContent() {
   // Block E: Record a rating result and compute nudge
   const recordResult = useCallback((topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => {
     sessionResults.current.push({ topicName, type, rating })
+    if (type === 'flashcard-review') track('flashcard_reviewed', { rating })
+    else if (type === 'exercise') track('exercise_rated', { rating })
     const nudge = computeNudge({
       completedTopicName: topicName,
       completedCount: completedCount + 1,
@@ -225,9 +243,10 @@ function DailyQueueContent() {
     if (profileId) {
       localStorage.setItem(SESSION_START_KEY(profileId, today), 'true')
     }
+    track('queue_started', { minutes, cramMode, itemCount: totalCount })
     setTimeAvailable(minutes)
     setShowStartOverlay(false)
-  }, [profileId, today])
+  }, [profileId, today, cramMode, totalCount])
 
   const handleComplete = useCallback((itemId: string) => {
     setConceptRevealed(false)
@@ -303,6 +322,30 @@ function DailyQueueContent() {
           aiDebrief={aiDebrief}
           isDebriefStreaming={isDebriefStreaming}
         />
+      )}
+
+      {/* Coach insight from Progress Monitor */}
+      {coachInsight && (
+        <div className={`glass-card p-3 mb-4 flex items-center gap-2 text-sm animate-fade-in ${
+          coachInsight.urgency === 'urgent' ? 'border-l-4 border-red-500' :
+          coachInsight.urgency === 'attention' ? 'border-l-4 border-amber-500' : ''
+        }`}>
+          <span className="text-base shrink-0">
+            {coachInsight.urgency === 'urgent' ? '🚨' : coachInsight.urgency === 'attention' ? '📊' : '💡'}
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-[var(--text-heading)] text-xs">{coachInsight.title}</p>
+            <p className="text-[var(--text-muted)] text-xs">{coachInsight.message}</p>
+          </div>
+          {coachInsight.action && (
+            <Link to={coachInsight.action.route} className="text-xs text-[var(--accent-text)] hover:underline shrink-0">
+              {coachInsight.action.label}
+            </Link>
+          )}
+          <button onClick={() => setCoachDismissed(true)} className="text-[var(--text-muted)] hover:text-[var(--text-body)] shrink-0">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
       )}
 
       {/* Header */}
@@ -523,6 +566,7 @@ function FlashcardReviewInline({
       }
 
       setReviewedCount(prev => prev + 1)
+      trackContentInteraction(card.id, quality, quality >= 3).catch(() => {})
       onRated(item.topicName, 'flashcard-review', quality <= 2 ? 'struggled' : quality <= 3 ? 'ok' : 'good')
 
       // Block B: Show AI explanation on "Again", don't auto-advance
@@ -720,6 +764,9 @@ function ExerciseInline({
       })
       if (item.topicId) await recomputeTopicMastery(item.topicId)
 
+      if (item.exerciseId) {
+        trackContentInteraction(item.exerciseId, score <= 0.3 ? 1 : score <= 0.6 ? 3 : 5, score >= 0.5).catch(() => {})
+      }
       onRated(item.topicName, 'exercise', score <= 0.3 ? 'struggled' : score <= 0.6 ? 'ok' : 'good')
 
       if (score === 0.2) {
@@ -868,6 +915,9 @@ function ConceptQuizInline({
       await advanceTopicSRS(item.topicId, quality)
       await recomputeTopicMastery(item.topicId)
 
+      if (item.conceptCardId) {
+        trackContentInteraction(item.conceptCardId, quality, quality >= 3).catch(() => {})
+      }
       onRated(item.topicName, 'concept-quiz', quality <= 1 ? 'struggled' : quality <= 3 ? 'ok' : 'good')
 
       if (quality === 1) {

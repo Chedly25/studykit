@@ -194,6 +194,16 @@ async function executeToolLocally(
       return prepareQuiz(input as Parameters<typeof prepareQuiz>[0])
     case 'renderCodePlayground':
       return prepareCodePlayground(input as Parameters<typeof prepareCodePlayground>[0])
+    case 'executeSequence': {
+      const steps = (input.steps ?? []) as Array<{ toolName: string; input: Record<string, unknown> }>
+      const results: Array<{ toolName: string; result: string }> = []
+      for (const step of steps.slice(0, 5)) {
+        if (step.toolName === 'executeSequence') continue // prevent nesting
+        const result = await executeToolLocally(step.toolName, step.input ?? {}, examProfileId, authToken, signal)
+        results.push({ toolName: step.toolName, result: result.slice(0, 3000) })
+      }
+      return JSON.stringify({ sequenceCompleted: true, stepCount: results.length, results })
+    }
     default:
       return JSON.stringify({ error: `Unknown tool: ${toolName}` })
   }

@@ -7,6 +7,7 @@ interface RenderConceptCardInput {
   example?: string
   connections?: string[]
   sourceReference?: string
+  content?: string          // Rich markdown fiche content
 }
 
 interface QuizQuestion {
@@ -25,6 +26,19 @@ export async function saveConceptCard(
   topicId: string,
   input: RenderConceptCardInput,
 ): Promise<string> {
+  // Check for duplicate title before saving
+  const existingWithTitle = await db.conceptCards
+    .where('examProfileId')
+    .equals(examProfileId)
+    .filter(c => c.topicId === topicId && c.title.toLowerCase() === input.title.toLowerCase())
+    .first()
+
+  if (existingWithTitle) {
+    return JSON.stringify({
+      error: `A concept card titled "${input.title}" already exists for this topic. Use a different title or update the existing card.`,
+    })
+  }
+
   const cardId = crypto.randomUUID()
   const now = new Date().toISOString()
 
@@ -33,6 +47,7 @@ export async function saveConceptCard(
     examProfileId,
     topicId,
     title: input.title,
+    content: input.content,
     keyPoints: JSON.stringify(input.keyPoints),
     example: input.example ?? '',
     sourceChunkIds: '[]',

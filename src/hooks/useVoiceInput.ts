@@ -4,6 +4,7 @@
  */
 import { useState, useRef, useCallback } from 'react'
 import { useAuth } from '@clerk/clerk-react'
+import { track } from '../lib/analytics'
 
 const MAX_DURATION_MS = 60_000 // 60 seconds max recording
 
@@ -120,6 +121,7 @@ export function useVoiceInput() {
           const data = await res.json() as { text?: string; error?: string }
           if (data.error) { setError(data.error); resolve(''); return }
 
+          track('voice_used')
           resolve(data.text ?? '')
         } catch {
           setError('Transcription failed')

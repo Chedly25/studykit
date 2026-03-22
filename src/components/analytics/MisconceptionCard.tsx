@@ -1,8 +1,10 @@
 /**
  * Misconception graph display — shows active misconceptions grouped by topic.
  */
+import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { AlertCircle, Check } from 'lucide-react'
+import { AlertCircle, Check, Dumbbell, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { db } from '../../db'
 
 interface Props {
@@ -10,6 +12,34 @@ interface Props {
 }
 
 export function MisconceptionCard({ examProfileId }: Props) {
+  const [isEnqueuing, setIsEnqueuing] = useState(false)
+
+  const handleGenerateExercises = async () => {
+    setIsEnqueuing(true)
+    try {
+      const now = new Date().toISOString()
+      await db.backgroundJobs.put({
+        id: crypto.randomUUID(),
+        examProfileId,
+        type: 'misconception-exercise',
+        status: 'queued',
+        config: JSON.stringify({ examProfileId, maxMisconceptions: 3 }),
+        completedStepIds: '[]',
+        stepResults: '{}',
+        totalSteps: 3,
+        completedStepCount: 0,
+        currentStepName: '',
+        createdAt: now,
+        updatedAt: now,
+      })
+      toast.success('Generating targeted exercises — they\'ll appear in your queue soon')
+    } catch {
+      toast.error('Failed to start exercise generation')
+    } finally {
+      setIsEnqueuing(false)
+    }
+  }
+
   const misconceptions = useLiveQuery(
     () => db.misconceptions.where('examProfileId').equals(examProfileId).toArray(),
     [examProfileId],
@@ -46,9 +76,19 @@ export function MisconceptionCard({ examProfileId }: Props) {
       <div className="flex items-center gap-2 mb-4">
         <AlertCircle className="w-5 h-5 text-red-500" />
         <h3 className="text-sm font-bold text-[var(--text-heading)]">Misconceptions</h3>
-        <span className="text-xs text-[var(--text-muted)]">
+        <span className="text-xs text-[var(--text-muted)] flex-1">
           {unresolvedCount} active, {misconceptions.length - unresolvedCount} resolved
         </span>
+        {unresolvedCount > 0 && (
+          <button
+            onClick={handleGenerateExercises}
+            disabled={isEnqueuing}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[var(--accent-bg)] text-[var(--accent-text)] hover:opacity-80 transition-opacity disabled:opacity-50"
+          >
+            {isEnqueuing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Dumbbell className="w-3 h-3" />}
+            Generate exercises
+          </button>
+        )}
       </div>
 
       <div className="space-y-4">
