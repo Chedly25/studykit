@@ -24,6 +24,7 @@ export function useSourceProcessing(examProfileId: string | undefined) {
 
   const processDocument = useCallback(async (documentId: string) => {
     if (!examProfileId) return null
+    if (!isPro) return null // AI processing is Pro only
 
     const id = await enqueue(
       'source-processing',

@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
+import { ClipboardCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useSources } from '../hooks/useSources'
 import { usePracticeExam } from '../hooks/usePracticeExam'
+import { useSubscription } from '../hooks/useSubscription'
 import { PracticeExamSetup } from '../components/practice/PracticeExamSetup'
 import { PracticeExamGenerator } from '../components/practice/PracticeExamGenerator'
 import { PracticeExamTaker } from '../components/practice/PracticeExamTaker'
@@ -21,6 +23,7 @@ export default function PracticeExam() {
   const { documentCount } = useSources(profileId)
 
   const exam = usePracticeExam(profileId)
+  const { isPro } = useSubscription()
   const masterySnapshotRef = useRef<Map<string, number>>(new Map())
   const streakRef = useRef(streak)
   streakRef.current = streak
@@ -90,6 +93,19 @@ export default function PracticeExam() {
         <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('ai.practiceSession')}</h1>
         <p className="text-[var(--text-muted)]">{t('ai.createProfileFirst')}</p>
         <a href="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">{t('profile.create')}</a>
+      </div>
+    )
+  }
+
+  if (exam.phase === 'setup' && !isPro) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
+        <ClipboardCheck className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
+        <h2 className="text-xl font-bold text-[var(--text-heading)] mb-2">Practice Exams — Pro</h2>
+        <p className="text-sm text-[var(--text-muted)] mb-6">
+          Generate AI-powered practice exams from your study materials with automatic grading and feedback.
+        </p>
+        <a href="/pricing" className="btn-primary px-6 py-2.5 inline-block">Upgrade to Pro</a>
       </div>
     )
   }

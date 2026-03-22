@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { toast } from 'sonner'
-import { FileText, Loader2, ClipboardCheck, BookOpen, ListChecks, Sparkles } from 'lucide-react'
+import { FileText, Loader2, ClipboardCheck, BookOpen, ListChecks, Sparkles, Lock } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useExamProfile } from '../hooks/useExamProfile'
+import { useSubscription } from '../hooks/useSubscription'
 import { useSources } from '../hooks/useSources'
 import { useAgent } from '../hooks/useAgent'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
@@ -61,6 +62,7 @@ export default function Sources() {
   const agent = useAgent({ profile: activeProfile, subjects, topics, dailyLogs })
   const navigate = useNavigate()
   const { getToken } = useAuth()
+  const { isPro } = useSubscription()
 
   // Count unprocessed documents (no summary yet)
   const unprocessedDocs = documents.filter(d => !d.summary)
@@ -248,22 +250,31 @@ export default function Sources() {
       {unprocessedDocs.length > 0 && !isProcessingDoc && (
         <div className="glass-card p-3 mb-4 flex items-center justify-between">
           <span className="text-sm text-[var(--text-body)]">
-            {t('sources.readyToProcess', { count: unprocessedDocs.length })}
+            {isPro
+              ? t('sources.readyToProcess', { count: unprocessedDocs.length })
+              : `${unprocessedDocs.length} document${unprocessedDocs.length > 1 ? 's' : ''} uploaded — upgrade to process with AI`
+            }
           </span>
-          <button
-            onClick={handleProcessAll}
-            disabled={isBatchProcessing}
-            className="btn-primary text-sm px-4 py-1.5 disabled:opacity-50"
-          >
-            {isBatchProcessing ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                {t('sources.processingAll')}
-              </span>
-            ) : (
-              t('sources.processAll')
-            )}
-          </button>
+          {isPro ? (
+            <button
+              onClick={handleProcessAll}
+              disabled={isBatchProcessing}
+              className="btn-primary text-sm px-4 py-1.5 disabled:opacity-50"
+            >
+              {isBatchProcessing ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  {t('sources.processingAll')}
+                </span>
+              ) : (
+                t('sources.processAll')
+              )}
+            </button>
+          ) : (
+            <Link to="/pricing" className="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5" /> Upgrade
+            </Link>
+          )}
         </div>
       )}
 
@@ -294,22 +305,34 @@ export default function Sources() {
             </Link>
           ))}
           {topics.length > 0 && (
-            <button
-              onClick={() => {
-                const firstDoc = documents[0]
-                if (firstDoc) handleExtractConcepts(firstDoc)
-              }}
-              disabled={!!extractingConcepts}
-              className="glass-card glass-card-hover p-3 flex items-start gap-3 group text-left disabled:opacity-50"
-            >
-              <div className="w-9 h-9 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center flex-shrink-0">
-                {extractingConcepts ? <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin" /> : <Sparkles className="w-4 h-4 text-[var(--accent-text)]" />}
-              </div>
-              <div>
-                <span className="text-sm font-semibold text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors">{t('sources.discovery.extractConcepts')}</span>
-                <p className="text-xs text-[var(--text-muted)]">{t('sources.discovery.extractConceptsDesc')}</p>
-              </div>
-            </button>
+            isPro ? (
+              <button
+                onClick={() => {
+                  const firstDoc = documents[0]
+                  if (firstDoc) handleExtractConcepts(firstDoc)
+                }}
+                disabled={!!extractingConcepts}
+                className="glass-card glass-card-hover p-3 flex items-start gap-3 group text-left disabled:opacity-50"
+              >
+                <div className="w-9 h-9 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center flex-shrink-0">
+                  {extractingConcepts ? <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin" /> : <Sparkles className="w-4 h-4 text-[var(--accent-text)]" />}
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors">{t('sources.discovery.extractConcepts')}</span>
+                  <p className="text-xs text-[var(--text-muted)]">{t('sources.discovery.extractConceptsDesc')}</p>
+                </div>
+              </button>
+            ) : (
+              <Link to="/pricing" className="glass-card glass-card-hover p-3 flex items-start gap-3 group">
+                <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-4 h-4 text-purple-500" />
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors">Extract Concepts — Pro</span>
+                  <p className="text-xs text-[var(--text-muted)]">AI maps your documents to study topics</p>
+                </div>
+              </Link>
+            )
           )}
         </div>
       )}
@@ -326,16 +349,22 @@ export default function Sources() {
           <span className="text-sm text-[var(--text-body)]">
             {documents.filter(d => d.category === 'exam' && !examSourceCounts.has(d.id)).length} exam(s) ready for exercise extraction
           </span>
-          <button
-            onClick={async () => {
-              for (const doc of documents.filter(d => d.category === 'exam' && !examSourceCounts.has(d.id))) {
-                await processExamDocument(doc.id)
-              }
-            }}
-            className="btn-primary text-sm px-4 py-1.5"
-          >
-            Extract Exercises
-          </button>
+          {isPro ? (
+            <button
+              onClick={async () => {
+                for (const doc of documents.filter(d => d.category === 'exam' && !examSourceCounts.has(d.id))) {
+                  await processExamDocument(doc.id)
+                }
+              }}
+              className="btn-primary text-sm px-4 py-1.5"
+            >
+              Extract Exercises
+            </button>
+          ) : (
+            <Link to="/pricing" className="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5" /> Upgrade
+            </Link>
+          )}
         </div>
       )}
 

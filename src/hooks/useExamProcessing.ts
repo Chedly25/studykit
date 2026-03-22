@@ -22,6 +22,7 @@ export function useExamProcessing(examProfileId: string | undefined) {
 
   const processExamDocument = useCallback(async (documentId: string) => {
     if (!examProfileId) return null
+    if (!isPro) return null // AI processing is Pro only
 
     const id = await enqueue(
       'exam-exercise-processing',

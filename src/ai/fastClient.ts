@@ -1,16 +1,22 @@
 /**
  * Fast pipeline LLM client — calls Claude Haiku via /api/fast.
- * Falls back to main /api/chat (Kimi) if user is not Pro.
- * Non-streaming, for structured extraction and classification tasks.
+ * Pro only. Throws ProRequiredError if user is not Pro.
  */
-import { fastGate, llmGate, fetchWithGate } from '../lib/requestGate'
+import { fastGate, fetchWithGate } from '../lib/requestGate'
 
 const FAST_URL = '/api/fast'
-const CHAT_URL = '/api/chat'
+
+export class ProRequiredError extends Error {
+  code = 'PRO_REQUIRED' as const
+  constructor(message: string) {
+    super(message)
+    this.name = 'ProRequiredError'
+  }
+}
 
 /**
- * Call the fast pipeline model (Claude Haiku for Pro, Kimi fallback for free).
- * Returns plain text response — no streaming, no tool use.
+ * Call the fast pipeline model (Claude Haiku). Pro only.
+ * Throws ProRequiredError if user is not on Pro plan.
  */
 export async function callFastModel(
   prompt: string,
@@ -18,8 +24,7 @@ export async function callFastModel(
   authToken: string,
   opts?: { maxTokens?: number; signal?: AbortSignal },
 ): Promise<string> {
-  // Try fast model first (Pro users → Haiku)
-  const fastResponse = await fetchWithGate(fastGate, () =>
+  const response = await fetchWithGate(fastGate, () =>
     fetch(FAST_URL, {
       method: 'POST',
       headers: {
@@ -36,66 +41,21 @@ export async function callFastModel(
     { signal: opts?.signal },
   )
 
-  // If 403 (not Pro), fall back to main chat endpoint
-  if (fastResponse.status === 403) {
-    return callMainModel(prompt, system, authToken, opts)
+  if (response.status === 403) {
+    throw new ProRequiredError('This feature requires a Pro plan')
   }
 
-  if (!fastResponse.ok) {
-    const errText = await fastResponse.text()
-    throw new Error(`Fast model error ${fastResponse.status}: ${errText.slice(0, 200)}`)
+  if (!response.ok) {
+    const errText = await response.text()
+    throw new Error(`Fast model error ${response.status}: ${errText.slice(0, 200)}`)
   }
 
-  const data = await fastResponse.json() as { text?: string; error?: string }
+  const data = await response.json() as { text?: string; error?: string }
   if (data.error) {
-    // If error mentions Pro plan, fall back
     if (data.error.includes('Pro')) {
-      return callMainModel(prompt, system, authToken, opts)
+      throw new ProRequiredError(data.error)
     }
     throw new Error(data.error)
   }
   return data.text ?? ''
-}
-
-/**
- * Fallback: call the main /api/chat endpoint (Kimi) in non-streaming mode.
- * Used for free users who can't access /api/fast.
- */
-async function callMainModel(
-  prompt: string,
-  system: string,
-  authToken: string,
-  opts?: { maxTokens?: number; signal?: AbortSignal },
-): Promise<string> {
-  const response = await fetchWithGate(llmGate, () =>
-    fetch(CHAT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: prompt },
-        ],
-        max_tokens: opts?.maxTokens ?? 4096,
-        stream: false,
-      }),
-      signal: opts?.signal,
-    }),
-    { signal: opts?.signal },
-  )
-
-  if (!response.ok) {
-    const errText = await response.text()
-    throw new Error(`LLM error ${response.status}: ${errText.slice(0, 200)}`)
-  }
-
-  const data = await response.json() as {
-    choices?: Array<{ message?: { content?: string } }>
-    error?: string
-  }
-  if (data.error) throw new Error(data.error)
-  return data.choices?.[0]?.message?.content ?? ''
 }

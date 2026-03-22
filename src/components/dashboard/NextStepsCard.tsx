@@ -17,6 +17,7 @@ interface Props {
   practiceExamCount: number
   hasStudyPlan: boolean
   queueStartedToday: boolean
+  isPro: boolean
 }
 
 interface Step {
@@ -73,9 +74,11 @@ function computeSteps(props: Props): Step[] {
   if (unprocessed.length > 0 && props.documents.length > 0) {
     steps.push({
       icon: <ListChecks size={16} />,
-      text: `${unprocessed.length} document${unprocessed.length > 1 ? 's' : ''} need processing`,
-      cta: 'Process now',
-      link: '/sources',
+      text: props.isPro
+        ? `${unprocessed.length} document${unprocessed.length > 1 ? 's' : ''} need processing`
+        : 'Upgrade to process documents with AI',
+      cta: props.isPro ? 'Process now' : 'Upgrade',
+      link: props.isPro ? '/sources' : '/pricing',
     })
   }
 

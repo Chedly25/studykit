@@ -12,6 +12,7 @@ import { SubjectGrid } from '../components/dashboard/SubjectGrid'
 import { NextStepsCard } from '../components/dashboard/NextStepsCard'
 import { LearningProfileCard } from '../components/dashboard/LearningProfileCard'
 import { CalibrationAlert } from '../components/dashboard/CalibrationAlert'
+import { useSubscription } from '../hooks/useSubscription'
 import { useDailyQueue } from '../hooks/useDailyQueue'
 
 export default function Dashboard() {
@@ -21,6 +22,7 @@ export default function Dashboard() {
   const { subjects, topics, getChaptersForSubject } = useKnowledgeGraph(profileId)
   const topicStats = useTopicStats(profileId)
   const { queue: dailyQueue, typeCounts, remainingMinutes: queueMinutes } = useDailyQueue(profileId)
+  const { isPro } = useSubscription()
 
   const dueFlashcardCount = useLiveQuery(async () => {
     const today = new Date().toISOString().slice(0, 10)
@@ -195,6 +197,7 @@ export default function Dashboard() {
         practiceExamCount={practiceExamCount}
         hasStudyPlan={hasStudyPlan}
         queueStartedToday={queueInProgress}
+        isPro={isPro}
       />
 
       {/* Queue CTA */}

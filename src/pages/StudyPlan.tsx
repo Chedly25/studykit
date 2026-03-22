@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { useExamProfile } from '../hooks/useExamProfile'
+import { useSubscription } from '../hooks/useSubscription'
 import { useStudyPlan } from '../hooks/useStudyPlan'
 
 interface StudyActivity {
@@ -35,6 +36,7 @@ export default function StudyPlan() {
   const { t, i18n } = useTranslation()
   const { activeProfile } = useExamProfile()
   const { getToken } = useAuth()
+  const { isPro } = useSubscription()
   const profileId = activeProfile?.id
   const {
     activePlan, planDays, todaysPlan, isGenerating,
@@ -80,19 +82,23 @@ export default function StudyPlan() {
 
         <div className="glass-card p-6 text-center">
           <p className="text-sm text-[var(--text-body)] mb-4">
-            {t('ai.generatePrompt')}
+            {isPro ? t('ai.generatePrompt') : 'AI study plans are a Pro feature. Upgrade to generate a personalized study schedule.'}
           </p>
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="btn-primary px-8 py-2.5 flex items-center gap-2 mx-auto disabled:opacity-50"
-          >
-            {isGenerating ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> {t('ai.generating')}</>
-            ) : (
-              <><Play className="w-4 h-4" /> {t('ai.generatePlan')}</>
-            )}
-          </button>
+          {isPro ? (
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className="btn-primary px-8 py-2.5 flex items-center gap-2 mx-auto disabled:opacity-50"
+            >
+              {isGenerating ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t('ai.generating')}</>
+              ) : (
+                <><Play className="w-4 h-4" /> {t('ai.generatePlan')}</>
+              )}
+            </button>
+          ) : (
+            <Link to="/pricing" className="btn-primary px-8 py-2.5 inline-block">Upgrade to Pro</Link>
+          )}
         </div>
       </div>
     )
