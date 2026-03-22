@@ -6,7 +6,8 @@
 import type { Env } from '../env'
 import { verifyClerkJWT } from './auth'
 
-export const ADMIN_EMAIL = 'chedlyboukhris21@gmail.com'
+// Admin email configured via ADMIN_EMAIL env var, with fallback
+const DEFAULT_ADMIN_EMAIL = 'chedlyboukhris21@gmail.com'
 
 export class AdminError extends Error {
   status: number
@@ -40,8 +41,9 @@ export async function verifyAdmin(
     email_addresses: Array<{ email_address: string }>
   }
 
+  const adminEmail = (env as any).ADMIN_EMAIL ?? DEFAULT_ADMIN_EMAIL
   const isAdmin = user.email_addresses.some(
-    (e) => e.email_address === ADMIN_EMAIL
+    (e) => e.email_address === adminEmail
   )
 
   if (!isAdmin) {

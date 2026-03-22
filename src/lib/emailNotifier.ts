@@ -38,16 +38,19 @@ interface DailySummary {
 export async function sendDailyEmail(
   email: string,
   summary: DailySummary,
+  authToken?: string,
 ): Promise<boolean> {
   if (alreadySentToday()) return false
 
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`
+
     const response = await fetch('/api/send-notification', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
-        to: email,
-        subject: `StudiesKit Daily: ${summary.daysLeft} days until ${summary.profileName}`,
+        subject: `StudiesKit Daily: ${summary.daysLeft} days until ${esc(summary.profileName)}`,
         html: buildEmailHtml(summary),
       }),
     })

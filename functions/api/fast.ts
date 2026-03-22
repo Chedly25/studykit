@@ -35,13 +35,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     // Auth
-    const token = context.request.headers.get('Authorization')?.replace('Bearer ', '')
-    if (!token) {
+    const authHeader = context.request.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
 
+    const token = authHeader.slice(7)
     const jwt = await verifyClerkJWT(token, env.CLERK_ISSUER_URL)
 
     // Rate limit (separate from chat)
@@ -54,8 +55,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
     await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
 
-    // Parse request
-    const body = await context.request.json() as {
+    // Parse request (with size limit)
+    const rawBody = await context.request.text()
+    if (rawBody.length > 512_000) {
+      return new Response(JSON.stringify({ error: 'Request too large (max 512KB)' }), {
+        status: 413, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+    const body = JSON.parse(rawBody) as {
       prompt: string
       system?: string
       maxTokens?: number

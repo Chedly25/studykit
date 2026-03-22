@@ -186,6 +186,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       )
     }
 
+    // Sanitize messages: strip any client-injected system-role messages
+    const messages = (body.messages as Array<Record<string, unknown>>).filter(
+      m => m.role !== 'system'
+    )
+    body.messages = messages
+
     const apiUrl = env.LLM_API_URL || DEFAULT_API_URL
     const model = (env.LLM_MODEL || DEFAULT_MODEL) as string
     const apiKey = env.LLM_API_KEY
@@ -241,8 +247,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     if (!llmResponse || !llmResponse.ok) {
+      console.error('[chat] LLM upstream error:', lastError.slice(0, 500))
       return new Response(
-        JSON.stringify({ error: `AI service error: ${lastError.slice(0, 300)}` }),
+        JSON.stringify({ error: 'AI service temporarily unavailable. Please try again.' }),
         { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }

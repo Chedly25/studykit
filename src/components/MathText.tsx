@@ -7,28 +7,55 @@ interface MathTextProps {
   className?: string
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 /**
  * Renders text with inline LaTeX math ($...$) and display math ($$...$$).
- * Non-math text is rendered as-is.
+ * Non-math text is HTML-escaped for safety.
  */
 export function MathText({ children, className }: MathTextProps) {
   const html = useMemo(() => {
     if (!children) return ''
     try {
-      // Replace display math first ($$...$$), then inline ($...$)
-      let result = children.replace(/\$\$([\s\S]+?)\$\$/g, (_match, tex) => {
+      // Split on math delimiters, preserving the delimiters
+      // Process display math ($$...$$) first, then inline ($...$)
+      const parts: string[] = []
+      let remaining = children
+
+      // Extract display math
+      remaining = remaining.replace(/\$\$([\s\S]+?)\$\$/g, (_match, tex) => {
+        const placeholder = `\x00DISPLAY_${parts.length}\x00`
         try {
-          return katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false })
-        } catch { return `$$${tex}$$` }
+          parts.push(katex.renderToString(tex.trim(), { displayMode: true, throwOnError: false }))
+        } catch {
+          parts.push(escapeHtml(`$$${tex}$$`))
+        }
+        return placeholder
       })
-      result = result.replace(/\$([^\$]+?)\$/g, (_match, tex) => {
+
+      // Extract inline math
+      remaining = remaining.replace(/\$([^\$]+?)\$/g, (_match, tex) => {
+        const placeholder = `\x00INLINE_${parts.length}\x00`
         try {
-          return katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false })
-        } catch { return `$${tex}$` }
+          parts.push(katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false }))
+        } catch {
+          parts.push(escapeHtml(`$${tex}$`))
+        }
+        return placeholder
       })
+
+      // Escape remaining (non-math) text, then restore math placeholders
+      let result = escapeHtml(remaining)
+      for (let i = 0; i < parts.length; i++) {
+        result = result.replace(`\x00DISPLAY_${i}\x00`, parts[i])
+        result = result.replace(`\x00INLINE_${i}\x00`, parts[i])
+      }
+
       return result
     } catch {
-      return children
+      return escapeHtml(children)
     }
   }, [children])
 

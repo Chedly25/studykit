@@ -61,6 +61,15 @@ self.addEventListener('fetch', (event) => {
   }
 })
 
+// ─── URL validation helper ───────────────────────────────────────
+function safeUrl(u) {
+  try {
+    const parsed = new URL(u, self.location.origin)
+    if (parsed.origin !== self.location.origin) return '/'
+    return parsed.pathname + parsed.search
+  } catch { return '/' }
+}
+
 // ─── Push notifications ──────────────────────────────────────────
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {}
@@ -76,7 +85,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const url = event.notification.data?.url || '/'
+  const url = safeUrl(event.notification.data?.url || '/')
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
       for (const client of clients) {

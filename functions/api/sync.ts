@@ -21,14 +21,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
 
-    const token = context.request.headers.get('Authorization')?.replace('Bearer ', '')
-    if (!token) {
+    const syncAuthHeader = context.request.headers.get('Authorization')
+    if (!syncAuthHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
 
-    const jwt = await verifyClerkJWT(token, env.CLERK_ISSUER_URL)
+    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL)
     if (jwt.metadata?.plan !== 'pro') {
       return new Response(JSON.stringify({ error: 'Cloud sync requires Pro plan' }), {
         status: 403, headers: { ...cors, 'Content-Type': 'application/json' },
@@ -83,14 +83,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       })
     }
 
-    const token = context.request.headers.get('Authorization')?.replace('Bearer ', '')
-    if (!token) {
+    const syncAuthHeader = context.request.headers.get('Authorization')
+    if (!syncAuthHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
 
-    const jwt = await verifyClerkJWT(token, env.CLERK_ISSUER_URL)
+    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL)
     if (jwt.metadata?.plan !== 'pro') {
       return new Response(JSON.stringify({ error: 'Cloud sync requires Pro plan' }), {
         status: 403, headers: { ...cors, 'Content-Type': 'application/json' },
@@ -140,14 +140,19 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
       })
     }
 
-    const token = context.request.headers.get('Authorization')?.replace('Bearer ', '')
-    if (!token) {
+    const syncAuthHeader = context.request.headers.get('Authorization')
+    if (!syncAuthHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
 
-    const jwt = await verifyClerkJWT(token, env.CLERK_ISSUER_URL)
+    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL)
+    if (jwt.metadata?.plan !== 'pro') {
+      return new Response(JSON.stringify({ error: 'Cloud sync requires Pro plan' }), {
+        status: 403, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
 
     const url = new URL(context.request.url)
     const profileId = url.searchParams.get('profileId')

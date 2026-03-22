@@ -1,8 +1,6 @@
 import { useUser } from '@clerk/clerk-react'
 import { Navigate } from 'react-router-dom'
 
-const ADMIN_EMAIL = 'chedlyboukhris21@gmail.com'
-
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser()
 
@@ -14,7 +12,10 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (user?.primaryEmailAddress?.emailAddress !== ADMIN_EMAIL) {
+  // Admin access is verified server-side via ADMIN_EMAIL env var.
+  // Client-side check uses Clerk publicMetadata.role (set by admin API).
+  const isAdmin = (user?.publicMetadata as any)?.role === 'admin'
+  if (!isAdmin) {
     return <Navigate to="/" replace />
   }
 

@@ -207,7 +207,7 @@ export function Layout() {
             </div>
 
             {/* Sidebar footer — admin only */}
-            {user?.primaryEmailAddress?.emailAddress === 'chedlyboukhris21@gmail.com' && (
+            {(user?.publicMetadata as any)?.role === 'admin' && (
               <div className={`px-2 py-3 border-t border-[var(--border-card)] ${collapsed ? 'flex justify-center' : ''}`}>
                 <Link
                   to="/admin"
@@ -262,7 +262,7 @@ export function Layout() {
               </nav>
 
               {/* Sidebar footer — admin only */}
-              {user?.primaryEmailAddress?.emailAddress === 'chedlyboukhris21@gmail.com' && (
+              {(user?.publicMetadata as any)?.role === 'admin' && (
                 <div className="px-4 py-4 border-t border-[var(--border-card)]">
                   <Link
                     to="/admin"

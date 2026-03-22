@@ -58,7 +58,6 @@ export function useWeeklyDigest() {
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
-            to: email,
             subject: `Your weekly study report — ${activeProfile.name}`,
             html,
           }),
