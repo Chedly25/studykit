@@ -12,6 +12,8 @@ const DAILY_CAPS: Record<string, number> = {
   search: 100,     // Web search (Tavily)
   email: 5,        // Outbound emails (Resend)
   push: 50,        // Push subscription management
+  transcribe: 100, // Whisper STT (Pro only)
+  vision: 50,      // Anthropic vision (Pro only)
 }
 
 // ─── Global kill switch threshold (all users combined) ───────────
@@ -20,6 +22,8 @@ const GLOBAL_DAILY_CAP: Record<string, number> = {
   fast: 5000,
   embed: 3000,
   search: 2000,
+  transcribe: 2000,
+  vision: 1000,
 }
 
 function todayKey(): string {

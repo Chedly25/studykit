@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Send, Paperclip, FileText, X } from 'lucide-react'
+import { Send, Paperclip, FileText, X, Mic, MicOff, Camera, Loader2 } from 'lucide-react'
 import { AttachmentChip } from './AttachmentChip'
+import { ImagePreview } from './ImagePreview'
 import type { ChatAttachment } from '../../hooks/useAttachments'
 
 const MAX_LENGTH = 4000
@@ -10,6 +11,26 @@ export interface ContextPill {
   id: string
   label: string
   content: string
+}
+
+export interface VoiceInputState {
+  isRecording: boolean
+  isTranscribing: boolean
+  onStartRecording: () => void
+  onStopRecording: () => void
+  onCancelRecording: () => void
+}
+
+export interface PhotoState {
+  onSelectPhoto: () => void
+  isExtracting: boolean
+  imagePreview: {
+    imageUrl: string
+    extractedText: string | null
+    isExtracting: boolean
+    onRemove: () => void
+    onSaveToLibrary?: () => void
+  } | null
 }
 
 interface Props {
@@ -24,15 +45,17 @@ interface Props {
   onInitialValueConsumed?: () => void
   contextPills?: ContextPill[]
   onRemoveContextPill?: (id: string) => void
+  voiceInput?: VoiceInputState
+  photo?: PhotoState
 }
 
-export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFiles, onRemoveAttachment, isParsing, initialValue, onInitialValueConsumed, contextPills, onRemoveContextPill }: Props) {
+export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFiles, onRemoveAttachment, isParsing, initialValue, onInitialValueConsumed, contextPills, onRemoveContextPill, voiceInput, photo }: Props) {
   const { t } = useTranslation()
   const [text, setText] = useState('')
   const ref = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Accept pre-filled text from parent
+  // Accept pre-filled text from parent (including voice transcription)
   useEffect(() => {
     if (initialValue !== undefined && initialValue !== '') {
       setText(initialValue)
@@ -108,7 +131,14 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
         </div>
       )}
 
-      <div className="flex items-end gap-2 p-3">
+      {/* Image preview (photo capture) */}
+      {photo?.imagePreview && (
+        <div className="px-4 pt-3">
+          <ImagePreview {...photo.imagePreview} />
+        </div>
+      )}
+
+      <div className="flex items-end gap-1.5 p-3">
         {/* Paperclip button */}
         {onAddFiles && (
           <>
@@ -123,7 +153,7 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
             <button
               onClick={() => fileRef.current?.click()}
               disabled={disabled}
-              className="p-2.5 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)] transition-colors disabled:opacity-40"
+              className="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)] transition-colors disabled:opacity-40"
               title={t('ai.attachFile')}
             >
               <Paperclip className="w-5 h-5" />
@@ -131,13 +161,59 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
           </>
         )}
 
+        {/* Mic button (voice input) */}
+        {voiceInput && (
+          <button
+            onClick={() => {
+              if (voiceInput.isRecording) {
+                voiceInput.onStopRecording()
+              } else if (!voiceInput.isTranscribing) {
+                voiceInput.onStartRecording()
+              }
+            }}
+            disabled={disabled || voiceInput.isTranscribing}
+            className={`p-2 rounded-xl transition-colors disabled:opacity-40 ${
+              voiceInput.isRecording
+                ? 'bg-red-500/15 text-red-500 animate-pulse'
+                : voiceInput.isTranscribing
+                  ? 'text-[var(--accent-text)]'
+                  : 'text-[var(--text-muted)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)]'
+            }`}
+            title={voiceInput.isRecording ? 'Stop recording' : voiceInput.isTranscribing ? 'Transcribing...' : 'Voice input'}
+          >
+            {voiceInput.isTranscribing ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : voiceInput.isRecording ? (
+              <MicOff className="w-5 h-5" />
+            ) : (
+              <Mic className="w-5 h-5" />
+            )}
+          </button>
+        )}
+
+        {/* Camera button (photo capture) */}
+        {photo && (
+          <button
+            onClick={photo.onSelectPhoto}
+            disabled={disabled || photo.isExtracting}
+            className="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)] transition-colors disabled:opacity-40"
+            title="Scan photo"
+          >
+            {photo.isExtracting ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Camera className="w-5 h-5" />
+            )}
+          </button>
+        )}
+
         <textarea
           ref={ref}
           value={text}
           onChange={e => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder ?? t('ai.typeMessage')}
-          disabled={disabled}
+          placeholder={voiceInput?.isRecording ? 'Listening...' : placeholder ?? t('ai.typeMessage')}
+          disabled={disabled || voiceInput?.isRecording}
           rows={1}
           className="flex-1 resize-none bg-transparent border-none focus:outline-none focus:ring-0 text-base text-[var(--text-body)] placeholder:text-[var(--text-faint)] disabled:opacity-50 py-2 px-1"
         />

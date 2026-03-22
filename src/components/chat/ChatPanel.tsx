@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
-import { X, Brain, Settings } from 'lucide-react'
+import { X, Brain, Settings, Volume2, VolumeX } from 'lucide-react'
 import { useExamProfile } from '../../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../../hooks/useKnowledgeGraph'
 import { useAgent } from '../../hooks/useAgent'
@@ -18,6 +18,10 @@ import { UpgradePrompt } from '../subscription/UpgradePrompt'
 import { SourcesToggle } from '../sources/SourcesToggle'
 import { AttachmentSavePrompt } from './AttachmentSavePrompt'
 import { useSources } from '../../hooks/useSources'
+import { useVoiceInput } from '../../hooks/useVoiceInput'
+import { useVoiceOutput } from '../../hooks/useVoiceOutput'
+import { usePhotoCapture } from '../../hooks/usePhotoCapture'
+import { useSubscription } from '../../hooks/useSubscription'
 import type { ChatAttachment } from '../../hooks/useAttachments'
 
 interface Props {
@@ -49,6 +53,21 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) 
     sendMessage, cancel, loadConversation, newConversation,
   } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences })
 
+  // Voice mode
+  const { isPro } = useSubscription()
+  const voiceInput = useVoiceInput()
+  const voiceOutput = useVoiceOutput()
+  const [voiceTranscription, setVoiceTranscription] = useState<string | null>(null)
+
+  // Photo capture
+  const photoCapture = usePhotoCapture()
+  const [imagePreviewData, setImagePreviewData] = useState<{
+    url: string
+    blob: Blob
+    text: string | null
+    isExtracting: boolean
+  } | null>(null)
+
   const scrollRef = useRef<HTMLDivElement>(null)
   const [pendingSaveAttachments, setPendingSaveAttachments] = useState<ChatAttachment[] | null>(null)
   const [inputPrefill, setInputPrefill] = useState<string | undefined>()
@@ -67,6 +86,18 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) 
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages, streamingText])
+
+  // Auto-speak new assistant messages when voice output is enabled
+  const prevMsgCountRef = useRef(messages.length)
+  useEffect(() => {
+    if (voiceOutput.voiceEnabled && messages.length > prevMsgCountRef.current) {
+      const lastMsg = messages[messages.length - 1]
+      if (lastMsg?.role === 'assistant' && typeof lastMsg.content === 'string') {
+        voiceOutput.speak(lastMsg.content)
+      }
+    }
+    prevMsgCountRef.current = messages.length
+  }, [messages.length, voiceOutput])
 
   const handleSend = useCallback(async (message: string, sentAttachments?: ChatAttachment[]) => {
     let attachmentContext: { chunks: Array<{ content: string; documentTitle: string; chunkIndex: number }> } | undefined
@@ -102,6 +133,19 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) 
           >
             <Settings className="w-3.5 h-3.5" />
           </button>
+          {isPro && (
+            <button
+              onClick={() => voiceOutput.setVoiceEnabled(!voiceOutput.voiceEnabled)}
+              className={`p-1 rounded-lg transition-colors ${
+                voiceOutput.voiceEnabled
+                  ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+                  : 'hover:bg-[var(--bg-input)] text-[var(--text-muted)]'
+              }`}
+              title={voiceOutput.voiceEnabled ? 'Disable voice output' : 'Enable voice output'}
+            >
+              {voiceOutput.voiceEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            </button>
+          )}
           <QuotaIndicator messagesUsedToday={messagesUsedToday} />
         </div>
         <button
@@ -177,8 +221,45 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) 
           onAddFiles={addFiles}
           onRemoveAttachment={removeAttachment}
           isParsing={isParsing}
-          initialValue={inputPrefill}
-          onInitialValueConsumed={clearInputPrefill}
+          initialValue={voiceTranscription ?? inputPrefill}
+          onInitialValueConsumed={() => { clearInputPrefill(); setVoiceTranscription(null) }}
+          voiceInput={isPro ? {
+            isRecording: voiceInput.isRecording,
+            isTranscribing: voiceInput.isTranscribing,
+            onStartRecording: voiceInput.startRecording,
+            onStopRecording: async () => {
+              const text = await voiceInput.stopRecording()
+              if (text) {
+                if (voiceOutput.voiceEnabled) {
+                  // Auto-send in voice mode
+                  handleSend(text)
+                } else {
+                  setVoiceTranscription(text)
+                }
+              }
+            },
+            onCancelRecording: voiceInput.cancelRecording,
+          } : undefined}
+          photo={isPro ? {
+            onSelectPhoto: async () => {
+              const blob = await photoCapture.selectFromFiles()
+              if (!blob) return
+              const url = URL.createObjectURL(blob)
+              setImagePreviewData({ url, blob, text: null, isExtracting: true })
+              const text = await photoCapture.extractText(blob)
+              setImagePreviewData(prev => prev ? { ...prev, text, isExtracting: false } : null)
+            },
+            isExtracting: photoCapture.isExtracting,
+            imagePreview: imagePreviewData ? {
+              imageUrl: imagePreviewData.url,
+              extractedText: imagePreviewData.text,
+              isExtracting: imagePreviewData.isExtracting,
+              onRemove: () => {
+                if (imagePreviewData.url) URL.revokeObjectURL(imagePreviewData.url)
+                setImagePreviewData(null)
+              },
+            } : null,
+          } : undefined}
         />
       </div>
 
