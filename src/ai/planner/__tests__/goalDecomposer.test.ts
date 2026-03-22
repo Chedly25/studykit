@@ -48,7 +48,7 @@ describe('decomposeGoal', () => {
 
   it('detects goal keywords in short messages', async () => {
     const llm: LlmFn = vi.fn().mockResolvedValue('{ "isComplex": true, "goal": "Review", "steps": [{ "action": "diagnose", "topic": "All", "description": "Check status", "tools": [] }] }')
-    const result = await decomposeGoal('Help me study', mockTopics, null, llm)
+    await decomposeGoal('Help me study', mockTopics, null, llm)
     // "study" is a goal keyword, so LLM should be called despite short message
     expect(llm).toHaveBeenCalled()
   })

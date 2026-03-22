@@ -5,7 +5,7 @@
  * Pure computation — no LLM calls.
  */
 import { db } from '../../db'
-import { decayedMastery, computeStreak } from '../../lib/knowledgeGraph'
+import { decayedMastery } from '../../lib/knowledgeGraph'
 import type { AgentDefinition, AgentContext, AgentResult } from './types'
 
 export interface ProgressInsight {

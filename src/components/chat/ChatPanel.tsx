@@ -49,7 +49,7 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) 
 
   const {
     messages, isLoading, currentToolCall, streamingText, error,
-    conversationId, isSocratic, quotaExceeded, messagesUsedToday,
+    conversationId, quotaExceeded, messagesUsedToday,
     sendMessage, cancel, loadConversation, newConversation,
   } = useAgent({ profile: activeProfile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences: preferences })
 
@@ -123,7 +123,7 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed }: Props) 
         <div className="flex items-center gap-2">
           <Brain className="w-5 h-5 text-[var(--accent-text)]" />
           <span className="font-semibold text-[var(--text-heading)] text-sm">
-            {isSocratic ? t('ai.socratic') : t('ai.chat')}
+            {t('ai.chat')}
           </span>
           <SourcesToggle enabled={sourcesEnabled} onToggle={setSourcesEnabled} documentCount={documentCount} />
           <button

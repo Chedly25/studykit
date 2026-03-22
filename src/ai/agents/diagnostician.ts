@@ -4,7 +4,7 @@
  * Pure computation — no LLM calls needed.
  */
 import { db } from '../../db'
-import { decayedMastery, getWeakTopics, computeReadiness, computeStreak, computeWeeklyHours } from '../../lib/knowledgeGraph'
+import { decayedMastery, computeReadiness, computeStreak } from '../../lib/knowledgeGraph'
 import { getMiscalibratedTopicsFromRaw } from '../../lib/calibration'
 import type { AgentDefinition, AgentContext, AgentResult } from './types'
 
@@ -41,7 +41,7 @@ export const diagnosticianAgent: AgentDefinition = {
     const { examProfileId } = ctx
 
     // Load all data from IndexedDB
-    const [profile, topics, subjects, logs, snapshots, misconceptions] = await Promise.all([
+    const [profile, topics, subjects, logs, snapshots, _misconceptions] = await Promise.all([
       db.examProfiles.get(examProfileId),
       db.topics.where('examProfileId').equals(examProfileId).toArray(),
       db.subjects.where('examProfileId').equals(examProfileId).toArray(),
@@ -113,7 +113,6 @@ export const diagnosticianAgent: AgentDefinition = {
 
     // 3. Study rhythm
     const { streak } = computeStreak(logs)
-    const weeklyHours = computeWeeklyHours(logs)
     if (streak === 0 && logs.length > 0) {
       patterns.push({ type: 'study-gap', description: 'Study streak broken — no recent study activity', topicIds: [] })
     }

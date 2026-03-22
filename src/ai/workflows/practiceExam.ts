@@ -150,7 +150,7 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
           if (queries.length === 0) return ''
 
           // Run parallel semantic searches — topN=15 per query for rich coverage
-          type SearchChunk = Awaited<ReturnType<typeof semanticSearch>>[number] & { query: string }
+          type SearchChunk = Awaited<ReturnType<typeof hybridSearch>>[number] & { query: string }
           const searchResults = await Promise.all(
             queries.map(query =>
               hybridSearch(ctx.examProfileId, query, ctx.authToken, { topN: 15, rerank: true })
