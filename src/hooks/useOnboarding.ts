@@ -246,7 +246,7 @@ export function useOnboarding() {
       console.error('Onboarding error:', err)
       setState(prev => ({ ...prev, isProcessing: false }))
     }
-  }, [state, executeAction, getToken])
+  }, [executeAction, getToken])
 
   const completeOnboarding = useCallback(async () => {
     const profileId = state.profileId
@@ -256,9 +256,32 @@ export function useOnboarding() {
     await db.examProfiles.toCollection().modify({ isActive: false })
     await db.examProfiles.update(profileId, { isActive: true })
 
+    // Auto-process any uploaded documents by enqueuing jobs directly to IndexedDB.
+    // The app-level JobRunner (from BackgroundJobsProvider) picks up queued jobs automatically.
+    try {
+      const docs = await db.documents.where('examProfileId').equals(profileId).toArray()
+      const unprocessed = docs.filter(d => !d.summary)
+      const now = new Date().toISOString()
+      for (const doc of unprocessed) {
+        await db.backgroundJobs.put({
+          id: crypto.randomUUID(),
+          examProfileId: profileId,
+          type: 'source-processing' as const,
+          status: 'queued' as const,
+          config: JSON.stringify({ documentId: doc.id, isPro: true }),
+          completedStepIds: '[]',
+          stepResults: '{}',
+          totalSteps: 4,
+          completedStepCount: 0,
+          createdAt: now,
+          updatedAt: now,
+        })
+      }
+    } catch { /* non-blocking */ }
+
     // Clear onboarding state
     sessionStorage.removeItem(STORAGE_KEY)
-  }, [state.profileId])
+  }, [state.profileId, getToken, effectiveUserId])
 
   const resetOnboarding = useCallback(() => {
     sessionStorage.removeItem(STORAGE_KEY)

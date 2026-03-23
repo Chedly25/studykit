@@ -7,7 +7,7 @@
  * Block C: Post-queue AI debrief
  * Block E: Local nudges between items
  */
-import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate, Link } from 'react-router-dom'
@@ -39,6 +39,14 @@ import type { QueueItem } from '../lib/dailyQueueEngine'
 
 const SESSION_START_KEY = (profileId: string, date: string) => `session_start_${profileId}_${date}`
 const CRAM_KEY = (profileId: string) => `cramMode_${profileId}`
+
+type QueueItemType = 'flashcard-review' | 'exercise' | 'concept-quiz'
+
+const TYPE_STYLES: Record<QueueItemType, { border: string; bg: string; icon: string; progressColor: string }> = {
+  'flashcard-review': { border: 'border-l-4 border-purple-400', bg: '', icon: 'text-purple-500', progressColor: 'bg-purple-500' },
+  'exercise':         { border: 'border-l-4 border-orange-400', bg: '', icon: 'text-orange-500', progressColor: 'bg-orange-500' },
+  'concept-quiz':     { border: 'border-l-4 border-blue-400',   bg: '', icon: 'text-blue-500',   progressColor: 'bg-blue-500' },
+}
 
 export default function DailyQueue() {
   return (
@@ -95,6 +103,9 @@ function DailyQueueContent() {
   const sessionResults = useRef<SessionResult[]>([])
   const [currentNudge, setCurrentNudge] = useState<Nudge | null>(null)
 
+  // Priority 4: Pre-session mastery snapshot for computing deltas at completion
+  const preMastery = useRef<Map<string, number>>(new Map())
+
   // Feature 5: Elapsed time
   const [elapsedMinutes, setElapsedMinutes] = useState(0)
 
@@ -147,13 +158,16 @@ function DailyQueueContent() {
   useEffect(() => {
     if (isQueueEmpty && completedCount > 0) {
       // Block A: Capture time before ending session
+      const timeSpent = sessionStartRef.current > 0
+        ? Math.round((Date.now() - sessionStartRef.current) / 1000)
+        : 0
       if (sessionStartedRef.current) {
-        setFinalTimeSpent(Math.round((Date.now() - sessionStartRef.current) / 1000))
+        setFinalTimeSpent(timeSpent)
         endSession().catch(() => {})
         sessionStartedRef.current = false
       }
 
-      track('queue_completed', { completedCount, timeSpent: Math.round((Date.now() - sessionStartRef.current) / 1000) })
+      track('queue_completed', { completedCount, timeSpent })
 
       if (profileId) {
         generateNotifications(profileId).catch(() => {})
@@ -223,6 +237,29 @@ function DailyQueueContent() {
     return db.dailyStudyLogs.get(`${profileId}:${yesterday}`)
   }, [profileId])
 
+  // Tomorrow's due count for session completion (items due on or before tomorrow)
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+  const tomorrowDueCount = useLiveQuery(async () => {
+    if (!profileId) return 0
+    const decks = await db.flashcardDecks.where('examProfileId').equals(profileId).toArray()
+    const deckIds = new Set(decks.map(d => d.id))
+    // Count items due exactly tomorrow (not today's leftovers)
+    const flashcardsDue = await db.flashcards.where('nextReviewDate').equals(tomorrow).filter(c => deckIds.has(c.deckId)).count()
+    const exercisesDue = await db.exercises.where('examProfileId').equals(profileId).filter(e => !e.hidden && e.nextReviewDate === tomorrow).count()
+    return flashcardsDue + exercisesDue
+  }, [profileId, tomorrow]) ?? 0
+
+  // Macro roadmap active phase for session completion
+  const activeRoadmapPhase = useLiveQuery(async () => {
+    if (!profileId) return null
+    try {
+      const roadmap = await db.macroRoadmaps.get(profileId)
+      if (!roadmap) return null
+      const phases = JSON.parse(roadmap.phases) as Array<{ name: string; status: string; week?: number }>
+      return phases.find(p => p.status === 'active') ?? null
+    } catch { return null }
+  }, [profileId]) ?? null
+
   const masteryDropTopics = topics
     .filter(tp => tp.mastery >= 0.4 && decayedMastery(tp) < tp.mastery - 0.05)
     .map(tp => ({ name: tp.name, drop: Math.round((tp.mastery - decayedMastery(tp)) * 100) }))
@@ -247,10 +284,15 @@ function DailyQueueContent() {
     if (profileId) {
       localStorage.setItem(SESSION_START_KEY(profileId, today), 'true')
     }
+    // Capture pre-session mastery for delta computation
+    const topicIds = new Set(queue.map(q => q.topicId))
+    for (const tp of topics) {
+      if (topicIds.has(tp.id)) preMastery.current.set(tp.id, tp.mastery)
+    }
     track('queue_started', { minutes, cramMode, itemCount: totalCount })
     setTimeAvailable(minutes)
     setShowStartOverlay(false)
-  }, [profileId, today, cramMode, totalCount])
+  }, [profileId, today, cramMode, totalCount, queue, topics])
 
   const handleComplete = useCallback((itemId: string) => {
     setConceptRevealed(false)
@@ -262,6 +304,21 @@ function DailyQueueContent() {
     setCurrentNudge(null)
     skipItem(itemId)
   }, [skipItem])
+
+  const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+
+  // Compute colored progress segments from session results
+  const completedSegments = useMemo(() => {
+    if (totalCount === 0) return []
+    const typeCounts = new Map<string, number>()
+    for (const r of sessionResults.current) {
+      typeCounts.set(r.type, (typeCounts.get(r.type) ?? 0) + 1)
+    }
+    return Array.from(typeCounts.entries()).map(([type, count]) => ({
+      color: TYPE_STYLES[type as QueueItemType]?.progressColor ?? 'bg-[var(--accent-text)]',
+      pct: (count / totalCount) * 100,
+    }))
+  }, [completedCount, totalCount])
 
   if (!activeProfile) {
     return (
@@ -285,6 +342,15 @@ function DailyQueueContent() {
   const flashcardCount = queue.filter(q => q.type === 'flashcard-review').length
   const activityType = exerciseCount > flashcardCount ? 'practice-exam' as const : 'flashcards' as const
 
+  // Compute mastery deltas from pre-session snapshot
+  const masteryDeltas = topics
+    .filter(tp => preMastery.current.has(tp.id) && tp.mastery !== preMastery.current.get(tp.id))
+    .map(tp => ({
+      topicName: tp.name,
+      before: preMastery.current.get(tp.id)!,
+      after: tp.mastery,
+    }))
+
   const completionData: SessionCompletionData = {
     activityType,
     timeSpentSeconds: finalTimeSpent,
@@ -292,9 +358,10 @@ function DailyQueueContent() {
     weeklyHours,
     weeklyTarget: activeProfile.weeklyTargetHours,
     nextRecommendation,
+    masteryDeltas: masteryDeltas.length > 0 ? masteryDeltas : undefined,
+    tomorrowDueCount: tomorrowDueCount > 0 ? tomorrowDueCount : undefined,
+    roadmapPhase: activeRoadmapPhase?.name,
   }
-
-  const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
@@ -380,12 +447,18 @@ function DailyQueueContent() {
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full h-2 rounded-full bg-[var(--bg-input)] mb-6 overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${cramMode ? 'bg-red-500' : 'bg-[var(--accent-text)]'}`}
-          style={{ width: `${progressPct}%` }}
-        />
+      {/* Progress bar — colored segments per item type */}
+      <div className="w-full h-2 rounded-full bg-[var(--bg-input)] mb-6 overflow-hidden flex">
+        {completedSegments.length > 0 ? (
+          completedSegments.map((seg, i) => (
+            <div key={i} className={`h-full transition-all duration-500 ${seg.color}`} style={{ width: `${seg.pct}%` }} />
+          ))
+        ) : (
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${cramMode ? 'bg-red-500' : 'bg-[var(--accent-text)]'}`}
+            style={{ width: `${progressPct}%` }}
+          />
+        )}
       </div>
 
       {/* Block E: Nudge banner */}
@@ -403,11 +476,11 @@ function DailyQueueContent() {
 
       {/* Current Item */}
       {currentItem ? (
-        <div className={`glass-card p-6 mb-4 ${cramMode ? 'border border-red-500/20' : ''}`}>
+        <div className={`glass-card p-6 mb-4 ${TYPE_STYLES[currentItem.type as QueueItemType]?.border ?? ''} ${cramMode ? 'border border-red-500/20' : ''}`}>
           <div className="flex items-center gap-2 mb-3">
             <ItemTypeIcon type={currentItem.type} />
-            <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
-              {currentItem.type.replace('-', ' ')}
+            <span className={`text-xs font-semibold uppercase tracking-wider ${TYPE_STYLES[currentItem.type as QueueItemType]?.icon ?? 'text-[var(--text-muted)]'}`}>
+              {t(`queue.type.${currentItem.type}`, currentItem.type.replace('-', ' '))}
             </span>
             <span className="text-xs text-[var(--text-faint)]">·</span>
             <span className="text-xs text-[var(--text-muted)]">{currentItem.subjectName}</span>
@@ -506,9 +579,9 @@ function DailyQueueContent() {
 
 function ItemTypeIcon({ type }: { type: string }) {
   switch (type) {
-    case 'flashcard-review': return <BookOpen className="w-4 h-4 text-blue-500" />
+    case 'flashcard-review': return <BookOpen className="w-4 h-4 text-purple-500" />
     case 'exercise': return <ListChecks className="w-4 h-4 text-orange-500" />
-    case 'concept-quiz': return <Brain className="w-4 h-4 text-purple-500" />
+    case 'concept-quiz': return <Brain className="w-4 h-4 text-blue-500" />
     default: return <ArrowRight className="w-4 h-4 text-[var(--text-muted)]" />
   }
 }

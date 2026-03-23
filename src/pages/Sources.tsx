@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { toast } from 'sonner'
@@ -32,14 +32,23 @@ export default function Sources() {
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { subjects, topics, dailyLogs } = useKnowledgeGraph(profileId)
+  const { isPro } = useSubscription()
+  const { processDocument, cancel: cancelProcessing, isRunning: isProcessingDoc, progress: processingProgress, error: processingError } = useSourceProcessing(profileId)
+  const onDocumentReady = useCallback(
+    (docId: string) => { processDocument(docId) },
+    [processDocument],
+  )
+  const sourceOptions = useMemo(
+    () => ({ onDocumentReady: isPro ? onDocumentReady : undefined }),
+    [isPro, onDocumentReady],
+  )
   const {
     documents, totalChunks,
     uploadPdf, uploadMultiplePdfs, pasteText, saveNote, deleteSource,
     isProcessing, processingStatus, batchProgress,
-  } = useSources(profileId)
+  } = useSources(profileId, sourceOptions)
 
   const { coverage } = useSourceCoverage(profileId)
-  const { processDocument, cancel: cancelProcessing, isRunning: isProcessingDoc, progress: processingProgress, error: processingError } = useSourceProcessing(profileId)
   const { processExamDocument, isRunning: isExamProcessing } = useExamProcessing(profileId)
   const [categoryFilter, setCategoryFilter] = useState<'' | 'course' | 'exam'>('')
   const [pdfViewDoc, setPdfViewDoc] = useState<Document | null>(null)
@@ -62,7 +71,6 @@ export default function Sources() {
   const agent = useAgent({ profile: activeProfile, subjects, topics, dailyLogs })
   const navigate = useNavigate()
   const { getToken } = useAuth()
-  const { isPro } = useSubscription()
 
   // Count unprocessed documents (no summary yet)
   const unprocessedDocs = documents.filter(d => !d.summary)

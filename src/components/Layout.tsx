@@ -22,6 +22,7 @@ import { BottomNav } from './BottomNav'
 import { SyncIndicator } from './SyncIndicator'
 import { ErrorBoundary } from './ErrorBoundary'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
+import { ContextualAssistant } from './ContextualAssistant'
 import { useJobCompletionToasts } from '../hooks/useJobCompletionToasts'
 import { useWeeklyDigest } from '../hooks/useWeeklyDigest'
 import { identify } from '../lib/analytics'
@@ -327,6 +328,11 @@ export function Layout() {
       {/* Mobile Bottom Nav */}
       <SignedIn>
         <BottomNav />
+      </SignedIn>
+
+      {/* Contextual Floating Assistant */}
+      <SignedIn>
+        <ContextualAssistant chatOpen={chatOpen} />
       </SignedIn>
 
       {/* Chat Panel */}

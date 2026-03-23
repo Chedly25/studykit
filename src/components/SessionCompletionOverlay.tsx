@@ -18,6 +18,9 @@ export interface SessionCompletionData {
   questionsAnswered?: number
   questionsCorrect?: number
   feedbackSummary?: string
+  // Tomorrow preview + roadmap context
+  tomorrowDueCount?: number
+  roadmapPhase?: string
 }
 
 interface Props {
@@ -210,6 +213,20 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
             </div>
             <ArrowRight className="w-4 h-4 text-[var(--accent-text)] shrink-0" />
           </button>
+        )}
+
+        {/* Tomorrow preview + roadmap context */}
+        {(data.tomorrowDueCount || data.roadmapPhase) && (
+          <div className="text-center space-y-1">
+            {data.roadmapPhase && (
+              <p className="text-xs text-[var(--accent-text)] font-medium">{data.roadmapPhase}</p>
+            )}
+            {data.tomorrowDueCount && data.tomorrowDueCount > 0 && (
+              <p className="text-xs text-[var(--text-muted)]">
+                {t('session.tomorrowDue', { count: data.tomorrowDueCount })}
+              </p>
+            )}
+          </div>
         )}
 
         {/* Dismiss buttons */}

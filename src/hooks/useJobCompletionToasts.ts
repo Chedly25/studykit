@@ -9,7 +9,7 @@ import { useExamProfile } from './useExamProfile'
 
 const JOB_TOAST_CONFIG: Record<string, { message: string; cta: string; link: string }> = {
   'source-processing': {
-    message: 'Document processed — exercises and flashcards are ready',
+    message: 'Your document is ready — concept cards and flashcards have been generated',
     cta: 'View in library',
     link: '/sources',
   },

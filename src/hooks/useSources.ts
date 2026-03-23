@@ -23,7 +23,11 @@ import type { DocumentChunk } from '../db/schema'
 import { track } from '../lib/analytics'
 import type { BatchUploadProgressState } from '../components/sources/BatchUploadProgress'
 
-export function useSources(examProfileId: string | undefined) {
+interface UseSourcesOptions {
+  onDocumentReady?: (docId: string) => void
+}
+
+export function useSources(examProfileId: string | undefined, options?: UseSourcesOptions) {
   const { getToken } = useAuth()
   const { t } = useTranslation()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -79,6 +83,8 @@ export function useSources(examProfileId: string | undefined) {
       setProcessingStatus('')
       track('document_uploaded', { type: 'pdf', pageCount })
       toast.success(`"${title}" uploaded`)
+      // Auto-trigger processing if callback provided
+      try { options?.onDocumentReady?.(doc.id) } catch { /* non-blocking */ }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Upload failed')
       throw err
@@ -86,7 +92,7 @@ export function useSources(examProfileId: string | undefined) {
       setIsProcessing(false)
       setProcessingStatus('')
     }
-  }, [examProfileId])
+  }, [examProfileId, options?.onDocumentReady])
 
   const uploadMultiplePdfs = useCallback(async (files: File[], category?: 'course' | 'exam' | 'other') => {
     if (!examProfileId || files.length === 0) return
@@ -124,6 +130,8 @@ export function useSources(examProfileId: string | undefined) {
           }
         } catch { /* non-blocking */ }
         progress.results.push({ fileName: file.name, status: 'done' })
+        // Auto-trigger processing per file
+        try { options?.onDocumentReady?.(doc.id) } catch { /* non-blocking */ }
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Upload failed'
         progress.results.push({ fileName: file.name, status: 'error', error: errorMsg })
@@ -147,7 +155,7 @@ export function useSources(examProfileId: string | undefined) {
 
     // Clear batch progress after a delay
     setTimeout(() => setBatchProgress(null), 3000)
-  }, [examProfileId, t])
+  }, [examProfileId, t, options?.onDocumentReady])
 
   const pasteText = useCallback(async (title: string, text: string) => {
     if (!examProfileId || !text.trim()) return

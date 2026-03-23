@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Zap, ListTodo, ClipboardCheck, FileText, AlertCircle, MessageCircle } from 'lucide-react'
+import { ArrowRight, Zap, ListTodo, ClipboardCheck, FileText, AlertCircle, MessageCircle, Loader2 } from 'lucide-react'
 import { useUser } from '@clerk/clerk-react'
 import { isCramModeActive } from '../lib/cramModeEngine'
 import { db } from '../db'
@@ -156,6 +156,27 @@ export default function Dashboard() {
     } catch { return null }
   }, [profileId]) ?? null
 
+  // Detect newly created profile with active background jobs
+  const isNewProfile = useMemo(() => {
+    if (!activeProfile?.createdAt) return false
+    const createdMs = new Date(activeProfile.createdAt).getTime()
+    return Date.now() - createdMs < 5 * 60 * 1000 // within 5 minutes
+  }, [activeProfile?.createdAt])
+
+  const activeJobCount = useLiveQuery(async () => {
+    if (!profileId || !isNewProfile) return 0
+    return db.backgroundJobs
+      .where('[examProfileId+status]').equals([profileId, 'running'])
+      .count()
+      .then(running => db.backgroundJobs
+        .where('[examProfileId+status]').equals([profileId, 'queued'])
+        .count()
+        .then(queued => running + queued)
+      )
+  }, [profileId, isNewProfile]) ?? 0
+
+  const showSettingUp = isNewProfile && activeJobCount > 0
+
   // Quick stats
   const topicsWithoutMaterial = useMemo(() => {
     return topics.filter(t => {
@@ -200,6 +221,17 @@ export default function Dashboard() {
 
       {/* Celebration Banner */}
       {profileId && <CelebrationBanner examProfileId={profileId} streak={streak} />}
+
+      {/* Setting up indicator for new profiles */}
+      {showSettingUp && (
+        <div className="flex items-center gap-3 px-4 py-3 mb-3 rounded-xl bg-[var(--accent-bg)] border border-[var(--accent-text)]/20 animate-fade-in">
+          <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin shrink-0" />
+          <div>
+            <span className="text-sm font-medium text-[var(--text-heading)]">{t('dashboard.settingUp')}</span>
+            <span className="text-xs text-[var(--text-muted)] block">{t('dashboard.settingUpDesc')}</span>
+          </div>
+        </div>
+      )}
 
       {/* Welcome Header */}
       <div className="mb-6">

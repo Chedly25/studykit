@@ -299,7 +299,9 @@
     "profileUpdated": "Mis à jour {{time}}",
     "profileTimeMinutes": "il y a {{count}} min",
     "profileTimeHours": "il y a {{count}}h",
-    "profileTimeDays": "il y a {{count}}j"
+    "profileTimeDays": "il y a {{count}}j",
+    "settingUp": "Configuration de votre espace d'étude...",
+    "settingUpDesc": "Vos documents sont en cours de traitement. Votre file d'attente sera prête sous peu."
   },
   "tutor": {
     "topics": "{{count}} sujet",
@@ -872,5 +874,33 @@
     "dayOfStreak": "Jour {{streak}} de votre série — cette régularité paie vraiment",
     "almostDone": "Plus qu'une seule — vous avez presque terminé la session du jour",
     "connection": "Bien vu — {{topic1}} se connecte bien avec {{topic2}}. Voir ces liens renforce les deux."
+  },
+  "queue": {
+    "type": {
+      "flashcard-review": "Révision de flashcards",
+      "exercise": "Exercice",
+      "concept-quiz": "Quiz de concepts"
+    }
+  },
+  "session": {
+    "tomorrowDue": "Demain : {{count}} élément à réviser",
+    "tomorrowDue_plural": "Demain : {{count}} éléments à réviser"
+  },
+  "assistant": {
+    "askSubjectTutor": "Demander au tuteur {{subject}}",
+    "askAboutThis": "Poser une question",
+    "sourceActions": "Actions rapides",
+    "processDocuments": "Traiter les documents",
+    "processDocumentsPrompt": "Traite mes documents importés",
+    "generateFlashcards": "Générer des flashcards",
+    "generateFlashcardsPrompt": "Génère des flashcards à partir de mes sources",
+    "whatToFocus": "Sur quoi me concentrer ?",
+    "focusPrompt": "D'après ma progression, sur quoi devrais-je me concentrer ensuite ?",
+    "adjustPlan": "Ajuster mon plan",
+    "adjustPlanPrompt": "Aide-moi à ajuster mon plan d'études",
+    "quickActions": "Actions rapides",
+    "uploadMaterials": "Importer des documents",
+    "practiceExam": "Examen blanc",
+    "askTutor": "Poser une question"
   }
 }

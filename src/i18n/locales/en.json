@@ -299,7 +299,9 @@
     "profileUpdated": "Updated {{time}}",
     "profileTimeMinutes": "{{count}}m ago",
     "profileTimeHours": "{{count}}h ago",
-    "profileTimeDays": "{{count}}d ago"
+    "profileTimeDays": "{{count}}d ago",
+    "settingUp": "Setting up your study space...",
+    "settingUpDesc": "Your documents are being processed. Your queue will be ready shortly."
   },
   "tutor": {
     "topics": "{{count}} topic",
@@ -872,5 +874,33 @@
     "dayOfStreak": "Day {{streak}} of your streak — that consistency is really paying off",
     "almostDone": "One more to go — you've almost wrapped up today's session",
     "connection": "Nice — {{topic1}} connects well with {{topic2}}. Seeing those links strengthens both."
+  },
+  "queue": {
+    "type": {
+      "flashcard-review": "Flashcard Review",
+      "exercise": "Exercise",
+      "concept-quiz": "Concept Quiz"
+    }
+  },
+  "session": {
+    "tomorrowDue": "Tomorrow: {{count}} item due",
+    "tomorrowDue_plural": "Tomorrow: {{count}} items due"
+  },
+  "assistant": {
+    "askSubjectTutor": "Ask {{subject}} Tutor",
+    "askAboutThis": "Ask about this",
+    "sourceActions": "Quick actions",
+    "processDocuments": "Process documents",
+    "processDocumentsPrompt": "Process my uploaded documents",
+    "generateFlashcards": "Generate flashcards",
+    "generateFlashcardsPrompt": "Generate flashcards from my sources",
+    "whatToFocus": "What should I focus on?",
+    "focusPrompt": "Based on my progress, what should I focus on next?",
+    "adjustPlan": "Adjust my plan",
+    "adjustPlanPrompt": "Help me adjust my study plan",
+    "quickActions": "Quick actions",
+    "uploadMaterials": "Upload materials",
+    "practiceExam": "Practice exam",
+    "askTutor": "Ask tutor"
   }
 }
