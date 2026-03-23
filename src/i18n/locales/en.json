@@ -933,5 +933,27 @@
     "uploadMaterials": "Upload materials",
     "practiceExam": "Practice exam",
     "askTutor": "Ask tutor"
+  },
+  "report": {
+    "title": "Study Report",
+    "generateReport": "Export Report",
+    "printSave": "Print / Save as PDF",
+    "generatedOn": "Generated on {{date}}",
+    "executiveSummary": "Executive Summary",
+    "overallReadiness": "Overall Readiness",
+    "totalStudyHours": "Total Study Hours",
+    "currentStreak": "Current Streak",
+    "questionsAnswered": "Questions Answered",
+    "accuracy": "Accuracy",
+    "masteryOverview": "Mastery Overview",
+    "masteryTrajectory": "Mastery Trajectory",
+    "examHistory": "Practice Exam History",
+    "studyConsistency": "Study Consistency",
+    "topicDetails": "Topic Details",
+    "weakAreas": "Areas Needing Attention",
+    "noData": "Not enough data to generate a report. Complete some study sessions first.",
+    "noExams": "No practice exams taken yet",
+    "passed": "Passed",
+    "failed": "Failed"
   }
 }

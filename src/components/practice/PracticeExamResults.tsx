@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Trophy, BarChart3, RotateCcw, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
+import { Trophy, BarChart3, RotateCcw, ChevronDown, ChevronUp, RefreshCw, ShieldAlert, Clock } from 'lucide-react'
 import type { GeneratedQuestion, PracticeExamSession } from '../../db/schema'
 import { QuestionRenderer } from './QuestionRenderer'
 import type { WorkflowProgress } from '../../ai/orchestrator/types'
@@ -61,6 +61,28 @@ export function PracticeExamResults({
     } catch { /* ignore */ }
   }
 
+  // Parse proctor flags
+  let proctorFlags: { tabSwitches?: number; fullscreenExits?: number } | null = null
+  if (session.proctorFlags) {
+    try {
+      proctorFlags = JSON.parse(session.proctorFlags)
+    } catch { /* ignore */ }
+  }
+  const hasProctorAlerts = proctorFlags && ((proctorFlags.tabSwitches ?? 0) > 0 || (proctorFlags.fullscreenExits ?? 0) > 0)
+
+  // Compute per-question timing stats
+  const questionTimings = questions.filter(q => q.timeSpentSeconds != null && q.timeSpentSeconds > 0)
+  const hasTimingData = questionTimings.length > 0
+  let avgTime = 0, fastestTime = 0, slowestTime = 0, fastestQ = '', slowestQ = ''
+  if (hasTimingData) {
+    const times = questionTimings.map(q => q.timeSpentSeconds!)
+    avgTime = Math.round(times.reduce((a, b) => a + b, 0) / times.length)
+    fastestTime = Math.min(...times)
+    slowestTime = Math.max(...times)
+    fastestQ = `Q${(questionTimings.find(q => q.timeSpentSeconds === fastestTime)?.questionIndex ?? 0) + 1}`
+    slowestQ = `Q${(questionTimings.find(q => q.timeSpentSeconds === slowestTime)?.questionIndex ?? 0) + 1}`
+  }
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 animate-fade-in space-y-6">
       {/* Score card */}
@@ -108,6 +130,54 @@ export function PracticeExamResults({
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Proctor integrity alert */}
+      {hasProctorAlerts && (
+        <div className="glass-card p-6 border border-red-500/30 bg-red-500/5">
+          <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-3 flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5" />
+            {t('practiceExam.integrityAlert')}
+          </h3>
+          <div className="flex gap-6 text-sm">
+            {(proctorFlags?.tabSwitches ?? 0) > 0 && (
+              <div className="text-[var(--text-body)]">
+                <span className="font-medium text-red-600 dark:text-red-400">{proctorFlags!.tabSwitches}</span>{' '}
+                {t('practiceExam.tabSwitches')}
+              </div>
+            )}
+            {(proctorFlags?.fullscreenExits ?? 0) > 0 && (
+              <div className="text-[var(--text-body)]">
+                <span className="font-medium text-red-600 dark:text-red-400">{proctorFlags!.fullscreenExits}</span>{' '}
+                {t('practiceExam.fullscreenExits')}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Per-question timing stats */}
+      {hasTimingData && (
+        <div className="glass-card p-6">
+          <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-4 flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            {t('practiceExam.timingStats')}
+          </h3>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-[var(--accent-text)]">{avgTime}s</div>
+              <div className="text-xs text-[var(--text-muted)]">{t('practiceExam.avgTime')}</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-green-500">{fastestTime}s</div>
+              <div className="text-xs text-[var(--text-muted)]">{t('practiceExam.fastest')} ({fastestQ})</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-amber-500">{slowestTime}s</div>
+              <div className="text-xs text-[var(--text-muted)]">{t('practiceExam.slowest')} ({slowestQ})</div>
+            </div>
           </div>
         </div>
       )}

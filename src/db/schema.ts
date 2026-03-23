@@ -354,6 +354,10 @@ export interface ExamFormat {
   pointWeight: number       // percentage
   questionCount?: number
   samplePrompt?: string
+  sectionType?: 'written' | 'oral' | 'practical'
+  order?: number
+  questionFormat?: QuestionFormat
+  prepTimeMinutes?: number  // oral prep time before response
 }
 
 // ─── Mock Exams ─────────────────────────────────────────────────
@@ -390,6 +394,12 @@ export interface PracticeExamSession {
   maxScore?: number
   overallFeedback?: string
   createdAt: string
+  // Simulation mode fields
+  simulationMode?: boolean
+  proctorMode?: boolean
+  proctorFlags?: string        // JSON: [{type: 'tab-switch'|'exit-fullscreen', timestamp: string}]
+  sectionProgress?: string     // JSON: [{sectionId, startedAt, completedAt?}]
+  currentSectionIndex?: number
 }
 
 export interface GeneratedQuestion {
@@ -414,6 +424,11 @@ export interface GeneratedQuestion {
   isCorrect?: boolean
   earnedPoints?: number
   feedback?: string
+  // Simulation mode fields
+  examSectionId?: string
+  sectionIndex?: number
+  timeSpentSeconds?: number
+  flagged?: boolean
 }
 
 // ─── Chunk Embeddings ───────────────────────────────────────────

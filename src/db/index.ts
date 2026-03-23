@@ -327,6 +327,16 @@ export class StudiesKitDB extends Dexie {
         if (card.nextReviewDate === undefined) card.nextReviewDate = today
       })
     })
+
+    this.version(27).stores({
+      generatedQuestions: 'id, sessionId, examProfileId, questionIndex, examSectionId, [sessionId+sectionIndex]',
+      examFormats: 'id, examProfileId, [examProfileId+order]',
+    }).upgrade(tx => {
+      return tx.table('examFormats').toCollection().modify(fmt => {
+        if (fmt.sectionType === undefined) fmt.sectionType = 'written'
+        if (fmt.order === undefined) fmt.order = 0
+      })
+    })
   }
 }
 

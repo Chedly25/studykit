@@ -933,5 +933,27 @@
     "uploadMaterials": "Importer des documents",
     "practiceExam": "Examen blanc",
     "askTutor": "Poser une question"
+  },
+  "report": {
+    "title": "Rapport d'études",
+    "generateReport": "Exporter le rapport",
+    "printSave": "Imprimer / Enregistrer en PDF",
+    "generatedOn": "Généré le {{date}}",
+    "executiveSummary": "Résumé",
+    "overallReadiness": "État de préparation",
+    "totalStudyHours": "Heures d'étude totales",
+    "currentStreak": "Série en cours",
+    "questionsAnswered": "Questions répondues",
+    "accuracy": "Précision",
+    "masteryOverview": "Vue d'ensemble de la maîtrise",
+    "masteryTrajectory": "Évolution de la maîtrise",
+    "examHistory": "Historique des examens blancs",
+    "studyConsistency": "Régularité d'étude",
+    "topicDetails": "Détails par sujet",
+    "weakAreas": "Points à améliorer",
+    "noData": "Pas assez de données pour générer un rapport. Complétez d'abord quelques sessions d'étude.",
+    "noExams": "Aucun examen blanc passé pour le moment",
+    "passed": "Réussi",
+    "failed": "Échoué"
   }
 }

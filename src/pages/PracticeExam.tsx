@@ -6,9 +6,11 @@ import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useSources } from '../hooks/useSources'
 import { usePracticeExam } from '../hooks/usePracticeExam'
 import { useSubscription } from '../hooks/useSubscription'
+import { useProctorMode } from '../hooks/useProctorMode'
 import { PracticeExamSetup } from '../components/practice/PracticeExamSetup'
 import { PracticeExamGenerator } from '../components/practice/PracticeExamGenerator'
 import { PracticeExamTaker } from '../components/practice/PracticeExamTaker'
+import { SimulationExamTaker } from '../components/practice/SimulationExamTaker'
 import { PracticeExamResults } from '../components/practice/PracticeExamResults'
 import { PracticeExamHistory } from '../components/practice/PracticeExamHistory'
 import { SessionCompletionOverlay, type SessionCompletionData } from '../components/SessionCompletionOverlay'
@@ -24,6 +26,8 @@ export default function PracticeExam() {
 
   const exam = usePracticeExam(profileId)
   const { isPro } = useSubscription()
+  const isProctorActive = exam.phase === 'taking' && exam.session?.proctorMode === true
+  const { getFlags: getProctorFlags } = useProctorMode(isProctorActive)
   const masterySnapshotRef = useRef<Map<string, number>>(new Map())
   const streakRef = useRef(streak)
   streakRef.current = streak
@@ -155,6 +159,21 @@ export default function PracticeExam() {
   }
 
   if (exam.phase === 'taking') {
+    // Simulation mode: multi-section taker with per-section timers
+    if (exam.session?.simulationMode && exam.session.sectionProgress) {
+      const sections = JSON.parse(exam.session.sectionProgress) as Array<{ sectionId: string; formatName: string; sectionType: string; timeAllocationMinutes: number; questionCount: number; prepTimeMinutes?: number }>
+      return (
+        <SimulationExamTaker
+          sessionId={exam.session.id}
+          examProfileId={profileId!}
+          sections={sections.map(s => ({ examFormatId: s.sectionId, ...s }))}
+          proctorMode={exam.session.proctorMode ?? false}
+          onSubmit={() => exam.submitExam(isProctorActive ? getProctorFlags() : undefined)}
+        />
+      )
+    }
+
+    // Practice mode: standard taker
     return (
       <PracticeExamTaker
         questions={exam.questions}
@@ -162,10 +181,12 @@ export default function PracticeExam() {
         answers={exam.answers}
         timeRemaining={exam.timeRemaining}
         targetDifficulty={exam.adaptiveState.targetDifficulty}
+        flaggedIds={exam.flaggedQuestions}
         onAnswer={exam.answerQuestion}
         onNavigate={exam.goToQuestion}
-        onSubmit={exam.submitExam}
+        onSubmit={() => exam.submitExam(isProctorActive ? getProctorFlags() : undefined)}
         onNextAdaptive={exam.goToNextAdaptive}
+        onToggleFlag={exam.toggleFlag}
       />
     )
   }

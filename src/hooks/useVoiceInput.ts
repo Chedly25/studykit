@@ -6,9 +6,9 @@ import { useState, useRef, useCallback } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { track } from '../lib/analytics'
 
-const MAX_DURATION_MS = 60_000 // 60 seconds max recording
+const DEFAULT_MAX_DURATION_MS = 60_000 // 60 seconds max recording
 
-export function useVoiceInput() {
+export function useVoiceInput(maxDurationMs: number = DEFAULT_MAX_DURATION_MS) {
   const { getToken } = useAuth()
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
@@ -58,7 +58,7 @@ export function useVoiceInput() {
         if (mediaRecorderRef.current?.state === 'recording') {
           mediaRecorderRef.current.stop()
         }
-      }, MAX_DURATION_MS)
+      }, maxDurationMs)
     } catch (err) {
       cleanup()
       if (err instanceof DOMException && err.name === 'NotAllowedError') {

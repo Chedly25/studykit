@@ -7,6 +7,7 @@ interface QuestionNavProps {
   answeredIds: Set<string>
   questionIds: string[]
   onNavigate: (index: number) => void
+  flaggedIds?: Set<string>
 }
 
 export function QuestionNav({
@@ -15,6 +16,7 @@ export function QuestionNav({
   answeredIds,
   questionIds,
   onNavigate,
+  flaggedIds,
 }: QuestionNavProps) {
   useTranslation()
 
@@ -32,6 +34,7 @@ export function QuestionNav({
         {questionIds.map((id, i) => {
           const isCurrent = i === currentIndex
           const isAnswered = answeredIds.has(id)
+          const isFlagged = flaggedIds?.has(id) ?? false
 
           return (
             <button
@@ -43,7 +46,7 @@ export function QuestionNav({
                   : isAnswered
                   ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] border border-[var(--accent-text)]'
                   : 'border border-[var(--border-card)] text-[var(--text-muted)] hover:border-[var(--text-muted)]'
-              }`}
+              }${isFlagged ? ' ring-2 ring-amber-400' : ''}`}
             >
               {i + 1}
             </button>

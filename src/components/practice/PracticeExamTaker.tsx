@@ -4,6 +4,7 @@ import { Send, Loader2 } from 'lucide-react'
 import type { GeneratedQuestion } from '../../db/schema'
 import { QuestionRenderer } from './QuestionRenderer'
 import { QuestionNav } from './QuestionNav'
+import { QuestionFlag } from './QuestionFlag'
 import { ExamTimer } from './ExamTimer'
 
 interface PracticeExamTakerProps {
@@ -12,10 +13,12 @@ interface PracticeExamTakerProps {
   answers: Map<string, string>
   timeRemaining: number | null
   targetDifficulty?: number
+  flaggedIds?: Set<string>
   onAnswer: (questionId: string, answer: string) => void
   onNavigate: (index: number) => void
   onSubmit: () => void
   onNextAdaptive?: () => void
+  onToggleFlag?: (questionId: string) => void
 }
 
 export function PracticeExamTaker({
@@ -24,10 +27,12 @@ export function PracticeExamTaker({
   answers,
   timeRemaining,
   targetDifficulty,
+  flaggedIds,
   onAnswer,
   onNavigate,
   onSubmit,
   onNextAdaptive,
+  onToggleFlag,
 }: PracticeExamTakerProps) {
   const { t } = useTranslation()
   const [showConfirm, setShowConfirm] = useState(false)
@@ -71,9 +76,10 @@ export function PracticeExamTaker({
   )
   const answeredCount = answeredIds.size
   const unansweredCount = questions.length - answeredCount
+  const flaggedCount = flaggedIds?.size ?? 0
 
   const handleSubmit = () => {
-    if (unansweredCount > 0) {
+    if (unansweredCount > 0 || flaggedCount > 0) {
       setShowConfirm(true)
     } else {
       onSubmit()
@@ -85,11 +91,19 @@ export function PracticeExamTaker({
       <div className="glass-card flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-4 py-3 border-b border-[var(--border-card)] flex items-center justify-between">
-          <div className="text-sm text-[var(--text-body)]">
-            {t('practiceExam.questionOf', { current: currentIndex + 1, total: questions.length })}
-            <span className="text-[var(--text-muted)] ml-2">
-              ({answeredCount}/{questions.length} {t('practiceExam.answered')})
-            </span>
+          <div className="flex items-center gap-2">
+            <div className="text-sm text-[var(--text-body)]">
+              {t('practiceExam.questionOf', { current: currentIndex + 1, total: questions.length })}
+              <span className="text-[var(--text-muted)] ml-2">
+                ({answeredCount}/{questions.length} {t('practiceExam.answered')})
+              </span>
+            </div>
+            {onToggleFlag && (
+              <QuestionFlag
+                flagged={flaggedIds?.has(currentQuestion.id) ?? false}
+                onToggle={() => onToggleFlag(currentQuestion.id)}
+              />
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -126,6 +140,7 @@ export function PracticeExamTaker({
             answeredIds={answeredIds}
             questionIds={questions.map(q => q.id)}
             onNavigate={onNavigate}
+            flaggedIds={flaggedIds}
           />
         </div>
       </div>
@@ -137,9 +152,16 @@ export function PracticeExamTaker({
             <h3 className="text-lg font-semibold text-[var(--text-heading)]">
               {t('practiceExam.confirmSubmit')}
             </h3>
-            <p className="text-sm text-[var(--text-muted)]">
-              {t('practiceExam.unansweredWarning', { count: unansweredCount })}
-            </p>
+            {unansweredCount > 0 && (
+              <p className="text-sm text-[var(--text-muted)]">
+                {t('practiceExam.unansweredWarning', { count: unansweredCount })}
+              </p>
+            )}
+            {flaggedCount > 0 && (
+              <p className="text-sm text-amber-600 dark:text-amber-400">
+                {t('practiceExam.flaggedWarning', { count: flaggedCount })}
+              </p>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setShowConfirm(false)}

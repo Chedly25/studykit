@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BarChart3, Play, Clock, Sparkles, X } from 'lucide-react'
+import { BarChart3, Play, Clock, Sparkles, X, Shield } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
 import type { Subject, Topic } from '../../db/schema'
@@ -50,6 +50,7 @@ export function PracticeExamSetup({
 
   const [timerEnabled, setTimerEnabled] = useState(false)
   const [timerMinutes, setTimerMinutes] = useState(30)
+  const [proctorMode, setProctorMode] = useState(false)
 
   const examFormats = useLiveQuery(
     () => db.examFormats.where('examProfileId').equals(examProfileId).toArray(),
@@ -88,6 +89,7 @@ export function PracticeExamSetup({
       examSection: examSection || undefined,
       sourcesEnabled,
       timeLimitSeconds: timerEnabled ? timerMinutes * 60 : undefined,
+      proctorMode: proctorMode || undefined,
     })
   }
 
@@ -272,6 +274,29 @@ export function PracticeExamSetup({
             </select>
           </div>
         )}
+
+        {/* Proctor Mode */}
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="text-sm font-medium text-[var(--text-body)] flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              {t('practiceExam.proctorMode')}
+            </label>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
+              {t('practiceExam.proctorModeHint')}
+            </p>
+          </div>
+          <button
+            onClick={() => setProctorMode(!proctorMode)}
+            className={`relative w-11 h-6 rounded-full transition-colors ${
+              proctorMode ? 'bg-[var(--accent-text)]' : 'bg-[var(--bg-input)] border border-[var(--border-card)]'
+            }`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+              proctorMode ? 'translate-x-5' : ''
+            }`} />
+          </button>
+        </div>
 
         {/* API usage estimate */}
         <div className="text-xs text-[var(--text-muted)] text-center">

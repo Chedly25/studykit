@@ -14,6 +14,18 @@ import { recordStudyActivity } from '../lib/studyActivity'
 
 export type PracticePhase = 'setup' | 'generating' | 'taking' | 'grading' | 'results'
 
+export interface SimulationSectionOption {
+  examFormatId: string
+  formatName: string
+  sectionType: 'written' | 'oral' | 'practical'
+  timeAllocationMinutes: number
+  questionCount: number
+  pointWeight: number
+  questionFormat?: string
+  samplePrompt?: string
+  prepTimeMinutes?: number
+}
+
 export interface PracticeExamOptions {
   questionCount: number
   focusSubject?: string
@@ -22,6 +34,10 @@ export interface PracticeExamOptions {
   examSection?: string
   sourcesEnabled: boolean
   timeLimitSeconds?: number
+  proctorMode?: boolean
+  // Simulation mode
+  simulationMode?: boolean
+  sections?: SimulationSectionOption[]
 }
 
 export function usePracticeExam(examProfileId: string | undefined) {
@@ -35,6 +51,11 @@ export function usePracticeExam(examProfileId: string | undefined) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [adaptiveState, setAdaptiveState] = useState<AdaptiveState>(createAdaptiveState)
   const [timeLimitForSession, setTimeLimitForSession] = useState<number | undefined>()
+  const [flaggedQuestions, setFlaggedQuestions] = useState<Set<string>>(new Set())
+
+  // Per-question timing
+  const questionStartTime = useRef<number>(Date.now())
+  const questionTimes = useRef<Map<string, number>>(new Map())
 
   // Background job tracking
   const [genJobId, setGenJobId] = useState<string | null>(null)
@@ -100,6 +121,8 @@ export function usePracticeExam(examProfileId: string | undefined) {
     if (genJob.isCompleted && phase === 'generating' && sessionId) {
       setPhase('taking')
       db.practiceExamSessions.update(sessionId, { phase: 'in-progress', startedAt: new Date().toISOString() })
+      questionStartTime.current = Date.now()
+      questionTimes.current = new Map()
       if (timeLimitForSession) {
         setTimeRemaining(timeLimitForSession)
         setTimerActive(true)
@@ -142,6 +165,9 @@ export function usePracticeExam(examProfileId: string | undefined) {
       examSection: options.examSection,
       sourcesEnabled: options.sourcesEnabled,
       timeLimitSeconds: options.timeLimitSeconds,
+      proctorMode: options.proctorMode || undefined,
+      simulationMode: options.simulationMode || undefined,
+      currentSectionIndex: options.simulationMode ? 0 : undefined,
       createdAt: new Date().toISOString(),
     }
     await db.practiceExamSessions.put(newSession)
@@ -150,7 +176,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setAnswers(new Map())
     setCurrentQuestionIndex(0)
     setAdaptiveState(createAdaptiveState())
-    setTimeLimitForSession(options.timeLimitSeconds)
+    setTimeLimitForSession(options.simulationMode ? undefined : options.timeLimitSeconds)
 
     const jobId = await enqueue(
       'practice-exam-generation',
@@ -163,6 +189,8 @@ export function usePracticeExam(examProfileId: string | undefined) {
         customFocus: options.customFocus,
         examSection: options.examSection,
         sourcesEnabled: options.sourcesEnabled,
+        simulationMode: options.simulationMode,
+        sections: options.sections,
       },
       5, // practice exam workflow has ~5 steps
     )
@@ -186,29 +214,80 @@ export function usePracticeExam(examProfileId: string | undefined) {
     }
   }, [questions])
 
-  const goToQuestion = useCallback((index: number) => {
-    setCurrentQuestionIndex(index)
+  const toggleFlag = useCallback((questionId: string) => {
+    setFlaggedQuestions(prev => {
+      const next = new Set(prev)
+      if (next.has(questionId)) {
+        next.delete(questionId)
+      } else {
+        next.add(questionId)
+      }
+      return next
+    })
   }, [])
+
+  const flushCurrentQuestionTime = useCallback(() => {
+    if (questions.length === 0) return
+    const currentQ = questions[currentQuestionIndex]
+    if (!currentQ) return
+    const elapsed = Math.round((Date.now() - questionStartTime.current) / 1000)
+    const prev = questionTimes.current.get(currentQ.id) ?? 0
+    questionTimes.current.set(currentQ.id, prev + elapsed)
+    questionStartTime.current = Date.now()
+  }, [questions, currentQuestionIndex])
+
+  const goToQuestion = useCallback((index: number) => {
+    flushCurrentQuestionTime()
+    setCurrentQuestionIndex(index)
+    questionStartTime.current = Date.now()
+  }, [flushCurrentQuestionTime])
 
   const goToNextAdaptive = useCallback(() => {
     if (questions.length === 0) return
+    flushCurrentQuestionTime()
     const nextIdx = getNextQuestionIndex(questions, adaptiveState, currentQuestionIndex)
     if (nextIdx === -1) return
     setCurrentQuestionIndex(nextIdx)
-  }, [questions, adaptiveState, currentQuestionIndex])
+    questionStartTime.current = Date.now()
+  }, [questions, adaptiveState, currentQuestionIndex, flushCurrentQuestionTime])
 
-  const submitExam = useCallback(async () => {
+  const submitExam = useCallback(async (proctorFlags?: { tabSwitches: number; fullscreenExits: number }) => {
     if (!sessionId || !examProfileId) return
     setTimerActive(false)
     if (timerRef.current) clearInterval(timerRef.current)
 
-    // Flush all answers to DB
+    // Flush per-question timing
+    flushCurrentQuestionTime()
+
+    // Flush all answers, flagged status, and timing to DB
     for (const [qId, answer] of answers) {
-      await db.generatedQuestions.update(qId, { userAnswer: answer, isAnswered: true })
+      await db.generatedQuestions.update(qId, {
+        userAnswer: answer,
+        isAnswered: true,
+        flagged: flaggedQuestions.has(qId) || undefined,
+        timeSpentSeconds: questionTimes.current.get(qId),
+      })
+    }
+    // Also write flags + timing for questions that were flagged/timed but not answered
+    for (const q of questions) {
+      if (!answers.has(q.id)) {
+        const updates: Record<string, unknown> = {}
+        if (flaggedQuestions.has(q.id)) updates.flagged = true
+        const time = questionTimes.current.get(q.id)
+        if (time !== undefined) updates.timeSpentSeconds = time
+        if (Object.keys(updates).length > 0) {
+          await db.generatedQuestions.update(q.id, updates)
+        }
+      }
     }
 
     setPhase('grading')
-    await db.practiceExamSessions.update(sessionId, { phase: 'grading' })
+
+    const sessionUpdate: Record<string, unknown> = { phase: 'grading' }
+    if (proctorFlags) {
+      sessionUpdate.proctorFlags = JSON.stringify(proctorFlags)
+    }
+    await db.practiceExamSessions.update(sessionId, sessionUpdate)
 
     const jobId = await enqueue(
       'practice-exam-grading',
@@ -217,7 +296,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
       4, // grading workflow has ~4 steps
     )
     setGradeJobId(jobId)
-  }, [sessionId, examProfileId, answers, enqueue])
+  }, [sessionId, examProfileId, answers, enqueue, flushCurrentQuestionTime, flaggedQuestions, questions])
 
   submitExamRef.current = submitExam
 
@@ -238,6 +317,8 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setTimeRemaining(null)
     setTimerActive(false)
     setAdaptiveState(createAdaptiveState())
+    setFlaggedQuestions(new Set())
+    questionTimes.current = new Map()
   }, [])
 
   return {
@@ -282,5 +363,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
     resetToSetup,
     reviewSession,
     adaptiveState,
+    flaggedQuestions,
+    toggleFlag,
   }
 }

@@ -46,6 +46,8 @@ export function reconstructWorkflow(type: JobType, config: Record<string, unknow
         customFocus: config.customFocus as string | undefined,
         examSection: config.examSection as string | undefined,
         sourcesEnabled: config.sourcesEnabled as boolean,
+        simulationMode: config.simulationMode as boolean | undefined,
+        sections: config.sections as import('../workflows/practiceExam').SimulationSection[] | undefined,
       })
 
     case 'practice-exam-grading':

@@ -13,6 +13,18 @@ import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { getKnowledgeGraph, getWeakTopicsTool, getErrorPatterns } from '../tools/knowledgeState'
 import { hybridSearch } from '../../lib/hybridSearch'
 
+export interface SimulationSection {
+  examFormatId: string
+  formatName: string
+  sectionType: 'written' | 'oral' | 'practical'
+  timeAllocationMinutes: number
+  questionCount: number
+  pointWeight: number
+  questionFormat?: string
+  samplePrompt?: string
+  prepTimeMinutes?: number
+}
+
 export interface PracticeExamConfig {
   sessionId: string
   questionCount: number
@@ -21,6 +33,9 @@ export interface PracticeExamConfig {
   customFocus?: string
   examSection?: string
   sourcesEnabled: boolean
+  // Simulation mode fields
+  simulationMode?: boolean
+  sections?: SimulationSection[]
 }
 
 interface GeneratedQuestionData {
@@ -218,17 +233,139 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
         optional: true,
       },
 
-      // Step 4: Generate questions (core LLM step)
-      llmJsonStep<{ questions: GeneratedQuestionData[] }>(
-        'generateQuestions',
-        'Generating exam questions',
-        (ctx) => {
+      // Step 4: Generate questions (core LLM step — handles both practice and simulation modes)
+      {
+        id: 'generateQuestions',
+        name: 'Generating exam questions',
+        async execute(_input: unknown, ctx: WorkflowContext): Promise<{ questions: GeneratedQuestionData[] }> {
           const context = ctx.results['gatherContext']?.data as GatherContextResult
-
           const sourceSearchContent = ctx.results['searchDocuments']?.data as string | undefined
           const webContent = ctx.results['searchWeb']?.data as string | undefined
 
-          // Build focus instructions from all available specificity
+          // Shared helpers for building prompts
+          const buildSourceBlock = (): { sourceBlock: string; hasSourceContent: boolean } => {
+            const hasSourceContent = config.sourcesEnabled && !!(context?.documentSummaries || sourceSearchContent)
+            let sourceBlock = ''
+            if (hasSourceContent) {
+              if (context?.documentSummaries) sourceBlock += `\n\nSTUDY MATERIAL OVERVIEW:\n${context.documentSummaries}`
+              if (sourceSearchContent) sourceBlock += `\n\nDETAILED SOURCE CONTENT (by topic):\n${sourceSearchContent}`
+              if (webContent) sourceBlock += `\n\nSUPPLEMENTARY WEB RESEARCH:\n${webContent.slice(0, 3000)}`
+            } else if (webContent) {
+              sourceBlock += `\n\nWEB RESEARCH:\n${webContent.slice(0, 3000)}`
+            }
+            return { sourceBlock, hasSourceContent }
+          }
+
+          const { sourceBlock, hasSourceContent } = buildSourceBlock()
+          const sourceInstructions = hasSourceContent
+            ? `- Base at least 80% of questions directly on the provided source content
+- In each question's explanation, reference the source document by name
+- Do NOT invent facts not in the provided materials — generate fewer questions rather than fabricating
+- Include a "sourceReference" field with the document title or section for each question`
+            : ''
+          const sourceRefField = hasSourceContent ? `\n      "sourceReference": "Document title or section",` : ''
+
+          const systemPrompt = 'You are an expert exam question generator specializing in creating academically rigorous, contextually relevant practice exams. You MUST base all questions on the student\'s actual subjects and study materials. NEVER generate generic or off-topic questions. Return ONLY valid JSON.'
+
+          // ─── SIMULATION MODE: generate per-section ───
+          if (config.simulationMode && config.sections?.length) {
+            const allQuestions: GeneratedQuestionData[] = []
+            const sections = config.sections
+            let globalQuestionIndex = 0
+
+            for (let sIdx = 0; sIdx < sections.length; sIdx++) {
+              const section = sections[sIdx]
+              const sectionCount = section.questionCount || 10
+
+              await ctx.updateProgress?.(`Generating ${section.formatName} (${sIdx + 1}/${sections.length})...`)
+
+              // Oral sections: enforce short-answer/essay format only
+              const isOral = section.sectionType === 'oral'
+              const formatInstruction = isOral
+                ? '- Use ONLY "short-answer" or "essay" format for all questions (this is an oral exam section — no multiple choice)'
+                : section.questionFormat
+                  ? `- Use "${section.questionFormat}" format for all questions in this section`
+                  : '- Use a mix of question formats (multiple-choice, true-false, short-answer)'
+
+              const sectionPrompt = `You are generating questions for section "${section.formatName}" of a simulation exam for: "${context.profileName}" (${context.examType}).
+${context.examDate ? `Exam date: ${context.examDate}.` : ''}
+Passing threshold: ${context.passingThreshold}%.
+
+SECTION DETAILS:
+- Section name: ${section.formatName}
+- Section type: ${section.sectionType}
+- Time allocation: ${section.timeAllocationMinutes} minutes
+- Point weight: ${section.pointWeight}%
+${section.samplePrompt ? `- Example prompt: ${section.samplePrompt}` : ''}
+
+SUBJECTS AND TOPICS THE STUDENT IS STUDYING:
+${context.subjectsList || 'No subjects defined yet.'}
+
+STUDENT PERFORMANCE DATA:
+Knowledge graph: ${context.knowledgeGraph}
+Weak topics: ${context.weakTopics}
+Error patterns: ${context.errorPatterns}
+${context.studentModel ? `Learning style: ${context.studentModel.learningStyle}\nCommon mistakes: ${context.studentModel.commonMistakes}` : ''}
+${sourceBlock}
+
+CRITICAL INSTRUCTIONS:
+- Generate EXACTLY ${sectionCount} questions for this section
+- Every question MUST be directly relevant to the subjects and topics listed above
+- Questions must be at the appropriate academic level for "${context.profileName}"
+- topicName for each question MUST be one of these topics: ${context.topicsList || 'use the subject names'}
+- Do NOT generate generic or unrelated questions
+- Vary difficulty (1-5) across questions, with more questions at difficulty 2-4
+${formatInstruction}
+${sourceInstructions}
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "questions": [
+    {
+      "text": "Question text here",
+      "format": "${isOral ? 'short-answer' : 'multiple-choice'}",
+      ${isOral ? '' : '"options": ["Option A", "Option B", "Option C", "Option D"],'}
+      "correctAnswer": "${isOral ? 'Expected answer content' : 'Option B'}",
+      ${isOral ? '' : '"correctOptionIndex": 1,'}
+      "explanation": "Why this is correct...",
+      "difficulty": 3,
+      "topicName": "Topic Name",${sourceRefField}
+      "points": 2
+    }
+  ]
+}
+
+Format rules:
+- multiple-choice: 4 options, correctOptionIndex (0-based), correctAnswer matches option text
+- true-false: correctAnswer is "true" or "false", no options
+- short-answer: correctAnswer is the expected answer, no options
+- essay: correctAnswer describes the ideal answer, no options
+- Points: 1 for true-false, 2 for MCQ/short-answer, 3 for essay`
+
+              const text = await ctx.llm(sectionPrompt, systemPrompt)
+              let parsed: { questions: GeneratedQuestionData[] }
+              try {
+                // Try to parse JSON from response
+                const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '')
+                const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+                parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { questions: [] }
+              } catch {
+                parsed = { questions: [] }
+              }
+
+              // Tag each question with section metadata
+              for (const q of (parsed.questions ?? [])) {
+                ;(q as GeneratedQuestionData & { examSectionId?: string; sectionIndex?: number }).examSectionId = section.examFormatId
+                ;(q as GeneratedQuestionData & { sectionIndex?: number }).sectionIndex = sIdx
+                globalQuestionIndex++
+                allQuestions.push(q)
+              }
+            }
+
+            return { questions: allQuestions }
+          }
+
+          // ─── PRACTICE MODE: existing flat batch generation ───
           const focusParts: string[] = []
           if (config.customFocus) {
             focusParts.push(`The student specifically requested questions about: "${config.customFocus}". This is the PRIMARY focus — most questions should target this area.`)
@@ -251,42 +388,7 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
             ? `\nExam format sections:\n${context.examFormats.map(f => `- ${f.formatName}: ${f.description}${f.samplePrompt ? ` (Example: ${f.samplePrompt})` : ''}`).join('\n')}`
             : ''
 
-          // Build source content block — different structure when sources are enabled
-          const hasSourceContent = config.sourcesEnabled && (context?.documentSummaries || sourceSearchContent)
-          let sourceBlock = ''
-
-          if (hasSourceContent) {
-            // Sources enabled: structured source content for grounded generation
-            if (context?.documentSummaries) {
-              sourceBlock += `\n\nSTUDY MATERIAL OVERVIEW:\n${context.documentSummaries}`
-            }
-            if (sourceSearchContent) {
-              sourceBlock += `\n\nDETAILED SOURCE CONTENT (by topic):\n${sourceSearchContent}`
-            }
-            if (webContent) {
-              sourceBlock += `\n\nSUPPLEMENTARY WEB RESEARCH:\n${webContent.slice(0, 3000)}`
-            }
-          } else {
-            // Sources disabled or no documents: use web content only
-            if (webContent) {
-              sourceBlock += `\n\nWEB RESEARCH:\n${webContent.slice(0, 3000)}`
-            }
-          }
-
-          // Source-grounding instructions when sources are enabled
-          const sourceInstructions = hasSourceContent
-            ? `- Base at least 80% of questions directly on the provided source content
-- In each question's explanation, reference the source document by name
-- Do NOT invent facts not in the provided materials — generate fewer questions rather than fabricating
-- Include a "sourceReference" field with the document title or section for each question`
-            : ''
-
-          // JSON schema — include sourceReference field when sources enabled
-          const sourceRefField = hasSourceContent
-            ? `\n      "sourceReference": "Document title or section",`
-            : ''
-
-          return `You are generating a practice exam for a student studying for: "${context.profileName}" (${context.examType}).
+          const prompt = `You are generating a practice exam for a student studying for: "${context.profileName}" (${context.examType}).
 ${context.examDate ? `Exam date: ${context.examDate}.` : ''}
 Passing threshold: ${context.passingThreshold}%.
 
@@ -337,9 +439,14 @@ Format rules:
 - short-answer: correctAnswer is the expected answer, no options
 - essay: correctAnswer describes the ideal answer, no options
 - Points: 1 for true-false, 2 for MCQ/short-answer, 3 for essay`
+
+          const text = await ctx.llm(prompt, systemPrompt)
+          const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '')
+          const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+          if (!jsonMatch) throw new Error('No JSON found in LLM response')
+          return JSON.parse(jsonMatch[0]) as { questions: GeneratedQuestionData[] }
         },
-        `You are an expert exam question generator specializing in creating academically rigorous, contextually relevant practice exams. You MUST base all questions on the student's actual subjects and study materials. NEVER generate generic or off-topic questions. Return ONLY valid JSON.`,
-      ),
+      },
 
       // Step 5: Validate generated questions (optional)
       {
@@ -401,6 +508,9 @@ If all questions are correct, return them unchanged.`
         subQuestions: q.subQuestions ? JSON.stringify(q.subQuestions) : undefined,
         sourceReference: q.sourceReference,
         isAnswered: false,
+        // Simulation mode fields (carried from per-section tagging)
+        examSectionId: (q as GeneratedQuestionData & { examSectionId?: string }).examSectionId,
+        sectionIndex: (q as GeneratedQuestionData & { sectionIndex?: number }).sectionIndex,
       }))
 
       await db.generatedQuestions.bulkPut(generatedQuestions)
