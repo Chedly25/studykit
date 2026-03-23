@@ -131,7 +131,7 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
             {priorities.map((p, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
                 <span className="mt-0.5 shrink-0">
-                  {p.urgency === 'critical' ? '🔴' : p.urgency === 'high' ? '🟠' : '🔵'}
+                  <span className={`inline-block w-2 h-2 rounded-full ${p.urgency === 'critical' ? 'bg-red-500' : p.urgency === 'high' ? 'bg-orange-500' : 'bg-blue-500'}`} />
                 </span>
                 <span className="text-[var(--text-body)]">
                   <span className="font-medium text-[var(--text-heading)]">{p.topicName}</span>

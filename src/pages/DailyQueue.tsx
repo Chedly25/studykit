@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
-import { ArrowRight, SkipForward, CheckCircle2, BookOpen, ListChecks, Brain, Zap, Loader2, X, Flag, ExternalLink, MessageCircle } from 'lucide-react'
+import { ArrowRight, SkipForward, CheckCircle2, BookOpen, ListChecks, Brain, Zap, Loader2, X, Flag, ExternalLink, MessageCircle, AlertTriangle, BarChart3, Lightbulb, RefreshCw, Link2, Sparkles, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
@@ -433,8 +433,8 @@ function DailyQueueContent() {
           coachInsight.urgency === 'urgent' ? 'border-l-4 border-red-500' :
           coachInsight.urgency === 'attention' ? 'border-l-4 border-amber-500' : ''
         }`}>
-          <span className="text-base shrink-0">
-            {coachInsight.urgency === 'urgent' ? '🚨' : coachInsight.urgency === 'attention' ? '📊' : '💡'}
+          <span className="shrink-0">
+            {coachInsight.urgency === 'urgent' ? <AlertTriangle className="w-4 h-4 text-red-500" /> : coachInsight.urgency === 'attention' ? <BarChart3 className="w-4 h-4 text-amber-500" /> : <Lightbulb className="w-4 h-4 text-blue-500" />}
           </span>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-[var(--text-heading)] text-xs">{coachInsight.title}</p>
@@ -495,8 +495,8 @@ function DailyQueueContent() {
       {/* Block E: Nudge banner */}
       {currentNudge && (
         <div className="glass-card p-3 mb-4 flex items-center gap-2 text-sm animate-fade-in">
-          <span className="text-base">
-            {currentNudge.type === 'reinforcement' ? '🔄' : currentNudge.type === 'progress' ? '📊' : currentNudge.type === 'connection' ? '🔗' : '✨'}
+          <span className="shrink-0">
+            {currentNudge.type === 'reinforcement' ? <RefreshCw className="w-4 h-4 text-blue-500" /> : currentNudge.type === 'progress' ? <BarChart3 className="w-4 h-4 text-emerald-500" /> : currentNudge.type === 'connection' ? <Link2 className="w-4 h-4 text-purple-500" /> : <Sparkles className="w-4 h-4 text-[var(--accent-text)]" />}
           </span>
           <span className="text-[var(--text-body)] flex-1">{currentNudge.text}</span>
           <button onClick={() => setCurrentNudge(null)} className="text-[var(--text-muted)] hover:text-[var(--text-body)]">
@@ -1125,7 +1125,7 @@ function ExerciseInline({
     <div>
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xs font-medium text-[var(--text-muted)]">{examSource ? `${examSource.name}${examSource.year ? ' ' + examSource.year : ''} · ` : ''}Ex. {exercise.exerciseNumber}</span>
-        <span className="text-xs text-[var(--text-faint)]">· {t('queue.difficulty')}: {'★'.repeat(exercise.difficulty)}{'☆'.repeat(5 - exercise.difficulty)}</span>
+        <span className="text-xs text-[var(--text-faint)] flex items-center gap-0.5">· {t('queue.difficulty')}: {Array.from({ length: 5 }, (_, i) => <Star key={i} className={`w-3 h-3 ${i < exercise.difficulty ? 'text-amber-400 fill-amber-400' : 'text-[var(--text-faint)]'}`} />)}</span>
         <span className="flex-1" />
         <button
           onClick={async () => {

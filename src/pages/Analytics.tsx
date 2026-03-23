@@ -9,7 +9,7 @@ import { useSessionInsights } from '../hooks/useSessionInsights'
 import { useSourceCoverage } from '../hooks/useSourceCoverage'
 import { useStudentModel } from '../hooks/useStudentModel'
 import { Link } from 'react-router-dom'
-import { BarChart3, FileText } from 'lucide-react'
+import { BarChart3, FileText, Lightbulb, AlertTriangle, Sparkles } from 'lucide-react'
 import { useTranslation, Trans } from 'react-i18next'
 import { CalibrationChart } from '../components/analytics/CalibrationChart'
 import { ErrorPatternChart } from '../components/analytics/ErrorPatternChart'
@@ -400,7 +400,7 @@ function CoachInsightsSection({ examProfileId }: { examProfileId: string | undef
   return (
     <div className="mt-4 glass-card p-5">
       <h3 className="text-sm font-bold text-[var(--text-heading)] mb-3 flex items-center gap-2">
-        <span className="text-base">💡</span> {t('analytics.coachInsights')}
+        <Lightbulb className="w-4 h-4 text-[var(--accent-text)]" /> {t('analytics.coachInsights')}
       </h3>
       <div className="space-y-2">
         {insights.map((insight, i) => (
@@ -413,7 +413,7 @@ function CoachInsightsSection({ examProfileId }: { examProfileId: string | undef
             }`}
           >
             <span className="mt-0.5 shrink-0">
-              {insight.urgency === 'urgent' ? '🚨' : insight.urgency === 'attention' ? '📊' : '✨'}
+              {insight.urgency === 'urgent' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> : insight.urgency === 'attention' ? <BarChart3 className="w-3.5 h-3.5 text-amber-500" /> : <Sparkles className="w-3.5 h-3.5 text-blue-500" />}
             </span>
             <div className="flex-1 min-w-0">
               <span className="font-medium text-[var(--text-heading)]">{insight.title}</span>

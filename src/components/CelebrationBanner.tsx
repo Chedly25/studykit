@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
+import { X, Target, Flame, Dumbbell, BookOpen, Trophy } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { db } from '../db'
 
 interface CelebrationMilestone {
   id: string
-  icon: string
+  icon: ReactNode
   title: string
   subtitle: string
 }
@@ -48,7 +49,7 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
         if (!isCelebrated(id)) {
           result.push({
             id,
-            icon: '🎯',
+            icon: <Target className="w-6 h-6 text-emerald-500" />,
             title: t('celebrate.masteryTitle', { name: tp.name }),
             subtitle: t('celebrate.masterySubtitle'),
           })
@@ -58,9 +59,9 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
 
     // Streak milestones
     const streakMilestones = [
-      { threshold: 7, icon: '🔥', title: t('celebrate.streak7Title'), subtitle: t('celebrate.streak7Subtitle') },
-      { threshold: 14, icon: '🔥', title: t('celebrate.streak14Title'), subtitle: t('celebrate.streak14Subtitle') },
-      { threshold: 30, icon: '💪', title: t('celebrate.streak30Title'), subtitle: t('celebrate.streak30Subtitle') },
+      { threshold: 7, icon: <Flame className="w-6 h-6 text-orange-500" />, title: t('celebrate.streak7Title'), subtitle: t('celebrate.streak7Subtitle') },
+      { threshold: 14, icon: <Flame className="w-6 h-6 text-orange-500" />, title: t('celebrate.streak14Title'), subtitle: t('celebrate.streak14Subtitle') },
+      { threshold: 30, icon: <Dumbbell className="w-6 h-6 text-orange-500" />, title: t('celebrate.streak30Title'), subtitle: t('celebrate.streak30Subtitle') },
     ]
     for (const m of streakMilestones) {
       if (streak >= m.threshold) {
@@ -79,7 +80,7 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
         if (!isCelebrated(id)) {
           result.push({
             id,
-            icon: '📚',
+            icon: <BookOpen className="w-6 h-6 text-emerald-500" />,
             title: t('celebrate.subjectCoverageTitle', { name: s.name }),
             subtitle: t('celebrate.subjectCoverageSubtitle'),
           })
@@ -93,7 +94,7 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
       if (!isCelebrated(id)) {
         result.push({
           id,
-          icon: '🏆',
+          icon: <Trophy className="w-6 h-6 text-amber-500" />,
           title: t('celebrate.firstExamTitle'),
           subtitle: t('celebrate.firstExamSubtitle'),
         })
@@ -123,7 +124,7 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
 
   return (
     <div className="w-full bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-4 flex items-start gap-3 animate-fade-in">
-      <span className="text-2xl shrink-0">{current.icon}</span>
+      <div className="shrink-0">{current.icon}</div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-[var(--text-heading)]">{t('celebrate.milestone')}: {current.title}</p>
         <p className="text-xs text-[var(--text-muted)] mt-0.5">{current.subtitle}</p>

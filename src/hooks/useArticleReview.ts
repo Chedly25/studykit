@@ -130,7 +130,7 @@ export function useArticleReview(projectId: string | undefined) {
       let analysis: { summary?: string; keyFindings?: string[] } = {}
       try { analysis = article.aiAnalysis ? JSON.parse(article.aiAnalysis) : {} } catch { /* ignore */ }
 
-      lines.push(`## ${article.decision === 'shortlisted' ? '★' : '?'} Article`)
+      lines.push(`## ${article.decision === 'shortlisted' ? '[Shortlisted]' : '[Pending]'} Article`)
       lines.push('')
       lines.push(`- **Decision:** ${article.decision}`)
       lines.push(`- **Composite Score:** ${article.compositeScore?.toFixed(2) ?? 'N/A'}`)
