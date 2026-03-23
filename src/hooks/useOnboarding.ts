@@ -92,7 +92,20 @@ export function useOnboarding() {
   // ── Agent loop ─────────────────────────────────────────
 
   const sendMessage = useCallback(async (userText?: string) => {
-    // 1. If user provided text, append user message
+    // 1. If no text and no messages yet, inject a hidden primer message
+    //    (many LLM APIs reject empty message arrays)
+    const isInitialGreeting = !userText && stateRef.current.messages.length === 0
+    if (isInitialGreeting) {
+      const primerMsg: Message = { role: 'user', content: 'Hi, I just signed up.' }
+      stateRef.current = {
+        ...stateRef.current,
+        messages: [...stateRef.current.messages, primerMsg],
+      }
+      setState(prev => ({ ...prev, messages: [...prev.messages, primerMsg] }))
+      // Don't add to displayMessages — the primer is invisible
+    }
+
+    // 2. If user provided text, append user message (visible)
     if (userText) {
       const userMsg: Message = { role: 'user', content: userText }
       const userDisplay: DisplayMessage = {
@@ -106,7 +119,6 @@ export function useOnboarding() {
         messages: [...prev.messages, userMsg],
         displayMessages: [...prev.displayMessages, userDisplay],
       }))
-      // Update ref so the loop sees the latest messages
       stateRef.current = {
         ...stateRef.current,
         messages: [...stateRef.current.messages, userMsg],
