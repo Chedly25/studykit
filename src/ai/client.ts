@@ -178,9 +178,9 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
   // Check for JSON error responses returned as 200 (to avoid Cloudflare 502 interception)
   const contentType = response.headers.get('Content-Type') || ''
   if (contentType.includes('application/json')) {
-    const json = await response.json() as { error?: string; code?: string }
+    const json = await response.json() as { error?: string; code?: string; detail?: string }
     if (json.error) {
-      throw new Error(json.error)
+      throw new Error(json.detail ? `${json.error} [${json.detail}]` : json.error)
     }
   }
 

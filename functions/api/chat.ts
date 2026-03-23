@@ -261,7 +261,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     if (!llmResponse || !llmResponse.ok) {
       console.error('[chat] LLM upstream error:', lastError.slice(0, 500))
       return new Response(
-        JSON.stringify({ error: 'AI service temporarily unavailable. Please try again.' }),
+        JSON.stringify({ error: 'AI service temporarily unavailable. Please try again.', detail: lastError.slice(0, 300) }),
         { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }
