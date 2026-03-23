@@ -12,7 +12,7 @@ export function useSourceProcessing(examProfileId: string | undefined) {
   const { isPro } = useSubscription()
   const { enqueue, cancel } = useBackgroundJobs()
   const [jobId, setJobId] = useState<string | null>(null)
-  const { job, isRunning, isCompleted, isFailed, progress, currentStepName, error } = useBackgroundJob(jobId)
+  const { job, isRunning, isCompleted, isFailed, progress: _progress, currentStepName, error } = useBackgroundJob(jobId)
 
   // Show toast on job failure
   useEffect(() => {

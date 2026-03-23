@@ -10,7 +10,6 @@ import { useAuth } from '@clerk/clerk-react'
 import { streamChat } from '../../ai/client'
 import { useExerciseBank } from '../../hooks/useExerciseBank'
 import { useExerciseAI } from '../../hooks/useExerciseAI'
-import type { Exercise } from '../../db/schema'
 
 function DifficultyStars({ level }: { level: number }) {
   return (

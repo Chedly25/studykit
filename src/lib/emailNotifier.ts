@@ -36,7 +36,7 @@ interface DailySummary {
 }
 
 export async function sendDailyEmail(
-  email: string,
+  _email: string,
   summary: DailySummary,
   authToken?: string,
 ): Promise<boolean> {

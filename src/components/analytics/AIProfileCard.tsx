@@ -17,7 +17,7 @@ function safeParse<T>(json: string | undefined | null, fallback: T): T {
   catch { return fallback }
 }
 
-export function AIProfileCard({ studentModel, profileId }: Props) {
+export function AIProfileCard({ studentModel, profileId: _profileId }: Props) {
   const [removing, setRemoving] = useState<string | null>(null)
 
   if (!studentModel) {

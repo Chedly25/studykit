@@ -17,11 +17,13 @@ class RequestGate {
   private active = 0
   private queue: QueueEntry[] = []
   private lastRequestTime = 0
+  private maxConcurrent: number
+  private minGapMs: number
 
-  constructor(
-    private readonly maxConcurrent: number,
-    private readonly minGapMs: number,
-  ) {}
+  constructor(maxConcurrent: number, minGapMs: number) {
+    this.maxConcurrent = maxConcurrent
+    this.minGapMs = minGapMs
+  }
 
   async acquire(): Promise<void> {
     if (this.active < this.maxConcurrent) {

@@ -1,10 +1,10 @@
 import { useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { ConceptCard, ConceptCardConnection } from '../db/schema'
+import type { ConceptCard } from '../db/schema'
 
 export function useConceptCards(examProfileId: string | undefined, topicId?: string) {
-  const cards = useLiveQuery(
+  const cards: ConceptCard[] = useLiveQuery(
     () => {
       if (!examProfileId) return []
       if (topicId) {
@@ -19,8 +19,7 @@ export function useConceptCards(examProfileId: string | undefined, topicId?: str
         .sortBy('createdAt')
     },
     [examProfileId, topicId],
-    [],
-  )
+  ) ?? []
 
   const connections = useLiveQuery(
     () => examProfileId

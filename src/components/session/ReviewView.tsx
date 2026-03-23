@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
 import { BookOpen, Check, X, ArrowRight, Trophy } from 'lucide-react'
 import { useConceptCards } from '../../hooks/useConceptCards'
-import type { ConceptCard } from '../../db/schema'
 
 interface ReviewViewProps {
   examProfileId: string

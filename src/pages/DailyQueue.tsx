@@ -974,7 +974,7 @@ const CONCEPT_RATINGS = [
 ]
 
 function ConceptQuizInline({
-  item, profileId, revealed, onReveal, onComplete, onRated, examProfileId,
+  item, profileId: _profileId, revealed, onReveal, onComplete, onRated, examProfileId,
 }: {
   item: QueueItem
   profileId: string | undefined

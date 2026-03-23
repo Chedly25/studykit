@@ -2,7 +2,6 @@
  * Renders a single PDF page: canvas + text layer + highlight overlay + context menu.
  */
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { BookOpen } from 'lucide-react'
 import type { PdfHighlight } from '../../db/schema'
 import { HighlightLayer } from '../sources/HighlightLayer'
 import { PdfContextMenu } from './PdfContextMenu'
@@ -23,7 +22,7 @@ interface Props {
 }
 
 export function PdfPageRenderer({
-  pdfDoc, pageNumber, scale, width, height, highlights,
+  pdfDoc, pageNumber, scale, width: _width, height: _height, highlights,
   onAddHighlight, onUpdateNote, onDeleteHighlight, onAskAI, onCreateFlashcard,
   topicHighlightTexts,
 }: Props) {

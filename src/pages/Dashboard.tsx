@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Zap, ListTodo, ClipboardCheck, FileText, AlertCircle, MessageCircle, Loader2 } from 'lucide-react'
+import { ArrowRight, Zap, ClipboardCheck, FileText, AlertCircle, MessageCircle, Loader2 } from 'lucide-react'
 import { useUser } from '@clerk/clerk-react'
 import { isCramModeActive } from '../lib/cramModeEngine'
 import { db } from '../db'
@@ -30,9 +30,9 @@ export default function Dashboard() {
   const { user } = useUser()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
-  const { subjects, topics, getChaptersForSubject, streak } = useKnowledgeGraph(profileId)
+  const { subjects, topics, streak } = useKnowledgeGraph(profileId)
   const topicStats = useTopicStats(profileId)
-  const { queue: dailyQueue, typeCounts, remainingMinutes: queueMinutes } = useDailyQueue(profileId)
+  const { queue: dailyQueue } = useDailyQueue(profileId)
   const { isPro } = useSubscription()
 
   const dueFlashcardCount = useLiveQuery(async () => {

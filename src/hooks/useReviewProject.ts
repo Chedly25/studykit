@@ -4,7 +4,6 @@
  */
 import { useState, useCallback, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useAuth } from '@clerk/clerk-react'
 import { db } from '../db'
 import type { ReviewProject, ReviewArticle } from '../db/schema'
 import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
@@ -14,7 +13,6 @@ import type { BatchProgress } from '../ai/orchestrator/parallelBatch'
 export type ReviewPhase = 'list' | 'setup' | 'uploading' | 'processing' | 'synthesizing' | 'reviewing'
 
 export function useReviewProject(examProfileId: string | undefined) {
-  const { getToken } = useAuth()
   const { enqueueBatch, cancel } = useBackgroundJobs()
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [phase, setPhase] = useState<ReviewPhase>('list')

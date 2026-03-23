@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { examBlueprints, getAllExamTypes, getExamBlueprint } from '../../../lib/examTopicMaps'
 import { db } from '../../../db'
-import type { ExamType, ProfileMode, ExamProfile } from '../../../db/schema'
+import type { ExamType, ExamProfile } from '../../../db/schema'
 import type { WizardDraft, WizardAction } from '../../../hooks/useWizardDraft'
 import { useExamResearch } from '../../../hooks/useExamResearch'
 import { useAuth } from '@clerk/clerk-react'

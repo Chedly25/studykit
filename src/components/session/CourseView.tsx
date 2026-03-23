@@ -2,15 +2,13 @@ import { Link } from 'react-router-dom'
 import { FileText, ExternalLink, BookOpen, Layers, Upload } from 'lucide-react'
 import { useTopicDetail } from '../../hooks/useTopicDetail'
 import { SkeletonLine, SkeletonBlock } from '../Skeleton'
-import { MathText } from '../MathText'
-
 interface CourseViewProps {
   examProfileId: string
   topicId: string
   topicName: string
 }
 
-export function CourseView({ examProfileId, topicId, topicName }: CourseViewProps) {
+export function CourseView({ examProfileId, topicId, topicName: _topicName }: CourseViewProps) {
   const detail = useTopicDetail(topicId, examProfileId)
 
   if (detail.isLoading) {

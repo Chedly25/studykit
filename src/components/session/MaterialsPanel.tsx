@@ -44,7 +44,7 @@ export function MaterialsPanel({ documents, isOpen, onClose, onSelectDocument }:
             >
               <div className="flex items-start gap-2.5">
                 <div className="p-1.5 rounded-lg bg-[var(--accent-bg)] flex-shrink-0">
-                  {doc.type === 'pdf' ? (
+                  {doc.sourceType === 'pdf' ? (
                     <FileText className="w-3.5 h-3.5 text-[var(--accent-text)]" />
                   ) : (
                     <File className="w-3.5 h-3.5 text-[var(--accent-text)]" />
@@ -53,7 +53,7 @@ export function MaterialsPanel({ documents, isOpen, onClose, onSelectDocument }:
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-[var(--text-heading)] truncate">{doc.title}</p>
                   <p className="text-[10px] text-[var(--text-muted)]">
-                    {doc.type.toUpperCase()} · {new Date(doc.createdAt).toLocaleDateString()}
+                    {doc.sourceType.toUpperCase()} · {new Date(doc.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>

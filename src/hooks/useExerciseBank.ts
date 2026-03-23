@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { Exercise, ExerciseAttempt, ExamSource } from '../db/schema'
+import type { Exercise, ExerciseAttempt } from '../db/schema'
 
 interface ExerciseStats {
   total: number

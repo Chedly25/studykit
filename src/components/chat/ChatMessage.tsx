@@ -13,7 +13,6 @@ import { InlineQuiz } from './InlineQuiz'
 import { CodePlaygroundBlock } from './CodePlaygroundBlock'
 
 const CANVAS_MARKER = '[canvas:study-plan]'
-const CANVAS_PARTIAL = '[canvas:'
 const CARD_RE = /\[card:([a-f0-9-]+)\]/g
 const QUIZ_RE = /\[quiz:([a-f0-9-]+)\]/g
 const ANY_MARKER_RE = /\[(?:card|quiz|code):([a-f0-9-]+)\]|\[canvas:study-plan\]/g
@@ -132,7 +131,6 @@ export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Pro
     return result.length > 0 ? result : [{ type: 'text', content: src }]
   }, [textWithoutCitations, isStreaming])
 
-  const hasRichContent = segments.some(s => s.type !== 'text')
   const showStreamingPlaceholder = isStreaming && PARTIAL_MARKER_RE.test(textWithoutCitations)
 
   const proseClass = `text-base prose prose-base max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-3 prose-code:text-[var(--accent-text)] prose-code:bg-[var(--accent-bg)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded ${isStreaming ? 'streaming-cursor' : ''}`

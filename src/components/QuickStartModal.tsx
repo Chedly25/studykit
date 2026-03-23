@@ -7,6 +7,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Upload, Loader2, Sparkles, ArrowRight } from 'lucide-react'
 import { db } from '../db'
+import type { Subject, Chapter, Topic } from '../db/schema'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { extractLandscapeFromText } from '../ai/landscapeExtractor'
 import { useAuth } from '@clerk/clerk-react'
@@ -88,9 +89,9 @@ export function QuickStartModal({ open, onClose }: Props) {
 
       // Seed subjects, chapters, and topics in bulk
       const today = new Date().toISOString().slice(0, 10)
-      const allSubjects: Parameters<typeof db.subjects.bulkPut>[0] = []
-      const allChapters: Parameters<typeof db.chapters.bulkPut>[0] = []
-      const allTopics: Parameters<typeof db.topics.bulkPut>[0] = []
+      const allSubjects: Subject[] = []
+      const allChapters: Chapter[] = []
+      const allTopics: Topic[] = []
 
       for (let si = 0; si < subjects.length; si++) {
         const subj = subjects[si]

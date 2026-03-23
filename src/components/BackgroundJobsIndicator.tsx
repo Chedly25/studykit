@@ -3,8 +3,7 @@
  * Reads job state from IndexedDB via useLiveQuery (no prop drilling needed).
  */
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Loader2, CheckCircle, XCircle, X } from 'lucide-react'
+import { Loader2, XCircle, X } from 'lucide-react'
 import { useActiveJobs } from '../hooks/useActiveJobs'
 import { useBackgroundJobs } from './BackgroundJobsProvider'
 import type { BackgroundJob, JobType } from '../db/schema'

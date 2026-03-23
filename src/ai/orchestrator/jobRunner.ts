@@ -288,7 +288,6 @@ export class JobRunner {
       })
 
       const stepStart = Date.now()
-      let stepSucceeded = false
       const MAX_RETRIES = 5
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
@@ -301,7 +300,6 @@ export class JobRunner {
           results[step.id] = { status: 'completed', data, durationMs: Date.now() - stepStart }
           completedStepIds.add(step.id)
           completedStepCount++
-          stepSucceeded = true
           break
         } catch (err) {
           // If deliberately cancelled, don't retry — break immediately
@@ -488,7 +486,7 @@ export class JobRunner {
     job: BackgroundJob,
     config: Record<string, unknown>,
     successCount: number,
-    failureCount: number,
+    _failureCount: number,
   ): Promise<void> {
     await db.backgroundJobs.update(job.id, {
       status: 'completed' as JobStatus,
@@ -528,7 +526,7 @@ export class JobRunner {
       } else if (job.type === 'session-insight') {
         const { generateSessionInsight } = await import('../insightGenerator')
         await generateSessionInsight(
-          config.messages as Array<{ role: string; content: string }>,
+          config.messages as Array<{ role: 'user' | 'assistant'; content: string }>,
           job.examProfileId,
           config.conversationId as string,
           authToken,

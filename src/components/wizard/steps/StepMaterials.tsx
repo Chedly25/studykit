@@ -13,7 +13,7 @@ interface StepMaterialsProps {
   onBack: () => void
 }
 
-export function StepMaterials({ draft, dispatch, onNext, onBack }: StepMaterialsProps) {
+export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: StepMaterialsProps) {
   const { t } = useTranslation()
   const { uploadMultiplePdfs, batchProgress, documents } = useSources(draft.profileId!)
   const { processDocument, isRunning: isCourseProcessing } = useSourceProcessing(draft.profileId!)

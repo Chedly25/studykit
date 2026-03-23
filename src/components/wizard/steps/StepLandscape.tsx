@@ -52,7 +52,7 @@ function extractedToDraft(subject: ExtractedSubject, index: number): DraftSubjec
 export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscapeProps) {
   const { t } = useTranslation()
   const { getToken } = useAuth()
-  const { uploadMultiplePdfs, batchProgress } = useSources(draft.profileId!)
+  const { batchProgress } = useSources(draft.profileId!)
 
   const isResearch = draft.profileMode === 'research'
   const [activeTab, setActiveTab] = useState<InputTab>(isResearch ? 'freetext' : 'upload')

@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Search, ChevronDown, ChevronRight, Lock, ArrowRight, ArrowUpDown } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
-import { useTopicStats, type TopicContentStats } from '../hooks/useTopicStats'
+import { useTopicStats } from '../hooks/useTopicStats'
 import { useExerciseBank } from '../hooks/useExerciseBank'
 import { isTopicLocked } from '../lib/knowledgeGraph'
 import { TopicDetailPanel } from '../components/dashboard/TopicDetailPanel'
@@ -327,7 +327,6 @@ function SortHeader({ label, sortKey, currentSort, onSort, width, align }: {
   width: string; align?: 'right'
 }) {
   const isActive = currentSort === sortKey || currentSort === sortKey.replace('-asc', '-desc')
-  const isDesc = currentSort.endsWith('-desc')
   return (
     <button
       onClick={() => onSort(sortKey)}

@@ -73,8 +73,6 @@ const nodeTypes: NodeTypes = {
 }
 
 export function KnowledgeMap({ subject, chapters, topics, currentTopicId, exerciseStatsByTopic }: KnowledgeMapProps) {
-  const navigate = useNavigate()
-
   const topicMasteryMap = useMemo(() => new Map(topics.map(t => [t.id, t.mastery])), [topics])
 
   const { nodes, edges } = useMemo(() => {

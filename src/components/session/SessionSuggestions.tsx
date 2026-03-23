@@ -19,7 +19,7 @@ export function SessionSuggestions({ topic, dueFlashcards, sessionInsights, onSe
     // Check for open questions from last session on this topic
     const relevantInsight = sessionInsights.find(i => {
       try {
-        const topics: string[] = JSON.parse(i.topicsCovered || '[]')
+        const topics: string[] = JSON.parse(i.conceptsDiscussed || '[]')
         return topics.some(t => t.toLowerCase().includes(name.toLowerCase()))
       } catch { return false }
     })

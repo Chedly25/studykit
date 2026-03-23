@@ -77,7 +77,7 @@ Rules:
 
   // Normalize keys and handle 3-level hierarchy
   for (const s of subjects) {
-    const raw = s as Record<string, unknown>
+    const raw = s as unknown as Record<string, unknown>
     if (!s.chapters && raw.chapitres) s.chapters = raw.chapitres as ExtractedSubject['chapters']
     if (s.chapters && Array.isArray(s.chapters) && s.chapters.length > 0) {
       s.topics = s.chapters.flatMap(ch => ch.topics ?? [])

@@ -30,7 +30,7 @@ export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, onAutoSc
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map())
   const observerRef = useRef<IntersectionObserver | null>(null)
 
-  const { highlights, addHighlight, updateNote, deleteHighlight, createFlashcardFromHighlight, getHighlightsForPage } = usePdfHighlights(documentId, examProfileId)
+  const { highlights: _highlights, addHighlight, updateNote, deleteHighlight, createFlashcardFromHighlight, getHighlightsForPage } = usePdfHighlights(documentId, examProfileId)
 
   // Pre-calculate all page dimensions
   useEffect(() => {

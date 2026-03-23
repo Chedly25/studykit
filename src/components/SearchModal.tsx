@@ -51,7 +51,7 @@ export function SearchModal({ open, onClose }: Props) {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Filter quick actions by query
   const matchingActions = useMemo(() => {
@@ -81,9 +81,9 @@ export function SearchModal({ open, onClose }: Props) {
       clear()
       return
     }
-    clearTimeout(debounceRef.current)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => search(query), 300)
-    return () => clearTimeout(debounceRef.current)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [query, search, clear])
 
   // Reset selection when results change

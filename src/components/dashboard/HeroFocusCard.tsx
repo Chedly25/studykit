@@ -27,7 +27,7 @@ const ACTION_COLORS: Record<string, string> = {
   'flashcards': 'bg-pink-500/15 text-pink-500',
 }
 
-export function HeroFocusCard({ recommendation, dueFlashcardCount, isResearch, allCaughtUp, hasTopics }: HeroFocusCardProps) {
+export function HeroFocusCard({ recommendation, dueFlashcardCount, isResearch: _isResearch, allCaughtUp, hasTopics }: HeroFocusCardProps) {
   const { t } = useTranslation()
 
   // State 1: Has a recommendation → show it

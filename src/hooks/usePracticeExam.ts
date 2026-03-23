@@ -5,7 +5,6 @@
  */
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useAuth } from '@clerk/clerk-react'
 import { db } from '../db'
 import type { GeneratedQuestion, PracticeExamSession } from '../db/schema'
 import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
@@ -26,7 +25,6 @@ export interface PracticeExamOptions {
 }
 
 export function usePracticeExam(examProfileId: string | undefined) {
-  const { getToken } = useAuth()
   const { enqueue, cancel } = useBackgroundJobs()
   const [phase, setPhase] = useState<PracticePhase>('setup')
   const [sessionId, setSessionId] = useState<string | null>(null)

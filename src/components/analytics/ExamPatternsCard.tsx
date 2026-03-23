@@ -2,7 +2,6 @@
  * Exam pattern analysis card — shows recurring question patterns across past exams.
  * Only renders when ≥2 exam sources exist.
  */
-import { useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { TrendingUp, Star } from 'lucide-react'
 import { db } from '../../db'

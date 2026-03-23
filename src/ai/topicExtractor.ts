@@ -127,7 +127,7 @@ Rules:
 
   // Normalize keys and handle 3-level hierarchy
   for (const s of subjects) {
-    const raw = s as Record<string, unknown>
+    const raw = s as unknown as Record<string, unknown>
     // Handle French chapter key
     if (!s.chapters && raw.chapitres) {
       s.chapters = raw.chapitres as ExtractedChapter[]

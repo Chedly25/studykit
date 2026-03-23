@@ -5,7 +5,8 @@
  * - Course: concept companion (explain, generate cards, answer questions)
  */
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { X, Sparkles, BookOpen, ClipboardCheck } from 'lucide-react'
+import { useAuth } from '@clerk/clerk-react'
+import { X, BookOpen, ClipboardCheck } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
 import { useExamProfile } from '../../hooks/useExamProfile'
@@ -83,6 +84,7 @@ function buildCourseCompanionPrompt(docTitle: string): string {
 // ─── Component ──────
 
 export function ReaderChatPane({ documentId, documentTitle, documentCategory, selectionContext, onSelectionContextConsumed, onClose }: Props) {
+  const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { subjects, topics, dailyLogs } = useKnowledgeGraph(profileId)
@@ -227,7 +229,7 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
       </div>
 
       {/* Messages */}
-      <ChatContextProvider>
+      <ChatContextProvider value={{ examProfileId: profileId, getToken }}>
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
           {messages.length === 0 && !isLoading && (
             <div className="text-center py-8">
@@ -255,7 +257,7 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
           )}
 
           {messages.map((msg, i) => (
-            <ChatMessageBubble key={msg.id || i} message={msg} />
+            <ChatMessageBubble key={i} message={msg} />
           ))}
 
           {streamingText && (

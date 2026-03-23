@@ -83,7 +83,7 @@ export default function Exercises() {
   const [filterChapter, setFilterChapter] = useState('')
   const [filterTopic, setFilterTopic] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
-  const [filterDifficulty, setFilterDifficulty] = useState(0)
+  const [filterDifficulty, _setFilterDifficulty] = useState(0)
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null)
   const [userAnswer, setUserAnswer] = useState('')
 

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@clerk/clerk-react'
 import { Loader2, ChevronLeft, Rocket, GripVertical, ArrowUp, ArrowDown } from 'lucide-react'
 import { useExamProfile } from '../../../hooks/useExamProfile'
 import { clearWizardDraft } from '../../../hooks/useWizardDraft'
@@ -17,7 +16,6 @@ interface StepPrioritiesProps {
 export function StepPriorities({ draft, dispatch, onBack }: StepPrioritiesProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { getToken } = useAuth()
   const { seedTopicsForProfile, setActiveProfile } = useExamProfile()
 
   const [isActivating, setIsActivating] = useState(false)

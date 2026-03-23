@@ -193,12 +193,12 @@ async function executeToolLocally(
       const topicName = (input.title as string) ?? ''
       const topic = await db.topics.where('examProfileId').equals(examProfileId).filter(t => t.name.toLowerCase().includes(topicName.toLowerCase().split(' ')[0])).first()
       const topicId = topic?.id ?? ''
-      return saveConceptCard(examProfileId, topicId, input as Parameters<typeof saveConceptCard>[2])
+      return saveConceptCard(examProfileId, topicId, input as unknown as Parameters<typeof saveConceptCard>[2])
     }
     case 'renderQuiz':
-      return prepareQuiz(input as Parameters<typeof prepareQuiz>[0])
+      return prepareQuiz(input as unknown as Parameters<typeof prepareQuiz>[0])
     case 'renderCodePlayground':
-      return prepareCodePlayground(input as Parameters<typeof prepareCodePlayground>[0])
+      return prepareCodePlayground(input as unknown as Parameters<typeof prepareCodePlayground>[0])
     case 'executeSequence': {
       const steps = (input.steps ?? []) as Array<{ toolName: string; input: Record<string, unknown> }>
       const results: Array<{ toolName: string; result: string }> = []
