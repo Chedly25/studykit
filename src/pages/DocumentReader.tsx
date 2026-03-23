@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
+import { usePdfHighlights } from '../hooks/usePdfHighlights'
 import { PdfScrollViewer } from '../components/reader/PdfScrollViewer'
 import { ReaderChatPane } from '../components/reader/ReaderChatPane'
 import { ReaderToolbar } from '../components/reader/ReaderToolbar'
@@ -35,6 +36,17 @@ export default function DocumentReader() {
   const [chatOpen, setChatOpen] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectionContext, setSelectionContext] = useState<{ text: string; pageNumber: number; documentTitle: string } | null>(null)
+
+  // Highlights for "quiz on highlights" feature
+  const { highlights: allHighlights } = usePdfHighlights(documentId ?? '', profileId)
+
+  const handleQuizOnHighlights = useCallback(() => {
+    if (!allHighlights || allHighlights.length === 0 || !documentMeta) return
+    const texts = allHighlights.slice(-20).map((h, i) => `${i + 1}. "${h.text.slice(0, 200)}"`)
+    const prompt = `Quiz me on my highlights from this document. Here are the passages I highlighted:\n\n${texts.join('\n')}\n\nGenerate 3-5 questions that test my understanding of these highlighted passages. Use the renderQuiz tool.`
+    setSelectionContext({ text: prompt, pageNumber: currentPage, documentTitle: documentMeta.title })
+    setChatOpen(true)
+  }, [allHighlights, documentMeta, currentPage])
 
   // Active recall suggestion
   const [showRecallSuggestion, setShowRecallSuggestion] = useState(false)
@@ -278,6 +290,8 @@ export default function DocumentReader() {
         onToggleChat={() => setChatOpen(prev => !prev)}
         onClose={() => navigate(-1)}
         title={documentMeta?.title ?? ''}
+        highlightCount={allHighlights?.length ?? 0}
+        onQuizHighlights={handleQuizOnHighlights}
       />
     </div>
   )

@@ -1,4 +1,4 @@
-import { ArrowLeft, ZoomIn, ZoomOut, MessageCircle } from 'lucide-react'
+import { ArrowLeft, ZoomIn, ZoomOut, MessageCircle, Brain } from 'lucide-react'
 
 interface Props {
   currentPage: number
@@ -10,9 +10,11 @@ interface Props {
   onToggleChat: () => void
   onClose: () => void
   title: string
+  highlightCount?: number
+  onQuizHighlights?: () => void
 }
 
-export function ReaderToolbar({ currentPage, totalPages, scale, onZoomIn, onZoomOut, chatOpen, onToggleChat, onClose, title }: Props) {
+export function ReaderToolbar({ currentPage, totalPages, scale, onZoomIn, onZoomOut, chatOpen, onToggleChat, onClose, title, highlightCount, onQuizHighlights }: Props) {
   return (
     <div className="flex items-center justify-between px-4 py-2 border-t border-[var(--border-card)] bg-[var(--bg-card)] flex-shrink-0">
       {/* Left: back + title */}
@@ -35,18 +37,29 @@ export function ReaderToolbar({ currentPage, totalPages, scale, onZoomIn, onZoom
         </button>
       </div>
 
-      {/* Right: chat toggle */}
-      <button
-        onClick={onToggleChat}
-        className={`p-1.5 rounded-lg transition-colors ${
-          chatOpen
-            ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
-            : 'text-[var(--text-muted)] hover:bg-[var(--bg-input)]'
-        }`}
-        title="Toggle AI chat"
-      >
-        <MessageCircle className="w-4 h-4" />
-      </button>
+      {/* Right: quiz + chat toggle */}
+      <div className="flex items-center gap-1">
+        {highlightCount !== undefined && highlightCount > 0 && onQuizHighlights && (
+          <button
+            onClick={onQuizHighlights}
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)] transition-colors"
+            title={`Quiz me on ${highlightCount} highlight${highlightCount > 1 ? 's' : ''}`}
+          >
+            <Brain className="w-4 h-4" />
+          </button>
+        )}
+        <button
+          onClick={onToggleChat}
+          className={`p-1.5 rounded-lg transition-colors ${
+            chatOpen
+              ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+              : 'text-[var(--text-muted)] hover:bg-[var(--bg-input)]'
+          }`}
+          title="Toggle AI chat"
+        >
+          <MessageCircle className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   )
 }

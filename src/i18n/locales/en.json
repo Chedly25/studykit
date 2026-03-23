@@ -904,7 +904,14 @@
     "conceptDueReview": "Due for review",
     "aiGradingAnswer": "Grading your answer...",
     "aiGraded": "AI Grade: {{score}}%",
-    "aiGradingFailed": "Grading failed — rate yourself"
+    "aiGradingFailed": "Grading failed — rate yourself",
+    "listening": "Listening..."
+  },
+  "reader": {
+    "generatingQuestion": "Generating question...",
+    "regenerateQuestion": "Regenerate",
+    "aiGeneratedHint": "AI-suggested — edit if needed",
+    "quizOnHighlights": "Quiz me on highlights"
   },
   "session": {
     "tomorrowDue": "Tomorrow: {{count}} item due",

@@ -904,7 +904,14 @@
     "conceptDueReview": "À réviser",
     "aiGradingAnswer": "Correction de votre réponse...",
     "aiGraded": "Note IA : {{score}} %",
-    "aiGradingFailed": "Correction échouée — évaluez-vous"
+    "aiGradingFailed": "Correction échouée — évaluez-vous",
+    "listening": "Écoute en cours..."
+  },
+  "reader": {
+    "generatingQuestion": "Génération de la question...",
+    "regenerateQuestion": "Regénérer",
+    "aiGeneratedHint": "Suggestion IA — modifiez si nécessaire",
+    "quizOnHighlights": "Quiz sur mes surlignages"
   },
   "session": {
     "tomorrowDue": "Demain : {{count}} élément à réviser",

@@ -2,6 +2,8 @@
  * Renders a single PDF page: canvas + text layer + highlight overlay + context menu.
  */
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { Loader2, RefreshCw } from 'lucide-react'
+import { useFlashcardGenerator } from '../../hooks/useFlashcardGenerator'
 import type { PdfHighlight } from '../../db/schema'
 import { HighlightLayer } from '../sources/HighlightLayer'
 import { PdfContextMenu } from './PdfContextMenu'
@@ -33,6 +35,23 @@ export function PdfPageRenderer({
   const [flashcardModal, setFlashcardModal] = useState<{ highlightId: string; back: string } | null>(null)
   const [flashcardFront, setFlashcardFront] = useState('')
   const renderTaskRef = useRef<any>(null)
+  const flashcardGen = useFlashcardGenerator()
+
+  // Auto-generate question when flashcard modal opens
+  useEffect(() => {
+    if (flashcardModal) {
+      flashcardGen.generate(flashcardModal.back)
+    } else {
+      flashcardGen.reset()
+    }
+  }, [flashcardModal?.highlightId])
+
+  // Pre-fill input when AI generates question
+  useEffect(() => {
+    if (flashcardGen.generatedQuestion && !flashcardFront) {
+      setFlashcardFront(flashcardGen.generatedQuestion)
+    }
+  }, [flashcardGen.generatedQuestion])
 
   // Render canvas + text layer
   useEffect(() => {
@@ -223,21 +242,40 @@ export function PdfPageRenderer({
           <div className="glass-card p-5 max-w-sm w-full mx-4 space-y-3 animate-scale-in" onClick={e => e.stopPropagation()}>
             <h3 className="font-semibold text-[var(--text-heading)]">Create Flashcard</h3>
             <div>
-              <label className="text-xs text-[var(--text-muted)]">Front (Question)</label>
-              <input
-                type="text"
-                value={flashcardFront}
-                onChange={e => setFlashcardFront(e.target.value)}
-                placeholder="What is...?"
-                className="w-full mt-1 px-3 py-2 text-sm bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg text-[var(--text-body)]"
-                autoFocus
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && flashcardFront.trim()) {
-                    onCreateFlashcard(flashcardModal.highlightId, flashcardFront)
-                    setFlashcardModal(null)
-                  }
-                }}
-              />
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-[var(--text-muted)]">Front (Question)</label>
+                {flashcardGen.generatedQuestion && (
+                  <span className="text-[10px] text-[var(--accent-text)]">AI-suggested — edit if needed</span>
+                )}
+              </div>
+              <div className="relative mt-1">
+                <input
+                  type="text"
+                  value={flashcardFront}
+                  onChange={e => setFlashcardFront(e.target.value)}
+                  placeholder={flashcardGen.isGenerating ? 'Generating question...' : 'What is...?'}
+                  disabled={flashcardGen.isGenerating}
+                  className="w-full px-3 py-2 pr-10 text-sm bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg text-[var(--text-body)] disabled:opacity-50"
+                  autoFocus={!flashcardGen.isGenerating}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && flashcardFront.trim()) {
+                      onCreateFlashcard(flashcardModal.highlightId, flashcardFront)
+                      setFlashcardModal(null)
+                    }
+                  }}
+                />
+                {flashcardGen.isGenerating ? (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--accent-text)] animate-spin" />
+                ) : flashcardGen.generatedQuestion ? (
+                  <button
+                    onClick={() => { setFlashcardFront(''); flashcardGen.generate(flashcardModal.back) }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-[var(--text-muted)] hover:text-[var(--accent-text)]"
+                    title="Regenerate"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                ) : null}
+              </div>
             </div>
             <div>
               <label className="text-xs text-[var(--text-muted)]">Back (Answer from highlight)</label>

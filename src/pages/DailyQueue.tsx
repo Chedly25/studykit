@@ -36,11 +36,19 @@ import { MathText } from '../components/MathText'
 import { track } from '../lib/analytics'
 import { trackContentInteraction } from '../lib/effectivenessTracker'
 import { useSubscription } from '../hooks/useSubscription'
+import { useVoiceInput } from '../hooks/useVoiceInput'
 import { useAnswerEvaluator } from '../hooks/useAnswerEvaluator'
 import { useExerciseAI } from '../hooks/useExerciseAI'
 import { AnswerInput } from '../components/queue/AnswerInput'
 import { EvaluationResult } from '../components/queue/EvaluationResult'
 import type { QueueItem } from '../lib/dailyQueueEngine'
+import type { VoiceInputState } from '../components/chat/ChatInput'
+
+interface VoicePropsForAnswer {
+  initialValue?: string
+  onInitialValueConsumed: () => void
+  voiceInput?: VoiceInputState
+}
 
 const SESSION_START_KEY = (profileId: string, date: string) => `session_start_${profileId}_${date}`
 const CRAM_KEY = (profileId: string) => `cramMode_${profileId}`
@@ -74,6 +82,23 @@ function DailyQueueContent() {
   const { topics, streak, weeklyHours } = useKnowledgeGraph(profileId)
   const { startSession, endSession } = useStudySession(profileId)
   const { isPro } = useSubscription()
+  const voiceInput = useVoiceInput()
+  const [voiceTranscription, setVoiceTranscription] = useState<string | null>(null)
+
+  const voiceProps: VoicePropsForAnswer = {
+    initialValue: voiceTranscription ?? undefined,
+    onInitialValueConsumed: () => setVoiceTranscription(null),
+    voiceInput: isPro ? {
+      isRecording: voiceInput.isRecording,
+      isTranscribing: voiceInput.isTranscribing,
+      onStartRecording: voiceInput.startRecording,
+      onStopRecording: async () => {
+        const text = await voiceInput.stopRecording()
+        if (text) setVoiceTranscription(text)
+      },
+      onCancelRecording: voiceInput.cancelRecording,
+    } : undefined,
+  }
 
   const today = new Date().toISOString().slice(0, 10)
   const [showStartOverlay, setShowStartOverlay] = useState(false)
@@ -506,6 +531,7 @@ function DailyQueueContent() {
               onRated={recordResult}
               examProfileId={profileId}
               isPro={isPro}
+              voiceProps={voiceProps}
             />
           )}
 
@@ -517,6 +543,7 @@ function DailyQueueContent() {
               onRated={recordResult}
               examProfileId={profileId}
               isPro={isPro}
+              voiceProps={voiceProps}
             />
           )}
 
@@ -530,6 +557,7 @@ function DailyQueueContent() {
               onRated={recordResult}
               examProfileId={profileId}
               isPro={isPro}
+              voiceProps={voiceProps}
             />
           )}
 
@@ -605,7 +633,7 @@ const RATING_BUTTONS = [
 ]
 
 function FlashcardReviewInline({
-  item, profileId, onComplete, onRated, examProfileId, isPro,
+  item, profileId, onComplete, onRated, examProfileId, isPro, voiceProps,
 }: {
   item: QueueItem
   profileId: string | undefined
@@ -613,6 +641,7 @@ function FlashcardReviewInline({
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
   examProfileId?: string
   isPro: boolean
+  voiceProps: VoicePropsForAnswer
 }) {
   const { t } = useTranslation()
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -784,6 +813,7 @@ function FlashcardReviewInline({
             <AnswerInput
               onSubmit={handleAnswerSubmit}
               onSkip={handleAnswerSkip}
+              {...voiceProps}
             />
           </div>
         )}
@@ -897,7 +927,7 @@ const EXERCISE_RATINGS = [
 ]
 
 function ExerciseInline({
-  item, profileId, onComplete, onRated, examProfileId, isPro,
+  item, profileId, onComplete, onRated, examProfileId, isPro, voiceProps,
 }: {
   item: QueueItem
   profileId: string | undefined
@@ -905,6 +935,7 @@ function ExerciseInline({
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
   examProfileId?: string
   isPro: boolean
+  voiceProps: VoicePropsForAnswer
 }) {
   const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -1120,6 +1151,7 @@ function ExerciseInline({
           placeholder={t('queue.writeSolution', 'Write your solution...')}
           onSubmit={handleAnswerSubmit}
           onSkip={handleAnswerSkip}
+          {...voiceProps}
         />
       )}
 
@@ -1266,7 +1298,7 @@ const CONCEPT_RATINGS = [
 ]
 
 function ConceptQuizInline({
-  item, profileId: _profileId, revealed, onReveal, onComplete, onRated, examProfileId, isPro,
+  item, profileId: _profileId, revealed, onReveal, onComplete, onRated, examProfileId, isPro, voiceProps,
 }: {
   item: QueueItem
   profileId: string | undefined
@@ -1276,6 +1308,7 @@ function ConceptQuizInline({
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
   examProfileId?: string
   isPro: boolean
+  voiceProps: VoicePropsForAnswer
 }) {
   const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -1376,6 +1409,7 @@ function ConceptQuizInline({
           placeholder={t('queue.explainInOwnWords', 'Explain in your own words...')}
           onSubmit={handleAnswerSubmit}
           onSkip={handleAnswerSkip}
+          {...voiceProps}
         />
       )}
 
