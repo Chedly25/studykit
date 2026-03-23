@@ -265,7 +265,7 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
             : ''
           const sourceRefField = hasSourceContent ? `\n      "sourceReference": "Document title or section",` : ''
 
-          const systemPrompt = 'You are an expert exam question generator specializing in creating academically rigorous, contextually relevant practice exams. You MUST base all questions on the student\'s actual subjects and study materials. NEVER generate generic or off-topic questions. Return ONLY valid JSON.'
+          const systemPrompt = 'You are an expert exam question generator specializing in creating academically rigorous, contextually relevant practice exams. You MUST base all questions on the student\'s actual subjects and study materials. NEVER generate generic or off-topic questions. Return ONLY valid JSON. Never use emojis in questions or explanations.'
 
           // ─── SIMULATION MODE: generate per-section ───
           if (config.simulationMode && config.sections?.length) {
@@ -473,7 +473,7 @@ ${JSON.stringify(generated?.questions ?? [], null, 2)}
 Return ONLY a JSON object: { "questions": [...] }
 If all questions are correct, return them unchanged.`
           },
-          'You are an expert exam reviewer. Ensure every question is relevant to the student\'s actual study profile. Return ONLY valid JSON.',
+          'You are an expert exam reviewer. Ensure every question is relevant to the student\'s actual study profile. Return ONLY valid JSON. Never use emojis.',
         ),
         optional: true,
       },

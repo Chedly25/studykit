@@ -53,7 +53,7 @@ Then provide feedback in markdown:
 - If partially correct: acknowledge what's right, fix what's wrong
 - If correct: confirm briefly, no need for extensive praise
 
-Be concise. Use $...$ for inline math and $$...$$ for display math.`
+Be concise. Use $...$ for inline math and $$...$$ for display math. Never use emojis.`
 }
 
 function parseGradingResponse(text: string): { score: number | null; errorType: string | null } {

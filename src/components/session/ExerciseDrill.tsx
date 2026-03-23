@@ -97,7 +97,7 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
           role: 'user',
           content: `Give a progressive hint #${hintNumber} for this exercise without revealing the answer. Be concise (2-3 sentences). ${priorHintsText}\n\nExercise: ${currentExercise.text}`,
         }],
-        system: 'You are a study assistant giving progressive hints. Each hint should be more specific than the last but never reveal the full answer.',
+        system: 'You are a study assistant giving progressive hints. Each hint should be more specific than the last but never reveal the full answer. Never use emojis.',
         tools: [],
         maxTokens: 768,
         authToken: token,

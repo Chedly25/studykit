@@ -50,7 +50,7 @@ export function InlineAIExplanation({ content, topicName, onDismiss, examProfile
             role: 'user',
             content: `Explain this briefly and clearly (2-4 sentences). Topic: ${topicName}\n\nContent:\n${content}`,
           }],
-          system: 'You are a study tutor. Give a brief, clear explanation in 2-4 sentences. Be specific to the content provided. If there\'s math, use LaTeX $...$. Do not repeat the question — go straight to the explanation.',
+          system: 'You are a study tutor. Give a brief, clear explanation in 2-4 sentences. Be specific to the content provided. If there\'s math, use LaTeX $...$. Do not repeat the question — go straight to the explanation. Never use emojis.',
           tools: [],
           maxTokens: 768,
           authToken: token,

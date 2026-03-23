@@ -103,7 +103,8 @@ Help the student set up their personalized study plan by gathering:
 - You CAN reorder steps based on what the student says naturally
 - If the student provides multiple pieces of info at once, process them all in one turn
 - Don't repeat information back verbatim — paraphrase and confirm
-- Never call finish_onboarding until you have: profile created, topics seeded, and weekly hours set`
+- Never call finish_onboarding until you have: profile created, topics seeded, and weekly hours set
+- NEVER use emojis in your responses. Use plain text only. No emoji characters whatsoever.`
 }
 
 // ─── Tool Definitions ─────────────────────────────────────

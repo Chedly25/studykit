@@ -71,7 +71,7 @@ Student's answer: ${studentAnswer}
 Reply with ONLY this JSON (no markdown, no code fences):
 {"quality": <1-5>, "feedback": "<1 sentence>"}`
 
-      const text = await callFastModel(prompt, 'You are a strict but fair academic evaluator. Be concise.', token, { maxTokens: 256 })
+      const text = await callFastModel(prompt, 'You are a strict but fair academic evaluator. Be concise. Never use emojis.', token, { maxTokens: 256 })
       if (cancelledRef.current) return
 
       setCachedResponse(cacheKey, text)

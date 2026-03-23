@@ -135,7 +135,7 @@ Return ONLY a JSON object:
 
 For "misconception": if incorrect, describe the specific misunderstanding in one sentence (e.g., "Confuses marginal and conditional probability"). null if correct or if it's a simple recall error.`
           },
-          'You are a fair and thorough exam grader. Grade based on accuracy and completeness. Return ONLY valid JSON.',
+          'You are a fair and thorough exam grader. Grade based on accuracy and completeness. Return ONLY valid JSON. Never use emojis.',
         ),
         optional: true,
         shouldRun: () => {
@@ -256,7 +256,7 @@ Return ONLY a JSON object:
   ]
 }`
         },
-        'You are an encouraging but honest tutor providing exam feedback. Return ONLY valid JSON.',
+        'You are an encouraging but honest tutor providing exam feedback. Return ONLY valid JSON. Never use emojis.',
       ),
 
       // Step 4: Update mastery stats + auto-enqueue misconception exercises

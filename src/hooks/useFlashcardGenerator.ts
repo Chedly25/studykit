@@ -38,7 +38,7 @@ export function useFlashcardGenerator() {
 
       const text = await callFastModel(
         prompt,
-        'You create study flashcard questions. Be concise and specific.',
+        'You create study flashcard questions. Be concise and specific. Never use emojis.',
         token,
         { maxTokens: 128 },
       )

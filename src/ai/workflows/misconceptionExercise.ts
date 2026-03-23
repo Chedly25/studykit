@@ -91,7 +91,7 @@ The exercises should be designed so that a student who has this misconception wi
 
 Return ONLY valid JSON:
 { "exercises": [{ "text": "exercise question text with full context", "solutionText": "detailed step-by-step solution explaining why the misconception leads to the wrong answer", "difficulty": 3 }] }`,
-                'You are an expert tutor creating diagnostic exercises. Each exercise should expose a specific misconception.',
+                'You are an expert tutor creating diagnostic exercises. Each exercise should expose a specific misconception. Never use emojis.',
               )
 
               const jsonMatch = text.match(/\{[\s\S]*\}/)

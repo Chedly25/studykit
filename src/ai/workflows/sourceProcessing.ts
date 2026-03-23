@@ -114,7 +114,7 @@ Match concept names to existing topics when the content clearly maps. Only inclu
 
 Respond ONLY with valid JSON.`
 
-          const text = await ctx.llm(prompt, 'You are an academic content analyst. Extract key concepts, generate summaries, and create study materials.')
+          const text = await ctx.llm(prompt, 'You are an academic content analyst. Extract key concepts, generate summaries, and create study materials. Never use emojis.')
           const jsonMatch = text.match(/\{[\s\S]*\}/)
           if (!jsonMatch) throw new Error('No JSON in extract response')
           const parsed = JSON.parse(jsonMatch[0]) as {
@@ -393,7 +393,7 @@ Return a JSON array with one object per concept:
 
 Return EXACTLY ${batch.length} cards in the array, one per concept above, in the same order.
 Respond ONLY with valid JSON (an array).`,
-                  'You are an expert at creating comprehensive study reference fiches.',
+                  'You are an expert at creating comprehensive study reference fiches. Never use emojis.',
                 )
 
                 const jsonMatch = text.match(/\[[\s\S]*\]/)

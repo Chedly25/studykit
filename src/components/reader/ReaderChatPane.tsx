@@ -55,6 +55,7 @@ function buildExamCompanionPrompt(docTitle: string, exercises: Exercise[]): stri
 - Use $...$ for inline math and $$...$$ for display math.
 - When checking their work: compare against the solution and point out specific errors
 - Respond in the student's language (match whatever they write in)
+- Never use emojis
 
 ## Exam Content
 ${exerciseList}
@@ -78,6 +79,7 @@ function buildCourseCompanionPrompt(docTitle: string): string {
 - Respond in the student's language
 - Reference specific sections from the document when explaining
 - NEVER write exercises as plain text — always use renderQuiz tool
+- Never use emojis
 `
 }
 
