@@ -5,6 +5,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { callFastModel } from '../ai/fastClient'
+import { getCachedResponse, setCachedResponse } from '../lib/sessionCache'
 
 interface EvalState {
   quality: number | null
@@ -42,6 +43,15 @@ export function useAnswerEvaluator(examProfileId?: string) {
     setState({ ...INITIAL, isEvaluating: true })
 
     try {
+      // Check cache first
+      const cacheKey = ['eval', question, expectedAnswer, studentAnswer]
+      const cached = getCachedResponse(cacheKey)
+      if (cached) {
+        const { quality, feedback } = parseEvalResponse(cached)
+        setState({ quality, feedback, isEvaluating: false, error: null })
+        return
+      }
+
       const token = await getToken()
       if (!token || cancelledRef.current) return
 
@@ -64,6 +74,7 @@ Reply with ONLY this JSON (no markdown, no code fences):
       const text = await callFastModel(prompt, 'You are a strict but fair academic evaluator. Be concise.', token, { maxTokens: 256 })
       if (cancelledRef.current) return
 
+      setCachedResponse(cacheKey, text)
       const { quality, feedback } = parseEvalResponse(text)
       setState({ quality, feedback, isEvaluating: false, error: null })
     } catch (err) {

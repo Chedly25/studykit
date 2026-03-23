@@ -17,6 +17,7 @@ import { CelebrationBanner } from '../components/CelebrationBanner'
 import { ResourceScoutCard } from '../components/ResourceScoutCard'
 import { useSubscription } from '../hooks/useSubscription'
 import { useDailyQueue } from '../hooks/useDailyQueue'
+import { DashboardIntelligenceBrief } from '../components/dashboard/DashboardIntelligenceBrief'
 
 function getGreetingKey(): string {
   const hour = new Date().getHours()
@@ -259,6 +260,9 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* Intelligence Brief */}
+      {profileId && <DashboardIntelligenceBrief examProfileId={profileId} />}
 
       {/* Next Steps */}
       <NextStepsCard

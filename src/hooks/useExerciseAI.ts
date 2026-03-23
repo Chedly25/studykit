@@ -5,6 +5,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { streamChat, QuotaExceededError } from '../ai/client'
+import { getCachedResponse, setCachedResponse } from '../lib/sessionCache'
 import { logQuestionResult } from '../ai/tools/dataOperations'
 import { db } from '../db'
 import type { Exercise } from '../db/schema'
@@ -87,6 +88,17 @@ export function useExerciseAI(examProfileId: string | undefined) {
     setState({ ...INITIAL_STATE, isStreaming: true })
 
     try {
+      // Check cache — skip AI call AND side effects on hit (they ran on first eval)
+      const cacheKey = ['exercise-grade', exercise.id, userAnswer]
+      const cached = getCachedResponse(cacheKey)
+      if (cached) {
+        const { score, errorType } = parseGradingResponse(cached)
+        const jsonEnd = cached.indexOf('}')
+        const feedbackText = jsonEnd >= 0 ? cached.slice(jsonEnd + 1).trim() : cached
+        setState({ feedback: feedbackText, score, errorType, isStreaming: false, error: null, quotaExceeded: false })
+        return
+      }
+
       const authToken = await getToken() ?? undefined
 
       const systemPrompt = buildGradingPrompt(exercise, userAnswer, topicNames)
@@ -116,6 +128,9 @@ export function useExerciseAI(examProfileId: string | undefined) {
       // Extract feedback (everything after the JSON block)
       const jsonEnd = finalText.indexOf('}')
       const feedbackText = jsonEnd >= 0 ? finalText.slice(jsonEnd + 1).trim() : finalText
+
+      // Cache the complete response
+      setCachedResponse(cacheKey, finalText)
 
       setState({
         feedback: feedbackText,

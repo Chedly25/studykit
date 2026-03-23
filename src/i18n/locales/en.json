@@ -301,7 +301,15 @@
     "profileTimeHours": "{{count}}h ago",
     "profileTimeDays": "{{count}}d ago",
     "settingUp": "Setting up your study space...",
-    "settingUpDesc": "Your documents are being processed. Your queue will be ready shortly."
+    "settingUpDesc": "Your documents are being processed. Your queue will be ready shortly.",
+    "briefTitle": "Intelligence Brief",
+    "briefReadiness": "Readiness",
+    "briefTrendImproving": "Improving",
+    "briefTrendStable": "Stable",
+    "briefTrendDeclining": "Declining",
+    "briefPriorities": "Today's priorities",
+    "briefNoPriorities": "No urgent items — you're on track",
+    "briefViewQueue": "Start session"
   },
   "tutor": {
     "topics": "{{count}} topic",

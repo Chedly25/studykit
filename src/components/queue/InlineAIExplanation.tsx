@@ -7,6 +7,7 @@ import { useAuth } from '@clerk/clerk-react'
 import { Sparkles, Loader2, X, Bookmark, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { streamChat } from '../../ai/client'
+import { getCachedResponse, setCachedResponse } from '../../lib/sessionCache'
 import { db } from '../../db'
 import { MathText } from '../MathText'
 
@@ -32,6 +33,14 @@ export function InlineAIExplanation({ content, topicName, onDismiss, examProfile
 
     ;(async () => {
       try {
+        // Check cache first
+        const cached = getCachedResponse(['inline-explain', content, topicName])
+        if (cached) {
+          setText(cached)
+          setIsStreaming(false)
+          return
+        }
+
         const token = await getToken()
         if (!token || controller.signal.aborted) return
 
@@ -51,6 +60,10 @@ export function InlineAIExplanation({ content, topicName, onDismiss, examProfile
           },
           signal: controller.signal,
         })
+        // Cache the completed response
+        if (accumulated) {
+          setCachedResponse(['inline-explain', content, topicName], accumulated)
+        }
       } catch (err) {
         if (!(err instanceof DOMException && err.name === 'AbortError')) {
           setError(true)

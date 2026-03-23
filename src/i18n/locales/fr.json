@@ -301,7 +301,15 @@
     "profileTimeHours": "il y a {{count}}h",
     "profileTimeDays": "il y a {{count}}j",
     "settingUp": "Configuration de votre espace d'étude...",
-    "settingUpDesc": "Vos documents sont en cours de traitement. Votre file d'attente sera prête sous peu."
+    "settingUpDesc": "Vos documents sont en cours de traitement. Votre file d'attente sera prête sous peu.",
+    "briefTitle": "Bulletin de renseignement",
+    "briefReadiness": "État de préparation",
+    "briefTrendImproving": "En hausse",
+    "briefTrendStable": "Stable",
+    "briefTrendDeclining": "En baisse",
+    "briefPriorities": "Priorités du jour",
+    "briefNoPriorities": "Aucun point urgent — vous êtes sur la bonne voie",
+    "briefViewQueue": "Commencer la session"
   },
   "tutor": {
     "topics": "{{count}} sujet",
