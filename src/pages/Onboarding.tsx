@@ -356,7 +356,7 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
 
 // ─── Fallback when AI unavailable ─────────────────────────
 
-function FallbackOnboarding({ onReset }: { onReset: () => void }) {
+function FallbackOnboarding({ onReset, lastError }: { onReset: () => void; lastError?: string | null }) {
   return (
     <div className="max-w-xl mx-auto py-16 px-4 text-center animate-fade-in">
       <div className="glass-card p-8 space-y-4">
@@ -367,6 +367,12 @@ function FallbackOnboarding({ onReset }: { onReset: () => void }) {
         <p className="text-sm text-[var(--text-muted)]">
           We are using a guided setup experience that requires AI. Please try again in a moment.
         </p>
+        {lastError && (
+          <details className="text-left">
+            <summary className="text-xs text-[var(--text-faint)] cursor-pointer">Debug info</summary>
+            <pre className="text-[10px] text-[var(--text-faint)] mt-1 p-2 bg-[var(--bg-input)] rounded overflow-x-auto whitespace-pre-wrap break-all">{lastError}</pre>
+          </details>
+        )}
         <button
           onClick={onReset}
           className="btn-primary px-6 py-2.5 text-sm font-semibold rounded-xl inline-flex items-center gap-2"
@@ -518,7 +524,7 @@ export default function Onboarding() {
 
   // ── Fallback ──────────────────────────────────────────
   if (state.useFallback) {
-    return <FallbackOnboarding onReset={resetOnboarding} />
+    return <FallbackOnboarding onReset={resetOnboarding} lastError={state.error} />
   }
 
   // Determine if we should show the free-text input
