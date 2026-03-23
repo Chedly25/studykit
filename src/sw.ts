@@ -28,9 +28,10 @@ registerRoute(
   }),
 )
 
-// ─── Runtime caching: fonts ──────────────────────────────────────
+// ─── Runtime caching: same-origin fonts only ─────────────────────
+// Skip cross-origin font CDNs (fontshare, gstatic) — CSP may block them in SW context
 registerRoute(
-  ({ request }) => request.destination === 'font',
+  ({ request, sameOrigin }) => sameOrigin && request.destination === 'font',
   new StaleWhileRevalidate({
     cacheName: 'fonts',
     plugins: [

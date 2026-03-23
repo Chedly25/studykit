@@ -29,7 +29,7 @@ const MAX_RETRIES_BEFORE_FALLBACK = 2
 type PersistedState = Pick<
   ConversationalOnboardingState,
   'messages' | 'displayMessages' | 'profileId' | 'examName' |
-  'extractedSubjects' | 'topicsSeeded' | 'weeklyHoursSet' | 'completed' | 'useFallback'
+  'extractedSubjects' | 'topicsSeeded' | 'weeklyHoursSet' | 'completed' | 'useFallback' | 'error'
 >
 
 function loadState(): ConversationalOnboardingState | null {
@@ -67,6 +67,7 @@ function saveState(state: ConversationalOnboardingState) {
       weeklyHoursSet: state.weeklyHoursSet,
       completed: state.completed,
       useFallback: state.useFallback,
+      error: state.error,
     }
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(persisted))
   } catch { /* quota exceeded — non-fatal */ }
@@ -333,11 +334,12 @@ export function useOnboarding() {
       console.error('Onboarding agent error:', err)
       retryCountRef.current += 1
 
+      const errorMsg = err instanceof Error ? err.message : 'Something went wrong.'
       if (retryCountRef.current >= MAX_RETRIES_BEFORE_FALLBACK) {
         setState(prev => ({
           ...prev,
           useFallback: true,
-          error: 'Switching to guided mode after repeated failures.',
+          error: errorMsg,
         }))
       } else {
         setState(prev => ({
