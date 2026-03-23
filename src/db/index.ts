@@ -315,6 +315,18 @@ export class StudiesKitDB extends Dexie {
     this.version(25).stores({
       macroRoadmaps: 'id, examProfileId',
     })
+
+    this.version(26).stores({
+      conceptCards: 'id, examProfileId, topicId, [examProfileId+topicId], nextReviewDate',
+    }).upgrade(tx => {
+      const today = new Date().toISOString().slice(0, 10)
+      return tx.table('conceptCards').toCollection().modify(card => {
+        if (card.easeFactor === undefined) card.easeFactor = 2.5
+        if (card.interval === undefined) card.interval = 0
+        if (card.repetitions === undefined) card.repetitions = 0
+        if (card.nextReviewDate === undefined) card.nextReviewDate = today
+      })
+    })
   }
 }
 

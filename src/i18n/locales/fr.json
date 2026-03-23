@@ -880,7 +880,23 @@
       "flashcard-review": "Révision de flashcards",
       "exercise": "Exercice",
       "concept-quiz": "Quiz de concepts"
-    }
+    },
+    "typeYourAnswer": "Tapez votre réponse...",
+    "explainConcept": "Expliquez avec vos propres mots...",
+    "writeYourSolution": "Rédigez votre solution...",
+    "submitAnswer": "Vérifier ma réponse",
+    "evaluating": "Évaluation en cours...",
+    "aiScore": "Score IA : {{score}}/5",
+    "acceptScore": "Accepter",
+    "overrideLabel": "Corriger :",
+    "ctrlEnterHint": "Ctrl+Entrée pour soumettre",
+    "enterToAccept": "Entrée pour accepter, 1-4 pour corriger",
+    "skipToSelfRate": "Passer — auto-évaluation",
+    "proFeature": "Pro : l'IA évalue vos réponses",
+    "conceptDueReview": "À réviser",
+    "aiGradingAnswer": "Correction de votre réponse...",
+    "aiGraded": "Note IA : {{score}} %",
+    "aiGradingFailed": "Correction échouée — évaluez-vous"
   },
   "session": {
     "tomorrowDue": "Demain : {{count}} élément à réviser",

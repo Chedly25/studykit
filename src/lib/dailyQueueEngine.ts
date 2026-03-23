@@ -100,6 +100,27 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
     })
   }
 
+  // 1.75. Due concept cards (SRS-scheduled, priority 85)
+  const dueConceptCards = input.conceptCards.filter(c =>
+    c.nextReviewDate && c.nextReviewDate <= today
+  )
+  for (const card of dueConceptCards) {
+    if (queue.some(q => q.conceptCardId === card.id)) continue
+    const info = input.topicMap.get(card.topicId)
+    queue.push({
+      id: `srs-concept-${card.id}`,
+      type: 'concept-quiz',
+      topicId: card.topicId,
+      topicName: info?.name ?? 'Unknown',
+      subjectName: info?.subjectName ?? '',
+      priority: 85,
+      estimatedMinutes: 3,
+      reason: 'Due for review — spaced repetition',
+      conceptCardId: card.id,
+      conceptCardTitle: card.title,
+    })
+  }
+
   // 2. Feedback loop actions
   if (input.feedbackActions) {
     for (const action of input.feedbackActions) {
@@ -216,19 +237,20 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
     })
   }
 
-  // Sort by priority descending
+  // Sort by priority descending, then interleave by subject/type
   queue.sort((a, b) => b.priority - a.priority)
+  const interleaved = interleaveQueue(queue)
 
   // Time truncation
   if (input.timeAvailableMinutes) {
     let totalMinutes = 0
-    return queue.filter(item => {
+    return interleaved.filter(item => {
       totalMinutes += item.estimatedMinutes
       return totalMinutes <= input.timeAvailableMinutes!
     })
   }
 
-  return queue
+  return interleaved
 }
 
 /**
@@ -316,14 +338,66 @@ function buildCramQueue(input: BuildQueueInput): QueueItem[] {
   }
 
   queue.sort((a, b) => b.priority - a.priority)
+  const interleaved = interleaveQueue(queue)
 
   if (input.timeAvailableMinutes) {
     let totalMinutes = 0
-    return queue.filter(item => {
+    return interleaved.filter(item => {
       totalMinutes += item.estimatedMinutes
       return totalMinutes <= input.timeAvailableMinutes!
     })
   }
 
-  return queue
+  return interleaved
+}
+
+// ─── Interleaving ─────────────────────────────────────────────────────
+
+/**
+ * Interleave queue items by subject (round-robin).
+ * If only 1 subject, interleave by type instead.
+ * Within each group, priority order from the original sort is preserved.
+ */
+function interleaveQueue(items: QueueItem[]): QueueItem[] {
+  if (items.length <= 2) return items
+
+  const bySubject = new Map<string, QueueItem[]>()
+  for (const item of items) {
+    const key = item.subjectName || '_none'
+    if (!bySubject.has(key)) bySubject.set(key, [])
+    bySubject.get(key)!.push(item)
+  }
+
+  if (bySubject.size <= 1) {
+    return interleaveByKey(items, item => item.type)
+  }
+
+  return roundRobin([...bySubject.values()])
+}
+
+function interleaveByKey(items: QueueItem[], keyFn: (item: QueueItem) => string): QueueItem[] {
+  const groups = new Map<string, QueueItem[]>()
+  for (const item of items) {
+    const key = keyFn(item)
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(item)
+  }
+  if (groups.size <= 1) return items
+  return roundRobin([...groups.values()])
+}
+
+function roundRobin(groups: QueueItem[][]): QueueItem[] {
+  const result: QueueItem[] = []
+  const iterators = groups.map(g => ({ items: g, idx: 0 }))
+  let placed = 0
+  const total = groups.reduce((sum, g) => sum + g.length, 0)
+  while (placed < total) {
+    for (const iter of iterators) {
+      if (iter.idx < iter.items.length) {
+        result.push(iter.items[iter.idx++])
+        placed++
+      }
+    }
+  }
+  return result
 }

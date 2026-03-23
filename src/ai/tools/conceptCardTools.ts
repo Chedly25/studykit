@@ -54,6 +54,10 @@ export async function saveConceptCard(
     sourceReference: input.sourceReference ?? '',
     relatedCardIds: JSON.stringify(input.connections ?? []),
     mastery: 0,
+    easeFactor: 2.5,
+    interval: 0,
+    repetitions: 0,
+    nextReviewDate: new Date().toISOString().slice(0, 10),
     createdAt: now,
     updatedAt: now,
   })

@@ -264,6 +264,11 @@ export interface ConceptCard {
   sourceReference: string
   relatedCardIds: string  // JSON string[]
   mastery: number         // 0-1
+  // SRS fields (per-card scheduling)
+  easeFactor?: number     // default 2.5
+  interval?: number       // default 0
+  repetitions?: number    // default 0
+  nextReviewDate?: string // default today
   createdAt: string
   updatedAt: string
 }

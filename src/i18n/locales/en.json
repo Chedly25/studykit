@@ -880,7 +880,23 @@
       "flashcard-review": "Flashcard Review",
       "exercise": "Exercise",
       "concept-quiz": "Concept Quiz"
-    }
+    },
+    "typeYourAnswer": "Type your answer...",
+    "explainConcept": "Explain in your own words...",
+    "writeYourSolution": "Write your solution...",
+    "submitAnswer": "Check my answer",
+    "evaluating": "Evaluating...",
+    "aiScore": "AI Score: {{score}}/5",
+    "acceptScore": "Accept",
+    "overrideLabel": "Override:",
+    "ctrlEnterHint": "Ctrl+Enter to submit",
+    "enterToAccept": "Enter to accept, 1-4 to override",
+    "skipToSelfRate": "Skip — rate yourself",
+    "proFeature": "Pro: AI evaluates your answers",
+    "conceptDueReview": "Due for review",
+    "aiGradingAnswer": "Grading your answer...",
+    "aiGraded": "AI Grade: {{score}}%",
+    "aiGradingFailed": "Grading failed — rate yourself"
   },
   "session": {
     "tomorrowDue": "Tomorrow: {{count}} item due",

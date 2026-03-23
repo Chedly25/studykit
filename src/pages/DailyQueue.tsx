@@ -35,6 +35,11 @@ import { streamChat } from '../ai/client'
 import { MathText } from '../components/MathText'
 import { track } from '../lib/analytics'
 import { trackContentInteraction } from '../lib/effectivenessTracker'
+import { useSubscription } from '../hooks/useSubscription'
+import { useAnswerEvaluator } from '../hooks/useAnswerEvaluator'
+import { useExerciseAI } from '../hooks/useExerciseAI'
+import { AnswerInput } from '../components/queue/AnswerInput'
+import { EvaluationResult } from '../components/queue/EvaluationResult'
 import type { QueueItem } from '../lib/dailyQueueEngine'
 
 const SESSION_START_KEY = (profileId: string, date: string) => `session_start_${profileId}_${date}`
@@ -68,6 +73,7 @@ function DailyQueueContent() {
   const profileId = activeProfile?.id
   const { topics, streak, weeklyHours } = useKnowledgeGraph(profileId)
   const { startSession, endSession } = useStudySession(profileId)
+  const { isPro } = useSubscription()
 
   const today = new Date().toISOString().slice(0, 10)
   const [showStartOverlay, setShowStartOverlay] = useState(false)
@@ -499,6 +505,7 @@ function DailyQueueContent() {
               onComplete={handleComplete}
               onRated={recordResult}
               examProfileId={profileId}
+              isPro={isPro}
             />
           )}
 
@@ -509,6 +516,7 @@ function DailyQueueContent() {
               onComplete={handleComplete}
               onRated={recordResult}
               examProfileId={profileId}
+              isPro={isPro}
             />
           )}
 
@@ -521,6 +529,7 @@ function DailyQueueContent() {
               onComplete={handleComplete}
               onRated={recordResult}
               examProfileId={profileId}
+              isPro={isPro}
             />
           )}
 
@@ -596,13 +605,14 @@ const RATING_BUTTONS = [
 ]
 
 function FlashcardReviewInline({
-  item, profileId, onComplete, onRated, examProfileId,
+  item, profileId, onComplete, onRated, examProfileId, isPro,
 }: {
   item: QueueItem
   profileId: string | undefined
   onComplete: (itemId: string) => void
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
   examProfileId?: string
+  isPro: boolean
 }) {
   const { t } = useTranslation()
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -613,6 +623,10 @@ function FlashcardReviewInline({
   const [explanationCtx, setExplanationCtx] = useState<{ front: string; back: string } | null>(null)
   // Feature 6: Next review interval
   const [nextInterval, setNextInterval] = useState<number | null>(null)
+  // AI active recall
+  const [phase, setPhase] = useState<'answering' | 'evaluating' | 'evaluated' | 'self-rating'>('answering')
+  const [userAnswer, setUserAnswer] = useState('')
+  const evaluator = useAnswerEvaluator(examProfileId)
 
   const cards = useLiveQuery(async () => {
     if (!item.flashcardIds?.length) return []
@@ -623,6 +637,9 @@ function FlashcardReviewInline({
 
   const advanceCard = () => {
     setExplanationCtx(null)
+    setPhase('answering')
+    setUserAnswer('')
+    evaluator.reset()
     if (currentIndex + 1 >= cards.length) {
       onComplete(item.id)
     } else {
@@ -630,6 +647,19 @@ function FlashcardReviewInline({
       setFlipped(false)
     }
   }
+
+  // Watch evaluator completion
+  useEffect(() => {
+    if (phase === 'evaluating') {
+      if (evaluator.quality !== null) {
+        setFlipped(true)
+        setPhase('evaluated')
+      } else if (evaluator.error !== null) {
+        setFlipped(true)
+        setPhase('self-rating')
+      }
+    }
+  }, [phase, evaluator.quality, evaluator.error])
 
   const handleRate = async (quality: number) => {
     if (!profileId || isSubmitting) return
@@ -673,18 +703,41 @@ function FlashcardReviewInline({
     }
   }
 
+  const handleAnswerSubmit = (answer: string) => {
+    setUserAnswer(answer)
+    if (isPro && answer.trim()) {
+      setPhase('evaluating')
+      if (currentCard) {
+        evaluator.evaluate(currentCard.front, currentCard.back, answer, item.topicName)
+      }
+    } else {
+      setFlipped(true)
+      setPhase('self-rating')
+    }
+  }
+
+  const handleAnswerSkip = () => {
+    setFlipped(true)
+    setPhase('self-rating')
+  }
+
   // Feature 1: Keyboard shortcuts ref
   const handleRateRef = useRef(handleRate)
   handleRateRef.current = handleRate
+  const phaseRef = useRef(phase)
+  phaseRef.current = phase
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (e.key === ' ' && !flipped && !explanationCtx) {
+      // Space-to-flip only in self-rating phase (answering phase needs space for textarea)
+      if (e.key === ' ' && !flipped && !explanationCtx && phaseRef.current === 'self-rating') {
         e.preventDefault()
         setFlipped(true)
         return
       }
+      // 1-4 shortcuts only in self-rating phase (evaluated phase has its own keyboard handler via EvaluationResult)
+      if (phaseRef.current !== 'self-rating') return
       if (!flipped || explanationCtx || isSubmitting || nextInterval !== null) return
       const keyMap: Record<string, number> = { '1': 1, '2': 3, '3': 4, '4': 5 }
       const quality = keyMap[e.key]
@@ -720,41 +773,95 @@ function FlashcardReviewInline({
       </div>
 
       <div className="glass-card p-5">
-        <div onClick={() => !explanationCtx && setFlipped(!flipped)} className="cursor-pointer min-h-[80px]">
-          <p className="text-sm font-medium text-[var(--text-heading)]">
-            <MathText>{currentCard.front}</MathText>
-          </p>
-          {flipped ? (
-            <div className="mt-3 pt-3 border-t border-[var(--border-card)]">
-              <p className="text-sm text-[var(--text-body)]">
-                <MathText>{currentCard.back}</MathText>
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-[var(--text-faint)] mt-3">{t('queue.tapToReveal')}</p>
-          )}
-        </div>
+        {/* Question always visible */}
+        <p className="text-sm font-medium text-[var(--text-heading)] min-h-[40px]">
+          <MathText>{currentCard.front}</MathText>
+        </p>
 
-        {flipped && !explanationCtx && nextInterval === null && (
-          <div className="flex gap-1.5 mt-4 pt-3 border-t border-[var(--border-card)]">
-            {RATING_BUTTONS.map(btn => (
-              <button
-                key={btn.quality}
-                onClick={() => handleRate(btn.quality)}
-                disabled={isSubmitting}
-                className={`flex-1 px-2 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
-              >
-                <span className="text-[10px] opacity-50 mr-1">{btn.key}</span>{t(btn.labelKey)}
-              </button>
-            ))}
+        {/* Phase: answering — show question + AnswerInput */}
+        {phase === 'answering' && (
+          <div className="mt-3 pt-3 border-t border-[var(--border-card)]">
+            <AnswerInput
+              onSubmit={handleAnswerSubmit}
+              onSkip={handleAnswerSkip}
+            />
           </div>
         )}
 
-        {/* Feature 6: Next review interval feedback */}
-        {nextInterval !== null && (
-          <p className="text-center text-xs text-[var(--text-muted)] mt-3 animate-fade-in">
-            {t('queue.nextReviewIn', { count: nextInterval })}
-          </p>
+        {/* Phase: evaluating — show disabled textarea + spinner */}
+        {phase === 'evaluating' && (
+          <div className="mt-3 pt-3 border-t border-[var(--border-card)]">
+            <textarea
+              value={userAnswer}
+              disabled
+              className="w-full min-h-[80px] rounded-lg border border-[var(--border-card)] bg-[var(--bg-input)] px-3 py-2.5 text-sm text-[var(--text-body)] opacity-50 resize-none"
+              rows={3}
+            />
+            <div className="flex items-center justify-center gap-2 mt-2 text-sm text-[var(--text-muted)]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {t('queue.evaluating', 'Evaluating your answer...')}
+            </div>
+          </div>
+        )}
+
+        {/* Phase: evaluated — show answer + EvaluationResult */}
+        {phase === 'evaluated' && (
+          <>
+            {flipped && (
+              <div className="mt-3 pt-3 border-t border-[var(--border-card)]">
+                <p className="text-sm text-[var(--text-body)]">
+                  <MathText>{currentCard.back}</MathText>
+                </p>
+              </div>
+            )}
+            <div className="mt-3 pt-3 border-t border-[var(--border-card)]">
+              <EvaluationResult
+                quality={evaluator.quality!}
+                feedback={evaluator.feedback}
+                onAccept={() => handleRate(evaluator.quality!)}
+                onOverride={(q) => handleRate(q)}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Phase: self-rating — original flip+rate UI */}
+        {phase === 'self-rating' && (
+          <>
+            <div onClick={() => !explanationCtx && setFlipped(!flipped)} className="cursor-pointer">
+              {flipped ? (
+                <div className="mt-3 pt-3 border-t border-[var(--border-card)]">
+                  <p className="text-sm text-[var(--text-body)]">
+                    <MathText>{currentCard.back}</MathText>
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-[var(--text-faint)] mt-3">{t('queue.tapToReveal')}</p>
+              )}
+            </div>
+
+            {flipped && !explanationCtx && nextInterval === null && (
+              <div className="flex gap-1.5 mt-4 pt-3 border-t border-[var(--border-card)]">
+                {RATING_BUTTONS.map(btn => (
+                  <button
+                    key={btn.quality}
+                    onClick={() => handleRate(btn.quality)}
+                    disabled={isSubmitting}
+                    className={`flex-1 px-2 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
+                  >
+                    <span className="text-[10px] opacity-50 mr-1">{btn.key}</span>{t(btn.labelKey)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Feature 6: Next review interval feedback */}
+            {nextInterval !== null && (
+              <p className="text-center text-xs text-[var(--text-muted)] mt-3 animate-fade-in">
+                {t('queue.nextReviewIn', { count: nextInterval })}
+              </p>
+            )}
+          </>
         )}
 
         {/* Block B: Inline AI explanation after "Again" */}
@@ -790,19 +897,23 @@ const EXERCISE_RATINGS = [
 ]
 
 function ExerciseInline({
-  item, profileId, onComplete, onRated, examProfileId,
+  item, profileId, onComplete, onRated, examProfileId, isPro,
 }: {
   item: QueueItem
   profileId: string | undefined
   onComplete: (itemId: string) => void
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
   examProfileId?: string
+  isPro: boolean
 }) {
   const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [explanationCtx, setExplanationCtx] = useState<string | null>(null)
   const [rated, setRated] = useState(false)
   const [showSolution, setShowSolution] = useState(false)
+  // AI active recall
+  const [phase, setPhase] = useState<'answering' | 'grading' | 'graded' | 'self-rating'>('answering')
+  const exerciseAI = useExerciseAI(examProfileId)
 
   const exercise = useLiveQuery(
     () => item.exerciseId ? db.exercises.get(item.exerciseId) : undefined,
@@ -814,6 +925,28 @@ function ExerciseInline({
     [exercise?.examSourceId]
   )
 
+  // Watch exerciseAI completion
+  useEffect(() => {
+    if (phase === 'grading' && exerciseAI.score !== null && !exerciseAI.isStreaming) {
+      setPhase('graded')
+    }
+  }, [phase, exerciseAI.score, exerciseAI.isStreaming])
+
+  // Fallback on quota exceeded
+  useEffect(() => {
+    if (phase === 'grading' && exerciseAI.quotaExceeded) {
+      setPhase('self-rating')
+    }
+  }, [phase, exerciseAI.quotaExceeded])
+
+  // Fallback on error (non-quota)
+  useEffect(() => {
+    if (phase === 'grading' && exerciseAI.error && !exerciseAI.isStreaming && !exerciseAI.quotaExceeded) {
+      setPhase('self-rating')
+    }
+  }, [phase, exerciseAI.error, exerciseAI.isStreaming, exerciseAI.quotaExceeded])
+
+  // Early return AFTER all hooks
   if (!exercise) return <p className="text-sm text-[var(--text-muted)]">{t('queue.loadingExercise')}</p>
 
   const dispatchAI = (prefill: string) => {
@@ -868,6 +1001,95 @@ function ExerciseInline({
     }
   }
 
+  const handleAnswerSubmit = (answer: string) => {
+    if (isPro && answer.trim() && exercise) {
+      setPhase('grading')
+      exerciseAI.checkAnswer(exercise, answer, [item.topicName])
+    } else {
+      setPhase('self-rating')
+    }
+  }
+
+  const handleAnswerSkip = () => {
+    setPhase('self-rating')
+  }
+
+  // AI graded: map score to SRS quality
+  const aiQuality = exerciseAI.score !== null
+    ? (exerciseAI.score >= 80 ? 5 : exerciseAI.score >= 50 ? 3 : 1)
+    : 1
+
+  const handleAIAccept = async () => {
+    // useExerciseAI already updated exercise status, attempts, and mastery in DB
+    // Just do session tracking + advance
+    if (exerciseAI.score !== null) {
+      const normalizedScore = exerciseAI.score / 100
+      if (item.exerciseId) {
+        trackContentInteraction(item.exerciseId, aiQuality, normalizedScore >= 0.5).catch(() => {})
+      }
+      onRated(item.topicName, 'exercise', aiQuality <= 2 ? 'struggled' : aiQuality <= 3 ? 'ok' : 'good')
+
+      // Advance exercise SRS (useExerciseAI updated status/attempts but not SRS fields)
+      if (profileId && item.exerciseId) {
+        const { calculateSM2 } = await import('../lib/spacedRepetition')
+        const srs = calculateSM2(aiQuality, {
+          id: exercise.id, front: '', back: '',
+          easeFactor: exercise.easeFactor ?? 2.5,
+          interval: exercise.interval ?? 0,
+          repetitions: exercise.repetitions ?? 0,
+          nextReviewDate: exercise.nextReviewDate ?? new Date().toISOString().slice(0, 10),
+          lastRating: aiQuality,
+        })
+        await db.exercises.update(item.exerciseId, {
+          easeFactor: srs.easeFactor,
+          interval: srs.interval,
+          repetitions: srs.repetitions,
+          nextReviewDate: srs.nextReviewDate,
+        })
+        if (item.topicId) await recomputeTopicMastery(item.topicId)
+      }
+
+      // Block B: Show AI explanation on bad score
+      if (aiQuality === 1) {
+        setExplanationCtx(exercise.text)
+      } else {
+        onComplete(item.id)
+      }
+    }
+  }
+
+  const handleAIOverride = async (overrideQuality: number) => {
+    // Override: re-do SRS with overridden quality
+    if (profileId && item.exerciseId) {
+      const { calculateSM2 } = await import('../lib/spacedRepetition')
+      const srs = calculateSM2(overrideQuality, {
+        id: exercise.id, front: '', back: '',
+        easeFactor: exercise.easeFactor ?? 2.5,
+        interval: exercise.interval ?? 0,
+        repetitions: exercise.repetitions ?? 0,
+        nextReviewDate: exercise.nextReviewDate ?? new Date().toISOString().slice(0, 10),
+        lastRating: overrideQuality,
+      })
+      await db.exercises.update(item.exerciseId, {
+        easeFactor: srs.easeFactor,
+        interval: srs.interval,
+        repetitions: srs.repetitions,
+        nextReviewDate: srs.nextReviewDate,
+      })
+      if (item.topicId) await recomputeTopicMastery(item.topicId)
+    }
+    if (item.exerciseId) {
+      trackContentInteraction(item.exerciseId, overrideQuality, overrideQuality >= 3).catch(() => {})
+    }
+    onRated(item.topicName, 'exercise', overrideQuality <= 2 ? 'struggled' : overrideQuality <= 3 ? 'ok' : 'good')
+
+    if (overrideQuality === 1) {
+      setExplanationCtx(exercise.text)
+    } else {
+      onComplete(item.id)
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -892,7 +1114,77 @@ function ExerciseInline({
         <MathText>{exercise.text}</MathText>
       </div>
 
-      {!explanationCtx && !rated && (
+      {/* Phase: answering — show AnswerInput */}
+      {phase === 'answering' && !explanationCtx && (
+        <AnswerInput
+          placeholder={t('queue.writeSolution', 'Write your solution...')}
+          onSubmit={handleAnswerSubmit}
+          onSkip={handleAnswerSkip}
+        />
+      )}
+
+      {/* Phase: grading — show streaming feedback */}
+      {phase === 'grading' && (
+        <div className="space-y-2">
+          {exerciseAI.feedback && (
+            <div className="glass-card p-4 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-blue-400">
+              <MathText>{exerciseAI.feedback}</MathText>
+            </div>
+          )}
+          {exerciseAI.isStreaming && (
+            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {t('queue.gradingAnswer', 'Grading your answer...')}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Phase: graded — show AI feedback + score + accept/override */}
+      {phase === 'graded' && !explanationCtx && (
+        <div className="space-y-3">
+          {exerciseAI.feedback && (
+            <div className="glass-card p-4 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-blue-400">
+              <MathText>{exerciseAI.feedback}</MathText>
+            </div>
+          )}
+          {exerciseAI.score !== null && (
+            <div className="flex items-center gap-2">
+              <span className={`text-sm font-bold px-2.5 py-1 rounded-lg ${
+                exerciseAI.score >= 80 ? 'bg-emerald-500/10 text-emerald-600' :
+                exerciseAI.score >= 50 ? 'bg-orange-500/10 text-orange-600' :
+                'bg-red-500/10 text-red-600'
+              }`}>
+                {exerciseAI.score}/100
+              </span>
+            </div>
+          )}
+          {exercise.solutionText && (
+            <div>
+              <button
+                onClick={() => setShowSolution(!showSolution)}
+                className="text-xs text-[var(--accent-text)] hover:underline"
+              >
+                {showSolution ? t('queue.hideCorrection') : t('queue.showCorrection')}
+              </button>
+              {showSolution && (
+                <div className="glass-card p-3 mt-1 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-emerald-500">
+                  <MathText>{exercise.solutionText}</MathText>
+                </div>
+              )}
+            </div>
+          )}
+          <EvaluationResult
+            quality={aiQuality}
+            feedback={exerciseAI.score !== null ? `Score: ${exerciseAI.score}/100` : ''}
+            onAccept={handleAIAccept}
+            onOverride={handleAIOverride}
+          />
+        </div>
+      )}
+
+      {/* Phase: self-rating — original flow */}
+      {phase === 'self-rating' && !explanationCtx && !rated && (
         <div className="space-y-2">
           <p className="text-xs font-medium text-[var(--text-muted)]">{t('queue.howDidYouDo')}</p>
           <div className="flex gap-2">
@@ -910,7 +1202,7 @@ function ExerciseInline({
         </div>
       )}
 
-      {rated && !explanationCtx && (
+      {phase === 'self-rating' && rated && !explanationCtx && (
         <div className="space-y-2 mt-3">
           {exercise.solutionText && (
             <div>
@@ -974,7 +1266,7 @@ const CONCEPT_RATINGS = [
 ]
 
 function ConceptQuizInline({
-  item, profileId: _profileId, revealed, onReveal, onComplete, onRated, examProfileId,
+  item, profileId: _profileId, revealed, onReveal, onComplete, onRated, examProfileId, isPro,
 }: {
   item: QueueItem
   profileId: string | undefined
@@ -983,16 +1275,33 @@ function ConceptQuizInline({
   onComplete: (itemId: string) => void
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
   examProfileId?: string
+  isPro: boolean
 }) {
   const { t } = useTranslation()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [explanationCtx, setExplanationCtx] = useState<string | null>(null)
+  // AI active recall
+  const [phase, setPhase] = useState<'answering' | 'evaluating' | 'evaluated' | 'self-rating'>('answering')
+  const [userAnswer, setUserAnswer] = useState('')
+  const evaluator = useAnswerEvaluator(examProfileId)
 
   const card = useLiveQuery(
     () => item.conceptCardId ? db.conceptCards.get(item.conceptCardId) : undefined,
     [item.conceptCardId]
   )
 
+  // Watch evaluator completion
+  useEffect(() => {
+    if (phase === 'evaluating') {
+      if (evaluator.quality !== null) {
+        setPhase('evaluated')
+      } else if (evaluator.error !== null) {
+        setPhase('self-rating')
+      }
+    }
+  }, [phase, evaluator.quality, evaluator.error])
+
+  // Early return AFTER all hooks
   if (!card) return <p className="text-sm text-[var(--text-muted)]">{t('queue.loadingConcept')}</p>
 
   let keyPoints: string[] = []
@@ -1004,6 +1313,26 @@ function ConceptQuizInline({
     try {
       await advanceTopicSRS(item.topicId, quality)
       await recomputeTopicMastery(item.topicId)
+
+      // Card-level SRS
+      if (item.conceptCardId && card) {
+        const { calculateSM2 } = await import('../lib/spacedRepetition')
+        const today = new Date().toISOString().slice(0, 10)
+        const srs = calculateSM2(quality, {
+          id: card.id, front: card.title, back: keyPoints.join('; '),
+          easeFactor: card.easeFactor ?? 2.5,
+          interval: card.interval ?? 0,
+          repetitions: card.repetitions ?? 0,
+          nextReviewDate: card.nextReviewDate ?? today,
+          lastRating: quality,
+        })
+        await db.conceptCards.update(card.id, {
+          easeFactor: srs.easeFactor,
+          interval: srs.interval,
+          repetitions: srs.repetitions,
+          nextReviewDate: srs.nextReviewDate,
+        })
+      }
 
       if (item.conceptCardId) {
         trackContentInteraction(item.conceptCardId, quality, quality >= 3).catch(() => {})
@@ -1020,15 +1349,54 @@ function ConceptQuizInline({
     }
   }
 
+  const handleAnswerSubmit = (answer: string) => {
+    setUserAnswer(answer)
+    if (isPro && answer.trim()) {
+      setPhase('evaluating')
+      evaluator.evaluate(card.title, keyPoints.join('; '), answer, item.topicName)
+    } else {
+      onReveal()
+      setPhase('self-rating')
+    }
+  }
+
+  const handleAnswerSkip = () => {
+    onReveal()
+    setPhase('self-rating')
+  }
+
   return (
     <div>
       <h3 className="font-medium text-[var(--text-heading)] mb-2"><MathText>{card.title}</MathText></h3>
       <p className="text-sm text-[var(--text-muted)] mb-3">{t('queue.canYouExplain')}</p>
-      {!revealed ? (
-        <button onClick={onReveal} className="btn-secondary text-sm px-4 py-2">
-          {t('queue.revealKeyPoints')}
-        </button>
-      ) : (
+
+      {/* Phase: answering — show AnswerInput */}
+      {phase === 'answering' && !revealed && (
+        <AnswerInput
+          placeholder={t('queue.explainInOwnWords', 'Explain in your own words...')}
+          onSubmit={handleAnswerSubmit}
+          onSkip={handleAnswerSkip}
+        />
+      )}
+
+      {/* Phase: evaluating — show spinner */}
+      {phase === 'evaluating' && (
+        <div className="space-y-2">
+          <textarea
+            value={userAnswer}
+            disabled
+            className="w-full min-h-[80px] rounded-lg border border-[var(--border-card)] bg-[var(--bg-input)] px-3 py-2.5 text-sm text-[var(--text-body)] opacity-50 resize-none"
+            rows={3}
+          />
+          <div className="flex items-center justify-center gap-2 text-sm text-[var(--text-muted)]">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            {t('queue.evaluating', 'Evaluating your answer...')}
+          </div>
+        </div>
+      )}
+
+      {/* Phase: evaluated — show key points (revealed) + EvaluationResult */}
+      {phase === 'evaluated' && (
         <>
           <div className="glass-card p-4 space-y-1 mb-4">
             {keyPoints.map((point, i) => (
@@ -1040,35 +1408,76 @@ function ConceptQuizInline({
               </p>
             )}
           </div>
+          <EvaluationResult
+            quality={evaluator.quality!}
+            feedback={evaluator.feedback}
+            onAccept={() => handleRate(evaluator.quality!)}
+            onOverride={(q) => handleRate(q)}
+          />
+        </>
+      )}
 
-          {!explanationCtx && (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-[var(--text-muted)]">{t('queue.howWellExplain')}</p>
-              <div className="flex gap-2">
-                {CONCEPT_RATINGS.map(btn => (
-                  <button
-                    key={btn.quality}
-                    onClick={() => handleRate(btn.quality)}
-                    disabled={isSubmitting}
-                    className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
-                  >
-                    {t(btn.labelKey)}
-                  </button>
+      {/* Phase: self-rating — original reveal + rate flow */}
+      {phase === 'self-rating' && (
+        <>
+          {!revealed ? (
+            <button onClick={onReveal} className="btn-secondary text-sm px-4 py-2">
+              {t('queue.revealKeyPoints')}
+            </button>
+          ) : (
+            <>
+              <div className="glass-card p-4 space-y-1 mb-4">
+                {keyPoints.map((point, i) => (
+                  <p key={i} className="text-sm text-[var(--text-body)]">• <MathText>{point}</MathText></p>
                 ))}
+                {card.example && (
+                  <p className="text-sm text-[var(--text-muted)] mt-2 pt-2 border-t border-[var(--border-card)]">
+                    {t('queue.example')} <MathText>{card.example}</MathText>
+                  </p>
+                )}
               </div>
-            </div>
-          )}
 
-          {explanationCtx && (
-            <InlineAIExplanation
-              content={explanationCtx}
-              topicName={item.topicName}
-              onDismiss={() => { setExplanationCtx(null); onComplete(item.id) }}
-              examProfileId={examProfileId}
-              topicId={item.topicId}
-            />
+              {!explanationCtx && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-[var(--text-muted)]">{t('queue.howWellExplain')}</p>
+                  <div className="flex gap-2">
+                    {CONCEPT_RATINGS.map(btn => (
+                      <button
+                        key={btn.quality}
+                        onClick={() => handleRate(btn.quality)}
+                        disabled={isSubmitting}
+                        className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
+                      >
+                        {t(btn.labelKey)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {explanationCtx && (
+                <InlineAIExplanation
+                  content={explanationCtx}
+                  topicName={item.topicName}
+                  onDismiss={() => { setExplanationCtx(null); onComplete(item.id) }}
+                  examProfileId={examProfileId}
+                  topicId={item.topicId}
+                />
+              )}
+            </>
           )}
         </>
+      )}
+
+      {/* Block B: Inline AI explanation (for evaluated phase after bad rating) */}
+      {phase !== 'self-rating' && explanationCtx && (
+        <InlineAIExplanation
+          content={explanationCtx}
+          topicName={item.topicName}
+          onDismiss={() => { setExplanationCtx(null); onComplete(item.id) }}
+          examProfileId={examProfileId}
+          topicId={item.topicId}
+        />
       )}
     </div>
   )
