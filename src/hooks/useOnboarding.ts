@@ -273,6 +273,7 @@ export function useOnboarding() {
           stepResults: '{}',
           totalSteps: 4,
           completedStepCount: 0,
+          currentStepName: '',
           createdAt: now,
           updatedAt: now,
         })
