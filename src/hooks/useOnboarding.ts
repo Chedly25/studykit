@@ -161,8 +161,12 @@ export function useOnboarding() {
         const textBlocks = contentBlocks.filter(b => b.type === 'text')
         const toolUseBlocks = contentBlocks.filter((b): b is ToolUseBlock => b.type === 'tool_use')
 
-        // d. Build assistant message and push to messages
-        const assistantMsg: Message = { role: 'assistant', content: contentBlocks }
+        // d. Build assistant message and push to messages (preserve reasoning_content for Kimi thinking mode)
+        const assistantMsg: Message = {
+          role: 'assistant',
+          content: contentBlocks,
+          ...(response.reasoningContent ? { reasoning_content: response.reasoningContent } : {}),
+        }
         stateRef.current = {
           ...stateRef.current,
           messages: [...stateRef.current.messages, assistantMsg],
