@@ -1,34 +1,47 @@
 /**
  * PostHog analytics — thin wrapper for event tracking.
  * EU hosting for GDPR compliance, manual events only.
+ * PostHog is dynamically imported to keep it out of the main bundle.
  */
-import posthog from 'posthog-js'
+
+type PostHog = {
+  init: (key: string, config: Record<string, unknown>) => void
+  identify: (userId: string, props?: Record<string, unknown>) => void
+  capture: (event: string, props?: Record<string, unknown>) => void
+  people: { set: (props: Record<string, unknown>) => void }
+}
 
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined
 
-export function initAnalytics() {
+let ph: PostHog | null = null
+
+export async function initAnalytics() {
   if (!POSTHOG_KEY) return
-  posthog.init(POSTHOG_KEY, {
-    api_host: 'https://eu.i.posthog.com',
-    capture_pageview: true,
-    capture_pageleave: true,
-    autocapture: false,
-    persistence: 'localStorage',
-    respect_dnt: true,
-  })
+  try {
+    const { default: posthog } = await import('posthog-js')
+    posthog.init(POSTHOG_KEY, {
+      api_host: 'https://eu.i.posthog.com',
+      capture_pageview: true,
+      capture_pageleave: true,
+      autocapture: false,
+      persistence: 'localStorage',
+      respect_dnt: true,
+    })
+    ph = posthog as unknown as PostHog
+  } catch { /* non-critical */ }
 }
 
 export function identify(userId: string, props?: Record<string, unknown>) {
-  if (!POSTHOG_KEY) return
-  posthog.identify(userId, props)
+  if (!ph) return
+  ph.identify(userId, props)
 }
 
 export function track(event: string, props?: Record<string, unknown>) {
-  if (!POSTHOG_KEY) return
-  posthog.capture(event, props)
+  if (!ph) return
+  ph.capture(event, props)
 }
 
 export function setUserProps(props: Record<string, unknown>) {
-  if (!POSTHOG_KEY) return
-  posthog.people.set(props)
+  if (!ph) return
+  ph.people.set(props)
 }

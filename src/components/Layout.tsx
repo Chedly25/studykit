@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, lazy, Suspense } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react'
@@ -10,8 +10,8 @@ import {
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
 import { ExamProfileSelector } from './knowledge/ExamProfileSelector'
-import { ChatPanel } from './chat/ChatPanel'
-import { SearchModal } from './SearchModal'
+const ChatPanel = lazy(() => import('./chat/ChatPanel').then(m => ({ default: m.ChatPanel })))
+const SearchModal = lazy(() => import('./SearchModal').then(m => ({ default: m.SearchModal })))
 import { ProBadge } from './subscription/ProBadge'
 import { NotificationBell } from './NotificationBell'
 import { useSubscription } from '../hooks/useSubscription'
@@ -335,11 +335,15 @@ export function Layout() {
         <ContextualAssistant chatOpen={chatOpen} />
       </SignedIn>
 
-      {/* Chat Panel */}
-      <ChatPanel open={chatOpen} onClose={() => { setChatOpen(false); setChatSubjectId(null); setChatSubjectName(null) }} prefill={chatPrefill} onPrefillConsumed={() => setChatPrefill(null)} subjectId={chatSubjectId} subjectName={chatSubjectName} />
+      {/* Chat Panel (lazy-loaded) */}
+      <Suspense fallback={null}>
+        <ChatPanel open={chatOpen} onClose={() => { setChatOpen(false); setChatSubjectId(null); setChatSubjectName(null) }} prefill={chatPrefill} onPrefillConsumed={() => setChatPrefill(null)} subjectId={chatSubjectId} subjectName={chatSubjectName} />
+      </Suspense>
 
-      {/* Search Modal */}
-      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      {/* Search Modal (lazy-loaded) */}
+      <Suspense fallback={null}>
+        <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      </Suspense>
     </div>
   )
 }
