@@ -55,6 +55,8 @@ import type {
   AgentInsight,
   ContentEffectiveness,
   StrategyEffectiveness,
+  SyncQueueEntry,
+  SyncMeta,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -114,6 +116,8 @@ export class StudiesKitDB extends Dexie {
   contentEffectiveness!: Table<ContentEffectiveness>
   strategyEffectiveness!: Table<StrategyEffectiveness>
   macroRoadmaps!: Table<import('./schema').MacroRoadmap>
+  _syncQueue!: Table<SyncQueueEntry>
+  _syncMeta!: Table<SyncMeta>
 
   constructor() {
     super('studieskit')
@@ -337,7 +341,16 @@ export class StudiesKitDB extends Dexie {
         if (fmt.order === undefined) fmt.order = 0
       })
     })
+
+    this.version(28).stores({
+      _syncQueue: '++id, table, timestamp',
+      _syncMeta: 'id',
+    })
   }
 }
 
 export const db = new StudiesKitDB()
+
+// Initialize incremental sync change tracking
+import { initSyncTracking } from './syncTracking'
+initSyncTracking()

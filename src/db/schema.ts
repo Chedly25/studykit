@@ -431,6 +431,23 @@ export interface GeneratedQuestion {
   flagged?: boolean
 }
 
+// ─── Sync Queue (incremental sync tracking) ────────────────────
+export interface SyncQueueEntry {
+  id?: number
+  table: string
+  recordId: string
+  operation: 'put' | 'delete'
+  data?: unknown
+  timestamp: string
+}
+
+export interface SyncMeta {
+  id: string              // profileId
+  lastPushedAt: string
+  lastPulledAt: string
+  lastSnapshotAt: string
+}
+
 // ─── Chunk Embeddings ───────────────────────────────────────────
 export interface ChunkEmbedding {
   id: string

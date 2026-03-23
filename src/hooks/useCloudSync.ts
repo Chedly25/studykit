@@ -7,6 +7,7 @@ import { useAuth } from '@clerk/clerk-react'
 import { useSubscription } from './useSubscription'
 import { useExamProfile } from './useExamProfile'
 import { pushToCloud, pullFromCloud, deleteSyncData } from '../lib/cloudSync'
+import { pushDelta, pullDelta } from '../lib/incrementalSync'
 
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline' | 'disabled'
 
@@ -38,7 +39,6 @@ export function useCloudSync() {
 
   const sync = useCallback(async () => {
     if (!profileId || !isPro) return
-    // Check localStorage directly to avoid stale closure
     if (localStorage.getItem(SYNC_ENABLED_KEY(profileId)) !== 'true') return
     if (syncingRef.current) return
 
@@ -50,14 +50,26 @@ export function useCloudSync() {
       const token = await getToken()
       if (!token) { setStatus('offline'); syncingRef.current = false; return }
 
-      const result = await pushToCloud(profileId, token)
-      if (result.success && result.syncedAt) {
-        setLastSyncedAt(result.syncedAt)
-        localStorage.setItem(SYNC_LAST_KEY(profileId), result.syncedAt)
+      // Incremental: push local changes, then pull remote changes
+      const pushResult = await pushDelta(profileId, token)
+      const pullResult = await pullDelta(profileId, token)
+
+      if (pushResult.success && pullResult.success) {
+        const now = new Date().toISOString()
+        setLastSyncedAt(now)
+        localStorage.setItem(SYNC_LAST_KEY(profileId), now)
         setStatus('synced')
       } else {
-        setError(result.error ?? 'Sync failed')
-        setStatus('error')
+        // Fallback: try full push if incremental fails
+        const fallback = await pushToCloud(profileId, token)
+        if (fallback.success && fallback.syncedAt) {
+          setLastSyncedAt(fallback.syncedAt)
+          localStorage.setItem(SYNC_LAST_KEY(profileId), fallback.syncedAt)
+          setStatus('synced')
+        } else {
+          setError(pushResult.error ?? pullResult.error ?? 'Sync failed')
+          setStatus('error')
+        }
       }
     } catch {
       setStatus('error')
@@ -134,10 +146,23 @@ export function useCloudSync() {
     // Sync on mount
     syncRef.current()
 
-    // Interval sync — use ref to always call latest closure
+    // Interval sync
     intervalRef.current = setInterval(() => syncRef.current(), SYNC_INTERVAL_MS)
+
+    // Sync on visibility change (tab becomes visible)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') syncRef.current()
+    }
+    // Sync when coming back online
+    const onOnline = () => syncRef.current()
+
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', onOnline)
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', onOnline)
     }
   }, [isPro, isEnabled, profileId])
 

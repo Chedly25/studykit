@@ -23,6 +23,8 @@ import { SyncIndicator } from './SyncIndicator'
 import { ErrorBoundary } from './ErrorBoundary'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { ContextualAssistant } from './ContextualAssistant'
+import { UpdatePrompt } from './UpdatePrompt'
+import { InstallPrompt } from './InstallPrompt'
 import { useJobCompletionToasts } from '../hooks/useJobCompletionToasts'
 import { useWeeklyDigest } from '../hooks/useWeeklyDigest'
 import { identify } from '../lib/analytics'
@@ -344,6 +346,10 @@ export function Layout() {
       <Suspense fallback={null}>
         <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       </Suspense>
+
+      {/* PWA prompts */}
+      <UpdatePrompt />
+      <InstallPrompt />
     </div>
   )
 }

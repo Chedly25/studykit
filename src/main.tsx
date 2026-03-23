@@ -13,10 +13,16 @@ import { initAnalytics } from './lib/analytics'
 // Initialize PostHog analytics (no-op if VITE_POSTHOG_KEY not set)
 initAnalytics()
 
-// Register service worker for offline caching + push
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {})
-}
+// Register service worker via vite-plugin-pwa
+import { registerSW } from 'virtual:pwa-register'
+registerSW({
+  onNeedRefresh() {
+    window.dispatchEvent(new CustomEvent('sw-update-available'))
+  },
+  onOfflineReady() {
+    console.log('[SW] Offline ready')
+  },
+})
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined
 if (!CLERK_KEY) {

@@ -1,6 +1,9 @@
 {
   "name": "StudiesKit",
   "short_name": "StudiesKit",
+  "description": "AI-powered study platform for exam preparation",
+  "id": "/",
+  "scope": "/",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
