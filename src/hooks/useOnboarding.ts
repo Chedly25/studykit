@@ -1,263 +1,407 @@
 /**
- * React hook for the conversational onboarding flow.
- * Manages state persistence (sessionStorage) and DB action execution.
+ * React hook for LLM-powered conversational onboarding.
+ * Uses an agent loop: the LLM calls tools to render widgets and execute DB writes.
+ * Falls back to the scripted onboardingFlow after repeated failures.
  */
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useAuth } from '@clerk/clerk-react'
+import { streamChat } from '../ai/client'
 import { db } from '../db'
-import { getExamBlueprint } from '../lib/examTopicMaps'
-import type { ExamType, Subject, Topic, Subtopic, Chapter } from '../db/schema'
-import type { ExtractedSubject } from '../ai/topicExtractor'
+import type { Message, ContentBlock, ToolUseBlock } from '../ai/types'
 import {
-  createInitialState,
-  processOnboardingInput,
-  type OnboardingState,
-  type OnboardingInput,
-  type OnboardingAction,
-} from '../ai/workflows/onboardingFlow'
+  type ConversationalOnboardingState,
+  type DisplayMessage,
+  type PendingWidget,
+  type OnboardingToolResult,
+  createInitialConversationalState,
+  buildOnboardingSystemPrompt,
+  onboardingToolDefs,
+  executeOnboardingTool,
+} from '../ai/workflows/onboardingAgent'
 
-const STORAGE_KEY = 'onboarding_state'
+const STORAGE_KEY = 'onboarding_state_v2'
+const OLD_STORAGE_KEY = 'onboarding_state'
+const MAX_AGENT_ITERATIONS = 5
+const MAX_RETRIES_BEFORE_FALLBACK = 2
 
-function loadState(): OnboardingState | null {
+// ─── Persistence helpers ─────────────────────────────────
+
+type PersistedState = Pick<
+  ConversationalOnboardingState,
+  'messages' | 'displayMessages' | 'profileId' | 'examName' |
+  'extractedSubjects' | 'topicsSeeded' | 'weeklyHoursSet' | 'completed' | 'useFallback'
+>
+
+function loadState(): ConversationalOnboardingState | null {
   try {
+    // Detect old format and clear it
+    const oldRaw = sessionStorage.getItem(OLD_STORAGE_KEY)
+    if (oldRaw) {
+      const oldParsed = JSON.parse(oldRaw)
+      if (oldParsed && 'step' in oldParsed) {
+        sessionStorage.removeItem(OLD_STORAGE_KEY)
+      }
+    }
+
     const raw = sessionStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch { return null }
+    if (!raw) return null
+    const persisted: PersistedState = JSON.parse(raw)
+    return {
+      ...createInitialConversationalState(),
+      ...persisted,
+    }
+  } catch {
+    return null
+  }
 }
 
-function saveState(state: OnboardingState) {
-  try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch {}
+function saveState(state: ConversationalOnboardingState) {
+  try {
+    const persisted: PersistedState = {
+      messages: state.messages,
+      displayMessages: state.displayMessages,
+      profileId: state.profileId,
+      examName: state.examName,
+      extractedSubjects: state.extractedSubjects,
+      topicsSeeded: state.topicsSeeded,
+      weeklyHoursSet: state.weeklyHoursSet,
+      completed: state.completed,
+      useFallback: state.useFallback,
+    }
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(persisted))
+  } catch { /* quota exceeded — non-fatal */ }
 }
+
+// ─── Hook ────────────────────────────────────────────────
 
 export function useOnboarding() {
   const { userId, getToken } = useAuth()
   const effectiveUserId = userId ?? 'local'
 
-  const [state, setState] = useState<OnboardingState>(() => loadState() ?? createInitialState())
+  const [state, setState] = useState<ConversationalOnboardingState>(
+    () => loadState() ?? createInitialConversationalState(),
+  )
   const stateRef = useRef(state)
   stateRef.current = state
 
-  // Persist to sessionStorage on every change
+  const retryCountRef = useRef(0)
+
+  // Persist to sessionStorage on every change (skip transient fields via saveState)
   useEffect(() => { saveState(state) }, [state])
 
-  const executeAction = useCallback(async (action: OnboardingAction, currentState: OnboardingState) => {
-    const authToken = await getToken()
+  // ── Agent loop ─────────────────────────────────────────
 
-    switch (action.type) {
-      case 'create-profile': {
-        const { examName, examType, examDate } = action.payload as { examName: string; examType: ExamType; examDate: string }
-        const blueprint = getExamBlueprint(examType)
-        const profileId = crypto.randomUUID()
-
-        await db.examProfiles.put({
-          id: profileId,
-          name: examName,
-          examType,
-          examDate: examDate || '',
-          isActive: false, // Activated at completion
-          passingThreshold: blueprint.defaultPassingThreshold,
-          weeklyTargetHours: 15, // Updated in capacity step
-          userId: effectiveUserId,
-          createdAt: new Date().toISOString(),
-          profileMode: 'study',
-        })
-
-        // Seed empty blueprint subjects (will be replaced by seed-topics if extraction happens)
-        const today = new Date().toISOString().slice(0, 10)
-        const subjects: Subject[] = []
-        const chapters: Chapter[] = []
-        const topics: Topic[] = []
-
-        for (let si = 0; si < blueprint.subjects.length; si++) {
-          const seed = blueprint.subjects[si]
-          const subjectId = crypto.randomUUID()
-          const chapterId = crypto.randomUUID()
-
-          subjects.push({
-            id: subjectId, examProfileId: profileId, name: seed.name,
-            weight: seed.weight, mastery: 0, color: seed.color, order: si,
-          })
-          chapters.push({
-            id: chapterId, subjectId, examProfileId: profileId, name: 'General', order: 0,
-          })
-          for (const seedTopic of seed.topics) {
-            topics.push({
-              id: crypto.randomUUID(), subjectId, chapterId, examProfileId: profileId,
-              name: seedTopic.name, mastery: 0, confidence: 0,
-              questionsAttempted: 0, questionsCorrect: 0,
-              easeFactor: 2.5, interval: 0, repetitions: 0, nextReviewDate: today,
-            })
-          }
-        }
-
-        if (subjects.length > 0) await db.subjects.bulkPut(subjects)
-        if (chapters.length > 0) await db.chapters.bulkPut(chapters)
-        if (topics.length > 0) await db.topics.bulkPut(topics)
-
-        setState(prev => ({ ...prev, profileId }))
-        return profileId
+  const sendMessage = useCallback(async (userText?: string) => {
+    // 1. If user provided text, append user message
+    if (userText) {
+      const userMsg: Message = { role: 'user', content: userText }
+      const userDisplay: DisplayMessage = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: userText,
       }
 
-      case 'seed-topics': {
-        const profileId = currentState.profileId
-        if (!profileId) break
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, userMsg],
+        displayMessages: [...prev.displayMessages, userDisplay],
+      }))
+      // Update ref so the loop sees the latest messages
+      stateRef.current = {
+        ...stateRef.current,
+        messages: [...stateRef.current.messages, userMsg],
+        displayMessages: [...stateRef.current.displayMessages, userDisplay],
+      }
+    }
 
-        const extracted = action.payload.subjects as ExtractedSubject[]
-        if (!extracted || extracted.length === 0) break
+    // 2. Start streaming
+    let streamingText = ''
+    setState(prev => ({ ...prev, isStreaming: true, streamingText: '', error: null }))
 
-        const COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4']
+    try {
+      const token = await getToken()
 
-        // Clear existing blueprint data
-        await db.subtopics.where('examProfileId').equals(profileId).delete()
-        await db.topics.where('examProfileId').equals(profileId).delete()
-        await db.chapters.where('examProfileId').equals(profileId).delete()
-        await db.subjects.where('examProfileId').equals(profileId).delete()
+      // 3. Agent loop
+      for (let iter = 0; iter < MAX_AGENT_ITERATIONS; iter++) {
+        streamingText = ''
+        setState(prev => ({ ...prev, streamingText: '' }))
 
-        const equalShare = 100 / extracted.length
-        const effectiveWeights = extracted.map(s => s.weight > 0 ? s.weight : equalShare)
-        const totalWeight = effectiveWeights.reduce((s, w) => s + w, 0)
-        const weightScale = 100 / totalWeight
+        const response = await streamChat({
+          messages: stateRef.current.messages as Message[],
+          system: buildOnboardingSystemPrompt(),
+          tools: onboardingToolDefs,
+          maxTokens: 1024,
+          authToken: token ?? undefined,
+          onToken: (t: string) => {
+            streamingText += t
+            setState(prev => ({ ...prev, streamingText }))
+          },
+        })
 
-        const subjects: Subject[] = []
-        const allChapters: Chapter[] = []
-        const allTopics: Topic[] = []
-        const subtopics: Subtopic[] = []
-        const today = new Date().toISOString().slice(0, 10)
+        // c. Parse response content
+        const contentBlocks = response.content as ContentBlock[]
+        const textBlocks = contentBlocks.filter(b => b.type === 'text')
+        const toolUseBlocks = contentBlocks.filter((b): b is ToolUseBlock => b.type === 'tool_use')
 
-        for (let si = 0; si < extracted.length; si++) {
-          const ext = extracted[si]
-          const subjectId = crypto.randomUUID()
-          const chapters = ext.chapters && ext.chapters.length > 0
-            ? ext.chapters
-            : [{ name: 'General', topics: ext.topics }]
+        // d. Build assistant message and push to messages
+        const assistantMsg: Message = { role: 'assistant', content: contentBlocks }
+        stateRef.current = {
+          ...stateRef.current,
+          messages: [...stateRef.current.messages, assistantMsg],
+        }
+        setState(prev => ({
+          ...prev,
+          messages: [...prev.messages, assistantMsg],
+        }))
 
-          subjects.push({
-            id: subjectId, examProfileId: profileId, name: ext.name,
-            weight: Math.round(effectiveWeights[si] * weightScale),
-            mastery: 0, color: COLORS[si % COLORS.length], order: si,
-          })
+        // e. Extract text → display message
+        const textContent = textBlocks
+          .map(b => b.type === 'text' ? b.text : '')
+          .join('')
+          .trim()
 
-          for (let ci = 0; ci < chapters.length; ci++) {
-            const ch = chapters[ci]
-            const chapterId = crypto.randomUUID()
-            allChapters.push({ id: chapterId, subjectId, examProfileId: profileId, name: ch.name, order: ci })
+        if (textContent) {
+          const displayMsg: DisplayMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: textContent,
+          }
+          stateRef.current = {
+            ...stateRef.current,
+            displayMessages: [...stateRef.current.displayMessages, displayMsg],
+          }
+          setState(prev => ({
+            ...prev,
+            displayMessages: [...prev.displayMessages, displayMsg],
+          }))
+        }
 
-            for (const topic of ch.topics) {
-              const topicId = crypto.randomUUID()
-              allTopics.push({
-                id: topicId, subjectId, chapterId, examProfileId: profileId,
-                name: topic.name, mastery: 0, confidence: 0,
-                questionsAttempted: 0, questionsCorrect: 0,
-                easeFactor: 2.5, interval: 0, repetitions: 0, nextReviewDate: today,
-              })
-              for (const st of topic.subtopics ?? []) {
-                subtopics.push({ id: crypto.randomUUID(), topicId, examProfileId: profileId, name: st })
+        // f. Handle tool calls
+        if (toolUseBlocks.length > 0) {
+          let shouldBreak = false
+
+          for (const toolUse of toolUseBlocks) {
+            // Build context for tool executor
+            const toolContext = {
+              profileId: stateRef.current.profileId,
+              userId: effectiveUserId,
+              authToken: token,
+              setProfileId: (id: string) => {
+                stateRef.current = { ...stateRef.current, profileId: id }
+                setState(prev => ({ ...prev, profileId: id }))
+              },
+              setExtractedSubjects: (subjects: typeof stateRef.current.extractedSubjects) => {
+                stateRef.current = { ...stateRef.current, extractedSubjects: subjects }
+                setState(prev => ({ ...prev, extractedSubjects: subjects }))
+              },
+              setTopicsSeeded: (v: boolean) => {
+                stateRef.current = { ...stateRef.current, topicsSeeded: v }
+                setState(prev => ({ ...prev, topicsSeeded: v }))
+              },
+              setWeeklyHoursSet: (v: boolean) => {
+                stateRef.current = { ...stateRef.current, weeklyHoursSet: v }
+                setState(prev => ({ ...prev, weeklyHoursSet: v }))
+              },
+              setExamName: (name: string) => {
+                stateRef.current = { ...stateRef.current, examName: name }
+                setState(prev => ({ ...prev, examName: name }))
+              },
+            }
+
+            const result: OnboardingToolResult = await executeOnboardingTool(
+              toolUse.name,
+              toolUse.input,
+              toolContext,
+            )
+
+            if (result.type === 'widget') {
+              // Add display message with widget
+              const widgetDisplay: DisplayMessage = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: result.message,
+                widget: { type: result.widgetType, config: result.config },
               }
+              const pending: PendingWidget = {
+                type: result.widgetType as PendingWidget['type'],
+                config: result.config,
+                toolCallId: toolUse.id,
+              }
+
+              // Push placeholder tool_result
+              const toolResultMsg: Message = {
+                role: 'user',
+                content: [{
+                  type: 'tool_result',
+                  tool_use_id: toolUse.id,
+                  content: 'Waiting for user input...',
+                }],
+              }
+
+              stateRef.current = {
+                ...stateRef.current,
+                displayMessages: [...stateRef.current.displayMessages, widgetDisplay],
+                messages: [...stateRef.current.messages, toolResultMsg],
+                pendingWidget: pending,
+              }
+              setState(prev => ({
+                ...prev,
+                displayMessages: [...prev.displayMessages, widgetDisplay],
+                messages: [...prev.messages, toolResultMsg],
+                pendingWidget: pending,
+              }))
+
+              shouldBreak = true
+              break
+            }
+
+            if (result.type === 'terminal') {
+              // Add summary display message
+              const summaryDisplay: DisplayMessage = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: 'Here\'s your study plan summary:',
+                widget: { type: 'summary', config: result.summaryData },
+              }
+
+              stateRef.current = {
+                ...stateRef.current,
+                displayMessages: [...stateRef.current.displayMessages, summaryDisplay],
+                completed: true,
+              }
+              setState(prev => ({
+                ...prev,
+                displayMessages: [...prev.displayMessages, summaryDisplay],
+                completed: true,
+              }))
+
+              shouldBreak = true
+              break
+            }
+
+            if (result.type === 'result') {
+              // Push tool_result and continue loop
+              const toolResultMsg: Message = {
+                role: 'user',
+                content: [{
+                  type: 'tool_result',
+                  tool_use_id: toolUse.id,
+                  content: result.content,
+                }],
+              }
+
+              stateRef.current = {
+                ...stateRef.current,
+                messages: [...stateRef.current.messages, toolResultMsg],
+              }
+              setState(prev => ({
+                ...prev,
+                messages: [...prev.messages, toolResultMsg],
+              }))
             }
           }
+
+          if (shouldBreak) break
+          // Tool results pushed — continue agent loop to let LLM respond
+          continue
         }
 
-        await db.subjects.bulkPut(subjects)
-        await db.chapters.bulkPut(allChapters)
-        await db.topics.bulkPut(allTopics)
-        if (subtopics.length > 0) await db.subtopics.bulkPut(subtopics)
+        // g. No tool calls (text-only response) — break
         break
       }
 
-      case 'update-student-model': {
-        const profileId = currentState.profileId
-        if (!profileId) break
-        const { selfAssessment } = action.payload as { selfAssessment: { strong: string[]; weak: string[]; experience: string } }
+      // Success — reset retry counter
+      retryCountRef.current = 0
+    } catch (err) {
+      console.error('Onboarding agent error:', err)
+      retryCountRef.current += 1
 
-        await db.studentModels.put({
-          id: profileId,
-          examProfileId: profileId,
-          learningStyle: '{}',
-          commonMistakes: '[]',
-          personalityNotes: JSON.stringify([selfAssessment.experience]),
-          preferredExplanations: '[]',
-          motivationTriggers: '[]',
-          updatedAt: new Date().toISOString(),
-        })
-        break
+      if (retryCountRef.current >= MAX_RETRIES_BEFORE_FALLBACK) {
+        setState(prev => ({
+          ...prev,
+          useFallback: true,
+          error: 'Switching to guided mode after repeated failures.',
+        }))
+      } else {
+        setState(prev => ({
+          ...prev,
+          error: err instanceof Error ? err.message : 'Something went wrong. Please try again.',
+        }))
       }
-
-      case 'generate-plan': {
-        const profileId = currentState.profileId
-        if (!profileId || !authToken) break
-
-        const weeklyHours = (action.payload.weeklyHours as number) ?? 15
-        await db.examProfiles.update(profileId, { weeklyTargetHours: weeklyHours })
-
-        // Non-blocking plan generation
-        import('../ai/studyPlanGenerator').then(({ generateStudyPlan }) => {
-          generateStudyPlan(profileId, authToken, 7).catch(() => {})
-        }).catch(() => {})
-        break
-      }
+    } finally {
+      setState(prev => ({ ...prev, isStreaming: false, streamingText: '' }))
+      // Persist after the loop completes
+      saveState(stateRef.current)
     }
   }, [effectiveUserId, getToken])
 
-  const sendMessage = useCallback(async (input: OnboardingInput) => {
-    setState(prev => ({ ...prev, isProcessing: true }))
+  // ── Widget response ────────────────────────────────────
 
-    try {
-      const currentState = stateRef.current
-      const { newState, actions } = processOnboardingInput(input, currentState)
+  const respondToWidget = useCallback(async (result: string) => {
+    const pending = stateRef.current.pendingWidget
+    if (!pending) return
 
-      // Execute actions sequentially
-      let updatedState = newState
-      for (const action of actions) {
-        const result = await executeAction(action, updatedState)
-        if (action.type === 'create-profile' && result) {
-          updatedState = { ...updatedState, profileId: result as string }
-        }
-      }
+    // Clear pending widget
+    stateRef.current = { ...stateRef.current, pendingWidget: null }
+    setState(prev => ({ ...prev, pendingWidget: null }))
 
-      // Auto-detect known exam topics when entering materials step
-      if (updatedState.step === 'materials' && !updatedState.topicsExtracted && !updatedState.materialsChoice) {
-        try {
-          const token = await getToken()
-          if (token && updatedState.examName) {
-            const { generateKnownExamLandscape } = await import('../ai/landscapeExtractor')
-            const result = await generateKnownExamLandscape(updatedState.examName, updatedState.jurisdiction, token)
-            if (result && result.subjects.length > 0) {
-              // Auto-detected! Show preview instead of choice widget
-              const { msg } = await import('../ai/workflows/onboardingFlow')
-              const previewMsg = msg(
-                'assistant',
-                `I know the standard ${updatedState.examName} subjects. Here's what I've set up:`,
-                { type: 'topic-preview', subjects: result.subjects },
-              )
-              updatedState = {
-                ...updatedState,
-                extractedSubjects: result.subjects,
-                messages: [...updatedState.messages.slice(0, -1), previewMsg], // Replace the choice widget message
-              }
-            }
-          }
-        } catch {
-          // Non-fatal — fall through to manual choice
-        }
-      }
-
-      setState({ ...updatedState, isProcessing: false })
-    } catch (err) {
-      console.error('Onboarding error:', err)
-      setState(prev => ({ ...prev, isProcessing: false }))
+    // Add user display message with human-readable result
+    const userDisplay: DisplayMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: result,
     }
-  }, [executeAction, getToken])
+    stateRef.current = {
+      ...stateRef.current,
+      displayMessages: [...stateRef.current.displayMessages, userDisplay],
+    }
+    setState(prev => ({
+      ...prev,
+      displayMessages: [...prev.displayMessages, userDisplay],
+    }))
+
+    // Push the real tool_result message (replacing the placeholder)
+    const toolResultMsg: Message = {
+      role: 'user',
+      content: [{
+        type: 'tool_result',
+        tool_use_id: pending.toolCallId,
+        content: result,
+      }],
+    }
+
+    // Find and remove the placeholder tool_result, then add the real one
+    const updatedMessages = stateRef.current.messages.filter(msg => {
+      if (typeof msg.content === 'string') return true
+      if (!Array.isArray(msg.content)) return true
+      const hasPlaceholder = msg.content.some(
+        b => b.type === 'tool_result' &&
+        'tool_use_id' in b &&
+        b.tool_use_id === pending.toolCallId &&
+        'content' in b &&
+        b.content === 'Waiting for user input...',
+      )
+      return !hasPlaceholder
+    })
+    updatedMessages.push(toolResultMsg)
+
+    stateRef.current = { ...stateRef.current, messages: updatedMessages }
+    setState(prev => ({ ...prev, messages: updatedMessages }))
+
+    // Re-enter the agent loop
+    await sendMessage()
+  }, [sendMessage])
+
+  // ── Complete onboarding ────────────────────────────────
 
   const completeOnboarding = useCallback(async () => {
-    const profileId = state.profileId
+    const profileId = stateRef.current.profileId
     if (!profileId) return
 
-    // Activate the profile
     await db.examProfiles.toCollection().modify({ isActive: false })
     await db.examProfiles.update(profileId, { isActive: true })
 
-    // Auto-process any uploaded documents by enqueuing jobs directly to IndexedDB.
-    // The app-level JobRunner (from BackgroundJobsProvider) picks up queued jobs automatically.
+    // Auto-process uploaded documents
     try {
       const docs = await db.documents.where('examProfileId').equals(profileId).toArray()
       const unprocessed = docs.filter(d => !d.summary)
@@ -280,14 +424,19 @@ export function useOnboarding() {
       }
     } catch { /* non-blocking */ }
 
-    // Clear onboarding state
     sessionStorage.removeItem(STORAGE_KEY)
-  }, [state.profileId, getToken, effectiveUserId])
+  }, [])
+
+  // ── Reset ──────────────────────────────────────────────
 
   const resetOnboarding = useCallback(() => {
     sessionStorage.removeItem(STORAGE_KEY)
-    setState(createInitialState())
+    sessionStorage.removeItem(OLD_STORAGE_KEY)
+    retryCountRef.current = 0
+    const fresh = createInitialConversationalState()
+    stateRef.current = fresh
+    setState(fresh)
   }, [])
 
-  return { state, sendMessage, completeOnboarding, resetOnboarding }
+  return { state, sendMessage, respondToWidget, completeOnboarding, resetOnboarding }
 }
