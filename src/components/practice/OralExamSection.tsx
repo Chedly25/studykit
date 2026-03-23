@@ -66,7 +66,7 @@ export function OralExamSection({ questions, prepTimePerQuestion, onComplete, ex
     if (phase === 'recording' && !voiceInput.isRecording && !voiceInput.isTranscribing) {
       voiceInput.startRecording()
     }
-  }, [phase])
+  }, [phase, voiceInput.isRecording, voiceInput.isTranscribing])
 
   const handleStopRecording = useCallback(async () => {
     const text = await voiceInput.stopRecording()

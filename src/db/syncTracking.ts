@@ -18,10 +18,12 @@ const EXCLUDED_TABLES = new Set([
 ])
 
 // Module flag: disable tracking during pull to prevent infinite loop
-let isSyncing = false
+// Uses a depth counter to handle concurrent pulls safely
+let syncDepth = 0
 
 export function setSyncing(value: boolean) {
-  isSyncing = value
+  syncDepth += value ? 1 : -1
+  if (syncDepth < 0) syncDepth = 0
 }
 
 // In-memory buffer for pending changes
@@ -29,7 +31,7 @@ let pendingChanges: SyncQueueEntry[] = []
 let flushInterval: ReturnType<typeof setInterval> | null = null
 
 function queueChange(table: string, recordId: string, operation: 'put' | 'delete', data?: unknown) {
-  if (isSyncing) return
+  if (syncDepth > 0) return
   pendingChanges.push({
     table,
     recordId: String(recordId),

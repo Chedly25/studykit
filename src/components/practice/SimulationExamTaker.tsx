@@ -89,8 +89,21 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
     })
   }, [])
 
+  const handleFinalSubmit = useCallback(async () => {
+    flushTiming()
+    for (const [qId, time] of questionTimesRef.current) {
+      await db.generatedQuestions.update(qId, { timeSpentSeconds: time }).catch(() => {})
+    }
+    for (const qId of flaggedIds) {
+      await db.generatedQuestions.update(qId, { flagged: true }).catch(() => {})
+    }
+    for (const [qId, answer] of answers) {
+      await db.generatedQuestions.update(qId, { userAnswer: answer, isAnswered: true }).catch(() => {})
+    }
+    onSubmit()
+  }, [flushTiming, flaggedIds, answers, onSubmit])
+
   const handleSectionTimeUp = useCallback(() => {
-    // Auto-advance to next section
     if (isLastSection) {
       handleFinalSubmit()
     } else {
@@ -98,7 +111,7 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
       setCurrentQuestionIdx(0)
       questionStartRef.current = Date.now()
     }
-  }, [isLastSection])
+  }, [isLastSection, handleFinalSubmit])
 
   const handleNextSection = useCallback(() => {
     flushTiming()
@@ -115,23 +128,7 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
       setCurrentSectionIdx(prev => prev + 1)
       setCurrentQuestionIdx(0)
     }
-  }, [isLastSection])
-
-  const handleFinalSubmit = useCallback(async () => {
-    flushTiming()
-    // Write timing + flags to DB
-    for (const [qId, time] of questionTimesRef.current) {
-      await db.generatedQuestions.update(qId, { timeSpentSeconds: time }).catch(() => {})
-    }
-    for (const qId of flaggedIds) {
-      await db.generatedQuestions.update(qId, { flagged: true }).catch(() => {})
-    }
-    // Write final answers
-    for (const [qId, answer] of answers) {
-      await db.generatedQuestions.update(qId, { userAnswer: answer, isAnswered: true }).catch(() => {})
-    }
-    onSubmit()
-  }, [flushTiming, flaggedIds, answers, onSubmit])
+  }, [isLastSection, handleFinalSubmit])
 
   if (!currentSection) return null
 

@@ -36,17 +36,18 @@ export function SectionHeader({ sectionName, sectionIndex, totalSections, sectio
 
   useEffect(() => {
     timerRef.current = setInterval(() => {
-      setRemaining(prev => {
-        if (prev <= 1 && !firedRef.current) {
-          firedRef.current = true
-          onTimeUp()
-          return 0
-        }
-        return Math.max(0, prev - 1)
-      })
+      setRemaining(prev => Math.max(0, prev - 1))
     }, 1000)
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [sectionIndex, onTimeUp])
+  }, [sectionIndex])
+
+  // Fire onTimeUp via effect (not inside state updater — React may call updaters twice)
+  useEffect(() => {
+    if (remaining <= 0 && !firedRef.current) {
+      firedRef.current = true
+      onTimeUp()
+    }
+  }, [remaining, onTimeUp])
 
   const isWarning = remaining > 0 && remaining <= 300 // 5 minutes
   const isExpired = remaining <= 0
