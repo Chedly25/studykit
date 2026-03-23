@@ -120,6 +120,11 @@ export function useOnboarding() {
 
     try {
       const token = await getToken()
+      if (!token) {
+        // Auth not ready yet — set error so UI can retry
+        setState(prev => ({ ...prev, isStreaming: false, error: 'Waiting for authentication...' }))
+        return
+      }
 
       // 3. Agent loop
       for (let iter = 0; iter < MAX_AGENT_ITERATIONS; iter++) {

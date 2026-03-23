@@ -495,13 +495,21 @@ export default function Onboarding() {
     }
   }, [profilesLoaded, profiles.length, state.profileId, navigate])
 
-  // Initial greeting — trigger AI opening message on mount
+  // Initial greeting — trigger AI opening message once auth is ready
+  const greetingSentRef = useRef(false)
   useEffect(() => {
-    if (state.displayMessages.length === 0 && !state.completed && !state.useFallback) {
-      sendMessage()
+    if (greetingSentRef.current) return
+    if (state.displayMessages.length === 0 && !state.completed && !state.useFallback && !state.isStreaming) {
+      // Delay slightly to let Clerk auth initialize
+      const timer = setTimeout(() => {
+        if (!greetingSentRef.current) {
+          greetingSentRef.current = true
+          sendMessage()
+        }
+      }, 1000)
+      return () => clearTimeout(timer)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [state.displayMessages.length, state.completed, state.useFallback, state.isStreaming, sendMessage])
 
   // Auto-scroll to bottom
   useEffect(() => {
