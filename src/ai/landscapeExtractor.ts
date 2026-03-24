@@ -307,10 +307,38 @@ Rules:
     const subjects = parsed.subjects ?? []
     if (!Array.isArray(subjects) || subjects.length === 0) return null
 
-    // Normalize (same logic as extractLandscapeFromText)
+    // Normalize — handle French key names at all levels
     for (const s of subjects) {
       const raw = s as Record<string, unknown>
+      // Subject-level French keys
+      if (!s.name && raw.nom) s.name = raw.nom as string
+      if (!s.name && raw.matière) s.name = raw.matière as string
+      if (!s.name && raw.matiere) s.name = raw.matiere as string
+      if (s.weight == null && raw.poids != null) s.weight = raw.poids as number
+      if (s.weight == null && raw.coefficient != null) s.weight = raw.coefficient as number
       if (!s.chapters && raw.chapitres) s.chapters = raw.chapitres as ExtractedSubject['chapters']
+
+      // Normalize chapters
+      if (s.chapters && Array.isArray(s.chapters)) {
+        for (const ch of s.chapters) {
+          const chRaw = ch as Record<string, unknown>
+          if (!ch.name && chRaw.nom) ch.name = chRaw.nom as string
+          if (!ch.topics && chRaw.sujets) ch.topics = chRaw.sujets as ExtractedChapter['topics']
+          if (!ch.topics && chRaw.thèmes) ch.topics = chRaw.thèmes as ExtractedChapter['topics']
+          if (!ch.topics && chRaw.themes) ch.topics = chRaw.themes as ExtractedChapter['topics']
+          // Normalize topic names within chapters
+          if (ch.topics && Array.isArray(ch.topics)) {
+            for (const tp of ch.topics) {
+              const tpRaw = tp as Record<string, unknown>
+              if (!tp.name && tpRaw.nom) tp.name = tpRaw.nom as string
+              if (!tp.name && tpRaw.sujet) tp.name = tpRaw.sujet as string
+              if (!tp.name && tpRaw.thème) tp.name = tpRaw.thème as string
+              if (!tp.name && tpRaw.theme) tp.name = tpRaw.theme as string
+            }
+          }
+        }
+      }
+
       if (s.chapters && Array.isArray(s.chapters) && s.chapters.length > 0) {
         s.topics = s.chapters.flatMap((ch: ExtractedChapter) => ch.topics ?? [])
       }
@@ -320,6 +348,15 @@ Rules:
         }
       }
       if (!s.topics) s.topics = []
+
+      // Normalize topic names in the flat topics array too
+      for (const tp of s.topics) {
+        const tpRaw = tp as Record<string, unknown>
+        if (!tp.name && tpRaw.nom) tp.name = tpRaw.nom as string
+        if (!tp.name && tpRaw.sujet) tp.name = tpRaw.sujet as string
+        if (!tp.name && tpRaw.thème) tp.name = tpRaw.thème as string
+        if (!tp.name && tpRaw.theme) tp.name = tpRaw.theme as string
+      }
     }
 
     return { examName: parsed.examName ?? examName, subjects }

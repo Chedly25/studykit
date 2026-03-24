@@ -466,19 +466,9 @@ function InlineWidget({
   }
 
   switch (widget.type) {
-    case 'topic-preview': {
-      const subjects = (widget.config.subjects as ExtractedSubject[]) ?? extractedSubjects
-      if (subjects.length === 0) return null
-      return (
-        <div className="mt-3">
-          <TopicPreviewWidget
-            subjects={subjects}
-            onConfirm={() => respondToWidget('Confirmed')}
-            disabled={disabled}
-          />
-        </div>
-      )
-    }
+    case 'topic-preview':
+      // Rendered only in PendingWidgetArea (bottom) to avoid duplicates
+      return null
     case 'summary':
       return (
         <div className="mt-3">
@@ -527,9 +517,16 @@ function PendingWidgetArea({
         />
       )
     }
-    case 'topic-preview':
-      // Topic preview is rendered inline (below the message) — no pending input needed
-      return null
+    case 'topic-preview': {
+      const subjects = (pendingWidget.config.subjects as ExtractedSubject[]) ?? extractedSubjects
+      return (
+        <TopicPreviewWidget
+          subjects={subjects}
+          onConfirm={() => respondToWidget('Confirmed')}
+          disabled={disabled}
+        />
+      )
+    }
     case 'summary':
       // Summary is rendered inline — no pending input needed
       return null
