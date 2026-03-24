@@ -156,14 +156,15 @@ function DailyQueueContent() {
     remainingMinutes, completeItem, skipItem, retryItem, isQueueEmpty,
   } = useDailyQueue(profileId, timeAvailable, cramMode)
 
-  // Show start overlay on first visit today
+  // Show start overlay on first visit today — but only if there are items
   useEffect(() => {
     if (!profileId) return
+    if (queue.length === 0) return  // Don't show overlay for empty queues
     const key = SESSION_START_KEY(profileId, today)
     if (!localStorage.getItem(key)) {
       setShowStartOverlay(true)
     }
-  }, [profileId, today])
+  }, [profileId, today, queue.length])
 
   // Expose current queue item context for chat panel
   useEffect(() => {
