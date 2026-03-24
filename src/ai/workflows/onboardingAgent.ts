@@ -65,7 +65,8 @@ export function buildOnboardingSystemPrompt(): string {
   const lang = i18n.language ?? 'en'
   return `You are the onboarding assistant for StudiesKit, a premium AI-powered study platform.
 
-[User language preference: ${lang}]
+[User language: ${lang}]
+CRITICAL: You MUST respond in ${lang === 'fr' ? 'French' : lang === 'en' ? 'English' : lang}. Match the user's language from their first message. If the app language is French, greet and respond entirely in French.
 
 ## Your Goal
 Help the student set up their personalized study plan by gathering:
