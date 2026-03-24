@@ -16,6 +16,8 @@ import { SimulationExamTaker } from '../components/practice/SimulationExamTaker'
 import { PracticeExamResults } from '../components/practice/PracticeExamResults'
 import { DocumentExamTaker } from '../components/practice/DocumentExamTaker'
 import { DocumentExamResults } from '../components/practice/DocumentExamResults'
+import { SyntheseTaker } from '../components/practice/legal/SyntheseTaker'
+import { SyntheseResults } from '../components/practice/legal/SyntheseResults'
 import { PracticeExamHistory } from '../components/practice/PracticeExamHistory'
 import { SessionCompletionOverlay, type SessionCompletionData } from '../components/SessionCompletionOverlay'
 import { decayedMastery } from '../lib/knowledgeGraph'
@@ -242,6 +244,21 @@ export default function PracticeExam() {
       </div>
     ) : null
 
+    // Note de synthèse mode (Type C — CRFPA)
+    if (exam.session?.examMode === 'synthesis' && exam.session.dossierContent) {
+      let documents: Array<{ docNumber: number; title: string; type: string; content: string }> = []
+      try { documents = JSON.parse(exam.session.dossierContent) } catch { /* malformed */ }
+      return (
+        <SyntheseTaker
+          sessionId={exam.session.id}
+          documents={documents}
+          timeLimitSeconds={exam.session.timeLimitSeconds}
+          savedAnswer={exam.session.synthesisAnswer}
+          onSubmit={() => exam.submitSyntheseExam()}
+        />
+      )
+    }
+
     // Document exam mode (Type B — CPGE concours)
     if (exam.session?.examMode === 'document' && exam.session.documentContent) {
       let savedAnswers: Record<number, string> = {}
@@ -302,6 +319,35 @@ export default function PracticeExam() {
   }
 
   // grading or results
+  // Note de synthèse (Type C)
+  if (exam.session?.examMode === 'synthesis') {
+    if (exam.phase === 'grading') {
+      return (
+        <PracticeExamGenerator
+          progress={exam.gradingProgress}
+          error={exam.gradingError}
+          onCancel={() => {}}
+        />
+      )
+    }
+    return (
+      <>
+        {completionData && (
+          <SessionCompletionOverlay
+            data={completionData}
+            onDismiss={() => { setCompletionData(null); setAiDebrief('') }}
+            aiDebrief={aiDebrief}
+            isDebriefStreaming={isDebriefStreaming}
+          />
+        )}
+        <SyntheseResults
+          session={exam.session}
+          onRetake={exam.resetToSetup}
+        />
+      </>
+    )
+  }
+
   // Document exam (Type B)
   if (exam.session?.examMode === 'document') {
     // Show grading progress while grading is in progress

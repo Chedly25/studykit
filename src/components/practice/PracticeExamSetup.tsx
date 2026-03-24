@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BarChart3, Play, Clock, Sparkles, X, Shield, Settings2, FileText } from 'lucide-react'
+import { BarChart3, Play, Clock, Sparkles, X, Shield, Settings2, FileText, Scale } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
 import type { Subject, Topic } from '../../db/schema'
@@ -386,6 +386,21 @@ export function PracticeExamSetup({
             <FileText className="w-4 h-4" /> {t('documentExam.startDocument', 'Start Document Exam (CPGE)')}
           </button>
         </div>
+
+        {/* Note de synthèse (Type C — CRFPA) */}
+        <button
+          onClick={() => {
+            onStart({
+              questionCount: 0,
+              sourcesEnabled,
+              examMode: 'synthesis',
+              timeLimitSeconds: 5 * 3600, // 5 hours
+            })
+          }}
+          className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2 border-2 border-purple-500/30"
+        >
+          <Scale className="w-4 h-4" /> {t('syntheseExam.startSynthese', 'Note de Synthèse (CRFPA)')}
+        </button>
 
         {/* Document exam configuration panel */}
         {showDocumentExam && (

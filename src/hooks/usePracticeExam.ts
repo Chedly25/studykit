@@ -197,9 +197,9 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setAnswers(new Map())
     setCurrentQuestionIndex(0)
     setAdaptiveState(createAdaptiveState())
-    // Document exams manage their own timer in DocumentExamTaker; simulation exams use per-section timers
+    // Document/synthesis exams manage their own timer; simulation exams use per-section timers
     setTimeLimitForSession(
-      (options.simulationMode || options.examMode === 'document') ? undefined : options.timeLimitSeconds
+      (options.simulationMode || options.examMode === 'document' || options.examMode === 'synthesis') ? undefined : options.timeLimitSeconds
     )
 
     // Choose pipeline based on exam mode
@@ -207,7 +207,15 @@ export function usePracticeExam(examProfileId: string | undefined) {
     let jobConfig: Record<string, unknown>
     let totalSteps: number
 
-    if (options.examMode === 'document') {
+    if (options.examMode === 'synthesis') {
+      // Type C: note de synthèse (CRFPA)
+      jobType = 'synthesis-generation'
+      jobConfig = {
+        sessionId: id,
+        sourcesEnabled: options.sourcesEnabled,
+      }
+      totalSteps = 6 // gatherContext + architect + docGenerators + reviewer + synthesisWriter + rubricBuilder
+    } else if (options.examMode === 'document') {
       // Type B: document exam (CPGE concours)
       jobType = 'document-exam-generation'
       jobConfig = {
@@ -411,6 +419,27 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setGradeJobId(jobId)
   }, [sessionId, examProfileId, enqueue])
 
+  // Synthesis exam: submit (trigger grading)
+  const submitSyntheseExam = useCallback(async () => {
+    if (!sessionId || !examProfileId) return
+    setTimerActive(false)
+    if (timerRef.current) clearInterval(timerRef.current)
+
+    setPhase('grading')
+    await db.practiceExamSessions.update(sessionId, {
+      phase: 'grading',
+      completedAt: new Date().toISOString(),
+    })
+
+    const jobId = await enqueue(
+      'synthesis-grading',
+      examProfileId,
+      { sessionId },
+      3,
+    )
+    setGradeJobId(jobId)
+  }, [sessionId, examProfileId, enqueue])
+
   const resetToSetup = useCallback(() => {
     setPhase('setup')
     setSessionId(null)
@@ -477,5 +506,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
     // Document exam (Type B)
     saveDocumentAnswer,
     submitDocumentExam,
+    // Synthesis exam (Type C)
+    submitSyntheseExam,
   }
 }

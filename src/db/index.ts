@@ -349,6 +349,9 @@ export class StudiesKitDB extends Dexie {
 
     // v29: Document exam fields on PracticeExamSession (optional, no index changes)
     this.version(29).stores({})
+
+    // v30: Note de synthèse fields on PracticeExamSession (optional, no index changes)
+    this.version(30).stores({})
   }
 }
 

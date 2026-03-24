@@ -745,6 +745,22 @@
     "subject": "Subject",
     "generate": "Generate Document Exam"
   },
+  "syntheseExam": {
+    "startSynthese": "Note de Synthèse (CRFPA)",
+    "noDossier": "No dossier documents.",
+    "placeholder": "Write your synthesis here...",
+    "submit": "Submit",
+    "confirmSubmit": "Submit your synthesis?",
+    "wordCountInfo": "Your synthesis is {{count}} words (~{{pages}} page(s)).",
+    "shortWarning": "Warning: your synthesis seems short for 4 pages.",
+    "pages": "page(s)",
+    "criteriaBreakdown": "Grading Breakdown",
+    "documentCoverage": "Document Coverage",
+    "cited": "cited",
+    "missing": "missing",
+    "yourSynthesis": "Your Synthesis",
+    "modelSynthesis": "Model Synthesis"
+  },
   "mockExam": {
     "title": "Mock Exam",
     "subtitle": "Full-length timed exam simulation with AI grading",

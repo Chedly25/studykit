@@ -745,6 +745,22 @@
     "subject": "Matière",
     "generate": "Générer le sujet"
   },
+  "syntheseExam": {
+    "startSynthese": "Note de Synthèse (CRFPA)",
+    "noDossier": "Aucun document dans le dossier.",
+    "placeholder": "Rédigez votre note de synthèse ici...\n\nIntroduction\n\nI. ...\n  A. ...\n  B. ...\n\nII. ...\n  A. ...\n  B. ...",
+    "submit": "Rendre la copie",
+    "confirmSubmit": "Rendre la copie ?",
+    "wordCountInfo": "Votre synthèse fait {{count}} mots (~{{pages}} page(s)).",
+    "shortWarning": "Attention : votre synthèse semble courte pour 4 pages.",
+    "pages": "page(s)",
+    "criteriaBreakdown": "Détail de la correction",
+    "documentCoverage": "Couverture documentaire",
+    "cited": "cités",
+    "missing": "manquants",
+    "yourSynthesis": "Votre synthèse",
+    "modelSynthesis": "Synthèse modèle"
+  },
   "mockExam": {
     "title": "Examen blanc",
     "subtitle": "Simulation d'examen grandeur nature chronométrée avec correction par IA",

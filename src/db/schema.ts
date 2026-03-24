@@ -385,7 +385,7 @@ export interface MockExam {
 
 // ─── Practice Exam Sessions ────────────────────────────────────
 export type PracticeExamPhase = 'generating' | 'ready' | 'in-progress' | 'grading' | 'graded'
-export type ExamMode = 'standard' | 'document'
+export type ExamMode = 'standard' | 'document' | 'synthesis'
 
 export interface PracticeExamSession {
   id: string
@@ -415,6 +415,13 @@ export interface PracticeExamSession {
   documentAnswers?: string              // JSON: Record<number, string> — questionNumber → answer
   documentModelAnswers?: string         // JSON: per-question model answers + marking schemes
   documentGrading?: string              // JSON: per-question grading results
+  // Note de synthèse fields (Type C — CRFPA)
+  dossierContent?: string               // JSON: Array<{docNumber, title, type, content}>
+  synthesisAnswer?: string              // Student's synthesis text
+  synthesisModelAnswer?: string         // Model synthesis
+  synthesisGrading?: string             // JSON: grading results
+  synthesisRubric?: string              // JSON: grading rubric
+  dossierBlueprint?: string             // JSON: architect's blueprint
 }
 
 export interface GeneratedQuestion {
@@ -807,6 +814,8 @@ export type JobType =
   | 'exam-simulation'
   | 'document-exam-generation'
   | 'document-exam-grading'
+  | 'synthesis-generation'
+  | 'synthesis-grading'
 
 export interface BackgroundJob {
   id: string

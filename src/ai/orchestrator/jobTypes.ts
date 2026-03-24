@@ -15,6 +15,8 @@ import { createMisconceptionExerciseWorkflow } from '../workflows/misconceptionE
 import { createExamSimulationWorkflow } from '../workflows/examSimulation'
 import { createDocumentExamWorkflow } from '../workflows/documentExam'
 import { createDocumentExamGradingWorkflow } from '../workflows/documentExamGrading'
+import { createSyntheseGenerationWorkflow } from '../workflows/syntheseGeneration'
+import { createSyntheseGradingWorkflow } from '../workflows/syntheseGrading'
 
 /**
  * Reconstruct a WorkflowDefinition from a job type and its serialized config.
@@ -101,6 +103,17 @@ export function reconstructWorkflow(type: JobType, config: Record<string, unknow
 
     case 'document-exam-grading':
       return createDocumentExamGradingWorkflow({
+        sessionId: config.sessionId as string,
+      })
+
+    case 'synthesis-generation':
+      return createSyntheseGenerationWorkflow({
+        sessionId: config.sessionId as string,
+        sourcesEnabled: config.sourcesEnabled as boolean,
+      })
+
+    case 'synthesis-grading':
+      return createSyntheseGradingWorkflow({
         sessionId: config.sessionId as string,
       })
 
