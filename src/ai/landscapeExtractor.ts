@@ -253,7 +253,11 @@ export async function generateKnownExamLandscape(
     const jurisdictionCtx = jurisdiction ? ` in ${jurisdiction}` : ''
     const prompt = `Generate the complete subject and topic structure for the ${examName}${jurisdictionCtx}.
 
-You are an expert on this exam's official content. Generate the standard subjects and topics as they appear on the official exam blueprint.
+You are an expert on this exam's official program and syllabus. Generate the standard subjects and topics as they appear on the OFFICIAL program/syllabus.
+
+CRITICAL: Only include topics that are actually part of the official program. Do NOT invent topics or include content from different levels/tracks. If you are not 100% confident about a topic being in the official program, do NOT include it. It is better to have fewer accurate topics than many inaccurate ones.
+
+For French exams (CPGE, Concours, Bac, etc.): use the official Bulletin Officiel program. Use French terminology for topic names.
 
 Return ONLY valid JSON:
 {
@@ -277,13 +281,14 @@ Return ONLY valid JSON:
 Rules:
 - Include ALL standard subjects for this exam
 - Weights should reflect official exam weighting and sum to 100
-- Use official terminology
+- Use official terminology from the program
 - 2-8 chapters per subject, 2-10 topics per chapter
-- Be comprehensive — this structures the student's entire study plan`
+- Be comprehensive but ACCURATE — only include topics you are certain belong to this specific program
+- Names should be in the language of the exam (French for French exams)`
 
     const raw = await callFastModel(
       prompt,
-      'You are a curriculum expert. Generate exam topic structures. Return only valid JSON with English key names.',
+      'You are a curriculum expert with deep knowledge of official exam programs and syllabi. Generate exam topic structures based on the OFFICIAL program only. Return only valid JSON. Use the exam\'s language for topic names.',
       authToken,
       { maxTokens: 8192 },
     )

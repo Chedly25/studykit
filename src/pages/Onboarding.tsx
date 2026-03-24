@@ -496,16 +496,9 @@ function PendingWidgetArea({
         />
       )
     }
-    case 'topic-preview': {
-      const subjects = (pendingWidget.config.subjects as ExtractedSubject[]) ?? extractedSubjects
-      return (
-        <TopicPreviewWidget
-          subjects={subjects}
-          onConfirm={() => respondToWidget('Confirmed')}
-          disabled={disabled}
-        />
-      )
-    }
+    case 'topic-preview':
+      // Topic preview is rendered inline (below the message) — no pending input needed
+      return null
     case 'summary':
       // Summary is rendered inline — no pending input needed
       return null
