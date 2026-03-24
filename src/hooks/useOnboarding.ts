@@ -271,15 +271,21 @@ export function useOnboarding() {
                 toolCallId: toolUse.id,
               }
 
-              // Push placeholder tool_result
-              const toolResultMsg: Message = {
-                role: 'user',
-                content: [{
+              // Push tool_result for this widget + placeholders for any remaining unprocessed tools
+              const toolResults: Array<{ type: 'tool_result'; tool_use_id: string; content: string }> = [
+                { type: 'tool_result', tool_use_id: toolUse.id, content: 'Waiting for user input...' },
+              ]
+              // Send placeholder results for any remaining tools the AI called in this turn
+              const currentIdx = toolUseBlocks.indexOf(toolUse)
+              for (let ri = currentIdx + 1; ri < toolUseBlocks.length; ri++) {
+                toolResults.push({
                   type: 'tool_result',
-                  tool_use_id: toolUse.id,
-                  content: 'Waiting for user input...',
-                }],
+                  tool_use_id: toolUseBlocks[ri].id,
+                  content: 'Deferred — waiting for previous widget input.',
+                })
               }
+
+              const toolResultMsg: Message = { role: 'user', content: toolResults }
 
               stateRef.current = {
                 ...stateRef.current,
@@ -305,6 +311,21 @@ export function useOnboarding() {
                 role: 'assistant',
                 content: 'Here\'s your study plan summary:',
                 widget: { type: 'summary', config: result.summaryData },
+              }
+
+              // Send placeholder results for any remaining unprocessed tools
+              const currentIdx = toolUseBlocks.indexOf(toolUse)
+              const remainingResults: Array<{ type: 'tool_result'; tool_use_id: string; content: string }> = []
+              for (let ri = currentIdx + 1; ri < toolUseBlocks.length; ri++) {
+                remainingResults.push({
+                  type: 'tool_result',
+                  tool_use_id: toolUseBlocks[ri].id,
+                  content: 'Deferred — onboarding complete.',
+                })
+              }
+              if (remainingResults.length > 0) {
+                const deferMsg: Message = { role: 'user', content: remainingResults }
+                stateRef.current = { ...stateRef.current, messages: [...stateRef.current.messages, deferMsg] }
               }
 
               stateRef.current = {

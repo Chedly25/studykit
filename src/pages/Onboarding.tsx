@@ -657,8 +657,8 @@ export default function Onboarding() {
     return <FallbackOnboarding onReset={resetOnboarding} lastError={state.error} />
   }
 
-  // Determine if we should show the free-text input
-  const showFreeTextInput = !state.pendingWidget && !state.completed && !state.isStreaming
+  // Determine if we should show the free-text input (hide when error is showing)
+  const showFreeTextInput = !state.pendingWidget && !state.completed && !state.isStreaming && !state.error
 
   return (
     <div className="max-w-xl mx-auto py-8 px-4 min-h-[80vh] flex flex-col animate-fade-in">
