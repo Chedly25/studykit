@@ -152,6 +152,31 @@ export default function PracticeExam() {
   if (exam.phase === 'setup') {
     return (
       <>
+        {/* Resume prompt for in-progress exams */}
+        {exam.inProgressSession && (
+          <div className="max-w-3xl mx-auto px-4 pt-6">
+            <div className="glass-card p-5 mb-4 border-l-4 border-[var(--accent-text)] flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-[var(--text-heading)] mb-1">{t('practiceExam.resumeExam', 'Resume Exam')}</h3>
+                <p className="text-sm text-[var(--text-muted)]">
+                  {t('practiceExam.unfinishedExam', 'You have an unfinished exam from {{time}}.', {
+                    time: exam.inProgressSession.startedAt
+                      ? new Date(exam.inProgressSession.startedAt).toLocaleString()
+                      : 'earlier',
+                  })}
+                </p>
+              </div>
+              <div className="flex gap-2 shrink-0 ml-4">
+                <button onClick={() => exam.resumeSession(exam.inProgressSession!.id)} className="btn-primary text-sm px-4 py-2">
+                  {t('practiceExam.resume', 'Resume')}
+                </button>
+                <button onClick={() => exam.abandonSession(exam.inProgressSession!.id)} className="btn-secondary text-sm px-4 py-2">
+                  {t('practiceExam.startNew', 'Start New')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <PracticeExamSetup
           examProfileId={activeProfile.id}
           subjects={subjects}
@@ -196,7 +221,7 @@ export default function PracticeExam() {
   if (exam.phase === 'taking') {
     // Simulation mode: multi-section taker with per-section timers
     if (exam.session?.simulationMode && exam.session.sectionProgress) {
-      const sections = JSON.parse(exam.session.sectionProgress) as Array<{ sectionId: string; formatName: string; sectionType: string; timeAllocationMinutes: number; questionCount: number; prepTimeMinutes?: number }>
+      const sections = JSON.parse(exam.session.sectionProgress) as Array<{ sectionId: string; formatName: string; sectionType: string; timeAllocationMinutes: number; questionCount: number; prepTimeMinutes?: number; instructions?: string }>
       return (
         <SimulationExamTaker
           sessionId={exam.session.id}
@@ -204,6 +229,8 @@ export default function PracticeExam() {
           sections={sections.map(s => ({ examFormatId: s.sectionId, ...s }))}
           proctorMode={exam.session.proctorMode ?? false}
           onSubmit={() => exam.submitExam(isProctorActive ? getProctorFlags() : undefined)}
+          initialSectionIndex={exam.session.currentSectionIndex ?? 0}
+          onSectionChange={exam.updateSectionProgress}
         />
       )
     }

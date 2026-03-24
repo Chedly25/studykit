@@ -23,6 +23,7 @@ export interface SimulationSection {
   questionFormat?: string
   samplePrompt?: string
   prepTimeMinutes?: number
+  instructions?: string
 }
 
 export interface PracticeExamConfig {

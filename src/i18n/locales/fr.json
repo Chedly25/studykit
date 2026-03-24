@@ -704,6 +704,12 @@
     "sectionBreakdown": "Détail par section",
     "markingCriteria": "Critères de notation",
     "commonErrors": "Erreurs fréquentes",
+    "resumeExam": "Reprendre l'examen",
+    "unfinishedExam": "Vous avez un examen non terminé de {{time}}.",
+    "resume": "Reprendre",
+    "startNew": "Nouveau",
+    "beginSection": "Commencer la section",
+    "sectionOf": "Section {{current}} sur {{total}}",
     "steps": {
       "gatherContext": "Collecte de vos données d'étude",
       "searchDocuments": "Recherche dans vos supports d'étude",

@@ -1,7 +1,7 @@
 /**
  * Multi-section exam simulation taker.
  * Sequential sections with per-section timers. Forward-only between sections.
- * Oral sections use voice recording.
+ * Oral sections use voice recording. Section instructions shown before each section.
  */
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,14 +14,16 @@ import { QuestionNav } from './QuestionNav'
 import { QuestionFlag } from './QuestionFlag'
 import { SectionHeader } from './SectionHeader'
 import { OralExamSection } from './OralExamSection'
+import { SectionInstructionsOverlay } from './SectionInstructionsOverlay'
 
-interface SectionConfig {
+export interface SectionConfig {
   examFormatId: string
   formatName: string
   sectionType: string
   timeAllocationMinutes: number
   questionCount: number
   prepTimeMinutes?: number
+  instructions?: string
 }
 
 interface Props {
@@ -30,16 +32,19 @@ interface Props {
   sections: SectionConfig[]
   proctorMode: boolean
   onSubmit: () => void
+  initialSectionIndex?: number
+  onSectionChange?: (sectionIndex: number) => void
 }
 
-export function SimulationExamTaker({ sessionId, examProfileId, sections, proctorMode, onSubmit }: Props) {
+export function SimulationExamTaker({ sessionId, examProfileId, sections, proctorMode, onSubmit, initialSectionIndex, onSectionChange }: Props) {
   const { t } = useTranslation()
-  const [currentSectionIdx, setCurrentSectionIdx] = useState(0)
+  const [currentSectionIdx, setCurrentSectionIdx] = useState(initialSectionIndex ?? 0)
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
   const [answers, setAnswers] = useState<Map<string, string>>(new Map())
   const [flaggedIds, setFlaggedIds] = useState<Set<string>>(new Set())
   const [showSectionConfirm, setShowSectionConfirm] = useState(false)
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
+  const [showInstructions, setShowInstructions] = useState(true)
   const questionStartRef = useRef(Date.now())
   const questionTimesRef = useRef<Map<string, number>>(new Map())
 
@@ -103,34 +108,53 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
     onSubmit()
   }, [flushTiming, flaggedIds, answers, onSubmit])
 
+  const advanceSection = useCallback((newIdx: number) => {
+    setCurrentSectionIdx(newIdx)
+    setCurrentQuestionIdx(0)
+    setShowInstructions(true)
+    questionStartRef.current = Date.now()
+    onSectionChange?.(newIdx)
+  }, [onSectionChange])
+
   const handleSectionTimeUp = useCallback(() => {
     if (isLastSection) {
       handleFinalSubmit()
     } else {
-      setCurrentSectionIdx(prev => prev + 1)
-      setCurrentQuestionIdx(0)
-      questionStartRef.current = Date.now()
+      advanceSection(currentSectionIdx + 1)
     }
-  }, [isLastSection, handleFinalSubmit])
+  }, [isLastSection, handleFinalSubmit, advanceSection, currentSectionIdx])
 
   const handleNextSection = useCallback(() => {
     flushTiming()
     setShowSectionConfirm(false)
-    setCurrentSectionIdx(prev => prev + 1)
-    setCurrentQuestionIdx(0)
-    questionStartRef.current = Date.now()
-  }, [flushTiming])
+    advanceSection(currentSectionIdx + 1)
+  }, [flushTiming, advanceSection, currentSectionIdx])
 
   const handleOralComplete = useCallback(() => {
     if (isLastSection) {
       handleFinalSubmit()
     } else {
-      setCurrentSectionIdx(prev => prev + 1)
-      setCurrentQuestionIdx(0)
+      advanceSection(currentSectionIdx + 1)
     }
-  }, [isLastSection, handleFinalSubmit])
+  }, [isLastSection, handleFinalSubmit, advanceSection, currentSectionIdx])
 
   if (!currentSection) return null
+
+  // Section instructions overlay — shown before each section starts
+  if (showInstructions) {
+    return (
+      <SectionInstructionsOverlay
+        sectionName={currentSection.formatName}
+        sectionType={currentSection.sectionType}
+        sectionIndex={currentSectionIdx}
+        totalSections={sections.length}
+        timeAllocation={currentSection.timeAllocationMinutes}
+        questionCount={sectionQuestions.length || currentSection.questionCount}
+        instructions={currentSection.instructions}
+        onBegin={() => setShowInstructions(false)}
+      />
+    )
+  }
 
   // Oral section renders a completely different UI
   if (currentSection.sectionType === 'oral') {

@@ -156,6 +156,19 @@ export function usePracticeExam(examProfileId: string | undefined) {
     if (!examProfileId) return
 
     const id = crypto.randomUUID()
+    // Store section configs in sectionProgress so SimulationExamTaker can reconstruct on resume
+    const sectionProgressData = options.simulationMode && options.sections
+      ? JSON.stringify(options.sections.map(s => ({
+          sectionId: s.examFormatId,
+          formatName: s.formatName,
+          sectionType: s.sectionType,
+          timeAllocationMinutes: s.timeAllocationMinutes,
+          questionCount: s.questionCount,
+          prepTimeMinutes: s.prepTimeMinutes,
+          instructions: s.instructions,
+        })))
+      : undefined
+
     const newSession: PracticeExamSession = {
       id,
       examProfileId,
@@ -168,6 +181,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
       proctorMode: options.proctorMode || undefined,
       simulationMode: options.simulationMode || undefined,
       currentSectionIndex: options.simulationMode ? 0 : undefined,
+      sectionProgress: sectionProgressData,
       createdAt: new Date().toISOString(),
     }
     await db.practiceExamSessions.put(newSession)
@@ -309,6 +323,33 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setAnswers(new Map())
   }, [])
 
+  // Resume support: detect in-progress sessions
+  const inProgressSession = useLiveQuery(
+    () => examProfileId
+      ? db.practiceExamSessions
+          .where('examProfileId').equals(examProfileId)
+          .filter(s => s.phase === 'in-progress')
+          .first()
+      : undefined,
+    [examProfileId]
+  )
+
+  const resumeSession = useCallback((id: string) => {
+    setSessionId(id)
+    setPhase('taking')
+    setAnswers(new Map())
+    setCurrentQuestionIndex(0)
+  }, [])
+
+  const abandonSession = useCallback(async (id: string) => {
+    await db.practiceExamSessions.update(id, { phase: 'graded' as PracticeExamSession['phase'] })
+  }, [])
+
+  const updateSectionProgress = useCallback(async (sectionIndex: number) => {
+    if (!sessionId) return
+    await db.practiceExamSessions.update(sessionId, { currentSectionIndex: sectionIndex }).catch(() => {})
+  }, [sessionId])
+
   const resetToSetup = useCallback(() => {
     setPhase('setup')
     setSessionId(null)
@@ -367,5 +408,10 @@ export function usePracticeExam(examProfileId: string | undefined) {
     adaptiveState,
     flaggedQuestions,
     toggleFlag,
+    // Resume support
+    inProgressSession,
+    resumeSession,
+    abandonSession,
+    updateSectionProgress,
   }
 }

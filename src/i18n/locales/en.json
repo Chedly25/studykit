@@ -704,6 +704,12 @@
     "sectionBreakdown": "Section Breakdown",
     "markingCriteria": "Marking Criteria",
     "commonErrors": "Common Errors",
+    "resumeExam": "Resume Exam",
+    "unfinishedExam": "You have an unfinished exam from {{time}}.",
+    "resume": "Resume",
+    "startNew": "Start New",
+    "beginSection": "Begin Section",
+    "sectionOf": "Section {{current}} of {{total}}",
     "steps": {
       "gatherContext": "Gathering your study data",
       "searchDocuments": "Searching your study materials",
