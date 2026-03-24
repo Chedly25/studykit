@@ -72,6 +72,7 @@ export default function FlashcardMaker() {
   const [aiGenerating, setAiGenerating] = useState(false)
   const [aiError, setAiError] = useState('')
   const [aiDeckId, setAiDeckId] = useState<string | null>(null)
+  const [aiCardCount, setAiCardCount] = useState(10)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const studyStartTimeRef = useRef<number>(0)
@@ -228,8 +229,8 @@ export default function FlashcardMaker() {
       if (!token) throw new Error('Not authenticated')
 
       const response = await streamChat({
-        messages: [{ role: 'user', content: `Generate 10 flashcards about: ${topic}` }],
-        system: `You generate flashcards for studying. Return ONLY a JSON object with this exact format, no other text:\n{"cards":[{"front":"question or term","back":"answer or definition"}]}\n\nGenerate clear, concise flashcards that test key concepts. Each "front" should be a question or term, and "back" should be the answer or definition.`,
+        messages: [{ role: 'user', content: `Generate exactly ${aiCardCount} flashcards about: ${topic}` }],
+        system: `You generate flashcards for studying. Return ONLY a JSON object with this exact format, no other text:\n{"cards":[{"front":"question or term","back":"answer or definition"}]}\n\nGenerate exactly ${aiCardCount} clear, concise flashcards that test key concepts. Each "front" should be a question or term, and "back" should be the answer or definition.`,
         tools: [],
         authToken: token,
       })
@@ -492,7 +493,7 @@ export default function FlashcardMaker() {
                               <Sparkles size={14} className="text-[var(--accent-text)]" />
                               Generate cards with AI
                             </p>
-                            <div className="flex gap-3">
+                            <div className="flex gap-2">
                               <input
                                 type="text"
                                 placeholder="e.g. Photosynthesis, French Revolution, Linear Algebra..."
@@ -501,6 +502,16 @@ export default function FlashcardMaker() {
                                 onKeyDown={e => e.key === 'Enter' && !aiGenerating && generateWithAI(deck.id)}
                                 disabled={aiGenerating}
                                 className="input-field flex-1"
+                              />
+                              <input
+                                type="number"
+                                min={3}
+                                max={30}
+                                value={aiCardCount}
+                                onChange={e => setAiCardCount(Math.min(30, Math.max(3, parseInt(e.target.value) || 10)))}
+                                disabled={aiGenerating}
+                                className="w-14 text-xs text-center bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-1 py-1.5 text-[var(--text-body)]"
+                                title="Number of cards"
                               />
                               <button
                                 onClick={() => generateWithAI(deck.id)}

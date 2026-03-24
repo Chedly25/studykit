@@ -15,6 +15,7 @@ import { useSubscription } from '../hooks/useSubscription'
 import { useDailyQueue } from '../hooks/useDailyQueue'
 import { DashboardIntelligenceBrief } from '../components/dashboard/DashboardIntelligenceBrief'
 import { WeeklyScheduleCard } from '../components/dashboard/WeeklyScheduleCard'
+import { DataLocalBanner } from '../components/dashboard/DataLocalBanner'
 
 function getGreetingKey(): string {
   const hour = new Date().getHours()
@@ -188,6 +189,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Data local warning for free users */}
+      <DataLocalBanner isPro={isPro} />
 
       {/* ─── Hero Section ─── */}
       <div className="mb-6">

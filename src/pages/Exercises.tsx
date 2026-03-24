@@ -83,7 +83,7 @@ export default function Exercises() {
   const [filterChapter, setFilterChapter] = useState('')
   const [filterTopic, setFilterTopic] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
-  const [filterDifficulty, _setFilterDifficulty] = useState(0)
+  const [filterDifficulty, setFilterDifficulty] = useState(0)
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null)
   const [userAnswer, setUserAnswer] = useState('')
 
@@ -191,7 +191,7 @@ export default function Exercises() {
           <Filter className="w-4 h-4 text-[var(--text-muted)]" />
           <span className="text-xs font-semibold text-[var(--text-muted)] uppercase">{t('exercises.filters', 'Filters')}</span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <select
             value={filterSubject}
             onChange={e => { setFilterSubject(e.target.value); setFilterChapter(''); setFilterTopic('') }}
@@ -225,6 +225,18 @@ export default function Exercises() {
             <option value="not_attempted">Not attempted</option>
             <option value="attempted">Attempted</option>
             <option value="completed">Completed</option>
+          </select>
+          <select
+            value={filterDifficulty}
+            onChange={e => setFilterDifficulty(Number(e.target.value))}
+            className="text-xs bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-2 py-1.5 text-[var(--text-body)]"
+          >
+            <option value={0}>All difficulties</option>
+            <option value={1}>★ Easy</option>
+            <option value={2}>★★</option>
+            <option value={3}>★★★</option>
+            <option value={4}>★★★★</option>
+            <option value={5}>★★★★★ Hard</option>
           </select>
         </div>
       </div>

@@ -330,7 +330,9 @@
     "startSessionCta": "Start today's session — {{count}} items, ~{{minutes}} min",
     "scheduleFlashcards": "flashcards",
     "scheduleExercises": "exercises",
-    "scheduleConcepts": "concepts"
+    "scheduleConcepts": "concepts",
+    "dataLocalWarning": "Your data is stored locally in this browser only. Export regularly or upgrade for cloud backup.",
+    "exportData": "Export"
   },
   "tutor": {
     "topics": "{{count}} topic",
@@ -1089,6 +1091,11 @@
     "stats": "Statistics",
     "questionsAttempted": "Attempted",
     "accuracy": "Accuracy"
+  },
+  "settings": {
+    "language": "Language",
+    "displayLanguage": "Display Language",
+    "languageDesc": "Choose the language for the interface"
   },
   "report": {
     "title": "Study Report",

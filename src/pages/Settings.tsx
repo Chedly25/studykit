@@ -4,7 +4,8 @@
  */
 import { useState, useRef, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2, Mail } from 'lucide-react'
+import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2, Mail, Globe } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { requestPermission, getNotificationStatus, registerServiceWorker } from '../lib/pushNotifications'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useCloudSync } from '../hooks/useCloudSync'
@@ -12,6 +13,7 @@ import { db } from '../db'
 import { exportProfileData, importProfileData, generateProgressReport, downloadBlob } from '../lib/dataExport'
 
 export default function Settings() {
+  const { t, i18n } = useTranslation()
   const { activeProfile } = useExamProfile()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [exporting, setExporting] = useState(false)
@@ -182,6 +184,28 @@ export default function Settings() {
               <p className="text-xs text-[var(--text-muted)]">Get a markdown summary of your study progress</p>
             </div>
           </button>
+        </div>
+      </div>
+
+      {/* Language */}
+      <div className="glass-card p-5 space-y-4 mt-4">
+        <h2 className="text-lg font-semibold text-[var(--text-heading)]">{t('settings.language', 'Language')}</h2>
+        <div className="flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)]">
+          <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
+            <Globe className="w-5 h-5 text-indigo-500" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.displayLanguage', 'Display Language')}</p>
+            <p className="text-xs text-[var(--text-muted)]">{t('settings.languageDesc', 'Choose the language for the interface')}</p>
+          </div>
+          <select
+            value={i18n.language?.startsWith('fr') ? 'fr' : 'en'}
+            onChange={e => i18n.changeLanguage(e.target.value)}
+            className="text-sm bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-3 py-1.5 text-[var(--text-body)]"
+          >
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+          </select>
         </div>
       </div>
 
