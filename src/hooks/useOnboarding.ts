@@ -97,8 +97,9 @@ export function useOnboarding() {
     //    (many LLM APIs reject empty message arrays)
     const isInitialGreeting = !userText && stateRef.current.messages.length === 0
     if (isInitialGreeting) {
-      // Use the app language for the primer so the AI responds in the correct language
-      const lang = document.documentElement.lang || navigator.language || 'en'
+      // Use i18n language directly for the primer so the AI responds correctly
+      const { default: i18n } = await import('../i18n')
+      const lang = i18n.language ?? 'en'
       const primer = lang.startsWith('fr') ? 'Bonjour, je viens de m\'inscrire.' : 'Hi, I just signed up.'
       const primerMsg: Message = { role: 'user', content: primer }
       stateRef.current = {

@@ -22,7 +22,7 @@ export function LanguageToggle() {
       className="px-2 py-1 rounded-lg text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors"
       aria-label={`Switch to ${current === 'en' ? 'French' : 'English'}`}
     >
-      {current === 'en' ? 'FR' : 'EN'}
+      {current === 'en' ? 'EN' : 'FR'}
     </button>
   )
 }

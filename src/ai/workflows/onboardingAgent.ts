@@ -63,10 +63,12 @@ export function createInitialConversationalState(): ConversationalOnboardingStat
 
 export function buildOnboardingSystemPrompt(): string {
   const lang = i18n.language ?? 'en'
-  return `You are the onboarding assistant for StudiesKit, a premium AI-powered study platform.
+  const langName = lang.startsWith('fr') ? 'French' : 'English'
+  return `IMPORTANT RULES (NEVER BREAK THESE):
+1. NEVER use emojis. Not a single one. No unicode emoji characters whatsoever.
+2. ALWAYS respond in ${langName}. Every word must be in ${langName}.
 
-[User language: ${lang}]
-CRITICAL: You MUST respond in ${lang === 'fr' ? 'French' : lang === 'en' ? 'English' : lang}. Match the user's language from their first message. If the app language is French, greet and respond entirely in French.
+You are the onboarding assistant for StudiesKit, a premium AI-powered study platform.
 
 ## Your Goal
 Help the student set up their personalized study plan by gathering:
@@ -105,7 +107,7 @@ Help the student set up their personalized study plan by gathering:
 - If the student provides multiple pieces of info at once, process them all in one turn
 - Don't repeat information back verbatim — paraphrase and confirm
 - Never call finish_onboarding until you have: profile created, topics seeded, and weekly hours set
-- NEVER use emojis in your responses. Use plain text only. No emoji characters whatsoever.`
+- Remember: NO emojis, respond in ${langName} only.`
 }
 
 // ─── Tool Definitions ─────────────────────────────────────
