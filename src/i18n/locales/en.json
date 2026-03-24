@@ -713,6 +713,8 @@
     "beginSection": "Begin Section",
     "sectionOf": "Section {{current}} of {{total}}",
     "startSimulation": "Start Full Exam Simulation",
+    "proctorMode": "Proctor Mode",
+    "proctorModeHint": "Locks the screen — tracks tab switches, copy/paste, and right-clicks during the exam",
     "steps": {
       "gatherContext": "Gathering your study data",
       "searchDocuments": "Searching your study materials",

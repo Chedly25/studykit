@@ -184,7 +184,7 @@ export function PracticeExamSetup({
                         ? 'bg-[var(--accent-text)] text-white'
                         : isWeak
                         ? 'border border-amber-400/50 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:border-amber-400'
-                        : 'border border-[var(--border-card)] text-[var(--text-muted)] hover:border-[var(--text-muted)]'
+                        : 'border border-[var(--border-card)] bg-[var(--bg-input)] text-[var(--text-body)] hover:border-[var(--text-muted)]'
                     }`}
                   >
                     {topic.name}

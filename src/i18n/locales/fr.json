@@ -713,6 +713,8 @@
     "beginSection": "Commencer la section",
     "sectionOf": "Section {{current}} sur {{total}}",
     "startSimulation": "Lancer la simulation d'examen complète",
+    "proctorMode": "Mode surveillé",
+    "proctorModeHint": "Verrouille l'écran — détecte les changements d'onglet, copier/coller et clics droits pendant l'examen",
     "steps": {
       "gatherContext": "Collecte de vos données d'étude",
       "searchDocuments": "Recherche dans vos supports d'étude",
