@@ -90,6 +90,18 @@ export function useOnboarding() {
   // Persist to sessionStorage on every change (skip transient fields via saveState)
   useEffect(() => { saveState(state) }, [state])
 
+  // Clear onboarding state if language changes (cached conversation is in the wrong language)
+  const langRef = useRef(localStorage.getItem('studieskit-language') ?? '')
+  useEffect(() => {
+    const currentLang = localStorage.getItem('studieskit-language') ?? ''
+    if (langRef.current && currentLang && langRef.current !== currentLang && stateRef.current.messages.length > 0 && !stateRef.current.completed) {
+      sessionStorage.removeItem(STORAGE_KEY)
+      setState(createInitialConversationalState())
+      stateRef.current = createInitialConversationalState()
+    }
+    langRef.current = currentLang
+  })
+
   // ── Agent loop ─────────────────────────────────────────
 
   const sendMessage = useCallback(async (userText?: string) => {
