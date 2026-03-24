@@ -333,7 +333,9 @@
     "scheduleConcepts": "concepts",
     "dataLocalWarning": "Vos données sont stockées uniquement dans ce navigateur. Exportez régulièrement ou passez à Pro pour une sauvegarde cloud.",
     "exportData": "Exporter",
-    "behindSchedule": "Vous avez {{count}} jours de retard"
+    "behindSchedule": "Vous avez {{count}} jours de retard",
+    "predicted": "Prédit : {{score}} %",
+    "passing": "passage : {{threshold}} %"
   },
   "tutor": {
     "topics": "{{count}} sujet",
@@ -699,6 +701,9 @@
     "explainDifferently": "Expliquer autrement",
     "difficultyAdapting": "Adaptation de la difficulté",
     "practiceThis": "S'entraîner",
+    "sectionBreakdown": "Détail par section",
+    "markingCriteria": "Critères de notation",
+    "commonErrors": "Erreurs fréquentes",
     "steps": {
       "gatherContext": "Collecte de vos données d'étude",
       "searchDocuments": "Recherche dans vos supports d'étude",

@@ -79,11 +79,13 @@ export function PracticeExamResults({
   // Parse overall feedback
   let overallFeedback = ''
   let topicBreakdown: Array<{ topic: string; score: number; maxScore: number; advice: string }> = []
+  let sectionBreakdown: Array<{ sectionIndex: number; name: string; earned: number; max: number; percentage: number }> = []
   if (session.overallFeedback) {
     try {
       const parsed = JSON.parse(session.overallFeedback)
       overallFeedback = parsed.overallFeedback ?? ''
       topicBreakdown = parsed.topicBreakdown ?? []
+      sectionBreakdown = parsed.sectionBreakdown ?? []
     } catch { /* ignore */ }
   }
 
@@ -183,6 +185,35 @@ export function PracticeExamResults({
         </div>
       )}
 
+      {/* Section breakdown (simulation exams) */}
+      {sectionBreakdown.length > 0 && (
+        <div className="glass-card p-6">
+          <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-4 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            {t('practiceExam.sectionBreakdown', 'Section Breakdown')}
+          </h3>
+          <div className="space-y-3">
+            {sectionBreakdown.map((sec, i) => {
+              const pct = sec.max > 0 ? Math.round((sec.earned / sec.max) * 100) : 0
+              return (
+                <div key={i}>
+                  <div className="flex items-center justify-between text-sm mb-1">
+                    <span className="text-[var(--text-body)] font-medium">{sec.name}</span>
+                    <span className="text-[var(--text-muted)]">{sec.earned}/{sec.max} ({pct}%)</span>
+                  </div>
+                  <div className="w-full h-2 bg-[var(--bg-input)] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${pct >= 60 ? 'bg-green-500' : 'bg-red-500'}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Proctor integrity alert */}
       {hasProctorAlerts && (
         <div className="glass-card p-6 border border-red-500/30 bg-red-500/5">
@@ -275,6 +306,34 @@ export function PracticeExamResults({
                         readOnly
                         onAnswer={() => {}}
                       />
+                      {q.markingScheme && (() => {
+                        try {
+                          const scheme = JSON.parse(q.markingScheme) as { criteria?: Array<{ criterion: string; points: number }>; commonErrors?: Array<{ error: string; deduction: number }> }
+                          if (!scheme.criteria?.length) return null
+                          return (
+                            <div className="mt-3 p-3 rounded-lg bg-[var(--bg-input)] text-xs space-y-2">
+                              <p className="font-medium text-[var(--text-muted)]">{t('practiceExam.markingCriteria', 'Marking Criteria')}</p>
+                              {scheme.criteria.map((c, ci) => (
+                                <div key={ci} className="flex justify-between text-[var(--text-body)]">
+                                  <span>{c.criterion}</span>
+                                  <span className="text-[var(--text-muted)] shrink-0 ml-2">{c.points} pts</span>
+                                </div>
+                              ))}
+                              {scheme.commonErrors && scheme.commonErrors.length > 0 && (
+                                <>
+                                  <p className="font-medium text-red-500/80 pt-1">{t('practiceExam.commonErrors', 'Common Errors')}</p>
+                                  {scheme.commonErrors.map((e, ei) => (
+                                    <div key={ei} className="flex justify-between text-red-500/70">
+                                      <span>{e.error}</span>
+                                      <span className="shrink-0 ml-2">-{e.deduction} pts</span>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+                            </div>
+                          )
+                        } catch { return null }
+                      })()}
                       {!q.isCorrect && onExplainDifferently && (
                         <button
                           onClick={() => onExplainDifferently(q)}

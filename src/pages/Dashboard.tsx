@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Zap, MessageCircle, Loader2, AlertTriangle } from 'lucide-react'
+import { ArrowRight, Zap, MessageCircle, Loader2, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react'
 import { useUser } from '@clerk/clerk-react'
 import { isCramModeActive } from '../lib/cramModeEngine'
 import { db } from '../db'
@@ -152,6 +152,31 @@ export default function Dashboard() {
     return days.filter(d => d.date < today && !d.isCompleted).length
   }, [profileId]) ?? 0
 
+  // Predicted score from past simulation exams
+  const predictedScore = useLiveQuery(async () => {
+    if (!profileId) return null
+    const sims = await db.practiceExamSessions
+      .where('examProfileId').equals(profileId)
+      .filter(s => !!s.simulationMode && s.phase === 'graded' && s.totalScore != null && s.maxScore != null && s.maxScore! > 0)
+      .toArray()
+    if (sims.length < 2) return null
+    const sorted = sims.sort((a, b) => (a.completedAt ?? '').localeCompare(b.completedAt ?? ''))
+    const recent = sorted.slice(-5)
+    let weightedSum = 0, weightTotal = 0
+    recent.forEach((s, i) => {
+      const weight = i + 1
+      weightedSum += (s.totalScore! / s.maxScore!) * 100 * weight
+      weightTotal += weight
+    })
+    const predicted = Math.round(weightedSum / weightTotal)
+    const trend = recent.length >= 2
+      ? (recent[recent.length - 1].totalScore! / recent[recent.length - 1].maxScore!) >
+        (recent[recent.length - 2].totalScore! / recent[recent.length - 2].maxScore!)
+        ? 'up' as const : 'down' as const
+      : null
+    return { predicted, trend, count: sims.length }
+  }, [profileId]) ?? null
+
   if (!activeProfile) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
@@ -214,6 +239,18 @@ export default function Dashboard() {
           {daysUntilExam !== undefined && <span>{t('dashboard.daysToGo', { count: daysUntilExam })}</span>}
           {activePhase && <span className="text-[var(--accent-text)]"> · {activePhase.name}</span>}
         </p>
+        {predictedScore && (
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`text-sm font-bold ${predictedScore.predicted >= (activeProfile.passingThreshold ?? 60) ? 'text-emerald-500' : 'text-amber-500'}`}>
+              {t('dashboard.predicted', 'Predicted: {{score}}%', { score: predictedScore.predicted })}
+            </span>
+            <span className="text-xs text-[var(--text-faint)]">
+              ({t('dashboard.passing', 'passing: {{threshold}}%', { threshold: activeProfile.passingThreshold ?? 60 })})
+            </span>
+            {predictedScore.trend === 'up' && <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />}
+            {predictedScore.trend === 'down' && <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+          </div>
+        )}
 
         {/* Primary CTA */}
         {dailyQueue.length > 0 ? (

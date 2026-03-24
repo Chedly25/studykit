@@ -236,12 +236,48 @@ For "misconception": if incorrect, describe the specific misunderstanding in one
             total: data.total,
           }))
 
+          // Build section breakdown (for simulation exams)
+          const sectionMap = new Map<number, { name: string; earned: number; max: number; correct: number; total: number }>()
+          for (const q of questions) {
+            if (q.sectionIndex != null) {
+              const entry = sectionMap.get(q.sectionIndex) ?? { name: `Section ${q.sectionIndex + 1}`, earned: 0, max: 0, correct: 0, total: 0 }
+              entry.max += q.points
+              entry.total++
+              const grade = allGrades.find(g => g.questionId === q.id)
+              if (grade) {
+                entry.earned += grade.earnedPoints
+                if (grade.isCorrect) entry.correct++
+              }
+              sectionMap.set(q.sectionIndex, entry)
+            }
+          }
+          // Look up section names from ExamFormat
+          if (sectionMap.size > 0) {
+            const examFormats = await db.examFormats.where('examProfileId').equals(ctx.examProfileId).toArray()
+            const formatById = new Map(examFormats.map(f => [f.id, f]))
+            for (const q of questions) {
+              if (q.sectionIndex != null && q.examSectionId) {
+                const fmt = formatById.get(q.examSectionId)
+                if (fmt) {
+                  const entry = sectionMap.get(q.sectionIndex)
+                  if (entry) entry.name = fmt.formatName
+                }
+              }
+            }
+          }
+
+          const sectionSummary = Array.from(sectionMap.entries())
+            .sort(([a], [b]) => a - b)
+            .map(([idx, d]) => `- ${d.name}: ${d.earned}/${d.max} points, ${d.correct}/${d.total} correct`)
+            .join('\n')
+
           return `Generate performance feedback for a practice exam.
 
 Score: ${totalScore}/${maxScore} (${maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0}%)
 
 Topic breakdown:
 ${topicSummary.map(t => `- ${t.topic}: ${t.earned}/${t.max} points, ${t.correct}/${t.total} correct`).join('\n')}
+${sectionSummary ? `\nSection breakdown:\n${sectionSummary}` : ''}
 
 Return ONLY a JSON object:
 {
@@ -253,7 +289,16 @@ Return ONLY a JSON object:
       "maxScore": 6,
       "advice": "Brief advice for improvement"
     }
-  ]
+  ]${sectionMap.size > 0 ? `,
+  "sectionBreakdown": [
+    {
+      "sectionIndex": 0,
+      "name": "Section Name",
+      "earned": 12,
+      "max": 16,
+      "percentage": 75
+    }
+  ]` : ''}
 }`
         },
         'You are an encouraging but honest tutor providing exam feedback. Return ONLY valid JSON. Never use emojis.',

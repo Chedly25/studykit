@@ -333,7 +333,9 @@
     "scheduleConcepts": "concepts",
     "dataLocalWarning": "Your data is stored locally in this browser only. Export regularly or upgrade for cloud backup.",
     "exportData": "Export",
-    "behindSchedule": "You're {{count}} days behind schedule"
+    "behindSchedule": "You're {{count}} days behind schedule",
+    "predicted": "Predicted: {{score}}%",
+    "passing": "passing: {{threshold}}%"
   },
   "tutor": {
     "topics": "{{count}} topic",
@@ -699,6 +701,9 @@
     "explainDifferently": "Explain differently",
     "difficultyAdapting": "Difficulty adapting",
     "practiceThis": "Practice",
+    "sectionBreakdown": "Section Breakdown",
+    "markingCriteria": "Marking Criteria",
+    "commonErrors": "Common Errors",
     "steps": {
       "gatherContext": "Gathering your study data",
       "searchDocuments": "Searching your study materials",
