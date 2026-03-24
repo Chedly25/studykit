@@ -591,7 +591,8 @@
     "selectTopic": "Select topic...",
     "calibration": "Confidence Calibration",
     "errorPatterns": "Error Patterns",
-    "coachInsights": "Coach Insights"
+    "coachInsights": "Coach Insights",
+    "mockExamScores": "Mock Exam Scores"
   },
   "focus": {
     "title": "Focus Mode",
@@ -707,7 +708,19 @@
     "answerPlaceholder": "Type your answer...",
     "reviewPlaceholder": "Ask about your results...",
     "timeUp": "Time's up!",
-    "grading": "Grading your exam..."
+    "grading": "Grading your exam...",
+    "gradingFailed": "Could not load results",
+    "passed": "Passed!",
+    "needsWork": "Needs more practice",
+    "strengths": "Strengths",
+    "improvements": "Areas to Improve",
+    "sectionBreakdown": "Section Breakdown",
+    "yourAnswer": "Your answer:",
+    "correctAnswer": "Correct:",
+    "takeAnother": "Take Another",
+    "pastExams": "Past Exams",
+    "viewResults": "View Results",
+    "noHistory": "No past exams yet"
   },
   "notifications": {
     "title": "Notifications",

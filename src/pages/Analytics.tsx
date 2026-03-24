@@ -238,6 +238,9 @@ export default function Analytics() {
           )}
         </div>
 
+        {/* Mock Exam Scores */}
+        <MockExamScoresCard examProfileId={profileId} />
+
         {/* Mastery Trend */}
         <div className="glass-card p-4 md:col-span-2">
           <div className="flex items-center justify-between mb-3">
@@ -429,6 +432,46 @@ function CoachInsightsSection({ examProfileId }: { examProfileId: string | undef
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Mock Exam Scores card ────────────────────────────────────
+
+function MockExamScoresCard({ examProfileId }: { examProfileId: string | undefined }) {
+  const { t } = useTranslation()
+  const exams = useLiveQuery(async () => {
+    if (!examProfileId) return []
+    const all = await db.mockExams.where('examProfileId').equals(examProfileId).toArray()
+    return all
+      .filter(e => e.status === 'graded' && e.totalScore != null && e.maxScore != null && e.maxScore > 0)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))
+  }, [examProfileId]) ?? []
+
+  if (exams.length === 0) return null
+
+  const maxPct = 100
+  return (
+    <div className="glass-card p-4 md:col-span-2">
+      <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.mockExamScores', 'Mock Exam Scores')}</h2>
+      <div className="h-32 flex items-end gap-2">
+        {exams.map((exam, i) => {
+          const pct = Math.round((exam.totalScore! / exam.maxScore!) * 100)
+          const passed = pct >= 60
+          const dateLabel = new Date(exam.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+          return (
+            <div key={exam.id} className="flex-1 flex flex-col items-center gap-1 max-w-[60px]">
+              <span className={`text-xs font-bold ${passed ? 'text-emerald-500' : 'text-red-500'}`}>{pct}%</span>
+              <div
+                className={`w-full rounded-t-sm transition-all ${passed ? 'bg-emerald-500/60' : 'bg-red-500/60'}`}
+                style={{ height: `${Math.max((pct / maxPct) * 100, 4)}%` }}
+                title={`${pct}% — ${new Date(exam.startTime).toLocaleDateString()}`}
+              />
+              <span className="text-[10px] text-[var(--text-faint)]">{dateLabel}</span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

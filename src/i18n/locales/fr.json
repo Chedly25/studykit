@@ -591,7 +591,8 @@
     "selectTopic": "Sélectionnez un sujet...",
     "calibration": "Calibration de la confiance",
     "errorPatterns": "Schémas d'erreurs",
-    "coachInsights": "Observations du coach"
+    "coachInsights": "Observations du coach",
+    "mockExamScores": "Scores d'examens blancs"
   },
   "focus": {
     "title": "Mode concentration",
@@ -707,7 +708,19 @@
     "answerPlaceholder": "Tapez votre réponse...",
     "reviewPlaceholder": "Posez des questions sur vos résultats...",
     "timeUp": "Temps écoulé !",
-    "grading": "Correction de votre examen..."
+    "grading": "Correction de votre examen...",
+    "gradingFailed": "Impossible de charger les résultats",
+    "passed": "Réussi !",
+    "needsWork": "À retravailler",
+    "strengths": "Points forts",
+    "improvements": "Points à améliorer",
+    "sectionBreakdown": "Détail par section",
+    "yourAnswer": "Votre réponse :",
+    "correctAnswer": "Réponse correcte :",
+    "takeAnother": "Repasser un examen",
+    "pastExams": "Examens passés",
+    "viewResults": "Voir les résultats",
+    "noHistory": "Aucun examen passé pour le moment"
   },
   "notifications": {
     "title": "Notifications",
