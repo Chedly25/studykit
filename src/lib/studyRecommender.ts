@@ -50,6 +50,7 @@ export function computeDailyRecommendations(input: RecommenderInput): StudyRecom
   for (const topic of topics) {
     const subject = subjectMap.get(topic.subjectId)
     if (!subject) continue
+    if (!topic.name) continue // Skip topics with missing names (bad data)
 
     const dm = decayedMastery(topic)
     const subjectWeight = subject.weight / 100

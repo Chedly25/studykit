@@ -425,6 +425,7 @@ export async function executeOnboardingTool(
 
       for (let si = 0; si < subjects.length; si++) {
         const ext = subjects[si]
+        if (!ext.name) continue // Skip subjects with missing names
         const subjectId = crypto.randomUUID()
         const chs = ext.chapters && ext.chapters.length > 0 ? ext.chapters : [{ name: 'General', topics: ext.topics }]
 
@@ -437,9 +438,10 @@ export async function executeOnboardingTool(
         for (let ci = 0; ci < chs.length; ci++) {
           const ch = chs[ci]
           const chapterId = crypto.randomUUID()
-          dbChapters.push({ id: chapterId, subjectId, examProfileId: profileId, name: ch.name, order: ci })
+          dbChapters.push({ id: chapterId, subjectId, examProfileId: profileId, name: ch.name || `Chapter ${ci + 1}`, order: ci })
 
           for (const topic of ch.topics) {
+            if (!topic.name) continue // Skip topics with missing names
             dbTopics.push({
               id: crypto.randomUUID(), subjectId, chapterId, examProfileId: profileId,
               name: topic.name, mastery: 0, confidence: 0,
