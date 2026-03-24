@@ -35,11 +35,19 @@ export function WeakTopicsCard({ topics, subjects }: Props) {
           return (
             <div key={topic.id}>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-[var(--text-body)] truncate">
+                <Link to={`/topic/${topic.id}`} className="text-[var(--text-body)] truncate hover:text-[var(--accent-text)] transition-colors">
                   {topic.name}
                   {subject && <span className="text-[var(--text-faint)]"> &middot; {subject.name}</span>}
-                </span>
-                <span className="text-[var(--text-muted)] ml-2">{pct}%</span>
+                </Link>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <span className="text-[var(--text-muted)]">{pct}%</span>
+                  <Link
+                    to={`/practice-exam?topic=${topic.id}`}
+                    className="text-[10px] font-semibold text-[var(--accent-text)] bg-[var(--accent-bg)] px-1.5 py-0.5 rounded hover:underline"
+                  >
+                    {t('dashboard.nextSteps.study')}
+                  </Link>
+                </div>
               </div>
               <div className="w-full h-1.5 rounded-full bg-[var(--border-card)] overflow-hidden">
                 <div

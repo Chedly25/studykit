@@ -1,7 +1,7 @@
 /**
  * React hook managing the daily study queue state and progression.
  */
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { buildDailyQueue } from '../lib/dailyQueueEngine'
@@ -154,11 +154,17 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
     })
   }, [topics, subjects, dueFlashcards, exercises, conceptCards, questionResults, profile, timeAvailableMinutes, cramMode, topicMap])
 
-  // Filter out completed/skipped
+  // Retry queue — items re-inserted after struggle
+  const [retryQueue, setRetryQueue] = useState<typeof queue>([])
+  const retryInsertCounter = useRef(0)
+
+  // Filter out completed/skipped, then append retry items at the end
   const activeQueue = useMemo(() => {
     const doneSet = new Set([...progress.completedIds, ...progress.skippedIds])
-    return queue.filter(item => !doneSet.has(item.id))
-  }, [queue, progress])
+    const main = queue.filter(item => !doneSet.has(item.id))
+    const retries = retryQueue.filter(item => !doneSet.has(item.id))
+    return [...main, ...retries]
+  }, [queue, retryQueue, progress])
 
   const currentItem = activeQueue[0] ?? null
   const completedCount = progress.completedIds.length
@@ -191,11 +197,24 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
     }))
   }, [])
 
-  const reset = useCallback(() => {
-    setProgress({ completedIds: [], skippedIds: [], currentIndex: 0 })
+  const retryItem = useCallback((item: typeof queue[0]) => {
+    retryInsertCounter.current += 1
+    const retryId = `retry-${retryInsertCounter.current}-${item.id}`
+    setRetryQueue(prev => [...prev, { ...item, id: retryId, reason: 'Retrying — let\'s check again' }])
+    // Mark original as completed so it advances past it
+    setProgress(prev => ({
+      ...prev,
+      completedIds: [...prev.completedIds, item.id],
+      currentIndex: prev.currentIndex + 1,
+    }))
   }, [])
 
-  const isQueueEmpty = activeQueue.length === 0 && queue.length > 0
+  const reset = useCallback(() => {
+    setProgress({ completedIds: [], skippedIds: [], currentIndex: 0 })
+    setRetryQueue([])
+  }, [])
+
+  const isQueueEmpty = activeQueue.length === 0 && (queue.length > 0 || retryQueue.length > 0)
 
   return {
     queue,
@@ -207,6 +226,7 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
     typeCounts,
     completeItem,
     skipItem,
+    retryItem,
     reset,
     isQueueEmpty,
   }

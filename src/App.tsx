@@ -42,6 +42,7 @@ const Analytics = lazyWithRetry(() => import('./pages/Analytics'))
 const Report = lazyWithRetry(() => import('./pages/Report'))
 const FocusMode = lazyWithRetry(() => import('./pages/FocusMode'))
 const SubjectPage = lazyWithRetry(() => import('./pages/SubjectPage'))
+const TopicPage = lazyWithRetry(() => import('./pages/TopicPage'))
 
 // AI
 const PracticeExam = lazyWithRetry(() => import('./pages/PracticeExam'))
@@ -142,6 +143,7 @@ export default function App() {
           <Route path="welcome" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="subject/:subjectId" element={<ProtectedRoute><SubjectPage /></ProtectedRoute>} />
+          <Route path="topic/:topicId" element={<ProtectedRoute><TopicPage /></ProtectedRoute>} />
           <Route path="exam-profile" element={<ProtectedRoute><ExamProfile /></ProtectedRoute>} />
           <Route path="analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="report" element={<ProtectedRoute><Report /></ProtectedRoute>} />

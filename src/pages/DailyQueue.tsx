@@ -153,7 +153,7 @@ function DailyQueueContent() {
 
   const {
     queue, currentItem, completedCount, totalCount,
-    remainingMinutes, completeItem, skipItem, isQueueEmpty,
+    remainingMinutes, completeItem, skipItem, retryItem, isQueueEmpty,
   } = useDailyQueue(profileId, timeAvailable, cramMode)
 
   // Show start overlay on first visit today
@@ -418,6 +418,7 @@ function DailyQueueContent() {
   const masteryDeltas = topics
     .filter(tp => preMastery.current.has(tp.id) && tp.mastery !== preMastery.current.get(tp.id))
     .map(tp => ({
+      topicId: tp.id,
       topicName: tp.name,
       before: preMastery.current.get(tp.id)!,
       after: tp.mastery,
@@ -558,7 +559,11 @@ function DailyQueueContent() {
             <span className="text-xs text-[var(--text-muted)]">{currentItem.subjectName}</span>
           </div>
 
-          <h2 className="text-lg font-semibold text-[var(--text-heading)] mb-1">{currentItem.topicName}</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-heading)] mb-1">
+            <Link to={`/topic/${currentItem.topicId}`} className="hover:text-[var(--accent-text)] transition-colors">
+              {currentItem.topicName}
+            </Link>
+          </h2>
           {currentItem.reason && (
             <p className="text-xs text-[var(--text-muted)] mb-1">{currentItem.reason}</p>
           )}
@@ -570,6 +575,7 @@ function DailyQueueContent() {
               profileId={profileId}
               onComplete={handleComplete}
               onRated={recordResult}
+              onRetry={retryItem}
               examProfileId={profileId}
               isPro={isPro}
               voiceProps={voiceProps}
@@ -582,6 +588,7 @@ function DailyQueueContent() {
               profileId={profileId}
               onComplete={handleComplete}
               onRated={recordResult}
+              onRetry={retryItem}
               examProfileId={profileId}
               isPro={isPro}
               voiceProps={voiceProps}
@@ -596,6 +603,7 @@ function DailyQueueContent() {
               onReveal={() => setConceptRevealed(true)}
               onComplete={handleComplete}
               onRated={recordResult}
+              onRetry={retryItem}
               examProfileId={profileId}
               isPro={isPro}
               voiceProps={voiceProps}
@@ -689,12 +697,13 @@ const RATING_BUTTONS = [
 ]
 
 function FlashcardReviewInline({
-  item, profileId, onComplete, onRated, examProfileId, isPro, voiceProps,
+  item, profileId, onComplete, onRated, onRetry, examProfileId, isPro, voiceProps,
 }: {
   item: QueueItem
   profileId: string | undefined
   onComplete: (itemId: string) => void
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
+  onRetry?: (item: QueueItem) => void
   examProfileId?: string
   isPro: boolean
   voiceProps: VoicePropsForAnswer
@@ -956,6 +965,7 @@ function FlashcardReviewInline({
             content={`Question: ${explanationCtx.front}\nAnswer: ${explanationCtx.back}`}
             topicName={item.topicName}
             onDismiss={advanceCard}
+            onRetry={onRetry ? () => { setExplanationCtx(null); onRetry(item) } : undefined}
             examProfileId={examProfileId}
             topicId={item.topicId}
           />
@@ -983,12 +993,13 @@ const EXERCISE_RATINGS = [
 ]
 
 function ExerciseInline({
-  item, profileId, onComplete, onRated, examProfileId, isPro, voiceProps,
+  item, profileId, onComplete, onRated, onRetry, examProfileId, isPro, voiceProps,
 }: {
   item: QueueItem
   profileId: string | undefined
   onComplete: (itemId: string) => void
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
+  onRetry?: (item: QueueItem) => void
   examProfileId?: string
   isPro: boolean
   voiceProps: VoicePropsForAnswer
@@ -1337,6 +1348,7 @@ function ExerciseInline({
           content={explanationCtx}
           topicName={item.topicName}
           onDismiss={() => { setExplanationCtx(null); onComplete(item.id) }}
+          onRetry={onRetry ? () => { setExplanationCtx(null); onRetry(item) } : undefined}
           examProfileId={examProfileId}
           topicId={item.topicId}
         />
@@ -1354,7 +1366,7 @@ const CONCEPT_RATINGS = [
 ]
 
 function ConceptQuizInline({
-  item, profileId: _profileId, revealed, onReveal, onComplete, onRated, examProfileId, isPro, voiceProps,
+  item, profileId: _profileId, revealed, onReveal, onComplete, onRated, onRetry, examProfileId, isPro, voiceProps,
 }: {
   item: QueueItem
   profileId: string | undefined
@@ -1362,6 +1374,7 @@ function ConceptQuizInline({
   onReveal: () => void
   onComplete: (itemId: string) => void
   onRated: (topicName: string, type: string, rating: 'struggled' | 'ok' | 'good') => void
+  onRetry?: (item: QueueItem) => void
   examProfileId?: string
   isPro: boolean
   voiceProps: VoicePropsForAnswer
@@ -1550,6 +1563,7 @@ function ConceptQuizInline({
                   content={explanationCtx}
                   topicName={item.topicName}
                   onDismiss={() => { setExplanationCtx(null); onComplete(item.id) }}
+                  onRetry={onRetry ? () => { setExplanationCtx(null); onRetry(item) } : undefined}
                   examProfileId={examProfileId}
                   topicId={item.topicId}
                 />
@@ -1565,6 +1579,7 @@ function ConceptQuizInline({
           content={explanationCtx}
           topicName={item.topicName}
           onDismiss={() => { setExplanationCtx(null); onComplete(item.id) }}
+          onRetry={onRetry ? () => { setExplanationCtx(null); onRetry(item) } : undefined}
           examProfileId={examProfileId}
           topicId={item.topicId}
         />

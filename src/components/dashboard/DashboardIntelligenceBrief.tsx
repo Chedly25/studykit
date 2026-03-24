@@ -144,7 +144,7 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
                   <span className={`inline-block w-2 h-2 rounded-full ${p.urgency === 'critical' ? 'bg-red-500' : p.urgency === 'high' ? 'bg-orange-500' : 'bg-blue-500'}`} />
                 </span>
                 <span className="text-[var(--text-body)]">
-                  <span className="font-medium text-[var(--text-heading)]">{p.topicName}</span>
+                  <Link to={`/topic/${p.topicId}`} className="font-medium text-[var(--text-heading)] hover:text-[var(--accent-text)] transition-colors">{p.topicName}</Link>
                   {' — '}{p.reason}
                 </span>
               </li>

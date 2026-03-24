@@ -9,7 +9,7 @@ import { useSessionInsights } from '../hooks/useSessionInsights'
 import { useSourceCoverage } from '../hooks/useSourceCoverage'
 import { useStudentModel } from '../hooks/useStudentModel'
 import { Link } from 'react-router-dom'
-import { BarChart3, FileText, Lightbulb, AlertTriangle, Sparkles } from 'lucide-react'
+import { BarChart3, FileText, Lightbulb, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react'
 import { useTranslation, Trans } from 'react-i18next'
 import { CalibrationChart } from '../components/analytics/CalibrationChart'
 import { ErrorPatternChart } from '../components/analytics/ErrorPatternChart'
@@ -418,6 +418,14 @@ function CoachInsightsSection({ examProfileId }: { examProfileId: string | undef
             <div className="flex-1 min-w-0">
               <span className="font-medium text-[var(--text-heading)]">{insight.title}</span>
               <span className="text-[var(--text-muted)] ml-1">{insight.message}</span>
+              {insight.action && (
+                <Link
+                  to={insight.action.route}
+                  className="inline-flex items-center gap-1 text-[var(--accent-text)] hover:underline font-medium mt-1"
+                >
+                  {insight.action.label} <ArrowRight className="w-3 h-3" />
+                </Link>
+              )}
             </div>
           </div>
         ))}

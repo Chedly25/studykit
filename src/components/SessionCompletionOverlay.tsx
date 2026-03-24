@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { CheckCircle2, Flame, Clock, ArrowRight, Check, Home, BookOpen, ClipboardCheck, Target, Sparkles, Loader2 } from 'lucide-react'
 import { MathText } from './MathText'
 
@@ -9,7 +9,7 @@ export interface SessionCompletionData {
   streak: number
   weeklyHours: number
   weeklyTarget: number
-  masteryDeltas?: Array<{ topicName: string; before: number; after: number }>
+  masteryDeltas?: Array<{ topicId?: string; topicName: string; before: number; after: number }>
   flashcardStats?: { cardsReviewed: number; deckName: string }
   examStats?: { score: number; maxScore: number; percentage: number; passed: boolean }
   focusStats?: { sessionsCompleted: number; subjectName?: string }
@@ -150,7 +150,11 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
               const isPositive = change >= 0
               return (
                 <div key={i} className="flex items-center gap-2 text-sm">
-                  <span className="text-[var(--text-body)] truncate flex-1">{delta.topicName}</span>
+                  {delta.topicId ? (
+                    <Link to={`/topic/${delta.topicId}`} className="text-[var(--text-body)] truncate flex-1 hover:text-[var(--accent-text)] transition-colors">{delta.topicName}</Link>
+                  ) : (
+                    <span className="text-[var(--text-body)] truncate flex-1">{delta.topicName}</span>
+                  )}
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-[var(--text-muted)]">{Math.round(delta.before * 100)}%</span>
                     <ArrowRight className="w-3 h-3 text-[var(--text-faint)]" />

@@ -322,7 +322,15 @@
     "briefPriorities": "Priorités du jour",
     "briefNoPriorities": "Aucun point urgent — vous êtes sur la bonne voie",
     "briefViewQueue": "Commencer la session",
-    "advisorNote": "Note du conseiller"
+    "advisorNote": "Note du conseiller",
+    "thisWeek": "Cette semaine",
+    "itemsDue": "{{count}} élément à réviser",
+    "itemsDue_plural": "{{count}} éléments à réviser",
+    "continueSession": "Continuer la session",
+    "startSessionCta": "Commencer la session — {{count}} éléments, ~{{minutes}} min",
+    "scheduleFlashcards": "flashcards",
+    "scheduleExercises": "exercices",
+    "scheduleConcepts": "concepts"
   },
   "tutor": {
     "topics": "{{count}} sujet",
@@ -942,7 +950,9 @@
     "aiGradingAnswer": "Correction de votre réponse...",
     "aiGraded": "Note IA : {{score}} %",
     "aiGradingFailed": "Correction échouée — évaluez-vous",
-    "listening": "Écoute en cours..."
+    "listening": "Écoute en cours...",
+    "tryAgain": "Réessayer plus tard",
+    "gotIt": "Compris"
   },
   "reader": {
     "generatingQuestion": "Génération de la question...",
@@ -994,6 +1004,27 @@
     "uploadMaterials": "Importer des documents",
     "practiceExam": "Examen blanc",
     "askTutor": "Poser une question"
+  },
+  "topic": {
+    "notFound": "Sujet introuvable",
+    "decayedMastery": "Maîtrise effective : {{percent}} % (en déclin)",
+    "dueToday": "À réviser aujourd'hui",
+    "nextReview": "Prochaine révision : {{date}}",
+    "noReviewScheduled": "Aucune révision programmée",
+    "practice": "S'entraîner",
+    "askAI": "Demander à l'IA",
+    "masteryTrend": "Évolution de la maîtrise",
+    "flashcards": "Flashcards",
+    "review": "Réviser",
+    "cards": "cartes",
+    "dueCount": "{{count}} à réviser",
+    "exercises": "Exercices",
+    "attempted": "tentés",
+    "conceptCards": "Cartes de concepts",
+    "sourceMaterial": "Documents sources",
+    "stats": "Statistiques",
+    "questionsAttempted": "Tentées",
+    "accuracy": "Précision"
   },
   "report": {
     "title": "Rapport d'études",

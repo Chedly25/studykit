@@ -2,22 +2,19 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Zap, ClipboardCheck, FileText, AlertCircle, MessageCircle, Loader2 } from 'lucide-react'
+import { ArrowRight, Zap, MessageCircle, Loader2 } from 'lucide-react'
 import { useUser } from '@clerk/clerk-react'
 import { isCramModeActive } from '../lib/cramModeEngine'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
-import { useTopicStats } from '../hooks/useTopicStats'
 import { TutorDirectory } from '../components/TutorDirectory'
 import { NextStepsCard } from '../components/dashboard/NextStepsCard'
-import { LearningProfileCard } from '../components/dashboard/LearningProfileCard'
-import { CalibrationAlert } from '../components/dashboard/CalibrationAlert'
 import { CelebrationBanner } from '../components/CelebrationBanner'
-import { ResourceScoutCard } from '../components/ResourceScoutCard'
 import { useSubscription } from '../hooks/useSubscription'
 import { useDailyQueue } from '../hooks/useDailyQueue'
 import { DashboardIntelligenceBrief } from '../components/dashboard/DashboardIntelligenceBrief'
+import { WeeklyScheduleCard } from '../components/dashboard/WeeklyScheduleCard'
 
 function getGreetingKey(): string {
   const hour = new Date().getHours()
@@ -32,7 +29,6 @@ export default function Dashboard() {
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
   const { subjects, topics, streak } = useKnowledgeGraph(profileId)
-  const topicStats = useTopicStats(profileId)
   const { queue: dailyQueue } = useDailyQueue(profileId)
   const { isPro } = useSubscription()
 
@@ -78,40 +74,7 @@ export default function Dashboard() {
     }
   }, [profileId])
 
-  // Course documents
-  const courseDocuments = useLiveQuery(
-    async () => {
-      if (!profileId) return []
-      return db.documents.where('examProfileId').equals(profileId)
-        .filter(d => d.category === 'course')
-        .toArray()
-    },
-    [profileId],
-  ) ?? []
-
-  // Exam sources with exercise counts
-  const examSources = useLiveQuery(
-    async () => {
-      if (!profileId) return []
-      const sources = await db.examSources.where('examProfileId').equals(profileId).toArray()
-      const exercises = await db.exercises.where('examProfileId').equals(profileId).toArray()
-      return sources.map(source => {
-        const exs = exercises.filter(e => e.examSourceId === source.id && !e.hidden)
-        return {
-          ...source,
-          exerciseCount: exs.length,
-          completedCount: exs.filter(e => e.status === 'completed').length,
-        }
-      })
-    },
-    [profileId],
-  ) ?? []
-
-  // Student model for Learning Profile card
-  const studentModel = useLiveQuery(
-    () => profileId ? db.studentModels.where('examProfileId').equals(profileId).first() : undefined,
-    [profileId],
-  )
+  // (Course documents, exam sources, student model moved to Sources/Settings pages)
 
   // Exercise counts for NextSteps
   const exerciseCounts = useLiveQuery(
@@ -178,14 +141,6 @@ export default function Dashboard() {
 
   const showSettingUp = isNewProfile && activeJobCount > 0
 
-  // Quick stats
-  const topicsWithoutMaterial = useMemo(() => {
-    return topics.filter(t => {
-      const stats = topicStats.get(t.id)
-      return !stats?.docs && !stats?.exercises
-    }).length
-  }, [topics, topicStats])
-
   if (!activeProfile) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
@@ -234,37 +189,54 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Welcome Header */}
+      {/* ─── Hero Section ─── */}
       <div className="mb-6">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-heading)]">
           {t(getGreetingKey(), { name: user?.firstName || activeProfile.name })}
         </h1>
         <p className="text-sm text-[var(--text-muted)] mt-1">
-          {activeProfile.name}
-          {daysUntilExam !== undefined && ` — ${t('dashboard.daysToGo', { count: daysUntilExam })}`}
+          {streak > 0 && <span>{t('session.dayStreak', { count: streak })}</span>}
+          {streak > 0 && daysUntilExam !== undefined && <span> · </span>}
+          {daysUntilExam !== undefined && <span>{t('dashboard.daysToGo', { count: daysUntilExam })}</span>}
+          {activePhase && <span className="text-[var(--accent-text)]"> · {activePhase.name}</span>}
         </p>
-        {activePhase && (
-          <p className="text-xs text-[var(--accent-text)] mt-1 font-medium">
-            {activePhase.name}
-          </p>
-        )}
-        <div className="flex gap-3 mt-4">
-          <Link to="/queue" className="btn-primary flex-1 py-3 text-sm text-center flex items-center justify-center gap-2">
-            {t('dashboard.startSession')} <ArrowRight className="w-4 h-4" />
-          </Link>
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel', { detail: {} }))}
-            className="btn-secondary flex-1 py-3 text-sm text-center flex items-center justify-center gap-2"
+
+        {/* Primary CTA */}
+        {dailyQueue.length > 0 ? (
+          <Link
+            to="/queue"
+            className="btn-primary w-full py-3.5 text-sm font-medium text-center flex items-center justify-center gap-2 mt-4"
           >
-            <MessageCircle className="w-4 h-4" /> {t('dashboard.talkToTutor')}
-          </button>
-        </div>
+            {queueInProgress
+              ? t('dashboard.continueSession', 'Continue session')
+              : t('dashboard.startSessionCta', 'Start today\'s session — {{count}} items, ~{{minutes}} min', {
+                  count: dailyQueue.length,
+                  minutes: dailyQueue.reduce((s, q) => s + q.estimatedMinutes, 0),
+                })
+            }
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        ) : (
+          <div className="glass-card p-4 mt-4 text-center">
+            <p className="text-sm font-medium text-[var(--text-heading)]">{t('dashboard.allCaughtUp')}</p>
+            <div className="flex gap-2 mt-3 justify-center">
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel', { detail: {} }))}
+                className="btn-secondary py-2 px-4 text-sm flex items-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" /> {t('dashboard.talkToTutor')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Intelligence Brief */}
+      {/* ─── This Week Schedule ─── */}
+      <WeeklyScheduleCard examProfileId={profileId} />
+
+      {/* ─── Advisor Section ─── */}
       {profileId && <DashboardIntelligenceBrief examProfileId={profileId} />}
 
-      {/* Next Steps */}
       <NextStepsCard
         topics={topics}
         documents={allDocuments}
@@ -278,76 +250,12 @@ export default function Dashboard() {
         isPro={isPro}
       />
 
-      {/* Resource Scout */}
-      {profileId && <ResourceScoutCard examProfileId={profileId} />}
-
-      {/* Calibration Alert */}
-      {profileId && <CalibrationAlert topics={topics} profileId={profileId} />}
-
-      {/* Subjects */}
+      {/* ─── Subjects ─── */}
       {subjects.length > 0 && (
         <div className="mb-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">{t('dashboard.yourTutors')}</p>
           <TutorDirectory subjects={subjects} topics={topics} />
         </div>
-      )}
-
-      {/* AI Learning Profile */}
-      <LearningProfileCard studentModel={studentModel} />
-
-      {/* Your courses */}
-      {courseDocuments.length > 0 && (
-        <div className="glass-card p-4 mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">{t('dashboard.myCourses')}</p>
-          <div className="space-y-1">
-            {courseDocuments.map(doc => (
-              <Link key={doc.id} to={`/read/${doc.id}`}
-                className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--bg-input)] transition-colors">
-                <FileText size={16} className="text-blue-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-[var(--text-heading)] truncate block">{doc.title}</span>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Your exams */}
-      {examSources.length > 0 && (
-        <div className="glass-card p-4 mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">{t('dashboard.myExams')}</p>
-          <div className="space-y-1">
-            {examSources.map(source => (
-              <Link key={source.id} to={`/read/${source.documentId}`}
-                className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-[var(--bg-input)] transition-colors">
-                <ClipboardCheck size={16} className="text-orange-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-[var(--text-heading)] truncate block">
-                    {source.name}{source.year ? ` ${source.year}` : ''}
-                  </span>
-                  <span className="text-xs text-[var(--text-faint)]">
-                    {t('dashboard.exercisesCompleted', { completed: source.completedCount, total: source.exerciseCount })}
-                  </span>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Topics needing material */}
-      {topicsWithoutMaterial > 0 && (
-        <Link to="/sources" className="glass-card p-4 mb-4 flex items-center gap-3 hover:bg-[var(--bg-input)]/30 transition-colors block">
-          <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
-          <div className="flex-1">
-            <span className="text-sm font-medium text-[var(--text-heading)]">{t('dashboard.topicsWithoutMaterial', { count: topicsWithoutMaterial })}</span>
-            <span className="text-xs text-[var(--text-faint)] block">{t('dashboard.uploadDocuments')}</span>
-          </div>
-          <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-        </Link>
       )}
     </div>
   )

@@ -15,11 +15,12 @@ interface Props {
   content: string
   topicName: string
   onDismiss: () => void
+  onRetry?: () => void
   examProfileId?: string
   topicId?: string
 }
 
-export function InlineAIExplanation({ content, topicName, onDismiss, examProfileId, topicId }: Props) {
+export function InlineAIExplanation({ content, topicName, onDismiss, onRetry, examProfileId, topicId }: Props) {
   const { getToken } = useAuth()
   const [text, setText] = useState('')
   const [isStreaming, setIsStreaming] = useState(true)
@@ -141,8 +142,16 @@ export function InlineAIExplanation({ content, topicName, onDismiss, examProfile
             onClick={onDismiss}
             className="text-xs font-medium text-[var(--accent-text)] hover:underline"
           >
-            Got it — continue
+            {onRetry ? 'Got it' : 'Got it — continue'}
           </button>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="text-xs font-medium text-orange-500 hover:underline"
+            >
+              Try again later
+            </button>
+          )}
           {examProfileId && !saved && (
             <button
               onClick={handleSave}

@@ -322,7 +322,15 @@
     "briefPriorities": "Today's priorities",
     "briefNoPriorities": "No urgent items — you're on track",
     "briefViewQueue": "Start session",
-    "advisorNote": "Advisor's Note"
+    "advisorNote": "Advisor's Note",
+    "thisWeek": "This Week",
+    "itemsDue": "{{count}} item due",
+    "itemsDue_plural": "{{count}} items due",
+    "continueSession": "Continue session",
+    "startSessionCta": "Start today's session — {{count}} items, ~{{minutes}} min",
+    "scheduleFlashcards": "flashcards",
+    "scheduleExercises": "exercises",
+    "scheduleConcepts": "concepts"
   },
   "tutor": {
     "topics": "{{count}} topic",
@@ -942,7 +950,9 @@
     "aiGradingAnswer": "Grading your answer...",
     "aiGraded": "AI Grade: {{score}}%",
     "aiGradingFailed": "Grading failed — rate yourself",
-    "listening": "Listening..."
+    "listening": "Listening...",
+    "tryAgain": "Try again later",
+    "gotIt": "Got it"
   },
   "reader": {
     "generatingQuestion": "Generating question...",
@@ -994,6 +1004,27 @@
     "uploadMaterials": "Upload materials",
     "practiceExam": "Practice exam",
     "askTutor": "Ask tutor"
+  },
+  "topic": {
+    "notFound": "Topic not found",
+    "decayedMastery": "Effective mastery: {{percent}}% (decayed)",
+    "dueToday": "Due for review today",
+    "nextReview": "Next review: {{date}}",
+    "noReviewScheduled": "No review scheduled",
+    "practice": "Practice",
+    "askAI": "Ask AI",
+    "masteryTrend": "Mastery Trend",
+    "flashcards": "Flashcards",
+    "review": "Review",
+    "cards": "cards",
+    "dueCount": "{{count}} due",
+    "exercises": "Exercises",
+    "attempted": "attempted",
+    "conceptCards": "Concept Cards",
+    "sourceMaterial": "Source Material",
+    "stats": "Statistics",
+    "questionsAttempted": "Attempted",
+    "accuracy": "Accuracy"
   },
   "report": {
     "title": "Study Report",
