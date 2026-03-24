@@ -344,7 +344,13 @@ export function usePracticeExam(examProfileId: string | undefined) {
   }, [])
 
   const abandonSession = useCallback(async (id: string) => {
-    await db.practiceExamSessions.update(id, { phase: 'graded' as PracticeExamSession['phase'] })
+    // Mark as completed with 0 score to exclude from analytics but clear from in-progress detection
+    await db.practiceExamSessions.update(id, {
+      phase: 'graded' as PracticeExamSession['phase'],
+      totalScore: 0,
+      maxScore: 0,
+      completedAt: new Date().toISOString(),
+    })
   }, [])
 
   const updateSectionProgress = useCallback(async (sectionIndex: number) => {

@@ -275,10 +275,11 @@ export default function MockExam() {
     return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [started, isFinished])
 
-  // Auto-finish when time runs out
+  // Auto-finish when time runs out (uses ref to avoid hoisting issue)
+  const handleFinishRef = useRef<() => void>(() => {})
   useEffect(() => {
     if (started && !isFinished && timeLeft === 0 && examIdRef.current) {
-      handleFinish()
+      handleFinishRef.current()
     }
   }, [timeLeft, started, isFinished])
 
@@ -388,6 +389,7 @@ export default function MockExam() {
       gradeExam(currentExamId)
     }
   }
+  handleFinishRef.current = handleFinish
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
