@@ -907,6 +907,8 @@
     "welcomeStep1": "What you're preparing for",
     "welcomeStep2": "Your materials & experience",
     "welcomeStep3": "Your weekly schedule",
+    "parsingFile": "Reading your document...",
+    "uploadPrompt": "Click to upload PDFs, syllabi, or course materials",
     "welcomeStart": "Let's get started",
     "welcomeSkip": "Skip and explore on your own"
   },

@@ -907,6 +907,8 @@
     "welcomeStep1": "Ce que vous préparez",
     "welcomeStep2": "Vos supports et votre expérience",
     "welcomeStep3": "Votre emploi du temps hebdomadaire",
+    "parsingFile": "Lecture de votre document...",
+    "uploadPrompt": "Cliquez pour importer des PDF, programmes ou supports de cours",
     "welcomeStart": "C'est parti",
     "welcomeSkip": "Passer et explorer par vous-même"
   },

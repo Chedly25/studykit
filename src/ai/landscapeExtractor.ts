@@ -249,15 +249,21 @@ export async function generateKnownExamLandscape(
 
   try {
     const { callFastModel } = await import('./fastClient')
+    const { searchWeb } = await import('./tools/webSearchTool')
 
     const jurisdictionCtx = jurisdiction ? ` in ${jurisdiction}` : ''
+
+    // Search the web for the official program/syllabus
+    const searchQuery = `programme officiel ${examName}${jurisdictionCtx} matières sujets contenu syllabus`
+    const searchResults = await searchWeb(searchQuery, authToken, 5)
+    const contextBlock = searchResults
+      ? `\n\nBelow are web search results about the official program for ${examName}. Use these as your PRIMARY source of truth — extract topics from this content rather than guessing:\n\n${searchResults.slice(0, 6000)}`
+      : ''
+
     const prompt = `Generate the complete subject and topic structure for the ${examName}${jurisdictionCtx}.
+${contextBlock}
 
-You are an expert on this exam's official program and syllabus. Generate the standard subjects and topics as they appear on the OFFICIAL program/syllabus.
-
-CRITICAL: Only include topics that are actually part of the official program. Do NOT invent topics or include content from different levels/tracks. If you are not 100% confident about a topic being in the official program, do NOT include it. It is better to have fewer accurate topics than many inaccurate ones.
-
-For French exams (CPGE, Concours, Bac, etc.): use the official Bulletin Officiel program. Use French terminology for topic names.
+Extract the official subjects, chapters, and topics from the search results above. If the search results contain the actual program content, use it directly. Only fall back to your general knowledge for areas not covered by the search results.
 
 Return ONLY valid JSON:
 {
@@ -283,12 +289,12 @@ Rules:
 - Weights should reflect official exam weighting and sum to 100
 - Use official terminology from the program
 - 2-8 chapters per subject, 2-10 topics per chapter
-- Be comprehensive but ACCURATE — only include topics you are certain belong to this specific program
+- Be comprehensive and ACCURATE — base topics on the search results, not guessing
 - Names should be in the language of the exam (French for French exams)`
 
     const raw = await callFastModel(
       prompt,
-      'You are a curriculum expert with deep knowledge of official exam programs and syllabi. Generate exam topic structures based on the OFFICIAL program only. Return only valid JSON. Use the exam\'s language for topic names.',
+      'You are a curriculum expert. Extract exam topic structures from the provided search results about the official program. Return only valid JSON. Use the exam\'s language for topic names.',
       authToken,
       { maxTokens: 8192 },
     )

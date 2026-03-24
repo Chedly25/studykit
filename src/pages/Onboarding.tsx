@@ -173,6 +173,7 @@ function DateInputWidget({ onSubmit, disabled }: { onSubmit: (date: string) => v
 function FileUploadWidget({ onSubmit, disabled }: { onSubmit: (result: string) => void; disabled: boolean }) {
   const { t } = useTranslation()
   const [files, setFiles] = useState<File[]>([])
+  const [isParsing, setIsParsing] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,37 +182,67 @@ function FileUploadWidget({ onSubmit, disabled }: { onSubmit: (result: string) =
     }
   }
 
-  const handleSubmit = () => {
-    if (files.length > 0) {
-      onSubmit(`Uploaded ${files.length} file${files.length > 1 ? 's' : ''}`)
+  const handleSubmit = async () => {
+    if (files.length === 0) return
+    const file = files[0]
+
+    // For PDFs, extract text content so the AI can analyze it
+    if (file.name.toLowerCase().endsWith('.pdf')) {
+      setIsParsing(true)
+      try {
+        const { parsePdf } = await import('../lib/pdfParser')
+        const result = await parsePdf(file)
+        const text = result.text.slice(0, 8000)
+        onSubmit(`[Uploaded: ${file.name}, ${result.pageCount} pages]\n\n${text}`)
+      } catch {
+        onSubmit(`Uploaded ${file.name} but could not extract text. Please describe your subjects instead.`)
+      } finally {
+        setIsParsing(false)
+      }
+    } else {
+      // For text files, read directly
+      try {
+        const text = await file.text()
+        onSubmit(`[Uploaded: ${file.name}]\n\n${text.slice(0, 8000)}`)
+      } catch {
+        onSubmit(`Uploaded ${files.length} file(s)`)
+      }
     }
   }
 
   return (
     <div className="space-y-3">
       <div
-        onClick={() => inputRef.current?.click()}
-        className="border-2 border-dashed border-[var(--border-card)] rounded-xl p-6 text-center cursor-pointer hover:border-[var(--accent-text)] transition-colors"
+        onClick={() => !isParsing && inputRef.current?.click()}
+        className={`border-2 border-dashed border-[var(--border-card)] rounded-xl p-6 text-center cursor-pointer hover:border-[var(--accent-text)] transition-colors ${isParsing ? 'opacity-60 pointer-events-none' : ''}`}
       >
         <Upload className="w-8 h-8 mx-auto text-[var(--text-muted)] mb-2" />
         <p className="text-sm text-[var(--text-muted)]">
-          {files.length > 0
-            ? `${files.length} file${files.length > 1 ? 's' : ''} selected`
-            : 'Click to upload PDFs, syllabi, or course materials'}
+          {isParsing
+            ? t('onboarding.parsingFile', 'Reading your document...')
+            : files.length > 0
+              ? `${files.length} file${files.length > 1 ? 's' : ''} selected`
+              : t('onboarding.uploadPrompt', 'Click to upload PDFs, syllabi, or course materials')}
         </p>
         <input
           ref={inputRef}
           type="file"
           accept=".pdf,.doc,.docx,.txt"
-          multiple
           onChange={handleFiles}
           className="hidden"
-          disabled={disabled}
+          disabled={disabled || isParsing}
         />
       </div>
       {files.length > 0 && (
-        <button onClick={handleSubmit} disabled={disabled} className="btn-primary w-full py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
-          {t('common.continue', 'Continue')} <ArrowRight className="w-4 h-4" />
+        <button onClick={handleSubmit} disabled={disabled || isParsing} className="btn-primary w-full py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
+          {isParsing ? (
+            <span className="flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              {t('onboarding.parsingFile', 'Reading your document...')}
+            </span>
+          ) : (
+            <>{t('common.continue', 'Continue')} <ArrowRight className="w-4 h-4" /></>
+          )}
         </button>
       )}
     </div>
