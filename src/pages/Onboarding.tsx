@@ -586,11 +586,13 @@ export default function Onboarding() {
   )
 
   // Redirect if user already has profiles (not from this onboarding)
+  // Skip redirect if onboarding is actively in progress (messages exist or streaming)
   useEffect(() => {
-    if (profilesLoaded && profiles.length > 0 && !state.profileId) {
+    if (profilesLoaded && profiles.length > 0 && !state.profileId
+        && state.displayMessages.length === 0 && !state.isStreaming) {
       navigate('/dashboard', { replace: true })
     }
-  }, [profilesLoaded, profiles.length, state.profileId, navigate])
+  }, [profilesLoaded, profiles.length, state.profileId, state.displayMessages.length, state.isStreaming, navigate])
 
   // Initial greeting — trigger AI opening message once auth is ready
   const greetingSentRef = useRef(false)
