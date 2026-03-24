@@ -715,6 +715,8 @@
     "startSimulation": "Lancer la simulation d'examen complète",
     "proctorMode": "Mode surveillé",
     "proctorModeHint": "Verrouille l'écran — détecte les changements d'onglet, copier/coller et clics droits pendant l'examen",
+    "configureExamFormat": "Configurer le format d'examen",
+    "configureExamFormatHint": "Définissez les sections pour activer la simulation complète avec minuteurs et consignes par section",
     "steps": {
       "gatherContext": "Collecte de vos données d'étude",
       "searchDocuments": "Recherche dans vos supports d'étude",

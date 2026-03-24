@@ -715,6 +715,8 @@
     "startSimulation": "Start Full Exam Simulation",
     "proctorMode": "Proctor Mode",
     "proctorModeHint": "Locks the screen — tracks tab switches, copy/paste, and right-clicks during the exam",
+    "configureExamFormat": "Configure Exam Format",
+    "configureExamFormatHint": "Define sections to unlock full exam simulation with per-section timers and instructions",
     "steps": {
       "gatherContext": "Gathering your study data",
       "searchDocuments": "Searching your study materials",

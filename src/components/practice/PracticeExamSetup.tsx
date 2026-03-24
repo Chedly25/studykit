@@ -1,10 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BarChart3, Play, Clock, Sparkles, X, Shield } from 'lucide-react'
+import { BarChart3, Play, Clock, Sparkles, X, Shield, Settings2 } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
 import type { Subject, Topic } from '../../db/schema'
 import { SourcesToggle } from '../sources/SourcesToggle'
+import { ExamFormatEditor } from '../knowledge/ExamFormatEditor'
 import type { PracticeExamOptions } from '../../hooks/usePracticeExam'
 
 interface PracticeExamSetupProps {
@@ -48,6 +49,7 @@ export function PracticeExamSetup({
     setSourcesEnabled(v)
   }
 
+  const [showFormatEditor, setShowFormatEditor] = useState(false)
   const [timerEnabled, setTimerEnabled] = useState(false)
   const [timerMinutes, setTimerMinutes] = useState(30)
   const [proctorMode, setProctorMode] = useState(false)
@@ -216,11 +218,19 @@ export function PracticeExamSetup({
         )}
 
         {/* Exam format section */}
-        {examFormats.length > 0 && (
+        {examFormats.length > 0 ? (
           <div>
-            <label className="block text-sm font-medium text-[var(--text-body)] mb-1">
-              {t('examFormat.title')}
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-[var(--text-body)]">
+                {t('examFormat.title')}
+              </label>
+              <button
+                onClick={() => setShowFormatEditor(true)}
+                className="text-xs text-[var(--accent-text)] hover:underline flex items-center gap-1"
+              >
+                <Settings2 className="w-3 h-3" /> {t('examFormat.editFormat')}
+              </button>
+            </div>
             <select
               value={examSection}
               onChange={e => setExamSection(e.target.value)}
@@ -232,7 +242,24 @@ export function PracticeExamSetup({
               ))}
             </select>
           </div>
+        ) : (
+          <button
+            onClick={() => setShowFormatEditor(true)}
+            className="w-full flex items-center gap-3 p-4 rounded-xl border border-dashed border-[var(--accent-text)]/30 text-left hover:bg-[var(--accent-bg)] transition-colors"
+          >
+            <Settings2 className="w-5 h-5 text-[var(--accent-text)] shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-[var(--text-heading)]">{t('practiceExam.configureExamFormat', 'Configure Exam Format')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('practiceExam.configureExamFormatHint', 'Define sections to unlock full exam simulation with per-section timers and instructions')}</p>
+            </div>
+          </button>
         )}
+
+        <ExamFormatEditor
+          open={showFormatEditor}
+          onClose={() => setShowFormatEditor(false)}
+          examProfileId={examProfileId}
+        />
 
         {/* Sources toggle */}
         <div className="flex items-center justify-between">
