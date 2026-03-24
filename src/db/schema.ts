@@ -358,6 +358,13 @@ export interface ExamFormat {
   order?: number
   questionFormat?: QuestionFormat
   prepTimeMinutes?: number  // oral prep time before response
+  // Exam behavior fields
+  canGoBack?: boolean              // Can student return to previous questions
+  negativeMarking?: boolean        // Wrong MCQ answers lose points
+  negativeMarkingPenalty?: number  // Points deducted per wrong answer
+  shuffleQuestions?: boolean       // Randomize question order within section
+  passingScore?: number            // Per-section passing threshold (0-100)
+  instructions?: string            // Shown to student before section starts
 }
 
 // ─── Mock Exams ─────────────────────────────────────────────────
@@ -400,6 +407,7 @@ export interface PracticeExamSession {
   proctorFlags?: string        // JSON: [{type: 'tab-switch'|'exit-fullscreen', timestamp: string}]
   sectionProgress?: string     // JSON: [{sectionId, startedAt, completedAt?}]
   currentSectionIndex?: number
+  examBlueprint?: string          // JSON blueprint from Exam Architect
 }
 
 export interface GeneratedQuestion {
@@ -429,6 +437,7 @@ export interface GeneratedQuestion {
   sectionIndex?: number
   timeSpentSeconds?: number
   flagged?: boolean
+  markingScheme?: string         // JSON marking scheme from Answer Key Builder
 }
 
 // ─── Sync Queue (incremental sync tracking) ────────────────────
