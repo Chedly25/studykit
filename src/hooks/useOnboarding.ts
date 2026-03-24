@@ -20,6 +20,11 @@ import {
 } from '../ai/workflows/onboardingAgent'
 
 const STORAGE_KEY = 'onboarding_state_v2'
+
+// Strip emoji characters from AI responses (LLMs sometimes ignore no-emoji instructions)
+function stripEmojis(text: string): string {
+  return text.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F000}-\u{1FAFF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, '').replace(/\s{2,}/g, ' ').trim()
+}
 const OLD_STORAGE_KEY = 'onboarding_state'
 const MAX_AGENT_ITERATIONS = 5
 const MAX_RETRIES_BEFORE_FALLBACK = 2
@@ -168,7 +173,7 @@ export function useOnboarding() {
           authToken: token ?? undefined,
           onToken: (t: string) => {
             streamingText += t
-            setState(prev => ({ ...prev, streamingText }))
+            setState(prev => ({ ...prev, streamingText: stripEmojis(streamingText) }))
           },
         })
 
@@ -192,11 +197,10 @@ export function useOnboarding() {
           messages: [...prev.messages, assistantMsg],
         }))
 
-        // e. Extract text → display message
-        const textContent = textBlocks
-          .map(b => b.type === 'text' ? b.text : '')
-          .join('')
-          .trim()
+        // e. Extract text → display message (strip emojis from AI output)
+        const textContent = stripEmojis(
+          textBlocks.map(b => b.type === 'text' ? b.text : '').join('').trim()
+        )
 
         if (textContent) {
           const displayMsg: DisplayMessage = {
