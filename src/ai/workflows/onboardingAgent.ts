@@ -270,6 +270,7 @@ interface ToolContext {
   profileId: string | null
   userId: string
   authToken: string | null
+  extractedSubjects: ExtractedSubject[]
   setProfileId: (id: string) => void
   setExtractedSubjects: (subjects: ExtractedSubject[]) => void
   setTopicsSeeded: (v: boolean) => void
@@ -375,10 +376,12 @@ export async function executeOnboardingTool(
       }
 
     case 'show_topic_preview':
+      // Prefer ctx.extractedSubjects (from detect_known_exam/extract_topics_from_text)
+      // over the AI's freestyle subjects array which may have wrong structure
       return {
         type: 'widget',
         widgetType: 'topic-preview',
-        config: { subjects: input.subjects },
+        config: { subjects: ctx.extractedSubjects.length > 0 ? ctx.extractedSubjects : input.subjects },
         message: input.message as string,
       }
 

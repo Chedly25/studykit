@@ -228,6 +228,7 @@ export function useOnboarding() {
               profileId: stateRef.current.profileId,
               userId: effectiveUserId,
               authToken: token,
+              extractedSubjects: stateRef.current.extractedSubjects,
               setProfileId: (id: string) => {
                 stateRef.current = { ...stateRef.current, profileId: id }
                 setState(prev => ({ ...prev, profileId: id }))
