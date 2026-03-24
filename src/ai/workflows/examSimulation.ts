@@ -16,7 +16,27 @@ import { dbQueryStep } from '../orchestrator/steps'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { getKnowledgeGraph, getWeakTopicsTool, getErrorPatterns } from '../tools/knowledgeState'
 import { hybridSearch } from '../../lib/hybridSearch'
+import { streamChat } from '../client'
 import type { SimulationSection } from './practiceExam'
+
+/**
+ * Call the main LLM model with high token limits for exam generation.
+ * Bypasses ctx.llm() which uses the fast model with 4096 tokens — too small for exams.
+ */
+async function llmMain(prompt: string, system: string, ctx: WorkflowContext, maxTokens = 16384): Promise<string> {
+  const response = await streamChat({
+    messages: [{ role: 'user', content: prompt }],
+    system,
+    tools: [],
+    maxTokens,
+    authToken: ctx.authToken,
+    signal: ctx.signal,
+  })
+  return response.content
+    .filter((c): c is { type: 'text'; text: string } => c.type === 'text')
+    .map(c => c.text)
+    .join('')
+}
 
 // ─── Config ─────────────────────────────────────────────────────
 
@@ -304,7 +324,7 @@ Return ONLY valid JSON:
   "crossSectionNotes": "Section B should not re-test concepts from Section A. The scenario in Section C can reference Section A's industrial context."
 }`
 
-          const text = await ctx.llm(prompt, SYSTEM_PROMPT)
+          const text = await llmMain(prompt, SYSTEM_PROMPT, ctx)
           const blueprint = parseJsonFromLlm<ExamBlueprint>(text)
 
           // Persist blueprint
@@ -385,7 +405,7 @@ RULES:
 
 Return ONLY JSON: { "questions": [{ "text": "...", "format": "...", "options": [...], "correctAnswer": "...", "correctOptionIndex": N, "explanation": "...", "difficulty": N, "topicName": "...", "points": N, "scenarioText": "...", "sourceReference": "..." }] }`
 
-            const text = await ctx.llm(sectionPrompt, SYSTEM_PROMPT)
+            const text = await llmMain(sectionPrompt, SYSTEM_PROMPT, ctx)
             let parsed: { questions: GeneratedQuestionData[] }
             try {
               parsed = parseJsonFromLlm<{ questions: GeneratedQuestionData[] }>(text)
@@ -458,7 +478,7 @@ Return ONLY JSON:
   ]
 }`
 
-          const text = await ctx.llm(prompt, 'You are a meticulous exam quality reviewer. Fix every issue you find. Return ONLY valid JSON. Never use emojis.')
+          const text = await llmMain(prompt, 'You are a meticulous exam quality reviewer. Fix every issue you find. Return ONLY valid JSON. Never use emojis.', ctx)
 
           try {
             const result = parseJsonFromLlm<{
@@ -551,7 +571,7 @@ Return ONLY JSON:
 }`
 
             try {
-              const text = await ctx.llm(prompt, 'You are an expert exam marker creating official marking schemes. Be precise with partial credit breakpoints. Return ONLY valid JSON. Never use emojis.')
+              const text = await llmMain(prompt, 'You are an expert exam marker creating official marking schemes. Be precise with partial credit breakpoints. Return ONLY valid JSON. Never use emojis.', ctx)
               const parsed = parseJsonFromLlm<{ answerKeys: AnswerKey[] }>(text)
 
               // Map local questionIndex back to global

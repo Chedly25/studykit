@@ -12,6 +12,23 @@ import { dbQueryStep, webSearchStep, llmJsonStep } from '../orchestrator/steps'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { getKnowledgeGraph, getWeakTopicsTool, getErrorPatterns } from '../tools/knowledgeState'
 import { hybridSearch } from '../../lib/hybridSearch'
+import { streamChat } from '../client'
+
+/** Call main model with high token limits for exam question generation */
+async function llmHighTokens(prompt: string, system: string, ctx: WorkflowContext): Promise<string> {
+  const response = await streamChat({
+    messages: [{ role: 'user', content: prompt }],
+    system,
+    tools: [],
+    maxTokens: 16384,
+    authToken: ctx.authToken,
+    signal: ctx.signal,
+  })
+  return response.content
+    .filter((c): c is { type: 'text'; text: string } => c.type === 'text')
+    .map(c => c.text)
+    .join('')
+}
 
 export interface SimulationSection {
   examFormatId: string
@@ -345,7 +362,7 @@ Format rules:
 - essay: correctAnswer describes the ideal answer, no options
 - Points: 1 for true-false, 2 for MCQ/short-answer, 3 for essay`
 
-              const text = await ctx.llm(sectionPrompt, systemPrompt)
+              const text = await llmHighTokens(sectionPrompt, systemPrompt, ctx)
               let parsed: { questions: GeneratedQuestionData[] }
               try {
                 // Try to parse JSON from response
@@ -443,7 +460,7 @@ Format rules:
 - essay: correctAnswer describes the ideal answer, no options
 - Points: 1 for true-false, 2 for MCQ/short-answer, 3 for essay`
 
-          const text = await ctx.llm(prompt, systemPrompt)
+          const text = await llmHighTokens(prompt, systemPrompt, ctx)
           const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '')
           const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
           if (!jsonMatch) throw new Error('No JSON found in LLM response')
