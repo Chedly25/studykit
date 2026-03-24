@@ -92,27 +92,31 @@ export function computeDailyRecommendations(input: RecommenderInput): StudyRecom
 
     const sessionLink = `/session?topic=${encodeURIComponent(topic.name)}`
 
+    const weightPct = Math.round(subjectWeight * 100)
+
     if (dueCards > 0) {
       action = 'flashcards'
-      reason = `${dueCards} flashcard${dueCards > 1 ? 's' : ''} due for review`
+      reason = `${dueCards} flashcard${dueCards > 1 ? 's' : ''} due — mastery at ${Math.round(dm * 100)}%`
       linkTo = '/flashcard-maker'
     } else if (dm < 0.3) {
       action = 'read'
       reason = dm < topic.mastery
-        ? `Mastery decayed to ${Math.round(dm * 100)}% — needs refreshing`
-        : 'Low mastery — build foundation first'
+        ? `Mastery dropped to ${Math.round(dm * 100)}% — was ${Math.round(topic.mastery * 100)}%`
+        : `Low mastery (${Math.round(dm * 100)}%) — ${weightPct}% of exam`
       linkTo = sessionLink
     } else if (dm < 0.6) {
       action = 'practice'
-      reason = 'Moderate mastery — reinforce with practice questions'
+      reason = topic.questionsAttempted < 5
+        ? `${Math.round(dm * 100)}% mastery — only ${topic.questionsAttempted} practice attempts`
+        : `${Math.round(dm * 100)}% mastery — reinforce with practice`
       linkTo = `/exercises?topic=${encodeURIComponent(topic.name)}`
     } else if (dm > 0.7 && topic.questionsAttempted < 5) {
       action = 'explain-back'
-      reason = 'Good mastery — test deep understanding'
+      reason = `${Math.round(dm * 100)}% mastery but only ${topic.questionsAttempted} attempts — test deeper`
       linkTo = sessionLink
     } else {
       action = 'review'
-      reason = 'Due for spaced review'
+      reason = `${Math.round(dm * 100)}% mastery — scheduled review`
       linkTo = sessionLink
     }
 

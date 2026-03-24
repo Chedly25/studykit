@@ -45,7 +45,19 @@
     "allTools": "All Tools",
     "pricing": "Pricing",
     "aiChat": "AI Chat",
-    "projects": "Projects"
+    "projects": "Projects",
+    "actions": "Actions",
+    "actionsStudy": "Study",
+    "actionsPlan": "Plan",
+    "actionsMaterials": "Materials",
+    "actionsInsights": "Insights",
+    "todaySession": "Today's Session",
+    "practiceExam": "Practice Exam",
+    "focusTimer": "Focus Timer",
+    "studyPlan": "Study Plan",
+    "examProfile": "Exam Profile",
+    "exercises": "Exercises",
+    "report": "Study Report"
   },
   "footer": {
     "tagline": "StudiesKit — AI-Powered Learning Platform",

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Trophy, BarChart3, RotateCcw, ChevronDown, ChevronUp, RefreshCw, ShieldAlert, Clock } from 'lucide-react'
+import { Trophy, BarChart3, RotateCcw, ChevronDown, ChevronUp, RefreshCw, ShieldAlert, Clock, MessageCircle } from 'lucide-react'
 import type { GeneratedQuestion, PracticeExamSession } from '../../db/schema'
 import { QuestionRenderer } from './QuestionRenderer'
 import type { WorkflowProgress } from '../../ai/orchestrator/types'
@@ -245,10 +245,31 @@ export function PracticeExamResults({
       </div>
 
       {/* Actions */}
-      <div className="flex justify-center gap-3">
+      <div className="flex justify-center gap-3 flex-wrap">
         <button onClick={onRetake} className="btn-primary px-6 py-2.5 flex items-center gap-2">
           <RotateCcw className="w-4 h-4" />
           {t('practiceExam.retake')}
+        </button>
+        <button
+          onClick={() => {
+            const weakAreas = topicBreakdown
+              .filter(tb => tb.maxScore > 0 && (tb.score / tb.maxScore) < 0.6)
+              .map(tb => tb.topic)
+              .join(', ')
+            window.dispatchEvent(new CustomEvent('open-chat-panel', {
+              detail: {
+                context: {
+                  score: `${percentage}%`,
+                  weakTopics: weakAreas || 'none identified',
+                  topicName: session?.examName ?? '',
+                },
+              },
+            }))
+          }}
+          className="btn-secondary px-6 py-2.5 flex items-center gap-2"
+        >
+          <MessageCircle className="w-4 h-4" />
+          {t('practiceExam.discussResults', 'Discuss with AI')}
         </button>
         <a href="/dashboard" className="btn-secondary px-6 py-2.5">
           {t('dashboard.title')}

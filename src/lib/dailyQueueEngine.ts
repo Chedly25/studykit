@@ -72,7 +72,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
         subjectName: info?.subjectName ?? '',
         priority: 100,
         estimatedMinutes: Math.ceil(batch.length * 0.3),
-        reason: `${batch.length} card${batch.length > 1 ? 's' : ''} due for review`,
+        reason: `${batch.length} card${batch.length > 1 ? 's' : ''} due — mastery at ${Math.round((info?.mastery ?? 0) * 100)}%`,
         flashcardIds: batch.map(c => c.id),
       })
     }
@@ -95,7 +95,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
       subjectName: info?.subjectName ?? '',
       priority: 90,
       estimatedMinutes: 5,
-      reason: 'Due for review — spaced repetition',
+      reason: `Mastery at ${Math.round((info?.mastery ?? 0) * 100)}% — scheduled review`,
       exerciseId: exercise.id,
     })
   }
@@ -115,7 +115,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
       subjectName: info?.subjectName ?? '',
       priority: 85,
       estimatedMinutes: 3,
-      reason: 'Due for review — spaced repetition',
+      reason: `Mastery at ${Math.round((info?.mastery ?? 0) * 100)}% — scheduled review`,
       conceptCardId: card.id,
       conceptCardTitle: card.title,
     })

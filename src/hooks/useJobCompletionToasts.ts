@@ -1,15 +1,51 @@
 /**
  * Watches background jobs for completion and fires rich Sonner toasts with CTAs.
+ * Parses step results for source-processing to show specific counts.
  */
 import { useRef, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { toast } from 'sonner'
 import { db } from '../db'
 import { useExamProfile } from './useExamProfile'
+import type { BackgroundJob } from '../db/schema'
 
-const JOB_TOAST_CONFIG: Record<string, { message: string; cta: string; link: string }> = {
+interface ToastConfig {
+  message: string | ((job: BackgroundJob) => string)
+  cta: string
+  link: string
+}
+
+function getSourceProcessingMessage(job: BackgroundJob): string {
+  try {
+    const results = JSON.parse(job.stepResults || '{}')
+    const saveData = results['save-results']?.data as {
+      flashcardCount?: number
+      conceptsFound?: string[]
+      mappingsApplied?: number
+    } | undefined
+    const cardData = results['generate-concept-cards']?.data as {
+      cardsGenerated?: number
+    } | undefined
+
+    const parts: string[] = []
+    const flashcards = saveData?.flashcardCount ?? 0
+    const conceptCards = cardData?.cardsGenerated ?? 0
+    const topicsMapped = saveData?.mappingsApplied ?? 0
+
+    if (flashcards > 0) parts.push(`${flashcards} flashcards`)
+    if (conceptCards > 0) parts.push(`${conceptCards} concept cards`)
+    if (topicsMapped > 0) parts.push(`${topicsMapped} topics mapped`)
+
+    if (parts.length > 0) {
+      return `Document analyzed — ${parts.join(', ')}`
+    }
+  } catch { /* fall through */ }
+  return 'Your document is ready — concept cards and flashcards have been generated'
+}
+
+const JOB_TOAST_CONFIG: Record<string, ToastConfig> = {
   'source-processing': {
-    message: 'Your document is ready — concept cards and flashcards have been generated',
+    message: getSourceProcessingMessage,
     cta: 'View in library',
     link: '/sources',
   },
@@ -62,7 +98,9 @@ export function useJobCompletionToasts() {
       const config = JOB_TOAST_CONFIG[job.type]
       if (!config) continue
 
-      toast.success(config.message, {
+      const message = typeof config.message === 'function' ? config.message(job) : config.message
+
+      toast.success(message, {
         duration: 8000,
         action: {
           label: config.cta,

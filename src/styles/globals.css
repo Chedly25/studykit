@@ -244,6 +244,14 @@ body {
   animation: scale-in 0.25s ease-out;
 }
 
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
 /* ─── Toast overrides (sonner) ─── */
 [data-sonner-toaster] [data-sonner-toast] {
   font-family: var(--font-body);

@@ -31,9 +31,11 @@ interface Props {
   onPrefillConsumed?: () => void
   subjectId?: string | null
   subjectName?: string | null
+  context?: Record<string, string> | null
+  onContextConsumed?: () => void
 }
 
-export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId, subjectName }: Props) {
+export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId, subjectName, context, onContextConsumed }: Props) {
   const { t } = useTranslation()
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
@@ -82,6 +84,23 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId
       onPrefillConsumed?.()
     }
   }, [prefill, open, onPrefillConsumed])
+
+  // Handle context from parent — build a contextual prefill
+  useEffect(() => {
+    if (context && open && !prefill) {
+      const parts: string[] = []
+      if (context.topicName) parts.push(`I'm studying: ${context.topicName}`)
+      if (context.itemType) parts.push(`(${context.itemType.replace('-', ' ')})`)
+      if (context.subjectName) parts.push(`in ${context.subjectName}`)
+      if (context.question) parts.push(`\nQuestion: ${context.question}`)
+      if (context.score) parts.push(`\nScore: ${context.score}`)
+      if (context.weakTopics) parts.push(`\nWeak areas: ${context.weakTopics}`)
+      if (parts.length > 0) {
+        setInputPrefill(parts.join(' ').trim() + '\n\n')
+      }
+      onContextConsumed?.()
+    }
+  }, [context, open, prefill, onContextConsumed])
 
   useEffect(() => {
     if (scrollRef.current) {

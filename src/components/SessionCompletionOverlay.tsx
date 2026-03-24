@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle2, Flame, Clock, ArrowRight, RotateCcw, Home, BookOpen, ClipboardCheck, Target, Sparkles, Loader2 } from 'lucide-react'
+import { CheckCircle2, Flame, Clock, ArrowRight, Check, Home, BookOpen, ClipboardCheck, Target, Sparkles, Loader2 } from 'lucide-react'
 import { MathText } from './MathText'
 
 export interface SessionCompletionData {
@@ -232,8 +232,8 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
         {/* Dismiss buttons */}
         <div className="flex gap-3 pt-1">
           <button onClick={onDismiss} className="btn-secondary flex-1 py-2.5 text-sm flex items-center justify-center gap-2">
-            <RotateCcw className="w-4 h-4" />
-            {t('common.continue')}
+            <Check className="w-4 h-4" />
+            {t('common.done')}
           </button>
           <button
             onClick={() => { onDismiss(); navigate('/') }}

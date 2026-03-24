@@ -165,6 +165,19 @@ function DailyQueueContent() {
     }
   }, [profileId, today])
 
+  // Expose current queue item context for chat panel
+  useEffect(() => {
+    if (currentItem) {
+      sessionStorage.setItem('queue-current-item', JSON.stringify({
+        topicName: currentItem.topicName,
+        subjectName: currentItem.subjectName,
+        itemType: currentItem.type,
+      }))
+    } else {
+      sessionStorage.removeItem('queue-current-item')
+    }
+  }, [currentItem?.id])
+
   // Block A: Start session when first item appears (regardless of overlay)
   useEffect(() => {
     if (currentItem && !sessionStartedRef.current && profileId) {
@@ -547,7 +560,7 @@ function DailyQueueContent() {
 
           <h2 className="text-lg font-semibold text-[var(--text-heading)] mb-1">{currentItem.topicName}</h2>
           {currentItem.reason && (
-            <p className="text-xs text-[var(--text-faint)] mb-1 italic">{currentItem.reason}</p>
+            <p className="text-xs text-[var(--text-muted)] mb-1">{currentItem.reason}</p>
           )}
           <p className="text-sm text-[var(--text-muted)] mb-4">~{currentItem.estimatedMinutes} min</p>
 
@@ -612,9 +625,24 @@ function DailyQueueContent() {
               : t('queue.takeABreak')
             }
           </p>
-          <button onClick={() => navigate('/dashboard')} className="btn-primary px-6 py-2 text-sm">
-            {t('queue.backToDashboard')}
-          </button>
+          {tomorrowDueCount > 0 && (
+            <p className="text-xs text-[var(--text-faint)] mb-4">
+              {t('session.tomorrowDue', { count: tomorrowDueCount })}
+            </p>
+          )}
+          <div className="flex flex-col gap-2 max-w-xs mx-auto">
+            {topics.some(tp => tp.mastery < 0.3) && isPro && (
+              <button onClick={() => navigate('/practice-exam')} className="btn-primary w-full py-2 text-sm">
+                {t('queue.takePracticeExam', 'Take a practice exam')}
+              </button>
+            )}
+            <button onClick={() => navigate('/analytics')} className="btn-secondary w-full py-2 text-sm">
+              {t('queue.viewProgress', 'View your progress')}
+            </button>
+            <button onClick={() => navigate('/dashboard')} className="btn-secondary w-full py-2 text-sm">
+              {t('queue.backToDashboard')}
+            </button>
+          </div>
         </div>
       ) : null}
 

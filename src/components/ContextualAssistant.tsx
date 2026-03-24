@@ -65,7 +65,19 @@ export function ContextualAssistant({ chatOpen, subjectName }: Props) {
   } else if (path === '/queue') {
     config = {
       label: t('assistant.askAboutThis', 'Ask about this'),
-      directAction: () => openChat(),
+      directAction: () => {
+        try {
+          const raw = sessionStorage.getItem('queue-current-item')
+          const ctx = raw ? JSON.parse(raw) as Record<string, string> : null
+          if (ctx) {
+            openChat(undefined, { context: ctx })
+          } else {
+            openChat()
+          }
+        } catch {
+          openChat()
+        }
+      },
     }
   } else if (path === '/sources') {
     config = {

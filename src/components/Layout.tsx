@@ -5,7 +5,7 @@ import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react'
 import {
   Menu, X, BarChart3, MessageCircle,
   BookOpen, Shield, Zap, FolderOpen,
-  PanelLeftClose, PanelLeftOpen, Search, Settings,
+  PanelLeftClose, PanelLeftOpen, Search, Settings, LayoutGrid,
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
@@ -25,6 +25,7 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { ContextualAssistant } from './ContextualAssistant'
 import { UpdatePrompt } from './UpdatePrompt'
 import { InstallPrompt } from './InstallPrompt'
+import { ActionsMenu } from './ActionsMenu'
 import { useJobCompletionToasts } from '../hooks/useJobCompletionToasts'
 import { useWeeklyDigest } from '../hooks/useWeeklyDigest'
 import { identify } from '../lib/analytics'
@@ -33,8 +34,10 @@ export function Layout() {
   const [chatOpen, setChatOpen] = useState(false)
   const [chatPrefill, setChatPrefill] = useState<string | null>(null)
   const [chatSubjectId, setChatSubjectId] = useState<string | null>(null)
+  const [chatContext, setChatContext] = useState<Record<string, string> | null>(null)
   const [chatSubjectName, setChatSubjectName] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [actionsOpen, setActionsOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false) // mobile drawer
   const [sidebarPinned, setSidebarPinned] = useState(false) // desktop pin
   const [sidebarHovered, setSidebarHovered] = useState(false) // desktop hover
@@ -84,6 +87,7 @@ export function Layout() {
       setChatPrefill(detail?.prefill ?? null)
       setChatSubjectId(detail?.subjectId ?? null)
       setChatSubjectName(detail?.subjectName ?? null)
+      setChatContext(detail?.context ?? null)
     }
     window.addEventListener('open-chat-panel', handler)
     return () => window.removeEventListener('open-chat-panel', handler)
@@ -151,6 +155,20 @@ export function Layout() {
               <BackgroundJobsIndicator />
               <SyncIndicator />
               <NotificationBell examProfileId={activeProfile?.id} />
+              <div className="relative hidden md:block">
+                <button
+                  onClick={() => setActionsOpen(!actionsOpen)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    actionsOpen
+                      ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)]'
+                  }`}
+                  title={t('nav.actions', 'Actions')}
+                >
+                  <LayoutGrid size={18} />
+                </button>
+                <ActionsMenu open={actionsOpen} onClose={() => setActionsOpen(false)} mode="dropdown" />
+              </div>
               <button
                 onClick={() => setChatOpen(!chatOpen)}
                 className={`p-2 rounded-lg transition-colors ${
@@ -339,7 +357,7 @@ export function Layout() {
 
       {/* Chat Panel (lazy-loaded) */}
       <Suspense fallback={null}>
-        <ChatPanel open={chatOpen} onClose={() => { setChatOpen(false); setChatSubjectId(null); setChatSubjectName(null) }} prefill={chatPrefill} onPrefillConsumed={() => setChatPrefill(null)} subjectId={chatSubjectId} subjectName={chatSubjectName} />
+        <ChatPanel open={chatOpen} onClose={() => { setChatOpen(false); setChatSubjectId(null); setChatSubjectName(null); setChatContext(null) }} prefill={chatPrefill} onPrefillConsumed={() => setChatPrefill(null)} subjectId={chatSubjectId} subjectName={chatSubjectName} context={chatContext} onContextConsumed={() => setChatContext(null)} />
       </Suspense>
 
       {/* Search Modal (lazy-loaded) */}
