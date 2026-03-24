@@ -178,22 +178,24 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setAdaptiveState(createAdaptiveState())
     setTimeLimitForSession(options.simulationMode ? undefined : options.timeLimitSeconds)
 
-    const jobId = await enqueue(
-      'practice-exam-generation',
-      examProfileId,
-      {
-        sessionId: id,
-        questionCount: options.questionCount,
-        focusSubject: options.focusSubject,
-        selectedTopics: options.selectedTopics,
-        customFocus: options.customFocus,
-        examSection: options.examSection,
-        sourcesEnabled: options.sourcesEnabled,
-        simulationMode: options.simulationMode,
-        sections: options.sections,
-      },
-      5, // practice exam workflow has ~5 steps
-    )
+    // Use multi-agent pipeline for simulation mode, standard pipeline for practice
+    const jobType = options.simulationMode ? 'exam-simulation' : 'practice-exam-generation'
+    const jobConfig = options.simulationMode
+      ? { sessionId: id, sourcesEnabled: options.sourcesEnabled, sections: options.sections }
+      : {
+          sessionId: id,
+          questionCount: options.questionCount,
+          focusSubject: options.focusSubject,
+          selectedTopics: options.selectedTopics,
+          customFocus: options.customFocus,
+          examSection: options.examSection,
+          sourcesEnabled: options.sourcesEnabled,
+          simulationMode: options.simulationMode,
+          sections: options.sections,
+        }
+    const totalSteps = options.simulationMode ? 7 : 5
+
+    const jobId = await enqueue(jobType, examProfileId, jobConfig, totalSteps)
     setGenJobId(jobId)
   }, [examProfileId, enqueue])
 

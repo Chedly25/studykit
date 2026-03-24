@@ -797,6 +797,7 @@ export type JobType =
   | 'exam-research'
   | 'exam-exercise-processing'
   | 'misconception-exercise'
+  | 'exam-simulation'
 
 export interface BackgroundJob {
   id: string
