@@ -596,7 +596,9 @@
     "calibration": "Confidence Calibration",
     "errorPatterns": "Error Patterns",
     "coachInsights": "Coach Insights",
-    "mockExamScores": "Mock Exam Scores"
+    "mockExamScores": "Mock Exam Scores",
+    "simulationScores": "Simulation Exam Scores",
+    "exams": "Exams"
   },
   "focus": {
     "title": "Focus Mode",

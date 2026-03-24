@@ -147,6 +147,7 @@ export default function Analytics() {
         <a href="#study-hours" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.studyTime')}</a>
         <a href="#insights" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.insights', 'Insights')}</a>
         <a href="#knowledge" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.knowledgeMap', 'Knowledge Map')}</a>
+        <a href="#exams" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.exams', 'Exams')}</a>
       </nav>
 
       {/* ─── Study Hours ─── */}
@@ -238,7 +239,9 @@ export default function Analytics() {
           )}
         </div>
 
-        {/* Mock Exam Scores */}
+        {/* Exam Scores */}
+        <div id="exams" className="md:col-span-2" />
+        <SimulationExamScoresCard examProfileId={profileId} passingThreshold={activeProfile.passingThreshold} />
         <MockExamScoresCard examProfileId={profileId} />
 
         {/* Mastery Trend */}
@@ -472,6 +475,80 @@ function MockExamScoresCard({ examProfileId }: { examProfileId: string | undefin
             </div>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Simulation Exam Scores card ──────────────────────────────
+
+function SimulationExamScoresCard({ examProfileId, passingThreshold }: { examProfileId: string | undefined; passingThreshold?: number }) {
+  const { t } = useTranslation()
+  const threshold = passingThreshold ?? 60
+  const exams = useLiveQuery(async () => {
+    if (!examProfileId) return []
+    const all = await db.practiceExamSessions
+      .where('examProfileId').equals(examProfileId)
+      .filter(s => !!s.simulationMode && s.phase === 'graded' && s.totalScore != null && s.maxScore != null && s.maxScore! > 0)
+      .toArray()
+    return all.sort((a, b) => (a.completedAt ?? '').localeCompare(b.completedAt ?? ''))
+  }, [examProfileId]) ?? []
+
+  if (exams.length === 0) return null
+
+  // Compute predicted score for reference line
+  let predicted: number | null = null
+  if (exams.length >= 2) {
+    const recent = exams.slice(-5)
+    let ws = 0, wt = 0
+    recent.forEach((s, i) => { const w = i + 1; ws += (s.totalScore! / s.maxScore!) * 100 * w; wt += w })
+    predicted = Math.round(ws / wt)
+  }
+
+  return (
+    <div className="glass-card p-4 md:col-span-2">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-semibold text-[var(--text-heading)]">{t('analytics.simulationScores', 'Simulation Exam Scores')}</h2>
+        {predicted != null && (
+          <span className={`text-xs font-bold ${predicted >= threshold ? 'text-emerald-500' : 'text-amber-500'}`}>
+            {t('dashboard.predicted', 'Predicted: {{score}}%', { score: predicted })}
+          </span>
+        )}
+      </div>
+      <div className="relative h-32">
+        {/* Passing threshold line */}
+        <div
+          className="absolute w-full border-t border-dashed border-[var(--text-faint)]/40"
+          style={{ bottom: `${threshold}%` }}
+        >
+          <span className="absolute right-0 -top-3 text-[9px] text-[var(--text-faint)]">{threshold}%</span>
+        </div>
+        {/* Predicted score line */}
+        {predicted != null && (
+          <div
+            className="absolute w-full border-t border-dashed border-[var(--accent-text)]/40"
+            style={{ bottom: `${predicted}%` }}
+          />
+        )}
+        {/* Bars */}
+        <div className="h-full flex items-end gap-2">
+          {exams.map(exam => {
+            const pct = Math.round((exam.totalScore! / exam.maxScore!) * 100)
+            const passed = pct >= threshold
+            const dateLabel = new Date(exam.completedAt ?? exam.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+            return (
+              <div key={exam.id} className="flex-1 flex flex-col items-center gap-1 max-w-[60px]">
+                <span className={`text-xs font-bold ${passed ? 'text-emerald-500' : 'text-red-500'}`}>{pct}%</span>
+                <div
+                  className={`w-full rounded-t-sm transition-all ${passed ? 'bg-emerald-500/60' : 'bg-red-500/60'}`}
+                  style={{ height: `${Math.max(pct, 4)}%` }}
+                  title={`${pct}% — ${new Date(exam.completedAt ?? exam.createdAt).toLocaleDateString()}`}
+                />
+                <span className="text-[10px] text-[var(--text-faint)]">{dateLabel}</span>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

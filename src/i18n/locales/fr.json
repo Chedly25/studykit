@@ -596,7 +596,9 @@
     "calibration": "Calibration de la confiance",
     "errorPatterns": "Schémas d'erreurs",
     "coachInsights": "Observations du coach",
-    "mockExamScores": "Scores d'examens blancs"
+    "mockExamScores": "Scores d'examens blancs",
+    "simulationScores": "Scores d'examens de simulation",
+    "exams": "Examens"
   },
   "focus": {
     "title": "Mode concentration",
