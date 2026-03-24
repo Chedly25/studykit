@@ -198,6 +198,7 @@ Respond ONLY with valid JSON.`
           const chunkMap = new Map(context.chunks.map(c => [c.chunkIndex, c.id]))
 
           for (const concept of conceptData.concepts) {
+            if (!concept.name) continue
             conceptsFound.push(concept.name)
             const topicId = topicMap.get(concept.name.toLowerCase())
             if (topicId && concept.chunkIndices) {
@@ -308,6 +309,7 @@ Respond ONLY with valid JSON.`
           }> = []
 
           for (const concept of conceptData.concepts.slice(0, 12)) {
+            if (!concept.name) continue
             let topicId = topicMap.get(concept.name.toLowerCase())
             if (!topicId) {
               for (const [name, id] of topicMap) {
