@@ -332,7 +332,8 @@
     "scheduleExercises": "exercices",
     "scheduleConcepts": "concepts",
     "dataLocalWarning": "Vos données sont stockées uniquement dans ce navigateur. Exportez régulièrement ou passez à Pro pour une sauvegarde cloud.",
-    "exportData": "Exporter"
+    "exportData": "Exporter",
+    "behindSchedule": "Vous avez {{count}} jours de retard"
   },
   "tutor": {
     "topics": "{{count}} sujet",
@@ -659,7 +660,13 @@
   },
   "studyPlan": {
     "replanSuggested": "Votre plan d'études pourrait nécessiter une mise à jour",
-    "replan": "Replanifier"
+    "replan": "Replanifier",
+    "listView": "Liste",
+    "weekView": "Semaine",
+    "behindSchedule": "Vous avez {{count}} jours de retard",
+    "catchUp": "Rattraper",
+    "moveToToday": "Déplacer à aujourd'hui",
+    "missed": "Manqué"
   },
   "practiceExam": {
     "timer": "Minuteur",

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Zap, MessageCircle, Loader2 } from 'lucide-react'
+import { ArrowRight, Zap, MessageCircle, Loader2, AlertTriangle } from 'lucide-react'
 import { useUser } from '@clerk/clerk-react'
 import { isCramModeActive } from '../lib/cramModeEngine'
 import { db } from '../db'
@@ -142,6 +142,16 @@ export default function Dashboard() {
 
   const showSettingUp = isNewProfile && activeJobCount > 0
 
+  // Behind schedule detection
+  const missedPlanDays = useLiveQuery(async () => {
+    if (!profileId) return 0
+    const plan = await db.studyPlans.where('examProfileId').equals(profileId).filter(p => p.isActive).first()
+    if (!plan) return 0
+    const today = new Date().toISOString().slice(0, 10)
+    const days = await db.studyPlanDays.where('planId').equals(plan.id).toArray()
+    return days.filter(d => d.date < today && !d.isCompleted).length
+  }, [profileId]) ?? 0
+
   if (!activeProfile) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
@@ -237,6 +247,17 @@ export default function Dashboard() {
 
       {/* ─── This Week Schedule ─── */}
       <WeeklyScheduleCard examProfileId={profileId} />
+
+      {/* Behind schedule banner */}
+      {missedPlanDays > 0 && (
+        <Link to="/study-plan" className="glass-card p-3 mb-4 flex items-center gap-2 border-l-4 border-amber-500 hover:bg-[var(--bg-input)]/30 transition-colors block">
+          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+          <span className="text-sm text-[var(--text-body)] flex-1">
+            {t('dashboard.behindSchedule', 'You\'re {{count}} days behind schedule', { count: missedPlanDays })}
+          </span>
+          <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+        </Link>
+      )}
 
       {/* ─── Advisor Section ─── */}
       {profileId && <DashboardIntelligenceBrief examProfileId={profileId} />}

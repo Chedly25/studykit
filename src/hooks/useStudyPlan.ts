@@ -101,6 +101,100 @@ export function useStudyPlan(examProfileId: string | undefined) {
     await db.studyPlans.update(activePlan.id, { isActive: false })
   }, [activePlan])
 
+  // Count missed days (past + not completed)
+  const missedDayCount = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10)
+    return planDays.filter(d => d.date < today && !d.isCompleted).length
+  }, [planDays])
+
+  // Reschedule uncompleted activities from one day to another
+  const rescheduleDay = useCallback(async (fromDate: string, toDate: string) => {
+    if (!activePlan) return
+    const fromDayId = `${activePlan.id}:${fromDate}`
+    const toDayId = `${activePlan.id}:${toDate}`
+
+    const fromDay = await db.studyPlanDays.get(fromDayId)
+    if (!fromDay) return
+
+    const fromActivities: StudyActivity[] = JSON.parse(fromDay.activities)
+    const uncompleted = fromActivities.filter(a => !a.completed)
+    if (uncompleted.length === 0) return
+
+    const toDay = await db.studyPlanDays.get(toDayId)
+    if (toDay) {
+      const toActivities: StudyActivity[] = JSON.parse(toDay.activities)
+      toActivities.push(...uncompleted.map(a => ({ ...a, completed: false })))
+      await db.studyPlanDays.update(toDayId, { activities: JSON.stringify(toActivities) })
+    } else {
+      await db.studyPlanDays.put({
+        id: toDayId,
+        planId: activePlan.id,
+        examProfileId: activePlan.examProfileId,
+        date: toDate,
+        activities: JSON.stringify(uncompleted.map(a => ({ ...a, completed: false }))),
+        isCompleted: false,
+      })
+    }
+
+    const completed = fromActivities.filter(a => a.completed)
+    await db.studyPlanDays.update(fromDayId, {
+      activities: JSON.stringify(completed),
+      isCompleted: true,
+    })
+  }, [activePlan])
+
+  // Catch up: reschedule all missed activities to today and tomorrow
+  const catchUp = useCallback(async () => {
+    if (!activePlan) return
+    const today = new Date().toISOString().slice(0, 10)
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10)
+    const missedDays = planDays.filter(d => d.date < today && !d.isCompleted)
+    if (missedDays.length === 0) return
+
+    const allMissed: StudyActivity[] = []
+    for (const day of missedDays) {
+      const activities: StudyActivity[] = JSON.parse(day.activities)
+      allMissed.push(...activities.filter(a => !a.completed))
+    }
+
+    const half = Math.ceil(allMissed.length / 2)
+    const todayBatch = allMissed.slice(0, half)
+    const tomorrowBatch = allMissed.slice(half)
+
+    // Helper to append activities to a day
+    const appendToDay = async (date: string, batch: StudyActivity[]) => {
+      if (batch.length === 0) return
+      const dayId = `${activePlan.id}:${date}`
+      const existing = await db.studyPlanDays.get(dayId)
+      if (existing) {
+        const acts: StudyActivity[] = JSON.parse(existing.activities)
+        acts.push(...batch.map(a => ({ ...a, completed: false })))
+        await db.studyPlanDays.update(dayId, { activities: JSON.stringify(acts), isCompleted: false })
+      } else {
+        await db.studyPlanDays.put({
+          id: dayId,
+          planId: activePlan.id,
+          examProfileId: activePlan.examProfileId,
+          date,
+          activities: JSON.stringify(batch.map(a => ({ ...a, completed: false }))),
+          isCompleted: false,
+        })
+      }
+    }
+
+    await appendToDay(today, todayBatch)
+    await appendToDay(tomorrow, tomorrowBatch)
+
+    // Mark all missed days as handled
+    for (const day of missedDays) {
+      const completed: StudyActivity[] = JSON.parse(day.activities)
+      await db.studyPlanDays.update(day.id, {
+        activities: JSON.stringify(completed.filter(a => a.completed)),
+        isCompleted: true,
+      })
+    }
+  }, [activePlan, planDays])
+
   return {
     activePlan,
     planDays,
@@ -111,5 +205,8 @@ export function useStudyPlan(examProfileId: string | undefined) {
     deactivatePlan,
     replanPlan,
     replanSuggestion,
+    missedDayCount,
+    rescheduleDay,
+    catchUp,
   }
 }

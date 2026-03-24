@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Calendar, Check, Loader2, RefreshCw, Play, Download } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Calendar, Check, Loader2, RefreshCw, Play, Download, ChevronLeft, ChevronRight, AlertTriangle, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
@@ -37,6 +37,20 @@ const ACTIVITY_LABELS: Record<string, string> = {
   review: 'Review',
 }
 
+function getWeekDates(offset: number): string[] {
+  const now = new Date()
+  const day = now.getDay()
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7)
+  const dates: string[] = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    dates.push(d.toISOString().slice(0, 10))
+  }
+  return dates
+}
+
 export default function StudyPlan() {
   const { t, i18n } = useTranslation()
   const { activeProfile } = useExamProfile()
@@ -46,7 +60,8 @@ export default function StudyPlan() {
   const {
     activePlan, planDays, todaysPlan, isGenerating,
     generatePlan, markActivityCompleted, deactivatePlan,
-    replanPlan, replanSuggestion,
+    replanPlan, replanSuggestion, missedDayCount,
+    rescheduleDay, catchUp,
   } = useStudyPlan(profileId)
 
   // Strategist agent insight
@@ -61,6 +76,9 @@ export default function StudyPlan() {
   }, [profileId]) ?? null
 
   const [confirmDismiss, setConfirmDismiss] = useState(false)
+  const [view, setView] = useState<'list' | 'week'>('list')
+  const [weekOffset, setWeekOffset] = useState(0)
+
   useEffect(() => {
     if (confirmDismiss) {
       const timer = setTimeout(() => setConfirmDismiss(false), 3000)
@@ -123,6 +141,7 @@ export default function StudyPlan() {
   // Active plan view
   const today = new Date().toISOString().slice(0, 10)
   const todayActivities: StudyActivity[] = todaysPlan ? JSON.parse(todaysPlan.activities) : []
+  const planDayMap = new Map(planDays.map(d => [d.date, d]))
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 animate-fade-in">
@@ -144,7 +163,7 @@ export default function StudyPlan() {
             className="btn-secondary px-3 py-1.5 text-sm flex items-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5" />
-            Export to Calendar
+            Export
           </button>
           <button
             onClick={handleGenerate}
@@ -170,6 +189,38 @@ export default function StudyPlan() {
         </div>
       </div>
 
+      {/* Behind schedule banner */}
+      {missedDayCount > 0 && !replanSuggestion && (
+        <div className="glass-card p-4 mb-4 border-l-4 border-amber-500 flex items-center justify-between animate-fade-in">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-[var(--text-heading)]">
+                {t('studyPlan.behindSchedule', 'You\'re {{count}} days behind schedule', { count: missedDayCount })}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={catchUp}
+              className="btn-primary text-xs px-3 py-1.5"
+            >
+              {t('studyPlan.catchUp', 'Catch up')}
+            </button>
+            <button
+              onClick={async () => {
+                const token = await getToken()
+                if (token) replanPlan(token, `${missedDayCount} days behind`)
+              }}
+              disabled={isGenerating}
+              className="btn-secondary text-xs px-3 py-1.5"
+            >
+              {t('studyPlan.replan')}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Replan suggestion banner */}
       {replanSuggestion && (
         <div className="glass-card p-4 mb-4 border-l-4 border-amber-500 flex items-center justify-between">
@@ -177,17 +228,25 @@ export default function StudyPlan() {
             <p className="text-sm font-medium text-[var(--text-heading)]">{t('studyPlan.replanSuggested')}</p>
             <p className="text-xs text-[var(--text-muted)]">{replanSuggestion}</p>
           </div>
-          <button
-            onClick={async () => {
-              const token = await getToken()
-              if (token) replanPlan(token, replanSuggestion)
-            }}
-            disabled={isGenerating}
-            className="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
-            {t('studyPlan.replan')}
-          </button>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={catchUp}
+              className="btn-secondary text-xs px-3 py-1.5"
+            >
+              {t('studyPlan.catchUp', 'Catch up')}
+            </button>
+            <button
+              onClick={async () => {
+                const token = await getToken()
+                if (token) replanPlan(token, replanSuggestion)
+              }}
+              disabled={isGenerating}
+              className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+              {t('studyPlan.replan')}
+            </button>
+          </div>
         </div>
       )}
 
@@ -207,87 +266,235 @@ export default function StudyPlan() {
         </div>
       )}
 
-      {/* Today's activities */}
-      {todaysPlan && (
-        <div className="glass-card p-4 mb-4 border-l-4 border-[var(--accent-text)]">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">Today</h2>
-          <div className="space-y-2">
-            {todayActivities.map((act, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
-                  act.completed ? 'opacity-60' : 'hover:bg-[var(--bg-input)]'
-                }`}
-              >
-                <button
-                  onClick={() => markActivityCompleted(todaysPlan.id, i)}
-                  className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                    act.completed
-                      ? 'bg-[var(--accent-text)] border-[var(--accent-text)]'
-                      : 'border-[var(--border-card)]'
-                  }`}
-                >
-                  {act.completed && <Check className="w-3 h-3 text-white" />}
-                </button>
-                <div className="flex-1">
-                  <span className={`text-sm ${act.completed ? 'line-through text-[var(--text-faint)]' : 'text-[var(--text-body)]'}`}>
-                    {act.topicName}
-                  </span>
-                  <span className="text-xs text-[var(--text-muted)] ml-2">
-                    {ACTIVITY_LABELS[act.activityType] ?? act.activityType} &middot; {act.durationMinutes}m
-                  </span>
-                </div>
-                {ACTIVITY_ROUTES[act.activityType] ? (
-                  <Link
-                    to={ACTIVITY_ROUTES[act.activityType]!}
-                    className="text-xs text-[var(--accent-text)] hover:underline"
-                  >
-                    Start
-                  </Link>
-                ) : (
-                  <button
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel'))}
-                    className="text-xs text-[var(--accent-text)] hover:underline"
-                  >
-                    Start
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* View toggle */}
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={() => setView('list')}
+          className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+            view === 'list' ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]' : 'bg-[var(--bg-input)] text-[var(--text-muted)]'
+          }`}
+        >
+          {t('studyPlan.listView', 'List')}
+        </button>
+        <button
+          onClick={() => { setView('week'); setWeekOffset(0) }}
+          className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+            view === 'week' ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]' : 'bg-[var(--bg-input)] text-[var(--text-muted)]'
+          }`}
+        >
+          {t('studyPlan.weekView', 'Week')}
+        </button>
+      </div>
+
+      {/* ─── WEEK VIEW ─── */}
+      {view === 'week' && (
+        <WeeklyCalendar
+          weekOffset={weekOffset}
+          onPrev={() => setWeekOffset(w => w - 1)}
+          onNext={() => setWeekOffset(w => w + 1)}
+          planDayMap={planDayMap}
+          today={today}
+          onReschedule={(fromDate) => rescheduleDay(fromDate, today)}
+          onMarkCompleted={markActivityCompleted}
+          lang={i18n.language}
+        />
       )}
 
-      {/* Upcoming days */}
-      <div className="space-y-3">
-        {planDays
-          .filter(d => d.date > today)
-          .slice(0, 6)
-          .map(day => {
-            const activities: StudyActivity[] = JSON.parse(day.activities)
-            const dayLabel = new Date(day.date + 'T12:00:00').toLocaleDateString(i18n.language, {
-              weekday: 'short', month: 'short', day: 'numeric',
-            })
-            return (
-              <div key={day.id} className="glass-card p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-[var(--text-heading)]">{dayLabel}</span>
-                  {day.isCompleted && (
-                    <span className="text-xs text-green-500 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> {t('ai.completed')}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {activities.map((act, i) => (
-                    <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-[var(--accent-bg)] text-[var(--accent-text)]">
-                      {act.topicName} — {ACTIVITY_LABELS[act.activityType] ?? act.activityType} ({act.durationMinutes}m)
-                    </span>
-                  ))}
-                </div>
+      {/* ─── LIST VIEW ─── */}
+      {view === 'list' && (
+        <>
+          {/* Today's activities */}
+          {todaysPlan && (
+            <div className="glass-card p-4 mb-4 border-l-4 border-[var(--accent-text)]">
+              <h2 className="font-semibold text-[var(--text-heading)] mb-3">Today</h2>
+              <div className="space-y-2">
+                {todayActivities.map((act, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
+                      act.completed ? 'opacity-60' : 'hover:bg-[var(--bg-input)]'
+                    }`}
+                  >
+                    <button
+                      onClick={() => markActivityCompleted(todaysPlan.id, i)}
+                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                        act.completed
+                          ? 'bg-[var(--accent-text)] border-[var(--accent-text)]'
+                          : 'border-[var(--border-card)]'
+                      }`}
+                    >
+                      {act.completed && <Check className="w-3 h-3 text-white" />}
+                    </button>
+                    <div className="flex-1">
+                      <span className={`text-sm ${act.completed ? 'line-through text-[var(--text-faint)]' : 'text-[var(--text-body)]'}`}>
+                        {act.topicName}
+                      </span>
+                      <span className="text-xs text-[var(--text-muted)] ml-2">
+                        {ACTIVITY_LABELS[act.activityType] ?? act.activityType} &middot; {act.durationMinutes}m
+                      </span>
+                    </div>
+                    {ACTIVITY_ROUTES[act.activityType] ? (
+                      <Link
+                        to={ACTIVITY_ROUTES[act.activityType]!}
+                        className="text-xs text-[var(--accent-text)] hover:underline"
+                      >
+                        Start
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel'))}
+                        className="text-xs text-[var(--accent-text)] hover:underline"
+                      >
+                        Start
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
-            )
-          })}
+            </div>
+          )}
+
+          {/* Upcoming days */}
+          <div className="space-y-3">
+            {planDays
+              .filter(d => d.date > today)
+              .slice(0, 6)
+              .map(day => {
+                const activities: StudyActivity[] = JSON.parse(day.activities)
+                const dayLabel = new Date(day.date + 'T12:00:00').toLocaleDateString(i18n.language, {
+                  weekday: 'short', month: 'short', day: 'numeric',
+                })
+                return (
+                  <div key={day.id} className="glass-card p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-[var(--text-heading)]">{dayLabel}</span>
+                      {day.isCompleted && (
+                        <span className="text-xs text-green-500 flex items-center gap-1">
+                          <Check className="w-3 h-3" /> {t('ai.completed')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {activities.map((act, i) => (
+                        <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-[var(--accent-bg)] text-[var(--accent-text)]">
+                          {act.topicName} — {ACTIVITY_LABELS[act.activityType] ?? act.activityType} ({act.durationMinutes}m)
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// ─── Weekly Calendar Component ──────────────────────────────────
+
+function WeeklyCalendar({ weekOffset, onPrev, onNext, planDayMap, today, onReschedule, onMarkCompleted, lang }: {
+  weekOffset: number
+  onPrev: () => void
+  onNext: () => void
+  planDayMap: Map<string, import('../db/schema').StudyPlanDay>
+  today: string
+  onReschedule: (fromDate: string) => void
+  onMarkCompleted: (dayId: string, activityIndex: number) => void
+  lang: string
+}) {
+  const { t } = useTranslation()
+  const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset])
+  const weekLabel = useMemo(() => {
+    const start = new Date(weekDates[0] + 'T12:00:00')
+    const end = new Date(weekDates[6] + 'T12:00:00')
+    return `${start.toLocaleDateString(lang, { month: 'short', day: 'numeric' })} — ${end.toLocaleDateString(lang, { month: 'short', day: 'numeric' })}`
+  }, [weekDates, lang])
+
+  return (
+    <div>
+      {/* Week navigation */}
+      <div className="flex items-center justify-between mb-3">
+        <button onClick={onPrev} className="p-1.5 rounded-lg hover:bg-[var(--bg-input)] text-[var(--text-muted)]">
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <span className="text-sm font-medium text-[var(--text-heading)]">{weekLabel}</span>
+        <button onClick={onNext} className="p-1.5 rounded-lg hover:bg-[var(--bg-input)] text-[var(--text-muted)]">
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* 7-column grid — stack on mobile */}
+      <div className="grid grid-cols-2 sm:grid-cols-7 gap-2">
+        {weekDates.map(date => {
+          const planDay = planDayMap.get(date)
+          const isToday = date === today
+          const isPast = date < today
+          const activities: StudyActivity[] = planDay ? JSON.parse(planDay.activities) : []
+          const hasUncompleted = isPast && planDay && !planDay.isCompleted && activities.some(a => !a.completed)
+
+          const dayLabel = new Date(date + 'T12:00:00').toLocaleDateString(lang, { weekday: 'short', day: 'numeric' })
+
+          return (
+            <div
+              key={date}
+              className={`glass-card p-2 min-h-[120px] flex flex-col ${
+                isToday ? 'border-2 border-[var(--accent-text)]' :
+                hasUncompleted ? 'border-l-4 border-red-400' : ''
+              }`}
+            >
+              {/* Day header */}
+              <div className="flex items-center justify-between mb-1.5">
+                <span className={`text-[10px] font-semibold uppercase ${
+                  isToday ? 'text-[var(--accent-text)]' : isPast ? 'text-[var(--text-faint)]' : 'text-[var(--text-muted)]'
+                }`}>
+                  {dayLabel}
+                </span>
+                {planDay?.isCompleted && <Check className="w-3 h-3 text-emerald-500" />}
+              </div>
+
+              {/* Activities */}
+              <div className="flex-1 space-y-1">
+                {activities.length === 0 && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--border-card)] mx-auto mt-4" />
+                )}
+                {activities.map((act, i) => (
+                  <div
+                    key={i}
+                    className={`text-[10px] px-1.5 py-1 rounded ${
+                      act.completed
+                        ? 'bg-emerald-500/10 text-emerald-600 line-through'
+                        : isPast
+                          ? 'bg-red-500/10 text-red-600'
+                          : 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+                    }`}
+                  >
+                    <span className="font-medium">{act.topicName}</span>
+                    <span className="opacity-70"> · {ACTIVITY_LABELS[act.activityType] ?? act.activityType} · {act.durationMinutes}m</span>
+                    {isToday && !act.completed && planDay && (
+                      <button
+                        onClick={() => onMarkCompleted(planDay.id, i)}
+                        className="ml-1 text-[var(--accent-text)] hover:underline"
+                      >
+                        ✓
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Reschedule button for missed days */}
+              {hasUncompleted && (
+                <button
+                  onClick={() => onReschedule(date)}
+                  className="mt-1.5 text-[10px] font-medium text-amber-600 hover:underline flex items-center gap-0.5"
+                >
+                  <ArrowRight className="w-2.5 h-2.5" /> {t('studyPlan.moveToToday', 'Move to today')}
+                </button>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
