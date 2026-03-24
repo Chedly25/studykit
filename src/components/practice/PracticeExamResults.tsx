@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { Trophy, BarChart3, RotateCcw, ChevronDown, ChevronUp, RefreshCw, ShieldAlert, Clock, MessageCircle } from 'lucide-react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import type { GeneratedQuestion, PracticeExamSession } from '../../db/schema'
 import { QuestionRenderer } from './QuestionRenderer'
 import type { WorkflowProgress } from '../../ai/orchestrator/types'
 import { Loader2 } from 'lucide-react'
+import { db } from '../../db'
 
 interface PracticeExamResultsProps {
   session: PracticeExamSession | undefined
@@ -13,6 +16,7 @@ interface PracticeExamResultsProps {
   gradingProgress: WorkflowProgress | null
   onRetake: () => void
   onExplainDifferently?: (question: GeneratedQuestion) => void
+  examProfileId?: string
 }
 
 export function PracticeExamResults({
@@ -22,9 +26,31 @@ export function PracticeExamResults({
   gradingProgress,
   onRetake,
   onExplainDifferently,
+  examProfileId,
 }: PracticeExamResultsProps) {
   const { t } = useTranslation()
   const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null)
+
+  // Build topic name → ID map for linking
+  const knownTopics = useLiveQuery(
+    () => examProfileId ? db.topics.where('examProfileId').equals(examProfileId).toArray() : [],
+    [examProfileId]
+  ) ?? []
+
+  const topicNameMap = useMemo(() =>
+    new Map(knownTopics.map(tp => [tp.name.toLowerCase(), tp.id])),
+    [knownTopics]
+  )
+
+  const findTopicId = (name: string): string | undefined => {
+    if (!name) return undefined
+    const exact = topicNameMap.get(name.toLowerCase())
+    if (exact) return exact
+    for (const [tName, tId] of topicNameMap) {
+      if (name.toLowerCase().includes(tName) || tName.includes(name.toLowerCase())) return tId
+    }
+    return undefined
+  }
 
   // Show grading progress
   if (isGrading) {
@@ -102,7 +128,7 @@ export function PracticeExamResults({
         )}
       </div>
 
-      {/* Topic breakdown */}
+      {/* Topic breakdown — sorted worst-performing first */}
       {topicBreakdown.length > 0 && (
         <div className="glass-card p-6">
           <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-4 flex items-center gap-2">
@@ -110,13 +136,36 @@ export function PracticeExamResults({
             {t('practiceExam.topicBreakdown')}
           </h3>
           <div className="space-y-3">
-            {topicBreakdown.map((tb, i) => {
+            {[...topicBreakdown]
+              .sort((a, b) => {
+                const aPct = a.maxScore > 0 ? a.score / a.maxScore : 0
+                const bPct = b.maxScore > 0 ? b.score / b.maxScore : 0
+                return aPct - bPct
+              })
+              .map((tb, i) => {
               const pct = tb.maxScore > 0 ? Math.round((tb.score / tb.maxScore) * 100) : 0
+              const topicId = findTopicId(tb.topic)
               return (
                 <div key={i}>
                   <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-[var(--text-body)] font-medium">{tb.topic}</span>
-                    <span className="text-[var(--text-muted)]">{tb.score}/{tb.maxScore}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {topicId ? (
+                        <Link to={`/topic/${topicId}`} className="text-[var(--text-body)] font-medium hover:text-[var(--accent-text)] transition-colors truncate">
+                          {tb.topic}
+                        </Link>
+                      ) : (
+                        <span className="text-[var(--text-body)] font-medium truncate">{tb.topic}</span>
+                      )}
+                      {pct < 60 && topicId && (
+                        <Link
+                          to={`/practice-exam?topic=${topicId}`}
+                          className="text-[10px] font-semibold text-[var(--accent-text)] bg-[var(--accent-bg)] px-1.5 py-0.5 rounded hover:underline shrink-0"
+                        >
+                          {t('practiceExam.practiceThis', 'Practice')}
+                        </Link>
+                      )}
+                    </div>
+                    <span className="text-[var(--text-muted)] shrink-0 ml-2">{tb.score}/{tb.maxScore}</span>
                   </div>
                   <div className="w-full h-2 bg-[var(--bg-input)] rounded-full overflow-hidden">
                     <div

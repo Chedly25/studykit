@@ -243,6 +243,7 @@ export default function PracticeExam() {
         isGrading={exam.isGrading}
         gradingProgress={exam.gradingProgress}
         onRetake={exam.resetToSetup}
+        examProfileId={profileId}
       />
     </>
   )
