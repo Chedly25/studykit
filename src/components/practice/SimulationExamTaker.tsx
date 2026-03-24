@@ -24,6 +24,20 @@ export interface SectionConfig {
   questionCount: number
   prepTimeMinutes?: number
   instructions?: string
+  shuffleQuestions?: boolean
+  canGoBack?: boolean
+}
+
+function seededShuffle<T>(arr: T[], seed: string): T[] {
+  const result = [...arr]
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash) + seed.charCodeAt(i)
+  for (let i = result.length - 1; i > 0; i--) {
+    hash = (hash * 1103515245 + 12345) & 0x7fffffff
+    const j = hash % (i + 1)
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
 }
 
 interface Props {
@@ -45,9 +59,11 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
   const [showSectionConfirm, setShowSectionConfirm] = useState(false)
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
   const [showInstructions, setShowInstructions] = useState(true)
+  const [highestSectionReached, setHighestSectionReached] = useState(initialSectionIndex ?? 0)
   const questionStartRef = useRef(Date.now())
   const questionTimesRef = useRef<Map<string, number>>(new Map())
 
+  const isRevisiting = currentSectionIdx < highestSectionReached
   const currentSection = sections[currentSectionIdx]
   const isLastSection = currentSectionIdx >= sections.length - 1
 
@@ -57,11 +73,15 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
     [sessionId],
   ) ?? []
 
-  // Questions for current section
-  const sectionQuestions = useMemo(() =>
-    allQuestions.filter(q => q.sectionIndex === currentSectionIdx),
-    [allQuestions, currentSectionIdx],
-  )
+  // Questions for current section (optionally shuffled)
+  const sectionQuestions = useMemo(() => {
+    const filtered = allQuestions.filter(q => q.sectionIndex === currentSectionIdx)
+    const section = sections[currentSectionIdx]
+    if (section?.shuffleQuestions) {
+      return seededShuffle(filtered, `${sessionId}-${currentSectionIdx}`)
+    }
+    return filtered
+  }, [allQuestions, currentSectionIdx, sections, sessionId])
 
   const currentQuestion = sectionQuestions[currentQuestionIdx]
   const answeredInSection = sectionQuestions.filter(q => answers.has(q.id) || q.isAnswered).length
@@ -111,10 +131,12 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
   const advanceSection = useCallback((newIdx: number) => {
     setCurrentSectionIdx(newIdx)
     setCurrentQuestionIdx(0)
-    setShowInstructions(true)
+    // Only show instructions for new sections, not revisited ones
+    setShowInstructions(newIdx > highestSectionReached)
+    if (newIdx > highestSectionReached) setHighestSectionReached(newIdx)
     questionStartRef.current = Date.now()
     onSectionChange?.(newIdx)
-  }, [onSectionChange])
+  }, [onSectionChange, highestSectionReached])
 
   const handleSectionTimeUp = useCallback(() => {
     if (isLastSection) {
@@ -185,19 +207,54 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
     )
   }
 
+  // Section navigation pills (for back-navigation support)
+  const showSectionNav = sections.some(s => s.canGoBack) && !showInstructions
+  const sectionNavPills = showSectionNav ? (
+    <div className="flex gap-1 flex-wrap">
+      {sections.map((s, i) => {
+        const isActive = i === currentSectionIdx
+        const isPast = i < highestSectionReached + 1 && i !== currentSectionIdx
+        const canNavigate = isPast && s.canGoBack
+        return (
+          <button
+            key={i}
+            onClick={() => { if (canNavigate) { flushTiming(); advanceSection(i) } }}
+            disabled={!canNavigate && !isActive}
+            className={`text-[10px] px-2.5 py-1 rounded-lg transition-colors ${
+              isActive ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] font-semibold' :
+              canNavigate ? 'bg-[var(--bg-input)] text-[var(--text-body)] hover:bg-[var(--accent-bg)] cursor-pointer' :
+              'bg-[var(--bg-input)] text-[var(--text-faint)] cursor-not-allowed opacity-50'
+            }`}
+          >
+            {s.formatName}
+          </button>
+        )
+      })}
+    </div>
+  ) : null
+
   // Written section — standard question navigation
   return (
     <div className="space-y-4">
-      <SectionHeader
-        sectionName={currentSection.formatName}
-        sectionIndex={currentSectionIdx}
-        totalSections={sections.length}
-        sectionType={currentSection.sectionType}
-        timeAllocationMinutes={currentSection.timeAllocationMinutes}
-        answeredCount={answeredInSection}
-        totalQuestions={sectionQuestions.length}
-        onTimeUp={handleSectionTimeUp}
-      />
+      {sectionNavPills}
+      {!isRevisiting && (
+        <SectionHeader
+          sectionName={currentSection.formatName}
+          sectionIndex={currentSectionIdx}
+          totalSections={sections.length}
+          sectionType={currentSection.sectionType}
+          timeAllocationMinutes={currentSection.timeAllocationMinutes}
+          answeredCount={answeredInSection}
+          totalQuestions={sectionQuestions.length}
+          onTimeUp={handleSectionTimeUp}
+        />
+      )}
+      {isRevisiting && (
+        <div className="glass-card p-3 flex items-center justify-between">
+          <span className="text-sm font-medium text-[var(--text-heading)]">{currentSection.formatName}</span>
+          <span className="text-xs text-[var(--text-faint)]">Reviewing</span>
+        </div>
+      )}
 
       {proctorMode && (
         <div className="flex items-center gap-1.5 text-xs text-amber-600 px-2">

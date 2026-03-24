@@ -166,6 +166,8 @@ export function usePracticeExam(examProfileId: string | undefined) {
           questionCount: s.questionCount,
           prepTimeMinutes: s.prepTimeMinutes,
           instructions: s.instructions,
+          shuffleQuestions: s.shuffleQuestions,
+          canGoBack: s.canGoBack,
         })))
       : undefined
 

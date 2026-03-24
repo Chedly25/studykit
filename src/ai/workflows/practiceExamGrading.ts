@@ -35,19 +35,29 @@ export function createGradingWorkflow(config: GradingConfig): WorkflowDefinition
     name: 'Grade Practice Exam',
     steps: [
       // Step 1: Grade MCQ and True/False programmatically
-      localStep<QuestionGrade[]>('gradeObjective', 'Grading objective questions', async () => {
+      localStep<QuestionGrade[]>('gradeObjective', 'Grading objective questions', async (ctx) => {
         const questions = await db.generatedQuestions
           .where('sessionId').equals(config.sessionId)
           .toArray()
 
+        // Load exam formats for negative marking config
+        const examFormats = await db.examFormats.where('examProfileId').equals(ctx.examProfileId).toArray()
+        const formatMap = new Map(examFormats.map(f => [f.id, f]))
+
         const grades: QuestionGrade[] = []
         for (const q of questions) {
           if (q.format !== 'multiple-choice' && q.format !== 'true-false') continue
+
+          // Check if this question's section has negative marking
+          const fmt = q.examSectionId ? formatMap.get(q.examSectionId) : undefined
+          const hasNegativeMarking = fmt?.negativeMarking === true
+          const penalty = fmt?.negativeMarkingPenalty ?? 0.25
+
           if (!q.isAnswered) {
             grades.push({
               questionId: q.id,
               isCorrect: false,
-              earnedPoints: 0,
+              earnedPoints: 0, // No penalty for unanswered
               feedback: 'Not answered.',
             })
             continue
@@ -71,10 +81,10 @@ export function createGradingWorkflow(config: GradingConfig): WorkflowDefinition
           grades.push({
             questionId: q.id,
             isCorrect,
-            earnedPoints: isCorrect ? q.points : 0,
+            earnedPoints: isCorrect ? q.points : (hasNegativeMarking ? -penalty : 0),
             feedback: isCorrect
               ? 'Correct!'
-              : `Incorrect. The correct answer is: ${q.correctAnswer}`,
+              : `Incorrect. The correct answer is: ${q.correctAnswer}${hasNegativeMarking ? ` (-${penalty} penalty)` : ''}`,
           })
         }
         return grades

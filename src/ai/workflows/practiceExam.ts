@@ -24,6 +24,8 @@ export interface SimulationSection {
   samplePrompt?: string
   prepTimeMinutes?: number
   instructions?: string
+  shuffleQuestions?: boolean
+  canGoBack?: boolean
 }
 
 export interface PracticeExamConfig {

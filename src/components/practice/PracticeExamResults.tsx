@@ -291,7 +291,7 @@ export function PracticeExamResults({
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-[var(--text-muted)]">
+                    <span className={`text-xs ${(q.earnedPoints ?? 0) < 0 ? 'text-red-500 font-medium' : 'text-[var(--text-muted)]'}`}>
                       {q.earnedPoints ?? 0}/{q.points}
                     </span>
                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
