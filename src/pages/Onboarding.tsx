@@ -7,6 +7,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight, Upload, ChevronDown, ChevronUp, Check, AlertCircle, RefreshCw } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useOnboarding } from '../hooks/useOnboarding'
 import { useExamProfile } from '../hooks/useExamProfile'
 import type { DisplayMessage, PendingWidget } from '../ai/workflows/onboardingAgent'
@@ -50,6 +52,31 @@ function MilestoneIndicator({ profileId, topicsSeeded, weeklyHoursSet }: Milesto
   )
 }
 
+// ─── Markdown renderer for AI messages ───────────────────
+
+function MarkdownContent({ children }: { children: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+        ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-0.5">{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-0.5">{children}</ol>,
+        li: ({ children }) => <li>{children}</li>,
+        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+        h1: ({ children }) => <p className="font-bold text-base mb-1">{children}</p>,
+        h2: ({ children }) => <p className="font-bold mb-1">{children}</p>,
+        h3: ({ children }) => <p className="font-semibold mb-1">{children}</p>,
+        hr: () => <hr className="my-2 border-[var(--border-card)]" />,
+        a: ({ href, children }) => <a href={href} className="text-[var(--accent-text)] underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+        code: ({ children }) => <code className="bg-[var(--bg-card)] px-1 py-0.5 rounded text-xs">{children}</code>,
+      }}
+    >
+      {children}
+    </ReactMarkdown>
+  )
+}
+
 // ─── Message bubbles ──────────────────────────────────────
 
 function MessageBubble({ message }: { message: DisplayMessage }) {
@@ -65,8 +92,8 @@ function MessageBubble({ message }: { message: DisplayMessage }) {
 
   return (
     <div className="flex justify-start mb-3">
-      <div className="bg-[var(--bg-input)] px-4 py-2.5 rounded-2xl rounded-bl-md max-w-[85%] text-sm text-[var(--text-body)] whitespace-pre-line">
-        {message.content}
+      <div className="bg-[var(--bg-input)] px-4 py-2.5 rounded-2xl rounded-bl-md max-w-[85%] text-sm text-[var(--text-body)]">
+        <MarkdownContent>{message.content}</MarkdownContent>
       </div>
     </div>
   )
@@ -75,8 +102,8 @@ function MessageBubble({ message }: { message: DisplayMessage }) {
 function StreamingBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-start mb-3">
-      <div className="bg-[var(--bg-input)] px-4 py-2.5 rounded-2xl rounded-bl-md max-w-[85%] text-sm text-[var(--text-body)] whitespace-pre-line">
-        {text}
+      <div className="bg-[var(--bg-input)] px-4 py-2.5 rounded-2xl rounded-bl-md max-w-[85%] text-sm text-[var(--text-body)]">
+        <MarkdownContent>{text}</MarkdownContent>
         <span className="inline-block w-1.5 h-4 bg-[var(--text-muted)] ml-0.5 animate-pulse rounded-sm align-text-bottom" />
       </div>
     </div>
