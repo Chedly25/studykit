@@ -1117,7 +1117,13 @@
   "settings": {
     "language": "Langue",
     "displayLanguage": "Langue d'affichage",
-    "languageDesc": "Choisissez la langue de l'interface"
+    "languageDesc": "Choisissez la langue de l'interface",
+    "storage": "Stockage",
+    "protectData": "Protéger vos données",
+    "protectDataDesc": "Demander au navigateur de ne pas effacer vos données quand le stockage est faible",
+    "storageProtected": "Stockage protégé — le navigateur ne supprimera pas vos données",
+    "storageFull": "Le stockage est presque plein. Pensez à supprimer les documents inutilisés.",
+    "docFilesStored": "{{count}} fichiers stockés localement"
   },
   "report": {
     "title": "Rapport d'études",

@@ -1117,7 +1117,13 @@
   "settings": {
     "language": "Language",
     "displayLanguage": "Display Language",
-    "languageDesc": "Choose the language for the interface"
+    "languageDesc": "Choose the language for the interface",
+    "storage": "Storage",
+    "protectData": "Protect your data",
+    "protectDataDesc": "Ask the browser not to clear your study data when storage is low",
+    "storageProtected": "Storage is protected — browser won't clear your data",
+    "storageFull": "Storage is getting full. Consider removing unused documents.",
+    "docFilesStored": "{{count}} document files stored locally"
   },
   "report": {
     "title": "Study Report",

@@ -4,13 +4,19 @@
  */
 import { useState, useRef, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2, Mail, Globe } from 'lucide-react'
+import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2, Mail, Globe, Shield } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { requestPermission, getNotificationStatus, registerServiceWorker } from '../lib/pushNotifications'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useCloudSync } from '../hooks/useCloudSync'
 import { db } from '../db'
 import { exportProfileData, importProfileData, generateProgressReport, downloadBlob } from '../lib/dataExport'
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+}
 
 export default function Settings() {
   const { t, i18n } = useTranslation()
@@ -27,6 +33,21 @@ export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const profileId = activeProfile?.id
+
+  // Storage info
+  const [storageInfo, setStorageInfo] = useState<{ usage: number; quota: number } | null>(null)
+  const [isPersisted, setIsPersisted] = useState(false)
+  const [docCount, setDocCount] = useState(0)
+
+  useEffect(() => {
+    navigator.storage?.estimate?.().then(est => {
+      setStorageInfo({ usage: est.usage ?? 0, quota: est.quota ?? 0 })
+    }).catch(() => {})
+    navigator.storage?.persisted?.().then(setIsPersisted).catch(() => {})
+    if (profileId) {
+      db.documentFiles.where('examProfileId').equals(profileId).count().then(setDocCount).catch(() => {})
+    }
+  }, [profileId])
 
   // Handle unsubscribe URL param
   useEffect(() => {
@@ -185,6 +206,65 @@ export default function Settings() {
             </div>
           </button>
         </div>
+      </div>
+
+      {/* Storage */}
+      <div className="glass-card p-5 space-y-4 mt-4">
+        <h2 className="text-lg font-semibold text-[var(--text-heading)]">{t('settings.storage', 'Storage')}</h2>
+        {storageInfo && storageInfo.quota > 0 && (
+          <>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-[var(--text-body)]">
+                  {formatBytes(storageInfo.usage)} / {formatBytes(storageInfo.quota)}
+                </span>
+                <span className="text-[var(--text-muted)]">
+                  {Math.round((storageInfo.usage / storageInfo.quota) * 100)}%
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-[var(--border-card)] overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    storageInfo.usage / storageInfo.quota > 0.8 ? 'bg-red-500' : 'bg-[var(--accent-text)]'
+                  }`}
+                  style={{ width: `${Math.min(100, (storageInfo.usage / storageInfo.quota) * 100)}%` }}
+                />
+              </div>
+            </div>
+            {docCount > 0 && (
+              <p className="text-xs text-[var(--text-muted)]">
+                {t('settings.docFilesStored', '{{count}} document files stored locally', { count: docCount })}
+              </p>
+            )}
+            {storageInfo.usage / storageInfo.quota > 0.8 && (
+              <p className="text-xs text-amber-600">
+                {t('settings.storageFull', 'Storage is getting full. Consider removing unused documents.')}
+              </p>
+            )}
+          </>
+        )}
+        {!isPersisted && navigator.storage?.persist && (
+          <button
+            onClick={async () => {
+              const granted = await navigator.storage.persist()
+              setIsPersisted(granted)
+            }}
+            className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors text-left"
+          >
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+              <Shield className="w-5 h-5 text-emerald-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.protectData', 'Protect your data')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('settings.protectDataDesc', 'Ask the browser not to clear your study data when storage is low')}</p>
+            </div>
+          </button>
+        )}
+        {isPersisted && (
+          <div className="flex items-center gap-2 text-xs text-emerald-600">
+            <Shield className="w-3.5 h-3.5" /> {t('settings.storageProtected', 'Storage is protected — browser won\'t clear your data')}
+          </div>
+        )}
       </div>
 
       {/* Language */}
