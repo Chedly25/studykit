@@ -712,6 +712,7 @@
     "startNew": "Nouveau",
     "beginSection": "Commencer la section",
     "sectionOf": "Section {{current}} sur {{total}}",
+    "startSimulation": "Lancer la simulation d'examen complète",
     "steps": {
       "gatherContext": "Collecte de vos données d'étude",
       "searchDocuments": "Recherche dans vos supports d'étude",

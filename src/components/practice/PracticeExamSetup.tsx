@@ -303,10 +303,47 @@ export function PracticeExamSetup({
           {t('practiceExam.estimatedCalls', { count: estimatedCalls })}
         </div>
 
-        {/* Start button */}
-        <button onClick={handleStart} className="btn-primary px-6 py-2.5 w-full flex items-center justify-center gap-2">
-          <Play className="w-4 h-4" /> {t('ai.startPractice')}
-        </button>
+        {/* Start buttons */}
+        <div className="space-y-2">
+          <button onClick={handleStart} className="btn-primary px-6 py-2.5 w-full flex items-center justify-center gap-2">
+            <Play className="w-4 h-4" /> {t('ai.startPractice')}
+          </button>
+
+          {/* Simulation mode — uses exam format sections for a full exam experience */}
+          {examFormats.length > 0 && (
+            <button
+              onClick={() => {
+                const sections = examFormats
+                  .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                  .map(f => ({
+                    examFormatId: f.id,
+                    formatName: f.formatName,
+                    sectionType: (f.sectionType ?? 'written') as 'written' | 'oral' | 'practical',
+                    timeAllocationMinutes: f.timeAllocation,
+                    questionCount: f.questionCount ?? 10,
+                    pointWeight: f.pointWeight,
+                    questionFormat: f.questionFormat,
+                    samplePrompt: f.samplePrompt,
+                    prepTimeMinutes: f.prepTimeMinutes,
+                    instructions: f.instructions,
+                    shuffleQuestions: f.shuffleQuestions,
+                    canGoBack: f.canGoBack,
+                  }))
+                const totalQuestions = sections.reduce((s, sec) => s + sec.questionCount, 0)
+                onStart({
+                  questionCount: totalQuestions,
+                  sourcesEnabled,
+                  proctorMode: proctorMode || undefined,
+                  simulationMode: true,
+                  sections,
+                })
+              }}
+              className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2 border-2 border-[var(--accent-text)]/30"
+            >
+              <Shield className="w-4 h-4" /> {t('practiceExam.startSimulation', 'Start Full Exam Simulation')}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -712,6 +712,7 @@
     "startNew": "Start New",
     "beginSection": "Begin Section",
     "sectionOf": "Section {{current}} of {{total}}",
+    "startSimulation": "Start Full Exam Simulation",
     "steps": {
       "gatherContext": "Gathering your study data",
       "searchDocuments": "Searching your study materials",
