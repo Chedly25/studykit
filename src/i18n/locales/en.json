@@ -461,7 +461,8 @@
     "previousWeek": "Previous 7 days",
     "older": "Older",
     "dropFilesHere": "Drop files here",
-    "toggleSidebar": "Toggle sidebar"
+    "toggleSidebar": "Toggle sidebar",
+    "searchConversations": "Search conversations..."
   },
   "sources": {
     "title": "Sources Library",

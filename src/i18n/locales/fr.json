@@ -461,7 +461,8 @@
     "previousWeek": "7 derniers jours",
     "older": "Plus ancien",
     "dropFilesHere": "Déposez vos fichiers ici",
-    "toggleSidebar": "Afficher/masquer le panneau latéral"
+    "toggleSidebar": "Afficher/masquer le panneau latéral",
+    "searchConversations": "Rechercher dans les conversations..."
   },
   "sources": {
     "title": "Bibliothèque de sources",
