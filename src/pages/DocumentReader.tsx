@@ -8,7 +8,7 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import { Loader2, MessageCircle, X } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
@@ -33,7 +33,8 @@ export default function DocumentReader() {
   const [error, setError] = useState<string | null>(null)
   const [scale, setScale] = useState(1.2)
   const manualZoom = useRef(false)
-  const [chatOpen, setChatOpen] = useState(true)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  const [chatOpen, setChatOpen] = useState(() => window.innerWidth >= 768)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectionContext, setSelectionContext] = useState<{ text: string; pageNumber: number; documentTitle: string } | null>(null)
 
@@ -192,6 +193,13 @@ export default function DocumentReader() {
     return () => document.removeEventListener('keydown', handler)
   }, [navigate])
 
+  // Mobile detection
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
   // Auto-fit scale — respects manual zoom
   const handleAutoScale = useCallback((fitScale: number) => {
     if (!manualZoom.current) {
@@ -256,16 +264,15 @@ export default function DocumentReader() {
           </div>
         )}
 
-        {/* Drag handle */}
-        {chatOpen && (
+        {/* Desktop: Drag handle + side chat pane */}
+        {!isMobile && chatOpen && (
           <div
             onMouseDown={handleDragStart}
             className="w-1 flex-shrink-0 cursor-col-resize hover:bg-[var(--accent-text)]/30 active:bg-[var(--accent-text)]/50 transition-colors"
           />
         )}
 
-        {/* Chat pane */}
-        {chatOpen && documentMeta && (
+        {!isMobile && chatOpen && documentMeta && (
           <div style={{ width: chatWidth }} className="flex-shrink-0">
             <ReaderChatPane
               documentId={documentId!}
@@ -278,6 +285,38 @@ export default function DocumentReader() {
           </div>
         )}
       </div>
+
+      {/* Mobile: Floating chat button */}
+      {isMobile && !chatOpen && (
+        <button
+          onClick={() => setChatOpen(true)}
+          className="fixed bottom-24 right-4 z-40 w-12 h-12 rounded-full bg-[var(--accent-text)] text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+        >
+          <MessageCircle className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* Mobile: Full-screen chat sheet */}
+      {isMobile && chatOpen && documentMeta && (
+        <div className="fixed inset-0 z-50 bg-[var(--bg-card)] flex flex-col animate-fade-in">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-card)] shrink-0">
+            <span className="text-sm font-medium text-[var(--text-heading)] truncate">{documentMeta.title}</span>
+            <button onClick={() => setChatOpen(false)} className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-body)]">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex-1 min-h-0">
+            <ReaderChatPane
+              documentId={documentId!}
+              documentTitle={documentMeta.title}
+              documentCategory={documentMeta.category}
+              selectionContext={selectionContext}
+              onSelectionContextConsumed={() => setSelectionContext(null)}
+              onClose={() => setChatOpen(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Toolbar */}
       <ReaderToolbar
