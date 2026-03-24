@@ -29,7 +29,21 @@ export default function PracticeExam() {
   const exam = usePracticeExam(profileId)
   const { isPro } = useSubscription()
   const isProctorActive = exam.phase === 'taking' && exam.session?.proctorMode === true
-  const { getFlags: getProctorFlags } = useProctorMode(isProctorActive)
+  const [proctorWarning, setProctorWarning] = useState<string | null>(null)
+
+  const handleProctorEvent = useCallback((event: import('../hooks/useProctorMode').ProctorEvent) => {
+    const messages: Record<string, string> = {
+      'tab-switch': 'Tab switch detected',
+      'exit-fullscreen': 'Fullscreen exited',
+      'copy': 'Copy attempt detected',
+      'paste': 'Paste attempt detected',
+      'right-click': 'Right-click blocked',
+    }
+    setProctorWarning(messages[event.type] ?? 'Proctor event')
+    setTimeout(() => setProctorWarning(null), 3000)
+  }, [])
+
+  const { getFlags: getProctorFlags } = useProctorMode(isProctorActive, handleProctorEvent)
   const masterySnapshotRef = useRef<Map<string, number>>(new Map())
   const streakRef = useRef(streak)
   streakRef.current = streak
@@ -219,10 +233,19 @@ export default function PracticeExam() {
   }
 
   if (exam.phase === 'taking') {
+    // Proctor warning toast
+    const proctorToast = proctorWarning ? (
+      <div className="fixed top-4 right-4 z-50 glass-card p-3 border-l-4 border-red-500 animate-fade-in shadow-lg">
+        <span className="text-sm text-red-500 font-medium">{proctorWarning}</span>
+      </div>
+    ) : null
+
     // Simulation mode: multi-section taker with per-section timers
     if (exam.session?.simulationMode && exam.session.sectionProgress) {
       const sections = JSON.parse(exam.session.sectionProgress) as Array<{ sectionId: string; formatName: string; sectionType: string; timeAllocationMinutes: number; questionCount: number; prepTimeMinutes?: number; instructions?: string }>
       return (
+        <>
+        {proctorToast}
         <SimulationExamTaker
           sessionId={exam.session.id}
           examProfileId={profileId!}
@@ -232,11 +255,14 @@ export default function PracticeExam() {
           initialSectionIndex={exam.session.currentSectionIndex ?? 0}
           onSectionChange={exam.updateSectionProgress}
         />
+        </>
       )
     }
 
     // Practice mode: standard taker
     return (
+      <>
+      {proctorToast}
       <PracticeExamTaker
         questions={exam.questions}
         currentIndex={exam.currentQuestionIndex}
@@ -250,6 +276,7 @@ export default function PracticeExam() {
         onNextAdaptive={exam.goToNextAdaptive}
         onToggleFlag={exam.toggleFlag}
       />
+      </>
     )
   }
 

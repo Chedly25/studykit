@@ -214,29 +214,49 @@ export function PracticeExamResults({
         </div>
       )}
 
-      {/* Proctor integrity alert */}
-      {hasProctorAlerts && (
-        <div className="glass-card p-6 border border-red-500/30 bg-red-500/5">
-          <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-3 flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5" />
-            {t('practiceExam.integrityAlert')}
-          </h3>
-          <div className="flex gap-6 text-sm">
-            {(proctorFlags?.tabSwitches ?? 0) > 0 && (
-              <div className="text-[var(--text-body)]">
-                <span className="font-medium text-red-600 dark:text-red-400">{proctorFlags!.tabSwitches}</span>{' '}
-                {t('practiceExam.tabSwitches')}
+      {/* Proctor integrity report */}
+      {session.proctorMode && proctorFlags && (() => {
+        const totalEvents = (proctorFlags.tabSwitches ?? 0) + (proctorFlags.fullscreenExits ?? 0)
+          + ((proctorFlags as { copyAttempts?: number }).copyAttempts ?? 0)
+          + ((proctorFlags as { pasteAttempts?: number }).pasteAttempts ?? 0)
+          + ((proctorFlags as { rightClicks?: number }).rightClicks ?? 0)
+        const rating = totalEvents === 0 ? 'clean' : totalEvents <= 2 ? 'minor' : 'concerns'
+        const ratingColor = rating === 'clean' ? 'emerald' : rating === 'minor' ? 'amber' : 'red'
+        const ratingLabel = rating === 'clean' ? 'Clean' : rating === 'minor' ? 'Minor flags' : 'Integrity concerns'
+
+        const eventTypes: Array<{ label: string; count: number }> = [
+          { label: 'Tab switches', count: proctorFlags.tabSwitches ?? 0 },
+          { label: 'Fullscreen exits', count: proctorFlags.fullscreenExits ?? 0 },
+          { label: 'Copy attempts', count: (proctorFlags as { copyAttempts?: number }).copyAttempts ?? 0 },
+          { label: 'Paste attempts', count: (proctorFlags as { pasteAttempts?: number }).pasteAttempts ?? 0 },
+          { label: 'Right-clicks', count: (proctorFlags as { rightClicks?: number }).rightClicks ?? 0 },
+        ].filter(e => e.count > 0)
+
+        return (
+          <div className={`glass-card p-6 border border-${ratingColor}-500/30 bg-${ratingColor}-500/5`}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-[var(--text-heading)] flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5" />
+                Exam Integrity
+              </h3>
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-full bg-${ratingColor}-500/15 text-${ratingColor}-600`}>
+                {ratingLabel}
+              </span>
+            </div>
+            {eventTypes.length > 0 ? (
+              <div className="flex flex-wrap gap-4 text-sm">
+                {eventTypes.map(e => (
+                  <div key={e.label} className="text-[var(--text-body)]">
+                    <span className={`font-medium text-${ratingColor}-600`}>{e.count}</span> {e.label.toLowerCase()}
+                  </div>
+                ))}
               </div>
-            )}
-            {(proctorFlags?.fullscreenExits ?? 0) > 0 && (
-              <div className="text-[var(--text-body)]">
-                <span className="font-medium text-red-600 dark:text-red-400">{proctorFlags!.fullscreenExits}</span>{' '}
-                {t('practiceExam.fullscreenExits')}
-              </div>
+            ) : (
+              <p className="text-sm text-emerald-600">No integrity events detected. Clean session.</p>
             )}
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Per-question timing stats */}
       {hasTimingData && (
