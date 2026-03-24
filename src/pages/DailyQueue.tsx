@@ -220,10 +220,38 @@ function DailyQueueContent() {
             const results = sessionResults.current
             const struggled = results.filter(r => r.rating === 'struggled').map(r => r.topicName)
             const good = results.filter(r => r.rating === 'good').map(r => r.topicName)
+
+            // Gather mastery context
+            const currentTopics = await db.topics.where('examProfileId').equals(profileId!).toArray()
+            const deltaSummary = currentTopics
+              .filter(tp => preMastery.current.has(tp.id))
+              .map(tp => {
+                const before = preMastery.current.get(tp.id)!
+                const diff = tp.mastery - before
+                if (Math.abs(diff) < 0.01) return null
+                return `${tp.name}: ${Math.round(before * 100)}% → ${Math.round(tp.mastery * 100)}%`
+              })
+              .filter(Boolean)
+
+            // Read diagnostician priorities for forward-looking advice
+            let priorityContext = ''
+            try {
+              const insight = await db.agentInsights.get(`diagnostician:${profileId}`)
+              if (insight) {
+                const report = JSON.parse(insight.data)
+                const top = (report.priorities ?? []).slice(0, 3)
+                if (top.length > 0) {
+                  priorityContext = `\nTop study priorities: ${top.map((p: { topicName: string; reason: string }) => `${p.topicName} (${p.reason})`).join('; ')}.`
+                }
+              }
+            } catch { /* non-critical */ }
+
             const prompt = `Student just completed ${results.length} study items.\n` +
               (struggled.length > 0 ? `Struggled with: ${[...new Set(struggled)].join(', ')}.\n` : '') +
               (good.length > 0 ? `Did well on: ${[...new Set(good)].join(', ')}.\n` : '') +
-              `Give a 3-5 sentence coaching debrief. Be specific, encouraging, and actionable. If they struggled, explain the key insight briefly.`
+              (deltaSummary.length > 0 ? `Mastery changes: ${deltaSummary.join('; ')}.\n` : '') +
+              priorityContext +
+              `\nGive a 3-5 sentence coaching debrief. Mention specific mastery changes if notable. End with one concrete recommendation for their next session based on the priorities.`
 
             let text = ''
             await streamChat({

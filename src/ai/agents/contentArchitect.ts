@@ -14,7 +14,7 @@ export const contentArchitectAgent: AgentDefinition = {
   id: 'content-architect',
   name: 'Content Architect',
   description: 'Creates and improves study materials for priority topics',
-  triggers: ['manual'],
+  triggers: ['manual', 'app-open'],
   model: 'fast',
   cooldownMs: 3600000, // 1 hour
 

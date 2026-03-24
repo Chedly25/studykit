@@ -20,6 +20,8 @@ interface DiagnosticReport {
   priorities: DiagnosticPriority[]
   patterns: Array<{ type: string; description: string; topicIds: string[] }>
   readiness: { score: number; trend: 'improving' | 'stable' | 'declining'; riskAreas: string[] }
+  narrative?: string
+  narrativeGeneratedAt?: string
 }
 
 interface ProgressInsight {
@@ -120,6 +122,14 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
             {readiness.trend === 'stable' && <><Minus className="w-3.5 h-3.5 text-[var(--text-muted)]" /><span className="text-[var(--text-muted)]">{t('dashboard.briefTrendStable', 'Stable')}</span></>}
             {readiness.trend === 'declining' && <><TrendingDown className="w-3.5 h-3.5 text-red-500" /><span className="text-red-500">{t('dashboard.briefTrendDeclining', 'Declining')}</span></>}
           </div>
+        </div>
+      )}
+
+      {/* Advisor narrative */}
+      {report?.narrative && (
+        <div className="mb-3 px-3 py-2.5 rounded-lg bg-[var(--bg-input)] border-l-2 border-[var(--accent-text)]">
+          <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1">{t('dashboard.advisorNote', "Advisor's Note")}</p>
+          <p className="text-sm text-[var(--text-body)] leading-relaxed">{report.narrative}</p>
         </div>
       )}
 

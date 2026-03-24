@@ -309,7 +309,8 @@
     "briefTrendDeclining": "En baisse",
     "briefPriorities": "Priorités du jour",
     "briefNoPriorities": "Aucun point urgent — vous êtes sur la bonne voie",
-    "briefViewQueue": "Commencer la session"
+    "briefViewQueue": "Commencer la session",
+    "advisorNote": "Note du conseiller"
   },
   "tutor": {
     "topics": "{{count}} sujet",
@@ -500,7 +501,12 @@
     "readyToProcess": "{{count}} document prêt à traiter",
     "readyToProcess_plural": "{{count}} documents prêts à traiter",
     "processAll": "Tout traiter",
-    "processingAll": "Traitement..."
+    "processingAll": "Traitement...",
+    "freeProcessingAvailable": "{{count}} document importé — 1 traitement gratuit inclus",
+    "freeProcessingAvailable_plural": "{{count}} documents importés — 1 traitement gratuit inclus",
+    "processFirst": "Traiter",
+    "upgradeToProcess": "{{count}} document importé — passez à Pro pour traiter avec l'IA",
+    "upgradeToProcess_plural": "{{count}} documents importés — passez à Pro pour traiter avec l'IA"
   },
   "subscription": {
     "pricing": "Tarifs",
@@ -527,7 +533,16 @@
     "quotaExceeded": "Vous avez utilisé vos {{limit}} messages IA gratuits pour aujourd'hui. Passez à Pro pour un accès illimité.",
     "successTitle": "Bienvenue chez Pro !",
     "successSubtitle": "Votre abonnement est maintenant actif. Profitez d'un apprentissage illimité propulsé par l'IA.",
-    "goToDashboard": "Aller au tableau de bord"
+    "goToDashboard": "Aller au tableau de bord",
+    "getStarted": "Commencer",
+    "activatingInProgress": "Configuration de votre espace d'étude...",
+    "activatingDone": "Votre espace d'étude est prêt.",
+    "activatingDocuments": "Traitement de vos documents",
+    "activatingRoadmap": "Construction de votre feuille de route",
+    "activatingPlan": "Génération de votre plan d'études",
+    "activatingContent": "Préparation des exercices pour vos points faibles",
+    "activatingJobsRunning": "{{count}} tâches en cours...",
+    "startFirstSession": "Commencer votre première session"
   },
   "analytics": {
     "title": "Votre progression",
@@ -873,7 +888,15 @@
     "hoursPerWeek": "heures/semaine",
     "planGenerating": "Votre premier plan d'études est en cours de génération. Votre file d'attente sera prête à votre arrivée.",
     "goToDashboard": "Aller au tableau de bord",
-    "startStudying": "Commencer à étudier"
+    "startStudying": "Commencer à étudier",
+    "welcomeTitle": "Bienvenue, {{name}}.",
+    "welcomeTitleNoName": "Bienvenue.",
+    "welcomeSubtitle": "Construisons votre plan d'études personnalisé. Je vais vous poser quelques questions — ça prend environ 2 minutes.",
+    "welcomeStep1": "Ce que vous préparez",
+    "welcomeStep2": "Vos supports et votre expérience",
+    "welcomeStep3": "Votre emploi du temps hebdomadaire",
+    "welcomeStart": "C'est parti",
+    "welcomeSkip": "Passer et explorer par vous-même"
   },
   "nudge": {
     "revisited": "Vous avez revu {{topic}} {{count}} fois maintenant — c'est comme ça que se construit une compréhension profonde",

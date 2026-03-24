@@ -27,6 +27,8 @@ export interface DiagnosticReport {
   priorities: DiagnosticPriority[]
   patterns: DiagnosticPattern[]
   readiness: { score: number; trend: 'improving' | 'stable' | 'declining'; riskAreas: string[] }
+  narrative?: string
+  narrativeGeneratedAt?: string
 }
 
 export const diagnosticianAgent: AgentDefinition = {
@@ -160,6 +162,38 @@ export const diagnosticianAgent: AgentDefinition = {
         trend,
         riskAreas: priorities.filter(p => p.urgency === 'critical').map(p => p.topicName),
       },
+    }
+
+    // Generate advisor narrative (once per day max)
+    let shouldGenerateNarrative = true
+    try {
+      const existingInsight = await db.agentInsights.get(`diagnostician:${examProfileId}`)
+      if (existingInsight) {
+        const existing = JSON.parse(existingInsight.data) as DiagnosticReport
+        if (existing.narrativeGeneratedAt) {
+          const hoursSince = (Date.now() - new Date(existing.narrativeGeneratedAt).getTime()) / (1000 * 60 * 60)
+          if (hoursSince < 24 && existing.narrative) {
+            // Carry forward the existing narrative
+            report.narrative = existing.narrative
+            report.narrativeGeneratedAt = existing.narrativeGeneratedAt
+            shouldGenerateNarrative = false
+          }
+        }
+      }
+    } catch { /* non-critical */ }
+
+    if (shouldGenerateNarrative && priorities.length > 0 && !ctx.signal.aborted) {
+      try {
+        const topPriorities = priorities.slice(0, 5).map(p => `${p.topicName} (${p.urgency}: ${p.reason})`).join('; ')
+        const patternSummary = patterns.map(p => p.description).join('; ')
+        const narrativePrompt = `Readiness: ${readinessScore}%. Trend: ${trend}. Risk areas: ${report.readiness.riskAreas.join(', ') || 'none'}.\nPriorities: ${topPriorities}.\nPatterns: ${patternSummary || 'none detected'}.\n\nWrite a 2-3 sentence advisor note for the student. Be specific about topic names. Be honest about trajectory. End with one actionable focus for the coming days.`
+
+        report.narrative = await ctx.llm(
+          narrativePrompt,
+          'You are a study advisor writing a brief assessment for your student. Be warm but honest. No emojis. No greetings.',
+        )
+        report.narrativeGeneratedAt = new Date().toISOString()
+      } catch { /* non-fatal — narrative is optional */ }
     }
 
     // Write insight

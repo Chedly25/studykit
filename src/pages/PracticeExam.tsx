@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { ClipboardCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '@clerk/clerk-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useSources } from '../hooks/useSources'
 import { usePracticeExam } from '../hooks/usePracticeExam'
 import { useSubscription } from '../hooks/useSubscription'
 import { useProctorMode } from '../hooks/useProctorMode'
+import { streamChat } from '../ai/client'
 import { PracticeExamSetup } from '../components/practice/PracticeExamSetup'
 import { PracticeExamGenerator } from '../components/practice/PracticeExamGenerator'
 import { PracticeExamTaker } from '../components/practice/PracticeExamTaker'
@@ -34,6 +36,10 @@ export default function PracticeExam() {
   const weeklyHoursRef = useRef(weeklyHours)
   weeklyHoursRef.current = weeklyHours
   const [completionData, setCompletionData] = useState<SessionCompletionData | null>(null)
+  const [aiDebrief, setAiDebrief] = useState('')
+  const [isDebriefStreaming, setIsDebriefStreaming] = useState(false)
+  const debriefAbortRef = useRef<AbortController | null>(null)
+  const { getToken } = useAuth()
 
   // Scroll to top on phase change
   useEffect(() => { window.scrollTo(0, 0) }, [exam.phase])
@@ -50,6 +56,8 @@ export default function PracticeExam() {
     if (exam.phase === 'setup') {
       masterySnapshotRef.current = new Map()
       setCompletionData(null)
+      setAiDebrief('')
+      debriefAbortRef.current?.abort()
     }
   }, [exam.phase, topics])
 
@@ -86,10 +94,37 @@ export default function PracticeExam() {
           masteryDeltas: deltas.length > 0 ? deltas : undefined,
           examStats: { score: totalScore, maxScore, percentage, passed: percentage >= 60 },
         })
+
+        // Generate AI debrief for the practice exam
+        setIsDebriefStreaming(true)
+        const controller = new AbortController()
+        debriefAbortRef.current = controller
+        try {
+          const token = await getToken()
+          if (token && !controller.signal.aborted) {
+            const deltaSummary = deltas.map(d => `${d.topicName}: ${Math.round(d.before * 100)}% → ${Math.round(d.after * 100)}%`).join('; ')
+            const prompt = `Student just completed a practice exam.\n` +
+              `Score: ${totalScore}/${maxScore} (${percentage}%). ${percentage >= 60 ? 'Passed.' : 'Did not pass.'}\n` +
+              (deltaSummary ? `Mastery changes: ${deltaSummary}.\n` : '') +
+              `Give a 3-5 sentence coaching debrief. Acknowledge the score honestly. Highlight which areas improved or need work. End with one concrete recommendation for what to focus on next.`
+
+            let text = ''
+            await streamChat({
+              messages: [{ role: 'user', content: prompt }],
+              system: 'You are a study coach giving a brief post-exam debrief. Be warm, honest, and actionable. Use LaTeX $...$ for math if relevant. Never use emojis.',
+              tools: [],
+              maxTokens: 1024,
+              authToken: token,
+              onToken: (tok) => { text += tok; setAiDebrief(text) },
+              signal: controller.signal,
+            })
+          }
+        } catch { /* non-critical */ }
+        finally { setIsDebriefStreaming(false) }
       }
       buildCompletion()
     }
-  }, [exam.phase, exam.session, completionData, activeProfile?.weeklyTargetHours])
+  }, [exam.phase, exam.session, completionData, activeProfile?.weeklyTargetHours, getToken])
 
   if (!activeProfile) {
     return (
@@ -197,7 +232,9 @@ export default function PracticeExam() {
       {completionData && (
         <SessionCompletionOverlay
           data={completionData}
-          onDismiss={() => setCompletionData(null)}
+          onDismiss={() => { setCompletionData(null); setAiDebrief('') }}
+          aiDebrief={aiDebrief}
+          isDebriefStreaming={isDebriefStreaming}
         />
       )}
       <PracticeExamResults

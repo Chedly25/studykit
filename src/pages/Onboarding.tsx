@@ -6,6 +6,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useUser } from '@clerk/clerk-react'
 import { ArrowRight, Upload, ChevronDown, ChevronUp, Check, AlertCircle, RefreshCw } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -513,13 +514,76 @@ function PendingWidgetArea({
   }
 }
 
+// ─── Welcome screen ───────────────────────────────────────
+
+function WelcomeScreen({ firstName, onStart, onSkip }: { firstName?: string | null; onStart: () => void; onSkip: () => void }) {
+  const { t } = useTranslation()
+
+  const steps = [
+    t('onboarding.welcomeStep1'),
+    t('onboarding.welcomeStep2'),
+    t('onboarding.welcomeStep3'),
+  ]
+
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center px-4 animate-fade-in">
+      <div className="max-w-lg w-full text-center space-y-8">
+        <img src="/favicon-48x48.png" alt="StudiesKit" className="w-12 h-12 rounded-xl mx-auto" />
+
+        <div className="space-y-3">
+          <h1 className="text-2xl font-bold text-[var(--text-heading)]">
+            {firstName
+              ? t('onboarding.welcomeTitle', { name: firstName })
+              : t('onboarding.welcomeTitleNoName')}
+          </h1>
+          <p className="text-[var(--text-muted)] text-sm leading-relaxed max-w-sm mx-auto">
+            {t('onboarding.welcomeSubtitle')}
+          </p>
+        </div>
+
+        <div className="space-y-3 text-left max-w-xs mx-auto">
+          {steps.map((step, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <span className="text-sm text-[var(--text-body)]">{step}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-3 pt-2">
+          <button
+            onClick={onStart}
+            className="btn-primary w-full py-3 text-sm font-semibold rounded-xl"
+          >
+            {t('onboarding.welcomeStart')}
+          </button>
+          <button
+            onClick={onSkip}
+            className="text-sm text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors"
+          >
+            {t('onboarding.welcomeSkip')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────
 
 export default function Onboarding() {
   const navigate = useNavigate()
+  const { user } = useUser()
   const { state, sendMessage, respondToWidget, completeOnboarding, resetOnboarding } = useOnboarding()
   const { profiles, profilesLoaded } = useExamProfile()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Show welcome screen only for fresh onboarding (no messages yet)
+  const [showWelcome, setShowWelcome] = useState(
+    () => state.displayMessages.length === 0 && !state.completed
+  )
 
   // Redirect if user already has profiles (not from this onboarding)
   useEffect(() => {
@@ -532,7 +596,7 @@ export default function Onboarding() {
   const greetingSentRef = useRef(false)
   useEffect(() => {
     if (greetingSentRef.current) return
-    if (state.displayMessages.length === 0 && !state.completed && !state.useFallback && !state.isStreaming) {
+    if (!showWelcome && state.displayMessages.length === 0 && !state.completed && !state.useFallback && !state.isStreaming) {
       // Delay slightly to let Clerk auth initialize
       const timer = setTimeout(() => {
         if (!greetingSentRef.current) {
@@ -542,12 +606,25 @@ export default function Onboarding() {
       }, 1000)
       return () => clearTimeout(timer)
     }
-  }, [state.displayMessages.length, state.completed, state.useFallback, state.isStreaming, sendMessage])
+  }, [showWelcome, state.displayMessages.length, state.completed, state.useFallback, state.isStreaming, sendMessage])
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [state.displayMessages.length, state.streamingText])
+
+  // ── Welcome screen ───────────────────────────────────
+  if (showWelcome) {
+    return (
+      <WelcomeScreen
+        firstName={user?.firstName}
+        onStart={() => {
+          setShowWelcome(false)
+        }}
+        onSkip={() => navigate('/dashboard', { replace: true })}
+      />
+    )
+  }
 
   // ── Fallback ──────────────────────────────────────────
   if (state.useFallback) {

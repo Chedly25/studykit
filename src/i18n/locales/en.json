@@ -309,7 +309,8 @@
     "briefTrendDeclining": "Declining",
     "briefPriorities": "Today's priorities",
     "briefNoPriorities": "No urgent items — you're on track",
-    "briefViewQueue": "Start session"
+    "briefViewQueue": "Start session",
+    "advisorNote": "Advisor's Note"
   },
   "tutor": {
     "topics": "{{count}} topic",
@@ -500,7 +501,12 @@
     "readyToProcess": "{{count}} document ready to process",
     "readyToProcess_plural": "{{count}} documents ready to process",
     "processAll": "Process All",
-    "processingAll": "Processing..."
+    "processingAll": "Processing...",
+    "freeProcessingAvailable": "{{count}} document uploaded — 1 free processing included",
+    "freeProcessingAvailable_plural": "{{count}} documents uploaded — 1 free processing included",
+    "processFirst": "Process",
+    "upgradeToProcess": "{{count}} document uploaded — upgrade to process with AI",
+    "upgradeToProcess_plural": "{{count}} documents uploaded — upgrade to process with AI"
   },
   "subscription": {
     "pricing": "Pricing",
@@ -527,7 +533,16 @@
     "quotaExceeded": "You've used all {{limit}} free AI messages for today. Upgrade to Pro for unlimited access.",
     "successTitle": "Welcome to Pro!",
     "successSubtitle": "Your subscription is now active. Enjoy unlimited AI-powered learning.",
-    "goToDashboard": "Go to Dashboard"
+    "goToDashboard": "Go to Dashboard",
+    "getStarted": "Get started",
+    "activatingInProgress": "Setting up your study space...",
+    "activatingDone": "Your study space is ready.",
+    "activatingDocuments": "Processing your documents",
+    "activatingRoadmap": "Building your study roadmap",
+    "activatingPlan": "Generating your study plan",
+    "activatingContent": "Preparing exercises for weak areas",
+    "activatingJobsRunning": "{{count}} background tasks running...",
+    "startFirstSession": "Start your first session"
   },
   "analytics": {
     "title": "Your Progress",
@@ -873,7 +888,15 @@
     "hoursPerWeek": "hours/week",
     "planGenerating": "Your first study plan is being generated. Your queue will be ready when you arrive.",
     "goToDashboard": "Go to Dashboard",
-    "startStudying": "Start Studying"
+    "startStudying": "Start Studying",
+    "welcomeTitle": "Welcome, {{name}}.",
+    "welcomeTitleNoName": "Welcome.",
+    "welcomeSubtitle": "Let's build your personalized study plan. I'll ask a few questions — it takes about 2 minutes.",
+    "welcomeStep1": "What you're preparing for",
+    "welcomeStep2": "Your materials & experience",
+    "welcomeStep3": "Your weekly schedule",
+    "welcomeStart": "Let's get started",
+    "welcomeSkip": "Skip and explore on your own"
   },
   "nudge": {
     "revisited": "You've revisited {{topic}} {{count}} times now — that's how deep understanding forms",

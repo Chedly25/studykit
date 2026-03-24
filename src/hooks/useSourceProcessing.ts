@@ -7,6 +7,9 @@ import { toast } from 'sonner'
 import { useSubscription } from './useSubscription'
 import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
 import { useBackgroundJob } from './useBackgroundJob'
+import { db } from '../db'
+
+const FREE_PROCESSING_LIMIT = 1
 
 export function useSourceProcessing(examProfileId: string | undefined) {
   const { isPro } = useSubscription()
@@ -24,12 +27,20 @@ export function useSourceProcessing(examProfileId: string | undefined) {
 
   const processDocument = useCallback(async (documentId: string) => {
     if (!examProfileId) return null
-    if (!isPro) return null // AI processing is Pro only
+
+    // Free users get 1 document processing
+    if (!isPro) {
+      const processedCount = await db.documents
+        .where('examProfileId').equals(examProfileId)
+        .filter(d => !!d.summary)
+        .count()
+      if (processedCount >= FREE_PROCESSING_LIMIT) return null
+    }
 
     const id = await enqueue(
       'source-processing',
       examProfileId,
-      { documentId, isPro },
+      { documentId, isPro: true }, // Full pipeline for everyone (including free slot)
       4, // 4 steps: gather → parallel(embed+extract+flashcards) → save → concept cards
     )
     setJobId(id)

@@ -77,6 +77,7 @@ You MUST use your tools to collect information. Do NOT describe options as text 
 - As soon as you have exam name + type + date: CALL create_study_profile.
 - When topics are confirmed: CALL seed_topics.
 - When you learn strengths/weaknesses: CALL save_student_assessment.
+- When you learn how they prefer to study: CALL set_tutor_preferences.
 - When hours are set: CALL set_weekly_hours.
 - When everything is done: CALL finish_onboarding.
 
@@ -87,8 +88,9 @@ You MUST use your tools to collect information. Do NOT describe options as text 
 4. CALL create_study_profile with exam name, type, date.
 5. If detect_known_exam found topics → CALL show_topic_preview. If not → CALL show_file_upload so they can upload materials, OR ask them to describe their subjects and then CALL extract_topics_from_text.
 6. Ask about strengths and weaknesses → CALL save_student_assessment.
-7. CALL show_hours_slider for weekly hours.
-8. CALL seed_topics, CALL set_weekly_hours, then CALL finish_onboarding.
+7. Ask ONE quick question about how they prefer to learn (e.g., "Do you prefer concise or detailed explanations? Do you learn best through examples, analogies, or step-by-step definitions?"). CALL set_tutor_preferences based on their answer.
+8. CALL show_hours_slider for weekly hours.
+9. CALL seed_topics, CALL set_weekly_hours, then CALL finish_onboarding.
 
 ## ExamType inference
 - Bar, MCAT, LSAT, GRE, GMAT, CPA, CFA, USMLE, NCLEX, PE, FE, Concours, CRFPA, CPGE, Agregation, CAPES → "professional-exam"
@@ -214,6 +216,19 @@ export const onboardingToolDefs: ToolDefinition[] = [
         experience: { type: 'string', description: 'Brief description of their experience level' },
       },
       required: ['strong', 'weak', 'experience'],
+    },
+  },
+  {
+    name: 'set_tutor_preferences',
+    description: 'Store the student\'s preferred learning style. Call after asking how they prefer to learn.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        teachingStyle: { type: 'string', enum: ['concise', 'detailed'], description: 'Concise or detailed explanations' },
+        explanationApproach: { type: 'string', enum: ['analogies-first', 'definitions-first', 'examples-first', 'step-by-step'], description: 'How to explain concepts' },
+        feedbackTone: { type: 'string', enum: ['encouraging', 'direct'], description: 'Encouraging or direct feedback' },
+      },
+      required: ['teachingStyle', 'explanationApproach', 'feedbackTone'],
     },
   },
   {
@@ -439,17 +454,48 @@ export async function executeOnboardingTool(
 
     case 'save_student_assessment': {
       if (!ctx.profileId) return { type: 'result', content: 'Error: profile not created yet.' }
-      await db.studentModels.put({
+      const strong = (input.strong as string[]) ?? []
+      const weak = (input.weak as string[]) ?? []
+      const experience = (input.experience as string) ?? ''
+      const notes: string[] = []
+      if (experience) notes.push(`Experience: ${experience}`)
+      if (strong.length > 0) notes.push(`Self-reported strengths: ${strong.join(', ')}`)
+      if (weak.length > 0) notes.push(`Self-reported weaknesses: ${weak.join(', ')}`)
+
+      // Merge with existing model if present (avoid overwriting tutor-built data)
+      const existing = await db.studentModels.get(ctx.profileId)
+      if (existing) {
+        const existingNotes: string[] = JSON.parse(existing.personalityNotes || '[]')
+        await db.studentModels.update(ctx.profileId, {
+          personalityNotes: JSON.stringify([...existingNotes, ...notes]),
+          updatedAt: new Date().toISOString(),
+        })
+      } else {
+        await db.studentModels.put({
+          id: ctx.profileId,
+          examProfileId: ctx.profileId,
+          learningStyle: '{}',
+          commonMistakes: '[]',
+          personalityNotes: JSON.stringify(notes),
+          preferredExplanations: '[]',
+          motivationTriggers: '[]',
+          updatedAt: new Date().toISOString(),
+        })
+      }
+      return { type: 'result', content: 'Student assessment saved.' }
+    }
+
+    case 'set_tutor_preferences': {
+      if (!ctx.profileId) return { type: 'result', content: 'Error: profile not created yet.' }
+      await db.tutorPreferences.put({
         id: ctx.profileId,
         examProfileId: ctx.profileId,
-        learningStyle: '{}',
-        commonMistakes: '[]',
-        personalityNotes: JSON.stringify([input.experience as string]),
-        preferredExplanations: '[]',
-        motivationTriggers: '[]',
-        updatedAt: new Date().toISOString(),
+        teachingStyle: (input.teachingStyle as string) ?? 'detailed',
+        explanationApproach: (input.explanationApproach as string) ?? 'step-by-step',
+        feedbackTone: (input.feedbackTone as string) ?? 'encouraging',
+        languageLevel: 'beginner-friendly',
       })
-      return { type: 'result', content: 'Student assessment saved.' }
+      return { type: 'result', content: 'Tutor preferences saved.' }
     }
 
     case 'set_weekly_hours': {

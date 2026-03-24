@@ -72,8 +72,10 @@ export default function Sources() {
   const navigate = useNavigate()
   const { getToken } = useAuth()
 
-  // Count unprocessed documents (no summary yet)
+  // Count unprocessed and processed documents
   const unprocessedDocs = documents.filter(d => !d.summary)
+  const processedCount = documents.filter(d => !!d.summary).length
+  const hasFreeProcessingSlot = !isPro && processedCount < 1
 
   // Batch process all unprocessed documents sequentially
   const [isBatchProcessing, setIsBatchProcessing] = useState(false)
@@ -260,12 +262,14 @@ export default function Sources() {
           <span className="text-sm text-[var(--text-body)]">
             {isPro
               ? t('sources.readyToProcess', { count: unprocessedDocs.length })
-              : `${unprocessedDocs.length} document${unprocessedDocs.length > 1 ? 's' : ''} uploaded — upgrade to process with AI`
+              : hasFreeProcessingSlot
+                ? t('sources.freeProcessingAvailable', { count: unprocessedDocs.length })
+                : t('sources.upgradeToProcess', { count: unprocessedDocs.length })
             }
           </span>
-          {isPro ? (
+          {isPro || hasFreeProcessingSlot ? (
             <button
-              onClick={handleProcessAll}
+              onClick={hasFreeProcessingSlot ? () => processDocument(unprocessedDocs[0].id) : handleProcessAll}
               disabled={isBatchProcessing}
               className="btn-primary text-sm px-4 py-1.5 disabled:opacity-50"
             >
@@ -274,13 +278,15 @@ export default function Sources() {
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   {t('sources.processingAll')}
                 </span>
+              ) : hasFreeProcessingSlot ? (
+                t('sources.processFirst')
               ) : (
                 t('sources.processAll')
               )}
             </button>
           ) : (
             <Link to="/pricing" className="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" /> Upgrade
+              <Lock className="w-3.5 h-3.5" /> {t('common.upgrade')}
             </Link>
           )}
         </div>
