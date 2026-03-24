@@ -725,6 +725,26 @@
       "validateQuestions": "Validating question quality"
     }
   },
+  "documentExam": {
+    "title": "Document Exam",
+    "yourAnswer": "Your answer",
+    "words": "words",
+    "answerPlaceholder": "Write your answer here...",
+    "sidebar": "Questions",
+    "answered": "answered",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "submitExam": "Submit Exam",
+    "modelAnswer": "Model answer",
+    "unansweredWarning": "{{count}} question(s) have no answer.",
+    "noContent": "No exam document found.",
+    "startDocument": "Start Document Exam (CPGE)",
+    "configTitle": "Document Exam Configuration",
+    "configHint": "Generates a full concours-style problem document with LaTeX — one continuous exam, not individual questions.",
+    "concours": "Concours",
+    "subject": "Subject",
+    "generate": "Generate Document Exam"
+  },
   "mockExam": {
     "title": "Mock Exam",
     "subtitle": "Full-length timed exam simulation with AI grading",

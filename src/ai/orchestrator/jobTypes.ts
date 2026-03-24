@@ -13,6 +13,8 @@ import { createExamResearchWorkflow } from '../workflows/examResearch'
 import { createExamExerciseProcessingWorkflow } from '../workflows/examExerciseProcessing'
 import { createMisconceptionExerciseWorkflow } from '../workflows/misconceptionExercise'
 import { createExamSimulationWorkflow } from '../workflows/examSimulation'
+import { createDocumentExamWorkflow } from '../workflows/documentExam'
+import { createDocumentExamGradingWorkflow } from '../workflows/documentExamGrading'
 
 /**
  * Reconstruct a WorkflowDefinition from a job type and its serialized config.
@@ -86,6 +88,20 @@ export function reconstructWorkflow(type: JobType, config: Record<string, unknow
         sessionId: config.sessionId as string,
         sourcesEnabled: config.sourcesEnabled as boolean,
         sections: config.sections as import('../workflows/practiceExam').SimulationSection[],
+      })
+
+    case 'document-exam-generation':
+      return createDocumentExamWorkflow({
+        sessionId: config.sessionId as string,
+        subject: config.subject as import('../prompts/documentExamPrompts').DocumentExamSubject,
+        concours: config.concours as import('../prompts/documentExamPrompts').ConcoursType,
+        sourcesEnabled: config.sourcesEnabled as boolean,
+        timeLimitSeconds: config.timeLimitSeconds as number | undefined,
+      })
+
+    case 'document-exam-grading':
+      return createDocumentExamGradingWorkflow({
+        sessionId: config.sessionId as string,
       })
 
     default:

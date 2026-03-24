@@ -38,6 +38,10 @@ export interface PracticeExamOptions {
   // Simulation mode
   simulationMode?: boolean
   sections?: SimulationSectionOption[]
+  // Document exam mode (Type B — CPGE concours)
+  examMode?: 'standard' | 'document'
+  documentSubject?: string   // 'maths-algebre' | 'maths-analyse' | 'physique' | 'informatique'
+  documentConcours?: string  // 'polytechnique' | 'mines' | 'centrale' | 'ccinp'
 }
 
 export function usePracticeExam(examProfileId: string | undefined) {
@@ -184,6 +188,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
       simulationMode: options.simulationMode || undefined,
       currentSectionIndex: options.simulationMode ? 0 : undefined,
       sectionProgress: sectionProgressData,
+      examMode: options.examMode ?? 'standard',
       createdAt: new Date().toISOString(),
     }
     await db.practiceExamSessions.put(newSession)
@@ -192,24 +197,46 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setAnswers(new Map())
     setCurrentQuestionIndex(0)
     setAdaptiveState(createAdaptiveState())
-    setTimeLimitForSession(options.simulationMode ? undefined : options.timeLimitSeconds)
+    // Document exams manage their own timer in DocumentExamTaker; simulation exams use per-section timers
+    setTimeLimitForSession(
+      (options.simulationMode || options.examMode === 'document') ? undefined : options.timeLimitSeconds
+    )
 
-    // Use multi-agent pipeline for simulation mode, standard pipeline for practice
-    const jobType = options.simulationMode ? 'exam-simulation' : 'practice-exam-generation'
-    const jobConfig = options.simulationMode
-      ? { sessionId: id, sourcesEnabled: options.sourcesEnabled, sections: options.sections }
-      : {
-          sessionId: id,
-          questionCount: options.questionCount,
-          focusSubject: options.focusSubject,
-          selectedTopics: options.selectedTopics,
-          customFocus: options.customFocus,
-          examSection: options.examSection,
-          sourcesEnabled: options.sourcesEnabled,
-          simulationMode: options.simulationMode,
-          sections: options.sections,
-        }
-    const totalSteps = options.simulationMode ? 7 : 5
+    // Choose pipeline based on exam mode
+    let jobType: string
+    let jobConfig: Record<string, unknown>
+    let totalSteps: number
+
+    if (options.examMode === 'document') {
+      // Type B: document exam (CPGE concours)
+      jobType = 'document-exam-generation'
+      jobConfig = {
+        sessionId: id,
+        subject: options.documentSubject ?? 'maths-algebre',
+        concours: options.documentConcours ?? 'mines',
+        sourcesEnabled: options.sourcesEnabled,
+        timeLimitSeconds: options.timeLimitSeconds,
+      }
+      totalSteps = 4
+    } else if (options.simulationMode) {
+      jobType = 'exam-simulation'
+      jobConfig = { sessionId: id, sourcesEnabled: options.sourcesEnabled, sections: options.sections }
+      totalSteps = 7
+    } else {
+      jobType = 'practice-exam-generation'
+      jobConfig = {
+        sessionId: id,
+        questionCount: options.questionCount,
+        focusSubject: options.focusSubject,
+        selectedTopics: options.selectedTopics,
+        customFocus: options.customFocus,
+        examSection: options.examSection,
+        sourcesEnabled: options.sourcesEnabled,
+        simulationMode: options.simulationMode,
+        sections: options.sections,
+      }
+      totalSteps = 5
+    }
 
     const jobId = await enqueue(jobType, examProfileId, jobConfig, totalSteps)
     setGenJobId(jobId)
@@ -358,6 +385,32 @@ export function usePracticeExam(examProfileId: string | undefined) {
     await db.practiceExamSessions.update(sessionId, { currentSectionIndex: sectionIndex }).catch(() => {})
   }, [sessionId])
 
+  // Document exam: answer change callback (no-op — useDocumentAutoSave handles persistence)
+  const saveDocumentAnswer = useCallback((_questionNumber: number, _answer: string) => {
+    // Auto-save hook in DocumentExamTaker handles debounced persistence to avoid race conditions
+  }, [])
+
+  // Document exam: submit (flush answers, trigger grading)
+  const submitDocumentExam = useCallback(async () => {
+    if (!sessionId || !examProfileId) return
+    setTimerActive(false)
+    if (timerRef.current) clearInterval(timerRef.current)
+
+    setPhase('grading')
+    await db.practiceExamSessions.update(sessionId, {
+      phase: 'grading',
+      completedAt: new Date().toISOString(),
+    })
+
+    const jobId = await enqueue(
+      'document-exam-grading',
+      examProfileId,
+      { sessionId },
+      3,
+    )
+    setGradeJobId(jobId)
+  }, [sessionId, examProfileId, enqueue])
+
   const resetToSetup = useCallback(() => {
     setPhase('setup')
     setSessionId(null)
@@ -421,5 +474,8 @@ export function usePracticeExam(examProfileId: string | undefined) {
     resumeSession,
     abandonSession,
     updateSectionProgress,
+    // Document exam (Type B)
+    saveDocumentAnswer,
+    submitDocumentExam,
   }
 }

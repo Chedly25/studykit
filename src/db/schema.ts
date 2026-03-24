@@ -385,6 +385,7 @@ export interface MockExam {
 
 // ─── Practice Exam Sessions ────────────────────────────────────
 export type PracticeExamPhase = 'generating' | 'ready' | 'in-progress' | 'grading' | 'graded'
+export type ExamMode = 'standard' | 'document'
 
 export interface PracticeExamSession {
   id: string
@@ -408,6 +409,12 @@ export interface PracticeExamSession {
   sectionProgress?: string     // JSON: [{sectionId, startedAt, completedAt?}]
   currentSectionIndex?: number
   examBlueprint?: string          // JSON blueprint from Exam Architect
+  // Document exam fields (Type B — CPGE concours-style continuous problem)
+  examMode?: ExamMode                   // default 'standard'
+  documentContent?: string              // Full Markdown+LaTeX exam document
+  documentAnswers?: string              // JSON: Record<number, string> — questionNumber → answer
+  documentModelAnswers?: string         // JSON: per-question model answers + marking schemes
+  documentGrading?: string              // JSON: per-question grading results
 }
 
 export interface GeneratedQuestion {
@@ -798,6 +805,8 @@ export type JobType =
   | 'exam-exercise-processing'
   | 'misconception-exercise'
   | 'exam-simulation'
+  | 'document-exam-generation'
+  | 'document-exam-grading'
 
 export interface BackgroundJob {
   id: string

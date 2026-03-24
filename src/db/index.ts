@@ -346,6 +346,9 @@ export class StudiesKitDB extends Dexie {
       _syncQueue: '++id, table, timestamp',
       _syncMeta: 'id',
     })
+
+    // v29: Document exam fields on PracticeExamSession (optional, no index changes)
+    this.version(29).stores({})
   }
 }
 

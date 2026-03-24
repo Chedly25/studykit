@@ -1,12 +1,14 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BarChart3, Play, Clock, Sparkles, X, Shield, Settings2 } from 'lucide-react'
+import { BarChart3, Play, Clock, Sparkles, X, Shield, Settings2, FileText } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
 import type { Subject, Topic } from '../../db/schema'
 import { SourcesToggle } from '../sources/SourcesToggle'
 import { ExamFormatEditor } from '../knowledge/ExamFormatEditor'
 import type { PracticeExamOptions } from '../../hooks/usePracticeExam'
+import { CONCOURS_OPTIONS, SUBJECT_OPTIONS } from '../../ai/prompts/documentExamPrompts'
+import type { DocumentExamSubject, ConcoursType } from '../../ai/prompts/documentExamPrompts'
 
 interface PracticeExamSetupProps {
   examProfileId: string
@@ -53,6 +55,11 @@ export function PracticeExamSetup({
   const [timerEnabled, setTimerEnabled] = useState(false)
   const [timerMinutes, setTimerMinutes] = useState(30)
   const [proctorMode, setProctorMode] = useState(false)
+
+  // Document exam (Type B — CPGE)
+  const [showDocumentExam, setShowDocumentExam] = useState(false)
+  const [docConcours, setDocConcours] = useState<ConcoursType>('mines')
+  const [docSubject, setDocSubject] = useState<DocumentExamSubject>('maths-algebre')
 
   const examFormats = useLiveQuery(
     () => db.examFormats.where('examProfileId').equals(examProfileId).toArray(),
@@ -370,7 +377,83 @@ export function PracticeExamSetup({
               <Shield className="w-4 h-4" /> {t('practiceExam.startSimulation', 'Start Full Exam Simulation')}
             </button>
           )}
+
+          {/* Document exam (Type B — CPGE concours-style problem) */}
+          <button
+            onClick={() => setShowDocumentExam(!showDocumentExam)}
+            className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2 border-2 border-amber-500/30"
+          >
+            <FileText className="w-4 h-4" /> {t('documentExam.startDocument', 'Start Document Exam (CPGE)')}
+          </button>
         </div>
+
+        {/* Document exam configuration panel */}
+        {showDocumentExam && (
+          <div className="space-y-3 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
+            <h3 className="text-sm font-semibold text-[var(--text-heading)]">
+              {t('documentExam.configTitle', 'Document Exam Configuration')}
+            </h3>
+            <p className="text-xs text-[var(--text-muted)]">
+              {t('documentExam.configHint', 'Generates a full concours-style problem document with LaTeX — one continuous exam, not individual questions.')}
+            </p>
+
+            {/* Concours selector */}
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-body)] mb-1">
+                {t('documentExam.concours', 'Concours')}
+              </label>
+              <select
+                value={docConcours}
+                onChange={e => setDocConcours(e.target.value as ConcoursType)}
+                className="select-field w-full"
+              >
+                {CONCOURS_OPTIONS.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Subject selector */}
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-body)] mb-1">
+                {t('documentExam.subject', 'Subject')}
+              </label>
+              <select
+                value={docSubject}
+                onChange={e => setDocSubject(e.target.value as DocumentExamSubject)}
+                className="select-field w-full"
+              >
+                {SUBJECT_OPTIONS.map(s => (
+                  <option key={s.value} value={s.value}>{s.labelFr}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Generate button */}
+            <button
+              onClick={() => {
+                // Duration based on concours
+                const durations: Record<ConcoursType, number> = {
+                  polytechnique: 4 * 3600,
+                  mines: 3 * 3600,
+                  centrale: 4 * 3600,
+                  ccinp: 3 * 3600,
+                }
+                onStart({
+                  questionCount: 0, // will be computed from generated document
+                  sourcesEnabled,
+                  examMode: 'document',
+                  documentSubject: docSubject,
+                  documentConcours: docConcours,
+                  timeLimitSeconds: durations[docConcours],
+                })
+              }}
+              className="btn-primary px-6 py-2.5 w-full flex items-center justify-center gap-2"
+            >
+              <Play className="w-4 h-4" /> {t('documentExam.generate', 'Generate Document Exam')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

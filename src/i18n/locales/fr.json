@@ -725,6 +725,26 @@
       "validateQuestions": "Validation de la qualité des questions"
     }
   },
+  "documentExam": {
+    "title": "Épreuve écrite",
+    "yourAnswer": "Votre réponse",
+    "words": "mots",
+    "answerPlaceholder": "Rédigez votre réponse ici...",
+    "sidebar": "Questions",
+    "answered": "répondues",
+    "saving": "Sauvegarde...",
+    "saved": "Sauvegardé",
+    "submitExam": "Rendre la copie",
+    "modelAnswer": "Corrigé",
+    "unansweredWarning": "{{count}} question(s) sans réponse.",
+    "noContent": "Aucun sujet d'épreuve trouvé.",
+    "startDocument": "Épreuve écrite (CPGE)",
+    "configTitle": "Configuration de l'épreuve",
+    "configHint": "Génère un sujet de concours complet en LaTeX — un problème continu, pas des questions isolées.",
+    "concours": "Concours",
+    "subject": "Matière",
+    "generate": "Générer le sujet"
+  },
   "mockExam": {
     "title": "Examen blanc",
     "subtitle": "Simulation d'examen grandeur nature chronométrée avec correction par IA",

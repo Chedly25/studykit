@@ -14,6 +14,8 @@ import { PracticeExamGenerator } from '../components/practice/PracticeExamGenera
 import { PracticeExamTaker } from '../components/practice/PracticeExamTaker'
 import { SimulationExamTaker } from '../components/practice/SimulationExamTaker'
 import { PracticeExamResults } from '../components/practice/PracticeExamResults'
+import { DocumentExamTaker } from '../components/practice/DocumentExamTaker'
+import { DocumentExamResults } from '../components/practice/DocumentExamResults'
 import { PracticeExamHistory } from '../components/practice/PracticeExamHistory'
 import { SessionCompletionOverlay, type SessionCompletionData } from '../components/SessionCompletionOverlay'
 import { decayedMastery } from '../lib/knowledgeGraph'
@@ -240,6 +242,25 @@ export default function PracticeExam() {
       </div>
     ) : null
 
+    // Document exam mode (Type B — CPGE concours)
+    if (exam.session?.examMode === 'document' && exam.session.documentContent) {
+      let savedAnswers: Record<number, string> = {}
+      try { if (exam.session.documentAnswers) savedAnswers = JSON.parse(exam.session.documentAnswers) } catch { /* malformed */ }
+      return (
+        <>
+        {proctorToast}
+        <DocumentExamTaker
+          sessionId={exam.session.id}
+          documentContent={exam.session.documentContent}
+          timeLimitSeconds={exam.session.timeLimitSeconds}
+          savedAnswers={savedAnswers}
+          onSubmit={() => exam.submitDocumentExam()}
+          onAnswerChange={exam.saveDocumentAnswer}
+        />
+        </>
+      )
+    }
+
     // Simulation mode: multi-section taker with per-section timers
     if (exam.session?.simulationMode && exam.session.sectionProgress) {
       const sections = JSON.parse(exam.session.sectionProgress) as Array<{ sectionId: string; formatName: string; sectionType: string; timeAllocationMinutes: number; questionCount: number; prepTimeMinutes?: number; instructions?: string }>
@@ -281,6 +302,36 @@ export default function PracticeExam() {
   }
 
   // grading or results
+  // Document exam (Type B)
+  if (exam.session?.examMode === 'document') {
+    // Show grading progress while grading is in progress
+    if (exam.phase === 'grading') {
+      return (
+        <PracticeExamGenerator
+          progress={exam.gradingProgress}
+          error={exam.gradingError}
+          onCancel={() => {}}
+        />
+      )
+    }
+    return (
+      <>
+        {completionData && (
+          <SessionCompletionOverlay
+            data={completionData}
+            onDismiss={() => { setCompletionData(null); setAiDebrief('') }}
+            aiDebrief={aiDebrief}
+            isDebriefStreaming={isDebriefStreaming}
+          />
+        )}
+        <DocumentExamResults
+          session={exam.session}
+          onRetake={exam.resetToSetup}
+        />
+      </>
+    )
+  }
+
   return (
     <>
       {completionData && (
