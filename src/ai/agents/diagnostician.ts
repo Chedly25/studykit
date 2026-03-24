@@ -56,6 +56,12 @@ export const diagnosticianAgent: AgentDefinition = {
       return { success: true, summary: 'No data to analyze', episodes: [] }
     }
 
+    // Skip detailed diagnosis for brand-new users with zero study activity
+    const totalAttempts = topics.reduce((sum, t) => sum + t.questionsAttempted, 0)
+    if (totalAttempts === 0 && logs.length === 0) {
+      return { success: true, summary: 'New user — no study data yet', episodes: [] }
+    }
+
     const priorities: DiagnosticPriority[] = []
     const patterns: DiagnosticPattern[] = []
     const episodes: AgentResult['episodes'] = []
