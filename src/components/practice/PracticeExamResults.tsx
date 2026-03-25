@@ -223,9 +223,9 @@ export function PracticeExamResults({
         const rating = totalEvents === 0 ? 'clean' : totalEvents <= 2 ? 'minor' : 'concerns'
 
         const ratingStyles = {
-          clean: { card: 'border-emerald-500/30 bg-emerald-500/5', badge: 'bg-emerald-500/15 text-emerald-600', count: 'text-emerald-600', label: 'Clean' },
-          minor: { card: 'border-amber-500/30 bg-amber-500/5', badge: 'bg-amber-500/15 text-amber-600', count: 'text-amber-600', label: 'Minor flags' },
-          concerns: { card: 'border-red-500/30 bg-red-500/5', badge: 'bg-red-500/15 text-red-600', count: 'text-red-600', label: 'Integrity concerns' },
+          clean: { card: 'border-[var(--color-success-border)] bg-[var(--color-success-bg)]', badge: 'bg-[var(--color-success-bg)] text-[var(--color-success)]', count: 'text-[var(--color-success)]', label: 'Clean' },
+          minor: { card: 'border-[var(--color-warning-border)] bg-[var(--color-warning-bg)]', badge: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]', count: 'text-[var(--color-warning)]', label: 'Minor flags' },
+          concerns: { card: 'border-[var(--color-error-border)] bg-[var(--color-error-bg)]', badge: 'bg-[var(--color-error-bg)] text-[var(--color-error)]', count: 'text-[var(--color-error)]', label: 'Integrity concerns' },
         }
         const styles = ratingStyles[rating]
 
@@ -257,7 +257,7 @@ export function PracticeExamResults({
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-emerald-600">No integrity events detected. Clean session.</p>
+              <p className="text-sm text-[var(--color-success)]">No integrity events detected. Clean session.</p>
             )}
           </div>
         )
@@ -346,9 +346,9 @@ export function PracticeExamResults({
                               ))}
                               {scheme.commonErrors && scheme.commonErrors.length > 0 && (
                                 <>
-                                  <p className="font-medium text-red-500/80 pt-1">{t('practiceExam.commonErrors', 'Common Errors')}</p>
+                                  <p className="font-medium text-[var(--color-error)] pt-1">{t('practiceExam.commonErrors', 'Common Errors')}</p>
                                   {scheme.commonErrors.map((e, ei) => (
-                                    <div key={ei} className="flex justify-between text-red-500/70">
+                                    <div key={ei} className="flex justify-between text-[var(--color-error)]">
                                       <span>{e.error}</span>
                                       <span className="shrink-0 ml-2">-{e.deduction} pts</span>
                                     </div>

@@ -138,12 +138,12 @@ export function InlineQuiz({ quizId }: InlineQuizProps) {
         {/* Explanation + Next */}
         {answered && (
           <div className="mt-3">
-            <div className={`rounded-lg px-3 py-2 text-xs ${isCorrect ? 'bg-green-500/10 text-green-700' : 'bg-amber-500/10 text-amber-700'}`}>
+            <div className={`rounded-lg px-3 py-2 text-xs ${isCorrect ? 'bg-green-500/10 text-green-700' : 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'}`}>
               <MathText>{q.explanation}</MathText>
             </div>
             <button
               onClick={handleNext}
-              className="mt-2 px-4 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent-text)] text-white hover:opacity-90 transition-opacity"
+              className="mt-2 btn-primary text-sm px-4 py-2"
             >
               {currentIndex + 1 >= questions.length ? 'See results' : 'Next question'}
             </button>

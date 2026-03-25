@@ -223,7 +223,7 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
               {hints.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {hints.map((hint, i) => (
-                    <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                    <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)]">
                       <Lightbulb className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
                       <p className="text-xs text-[var(--text-body)]">{hint}</p>
                     </div>

@@ -13,14 +13,14 @@ export function InsightCard({ insights }: Props) {
   if (insights.length === 0) return null
 
   const bgColor = {
-    warning: 'bg-amber-500/10 border-amber-500/20',
-    tip: 'bg-blue-500/10 border-blue-500/20',
+    warning: 'bg-[var(--color-warning-bg)] border-[var(--color-warning-border)]',
+    tip: 'bg-[var(--color-info-bg)] border-[var(--color-info-border)]',
     encouragement: 'bg-[var(--accent-bg)] border-[var(--accent-text)]/20',
   }
 
   const textColor = {
-    warning: 'text-amber-600 dark:text-amber-400',
-    tip: 'text-blue-600 dark:text-blue-400',
+    warning: 'text-[var(--color-warning)]',
+    tip: 'text-[var(--color-info)]',
     encouragement: 'text-[var(--accent-text)]',
   }
 

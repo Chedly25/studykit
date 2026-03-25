@@ -23,8 +23,8 @@ export function DataLocalBanner({ isPro }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 mb-3 rounded-xl bg-amber-500/10 border border-amber-500/20 animate-fade-in">
-      <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
+    <div className="flex items-center gap-3 px-4 py-3 mb-3 rounded-xl bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)] animate-fade-in">
+      <ShieldAlert className="w-4 h-4 text-[var(--color-warning)] shrink-0" />
       <div className="flex-1 min-w-0">
         <span className="text-sm text-[var(--text-body)]">
           {t('dashboard.dataLocalWarning', 'Your data is stored locally in this browser only. Export regularly or upgrade for cloud backup.')}
@@ -33,7 +33,7 @@ export function DataLocalBanner({ isPro }: Props) {
           <Link to="/settings" className="text-xs font-medium text-[var(--accent-text)] hover:underline">
             {t('dashboard.exportData', 'Export')}
           </Link>
-          <Link to="/pricing" className="text-xs font-medium text-amber-600 hover:underline">
+          <Link to="/pricing" className="text-xs font-medium text-[var(--color-warning)] hover:underline">
             {t('common.upgrade')}
           </Link>
         </span>

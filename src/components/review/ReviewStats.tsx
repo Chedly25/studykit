@@ -24,21 +24,21 @@ export function ReviewStats({ stats, targetCount }: Props) {
           <span className="text-[var(--text-muted)]">total</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Star size={14} className="text-green-500" />
-          <span className="font-medium text-green-500">{stats.shortlisted}</span>
+          <Star size={14} className="text-[var(--color-success)]" />
+          <span className="font-medium text-[var(--color-success)]">{stats.shortlisted}</span>
           <span className="text-[var(--text-muted)]">shortlisted</span>
           {targetCount !== undefined && (
             <span className="text-[var(--text-muted)]">/ {targetCount}</span>
           )}
         </div>
         <div className="flex items-center gap-1.5">
-          <HelpCircle size={14} className="text-amber-500" />
-          <span className="font-medium text-amber-500">{stats.maybe}</span>
+          <HelpCircle size={14} className="text-[var(--color-warning)]" />
+          <span className="font-medium text-[var(--color-warning)]">{stats.maybe}</span>
           <span className="text-[var(--text-muted)]">maybe</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <XCircle size={14} className="text-red-400" />
-          <span className="font-medium text-red-400">{stats.rejected}</span>
+          <XCircle size={14} className="text-[var(--color-error)]" />
+          <span className="font-medium text-[var(--color-error)]">{stats.rejected}</span>
           <span className="text-[var(--text-muted)]">rejected</span>
         </div>
         <div className="flex items-center gap-1.5">

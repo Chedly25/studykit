@@ -52,12 +52,12 @@ export function CalibrationAlert({ topics, profileId }: Props) {
   return (
     <div className={`flex items-start gap-3 p-3 mb-4 rounded-xl ${
       isOverconfident
-        ? 'bg-amber-500/10 border border-amber-500/20'
-        : 'bg-emerald-500/10 border border-emerald-500/20'
+        ? 'bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)]'
+        : 'bg-[var(--color-success-bg)] border border-[var(--color-success-border)]'
     }`}>
       {isOverconfident
-        ? <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-        : <TrendingUp className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+        ? <AlertTriangle className="w-4 h-4 text-[var(--color-warning)] mt-0.5 shrink-0" />
+        : <TrendingUp className="w-4 h-4 text-[var(--color-success)] mt-0.5 shrink-0" />
       }
       <div className="flex-1 min-w-0">
         <p className="text-sm text-[var(--text-body)]">

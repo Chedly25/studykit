@@ -13,7 +13,7 @@ export function AttachmentChip({ name, status, onRemove }: Props) {
     <span
       className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
         status === 'error'
-          ? 'bg-red-500/10 text-red-400 border border-red-500/30'
+          ? 'bg-[var(--color-error-bg)] text-[var(--color-error)] border border-[var(--color-error-border)]'
           : 'bg-[var(--accent-bg)] text-[var(--accent-text)] border border-[var(--border-card)]'
       }`}
     >

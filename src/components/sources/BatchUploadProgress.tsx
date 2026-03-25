@@ -29,11 +29,11 @@ export function BatchUploadProgress({ progress }: Props) {
         {progress.results.map((r, i) => (
           <div key={i} className="flex items-center gap-2 text-xs">
             {r.status === 'done' ? (
-              <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-[var(--color-success)] flex-shrink-0" />
             ) : (
-              <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+              <XCircle className="w-3.5 h-3.5 text-[var(--color-error)] flex-shrink-0" />
             )}
-            <span className={r.status === 'error' ? 'text-red-400' : 'text-[var(--text-body)]'}>
+            <span className={r.status === 'error' ? 'text-[var(--color-error)]' : 'text-[var(--text-body)]'}>
               {r.fileName}
               {r.error && <span className="text-[var(--text-faint)]"> — {r.error}</span>}
             </span>

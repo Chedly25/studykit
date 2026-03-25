@@ -117,11 +117,11 @@ function MockExamResults({ exam, onBack, onRetake }: {
           )}
           {results.areasForImprovement?.length > 0 && (
             <div className="glass-card p-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-500 mb-2">{t('mockExam.improvements', 'Areas to Improve')}</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warning)] mb-2">{t('mockExam.improvements', 'Areas to Improve')}</h3>
               <ul className="space-y-1">
                 {results.areasForImprovement.map((a, i) => (
                   <li key={i} className="text-sm text-[var(--text-body)] flex items-start gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                    <AlertTriangle className="w-3.5 h-3.5 text-[var(--color-warning)] mt-0.5 shrink-0" />
                     {a}
                   </li>
                 ))}

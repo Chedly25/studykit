@@ -98,13 +98,13 @@ export function HabitGoalsCard({ goals, getTodayProgress, onAdd, onLog, onDelete
                   <span className="text-sm text-[var(--text-body)]">{goal.title}</span>
                   <div className="flex items-center gap-2">
                     {goal.currentStreak > 0 && (
-                      <span className="flex items-center gap-0.5 text-xs text-orange-500">
+                      <span className="flex items-center gap-0.5 text-xs text-[var(--color-warning)]">
                         <Flame className="w-3 h-3" /> {goal.currentStreak}
                       </span>
                     )}
                     <button
                       onClick={() => onDelete(goal.id)}
-                      className="p-0.5 text-[var(--text-faint)] hover:text-red-500"
+                      className="p-0.5 text-[var(--text-faint)] hover:text-[var(--color-error)]"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -113,7 +113,7 @@ export function HabitGoalsCard({ goals, getTodayProgress, onAdd, onLog, onDelete
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-2 rounded-full bg-[var(--border-card)] overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-300 ${isComplete ? 'bg-green-500' : 'bg-[var(--accent-text)]'}`}
+                      className={`h-full rounded-full transition-all duration-300 ${isComplete ? 'bg-[var(--color-success)]' : 'bg-[var(--accent-text)]'}`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>

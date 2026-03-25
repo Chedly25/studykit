@@ -11,9 +11,9 @@ interface StatCardProps {
 export function StatCard({ icon: Icon, label, value, delta, deltaType = 'neutral' }: StatCardProps) {
   const deltaColor =
     deltaType === 'positive'
-      ? 'text-green-500'
+      ? 'text-[var(--color-success)]'
       : deltaType === 'negative'
-        ? 'text-red-500'
+        ? 'text-[var(--color-error)]'
         : 'text-[var(--text-muted)]'
 
   return (

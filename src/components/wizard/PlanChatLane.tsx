@@ -51,7 +51,7 @@ export function PlanChatLane({
           {suggestions.map((suggestion, i) => (
             <div
               key={i}
-              className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20"
+              className="flex items-start gap-2 p-2.5 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)]"
             >
               <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-[var(--text-body)] flex-1">{suggestion}</p>

@@ -290,7 +290,7 @@ export function Layout() {
         {/* ─── Main content ───────────────────────────────────── */}
         <main className={isChatPage ? 'flex-1 w-full min-w-0 pb-16 md:pb-0' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0 pb-16 md:pb-0'}>
           {!isOnline && (
-            <div className="mb-4 px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-600 text-center">
+            <div className="mb-4 px-4 py-2 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)] text-sm text-[var(--color-warning)] text-center">
               You're offline. Some features may not work.
             </div>
           )}

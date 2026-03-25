@@ -211,7 +211,7 @@ export function PracticeExamSetup({
                       isSelected
                         ? 'bg-[var(--accent-text)] text-white'
                         : isWeak
-                        ? 'border border-amber-400/50 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:border-amber-400'
+                        ? 'border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-[var(--color-warning)] hover:border-[var(--color-warning-border)]'
                         : 'border border-[var(--border-card)] bg-[var(--bg-input)] text-[var(--text-body)] hover:border-[var(--text-muted)]'
                     }`}
                   >

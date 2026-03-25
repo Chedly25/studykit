@@ -116,7 +116,7 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
           {contextPills.map(pill => (
             <span
               key={pill.id}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-600 border border-blue-500/20"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--color-info-bg)] text-[var(--color-info)] border border-[var(--color-info-border)]"
             >
               <FileText className="w-3 h-3 flex-shrink-0" />
               <span className="truncate max-w-[180px]">{pill.label}</span>
@@ -174,7 +174,7 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
             disabled={disabled || voiceInput.isTranscribing}
             className={`p-2 rounded-xl transition-colors disabled:opacity-40 ${
               voiceInput.isRecording
-                ? 'bg-red-500/15 text-red-500 animate-pulse'
+                ? 'bg-[var(--color-error-bg)] text-[var(--color-error)] animate-pulse'
                 : voiceInput.isTranscribing
                   ? 'text-[var(--accent-text)]'
                   : 'text-[var(--text-muted)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)]'
@@ -219,7 +219,7 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
         />
         <div className="flex flex-col items-center gap-1 flex-shrink-0">
           {text.length > MAX_LENGTH * 0.8 && (
-            <span className={`text-xs ${text.length > MAX_LENGTH ? 'text-red-400' : 'text-[var(--text-faint)]'}`}>
+            <span className={`text-xs ${text.length > MAX_LENGTH ? 'text-[var(--color-error)]' : 'text-[var(--text-faint)]'}`}>
               {text.length}/{MAX_LENGTH}
             </span>
           )}
