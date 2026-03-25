@@ -783,6 +783,8 @@
     "subsidiaryQuestions": "Questions subsidiaires"
   },
   "fiche": {
+    "title": "Fiche de révision",
+    "view": "Voir",
     "notFound": "Aucune fiche de révision pour ce sujet.",
     "generate": "Générer la fiche",
     "regenerate": "Régénérer",

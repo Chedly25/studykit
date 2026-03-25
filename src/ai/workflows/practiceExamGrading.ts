@@ -9,6 +9,7 @@ import { db } from '../../db'
 import { localStep, llmJsonStep } from '../orchestrator/steps'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { logQuestionResult } from '../tools/dataOperations'
+import { appendMistakeToFiche } from './ficheGeneration'
 
 export interface GradingConfig {
   sessionId: string
@@ -373,6 +374,23 @@ Return ONLY a JSON object:
                   questionResultIds: JSON.stringify([q.id]),
                 })
               }
+
+              // Auto-append mistake to revision fiche (if one exists)
+              try {
+                const fiche = await db.revisionFiches
+                  .where('[examProfileId+topicId]')
+                  .equals([ctx.examProfileId, topic.id])
+                  .first()
+                if (fiche) {
+                  const mistakes: Array<{ text: string; date: string }> = JSON.parse(fiche.personalMistakes || '[]')
+                  mistakes.push({ text: grade.misconception!, date: now })
+                  await db.revisionFiches.update(fiche.id, {
+                    content: appendMistakeToFiche(fiche.content, grade.misconception!, now.slice(0, 10)),
+                    personalMistakes: JSON.stringify(mistakes),
+                    updatedAt: now,
+                  })
+                }
+              } catch { /* non-critical — fiche update is best-effort */ }
             }
           }
         }

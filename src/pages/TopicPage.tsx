@@ -9,11 +9,12 @@ import { useTranslation } from 'react-i18next'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
   ArrowLeft, ArrowRight, BookOpen, ClipboardCheck, Brain,
-  MessageCircle, Calendar, Layers, FileText, TrendingUp,
+  MessageCircle, Calendar, Layers, FileText, TrendingUp, RefreshCw, Clock,
 } from 'lucide-react'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useTopicDetail } from '../hooks/useTopicDetail'
+import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
 import { decayedMastery } from '../lib/knowledgeGraph'
 import type { Subject } from '../db/schema'
 
@@ -36,6 +37,26 @@ export default function TopicPage() {
   ) as Subject | undefined
 
   const detail = useTopicDetail(topicId ?? null, profileId)
+  const { enqueue } = useBackgroundJobs()
+
+  // Revision fiche for this topic
+  const fiche = useLiveQuery(
+    () => profileId && topicId
+      ? db.revisionFiches.where('[examProfileId+topicId]').equals([profileId, topicId]).first()
+      : undefined,
+    [profileId, topicId],
+  )
+
+  const handleGenerateFiche = async () => {
+    if (!profileId || !topicId || !topic || !subject) return
+    await enqueue('fiche-generation', profileId, {
+      topicId,
+      topicName: topic.name,
+      subjectId: subject.id,
+      subjectName: subject.name,
+      examName: activeProfile?.name ?? 'Exam',
+    }, 1)
+  }
 
   const decayed = topic ? decayedMastery(topic) : 0
   const masteryPct = topic ? Math.round(topic.mastery * 100) : 0
@@ -131,6 +152,43 @@ export default function TopicPage() {
               : t('topic.noReviewScheduled')
           }
         </span>
+      </div>
+
+      {/* Revision fiche */}
+      <div className="glass-card p-4 mb-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2">
+            <FileText className="w-4 h-4 text-[var(--accent-text)]" /> {t('fiche.title', 'Revision Fiche')}
+          </h3>
+          {fiche && (
+            <div className="flex items-center gap-2">
+              <Link to={`/fiche/${topicId}`} className="text-xs text-[var(--accent-text)] hover:underline">
+                {t('fiche.view', 'View')}
+              </Link>
+              <button onClick={handleGenerateFiche} className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors" title={t('fiche.regenerate', 'Regenerate')}>
+                <RefreshCw className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+        {fiche ? (
+          <p className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {t('fiche.lastUpdated', 'Updated {{when}}', {
+              when: (() => {
+                const days = Math.floor((Date.now() - new Date(fiche.updatedAt).getTime()) / 86400000)
+                if (days === 0) return t('fiche.today', 'today')
+                if (days === 1) return t('fiche.yesterday', 'yesterday')
+                return t('fiche.daysAgo', '{{count}} days ago', { count: days })
+              })()
+            })}
+            {fiche.version > 1 && <span> · v{fiche.version}</span>}
+          </p>
+        ) : (
+          <button onClick={handleGenerateFiche} className="btn-secondary text-xs px-3 py-1.5 mt-2">
+            {t('fiche.generate', 'Generate fiche')}
+          </button>
+        )}
       </div>
 
       {/* Quick actions */}

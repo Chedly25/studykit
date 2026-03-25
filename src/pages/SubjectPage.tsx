@@ -11,6 +11,7 @@ import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { isTopicLocked } from '../lib/knowledgeGraph'
 import { TopicDetailPanel } from '../components/dashboard/TopicDetailPanel'
+import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
 
 function masteryBarColor(mastery: number): string {
   if (mastery >= 0.7) return 'bg-[var(--color-success)]'
@@ -33,6 +34,7 @@ export default function SubjectPage() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null)
+  const { enqueue } = useBackgroundJobs()
 
   // Track which topics have fiches
   const ficheTopicIds = useLiveQuery(
@@ -185,6 +187,25 @@ export default function SubjectPage() {
             style={{ width: `${Math.max(Math.round(avgMastery * 100), 2)}%` }}
           />
         </div>
+        {/* Batch generate fiches */}
+        {profileId && allSubjectTopics.length > 0 && (
+          <button
+            onClick={async () => {
+              for (const t of allSubjectTopics) {
+                await enqueue('fiche-generation', profileId, {
+                  topicId: t.id,
+                  topicName: t.name || `Topic ${t.id.slice(0, 6)}`,
+                  subjectId: subject.id,
+                  subjectName: subject.name,
+                  examName: activeProfile?.name ?? 'Exam',
+                }, 1)
+              }
+            }}
+            className="btn-secondary text-xs px-3 py-1.5 mt-3 flex items-center gap-1.5"
+          >
+            <FileText className="w-3.5 h-3.5" /> Generate all fiches
+          </button>
+        )}
       </div>
 
       {/* Search */}
