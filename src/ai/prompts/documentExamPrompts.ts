@@ -18,6 +18,7 @@ export interface DocumentExamPromptConfig {
   sourceExcerpts?: string
   avoidThemes?: string[]
   language?: 'fr' | 'en'
+  dnaProfileBlock?: string  // Pre-built DNA profile block (replaces generic concours profile)
 }
 
 // ─── Concours Profiles ─────────────────────────────────────────
@@ -82,7 +83,7 @@ function buildMathsPrompt(config: DocumentExamPromptConfig): { system: string; u
 
 Tu dois produire un SUJET D'ÉPREUVE COMPLET — un document mathématique continu de 5 à 6 pages, PAS une liste de questions indépendantes. Le sujet est UN problème unique qui guide le candidat vers la démonstration d'un théorème non trivial.
 
-## ${CONCOURS_PROFILES[config.concours]}
+${config.dnaProfileBlock ?? `## ${CONCOURS_PROFILES[config.concours]}`}
 
 ## CE QUI DISTINGUE UN VRAI SUJET DE CONCOURS D'UN DEVOIR DE PRÉPA
 
@@ -174,7 +175,7 @@ function buildPhysiquePrompt(config: DocumentExamPromptConfig): { system: string
 
 Tu dois produire un SUJET D'ÉPREUVE COMPLET — un problème de physique continu de 5 à 7 pages centré sur l'étude d'un SYSTÈME PHYSIQUE RÉEL.
 
-## ${CONCOURS_PROFILES[config.concours]}
+${config.dnaProfileBlock ?? `## ${CONCOURS_PROFILES[config.concours]}`}
 
 ## CE QUI DISTINGUE UN VRAI SUJET DE CONCOURS D'UN TD DE PRÉPA
 
@@ -255,7 +256,7 @@ function buildInformatiquePrompt(config: DocumentExamPromptConfig): { system: st
 
 Tu dois produire un SUJET D'ÉPREUVE COMPLET — un problème d'informatique continu de 5 à 7 pages.
 
-## ${CONCOURS_PROFILES[config.concours]}
+${config.dnaProfileBlock ?? `## ${CONCOURS_PROFILES[config.concours]}`}
 
 ## CE QUI DISTINGUE UN VRAI SUJET DE CONCOURS D'UN TP DE PRÉPA
 

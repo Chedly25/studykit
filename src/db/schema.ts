@@ -281,6 +281,19 @@ export interface ConceptCardConnection {
   label: string           // e.g. "requires", "extends", "contrasts"
 }
 
+// ─── Exam DNA (style profiles from real past papers) ────────────
+export interface ExamDNA {
+  id: string
+  examProfileId: string
+  name: string                  // "Mines-Ponts Maths I 2020-2024"
+  subject: string               // "maths-algebre" | "physique" | etc.
+  sourceDocumentIds: string     // JSON string[] — which uploaded papers
+  dnaProfile: string            // JSON: the analyzed DNA characteristics
+  paperCount: number
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── Revision Fiches (topic-level revision sheets) ──────────────
 export interface RevisionFiche {
   id: string
@@ -834,6 +847,7 @@ export type JobType =
   | 'cas-pratique-generation'
   | 'grand-oral-generation'
   | 'fiche-generation'
+  | 'exam-dna-analysis'
 
 export interface BackgroundJob {
   id: string

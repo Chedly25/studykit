@@ -58,6 +58,7 @@ import type {
   SyncQueueEntry,
   SyncMeta,
   RevisionFiche,
+  ExamDNA,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -118,6 +119,7 @@ export class StudiesKitDB extends Dexie {
   strategyEffectiveness!: Table<StrategyEffectiveness>
   macroRoadmaps!: Table<import('./schema').MacroRoadmap>
   revisionFiches!: Table<RevisionFiche>
+  examDNA!: Table<ExamDNA>
   _syncQueue!: Table<SyncQueueEntry>
   _syncMeta!: Table<SyncMeta>
 
@@ -361,6 +363,11 @@ export class StudiesKitDB extends Dexie {
     // v32: Revision fiches (topic-level revision sheets)
     this.version(32).stores({
       revisionFiches: 'id, examProfileId, topicId, [examProfileId+topicId], [examProfileId+subjectId]',
+    })
+
+    // v33: Exam DNA (style profiles from real past papers)
+    this.version(33).stores({
+      examDNA: 'id, examProfileId, [examProfileId+subject]',
     })
   }
 }

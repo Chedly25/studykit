@@ -20,6 +20,7 @@ import { createSyntheseGradingWorkflow } from '../workflows/syntheseGrading'
 import { createCasPratiqueGenerationWorkflow } from '../workflows/casPratiqueGeneration'
 import { createGrandOralGenerationWorkflow } from '../workflows/grandOralGeneration'
 import { createFicheGenerationWorkflow } from '../workflows/ficheGeneration'
+import { createExamDNAAnalysisWorkflow } from '../workflows/examDNAAnalysis'
 
 /**
  * Reconstruct a WorkflowDefinition from a job type and its serialized config.
@@ -130,6 +131,13 @@ export function reconstructWorkflow(type: JobType, config: Record<string, unknow
     case 'grand-oral-generation':
       return createGrandOralGenerationWorkflow({
         sessionId: config.sessionId as string,
+      })
+
+    case 'exam-dna-analysis':
+      return createExamDNAAnalysisWorkflow({
+        documentIds: config.documentIds as string[],
+        name: config.name as string,
+        subject: config.subject as string,
       })
 
     case 'fiche-generation':

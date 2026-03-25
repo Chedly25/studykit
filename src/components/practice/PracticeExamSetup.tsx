@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { BarChart3, Play, Clock, Sparkles, X, Shield, Settings2, FileText, Scale } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
@@ -399,12 +400,20 @@ export function PracticeExamSetup({
 
           {/* CPGE: Document Exam */}
           {(examCategory === 'cpge' || examCategory === 'general') && (
-            <button
-              onClick={() => setShowDocumentExam(!showDocumentExam)}
-              className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2"
-            >
-              <FileText className="w-4 h-4" /> {t('documentExam.startDocument', 'Document Exam (CPGE)')}
-            </button>
+            <>
+              <button
+                onClick={() => setShowDocumentExam(!showDocumentExam)}
+                className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2"
+              >
+                <FileText className="w-4 h-4" /> {t('documentExam.startDocument', 'Document Exam (CPGE)')}
+              </button>
+              <Link
+                to="/exam-dna"
+                className="btn-ghost px-6 py-2 w-full flex items-center justify-center gap-2 text-sm"
+              >
+                {t('examDNA.setupDNA', 'Exam DNA — match real paper style')}
+              </Link>
+            </>
           )}
         </div>
 

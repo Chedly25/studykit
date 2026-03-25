@@ -49,6 +49,7 @@ const StudyPlan = lazyWithRetry(() => import('./pages/StudyPlan'))
 const StudySession = lazyWithRetry(() => import('./pages/StudySession'))
 const Exercises = lazyWithRetry(() => import('./pages/Exercises'))
 const FicheRevisionPage = lazyWithRetry(() => import('./components/fiche/FicheRevisionViewer'))
+const ExamDNAPage = lazyWithRetry(() => import('./components/examdna/ExamDNAPage'))
 // MockExam removed — superseded by PracticeExam simulation mode
 const DailyQueue = lazyWithRetry(() => import('./pages/DailyQueue'))
 const DocumentReader = lazyWithRetry(() => import('./pages/DocumentReader'))
@@ -148,6 +149,7 @@ export default function App() {
           {/* Protected — AI */}
           <Route path="practice-exam" element={<ProtectedRoute><PracticeExam /></ProtectedRoute>} />
           <Route path="fiche/:topicId" element={<ProtectedRoute><FicheRevisionPage /></ProtectedRoute>} />
+          <Route path="exam-dna" element={<ProtectedRoute><ExamDNAPage /></ProtectedRoute>} />
           <Route path="study-plan" element={<ProtectedRoute><StudyPlan /></ProtectedRoute>} />
           <Route path="session" element={<ProtectedRoute><StudySession /></ProtectedRoute>} />
           <Route path="exercises" element={<ProtectedRoute><Exercises /></ProtectedRoute>} />

@@ -18,6 +18,8 @@ import { hybridSearch } from '../../lib/hybridSearch'
 import { streamChat } from '../client'
 import { buildDocumentExamPrompt, buildSolutionPrompt } from '../prompts/documentExamPrompts'
 import type { DocumentExamSubject, ConcoursType } from '../prompts/documentExamPrompts'
+import { buildDNAProfileBlock } from '../prompts/examDNAPrompts'
+import type { DNAProfile } from '../prompts/examDNAPrompts'
 import { parseExamDocument } from '../../lib/examDocumentParser'
 
 // ─── Config ─────────────────────────────────────────────────────
@@ -169,12 +171,26 @@ export function createDocumentExamWorkflow(config: DocumentExamConfig): Workflow
           const context = ctx.results['gatherContext'].data as GatherContextResult
           const sources = ctx.results['searchDocuments']?.data as string | undefined
 
+          // Load DNA profile if one exists for this subject
+          let dnaProfileBlock: string | undefined
+          try {
+            const dna = await db.examDNA
+              .where('[examProfileId+subject]')
+              .equals([ctx.examProfileId, config.subject])
+              .first()
+            if (dna?.dnaProfile) {
+              const profile = JSON.parse(dna.dnaProfile) as DNAProfile
+              dnaProfileBlock = buildDNAProfileBlock(profile, dna.paperCount)
+            }
+          } catch { /* non-critical — fall back to generic profile */ }
+
           const { system, user } = buildDocumentExamPrompt({
             subject: config.subject,
             concours: config.concours,
             topics: context.topics,
             sourceExcerpts: sources && sources.length > 100 ? sources : undefined,
             avoidThemes: context.recentThemes.length > 0 ? context.recentThemes : undefined,
+            dnaProfileBlock,
           })
 
           ctx.updateProgress?.('Generating exam document (this may take a minute)...')
