@@ -91,7 +91,7 @@ export function createExamDNAAnalysisWorkflow(config: ExamDNAAnalysisConfig): Wo
               name: config.name,
               sourceDocumentIds: JSON.stringify(allDocIds),
               dnaProfile: JSON.stringify(merged),
-              paperCount: profiles.length,
+              paperCount: allDocIds.length,
               updatedAt: now,
             })
           } else {

@@ -98,7 +98,7 @@ Analyse cette épreuve et produis un profil ADN (DNA) au format JSON :
  * Build the DNA-enhanced prompt block that replaces the generic concours profile.
  */
 export function buildDNAProfileBlock(dna: DNAProfile, paperCount: number): string {
-  const qtypes = Object.entries(dna.questionTypes)
+  const qtypes = Object.entries(dna.questionTypes ?? {})
     .filter(([, v]) => v > 0.03)
     .sort(([, a], [, b]) => b - a)
     .map(([type, pct]) => {
@@ -115,34 +115,34 @@ export function buildDNAProfileBlock(dna: DNAProfile, paperCount: number): strin
     })
     .join('\n')
 
-  const domains = [dna.content.primaryDomain, ...dna.content.secondaryDomains].filter(Boolean).join(', ')
+  const domains = [dna.content?.primaryDomain, ...(dna.content?.secondaryDomains ?? [])].filter(Boolean).join(', ')
 
-  const patterns = dna.style.samplePatterns.length > 0
+  const patterns = (dna.style?.samplePatterns?.length ?? 0) > 0
     ? `\nPatterns réels extraits des sujets :\n${dna.style.samplePatterns.map(p => `  - "${p}"`).join('\n')}`
     : ''
 
   return `## PROFIL ADN DE L'ÉPREUVE (analysé à partir de ${paperCount} sujets réels)
 
-Structure : ${dna.structure.partCount} parties, ~${dna.structure.totalQuestions} questions
-${dna.structure.hasPreambule ? 'Préambule avec notations et définitions' : 'Pas de préambule formel'}
-${dna.structure.hasTheoremTarget ? 'Théorème cible annoncé en début de sujet' : 'Pas de théorème cible explicite'}
-${dna.structure.hasNavigationParagraph ? 'Paragraphe de navigation décrivant les parties' : ''}
+Structure : ${dna.structure?.partCount ?? '?'} parties, ~${dna.structure?.totalQuestions ?? '?'} questions
+${dna.structure?.hasPreambule ? 'Préambule avec notations et définitions' : 'Pas de préambule formel'}
+${dna.structure?.hasTheoremTarget ? 'Théorème cible annoncé en début de sujet' : 'Pas de théorème cible explicite'}
+${dna.structure?.hasNavigationParagraph ? 'Paragraphe de navigation décrivant les parties' : ''}
 
 Distribution des questions :
 ${qtypes}
 
-Difficulté : ${dna.difficulty.curveShape}
-Scaffolding : ${dna.difficulty.scaffoldingLevel} (${dna.difficulty.hintsCount} indications "On pourra utiliser..." max)
-${dna.difficulty.questionsWithoutHints} questions sans aucune indication
-${dna.difficulty.questionsWhereStudentFindsResult} questions où le candidat doit trouver le résultat
+Difficulté : ${dna.difficulty?.curveShape ?? 'non analysé'}
+Scaffolding : ${dna.difficulty?.scaffoldingLevel ?? 'moderate'} (${dna.difficulty?.hintsCount ?? '?'} indications "On pourra utiliser..." max)
+${dna.difficulty?.questionsWithoutHints ?? '?'} questions sans aucune indication
+${dna.difficulty?.questionsWhereStudentFindsResult ?? '?'} questions où le candidat doit trouver le résultat
 
 Domaines : ${domains}
-Intégration inter-domaines : ${dna.content.crossDomainIntegration}
-Niveau du théorème cible : ${dna.content.theoremLevel}
-Densité de notations : ${dna.content.notationDensity}${dna.content.customNotations.length > 0 ? `\nNotations originales : ${dna.content.customNotations.join(', ')}` : ''}
+Intégration inter-domaines : ${dna.content?.crossDomainIntegration ?? 'non analysé'}
+Niveau du théorème cible : ${dna.content?.theoremLevel ?? 'non analysé'}
+Densité de notations : ${dna.content?.notationDensity ?? 'moderate'}${(dna.content?.customNotations?.length ?? 0) > 0 ? `\nNotations originales : ${dna.content.customNotations.join(', ')}` : ''}
 
-Style : prose ${dna.style.proseDensity}, formalité ${dna.style.formalityLevel}
-Sous-parties a), b), c) : ${dna.style.subpartUsage}${patterns}`
+Style : prose ${dna.style?.proseDensity ?? 'moderate'}, formalité ${dna.style?.formalityLevel ?? 'formal'}
+Sous-parties a), b), c) : ${dna.style?.subpartUsage ?? 'frequent'}${patterns}`
 }
 
 /**
@@ -178,7 +178,7 @@ export function mergeDNAProfiles(profiles: DNAProfile[]): DNAProfile {
   return {
     structure: {
       partCount: Math.round(avg(profiles.map(p => p.structure.partCount))),
-      questionsPerPart: profiles[0].structure.questionsPerPart, // use first as template
+      questionsPerPart: (profiles.find(p => p.structure.questionsPerPart?.length > 0) ?? profiles[0]).structure.questionsPerPart ?? [],
       totalQuestions: Math.round(avg(profiles.map(p => p.structure.totalQuestions))),
       hasPreambule: profiles.filter(p => p.structure.hasPreambule).length > profiles.length / 2,
       hasTheoremTarget: profiles.filter(p => p.structure.hasTheoremTarget).length > profiles.length / 2,

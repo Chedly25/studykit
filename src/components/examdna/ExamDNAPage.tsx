@@ -19,19 +19,25 @@ export default function ExamDNAPage() {
   const { t } = useTranslation()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
-  const { uploadPdf } = useSources(profileId)
+  const { uploadMultiplePdfs } = useSources(profileId)
   const { enqueue } = useBackgroundJobs()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [subject, setSubject] = useState<DocumentExamSubject>('maths-algebre')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
-  // Exam documents for this profile
+  // Exam documents for this profile — show all exam docs
+  // The user selects which subject they belong to via the dropdown before analyzing
   const examDocs = useLiveQuery(
     () => profileId
       ? db.documents.where('examProfileId').equals(profileId).filter(d => d.category === 'exam').toArray()
       : [],
     [profileId],
   ) ?? []
+
+  // If DNA exists for this subject, only show docs that were used for it
+  const relevantDocIds = currentDNA
+    ? new Set(JSON.parse(currentDNA.sourceDocumentIds || '[]') as string[])
+    : null
 
   // DNA profiles for this profile
   const dnaProfiles = useLiveQuery(
@@ -47,12 +53,11 @@ export default function ExamDNAPage() {
 
   const handleFileUpload = useCallback(async (files: FileList | null) => {
     if (!files || !profileId) return
-    for (const file of Array.from(files)) {
-      if (file.type === 'application/pdf') {
-        await uploadPdf(file, 'exam')
-      }
+    const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf')
+    if (pdfFiles.length > 0) {
+      await uploadMultiplePdfs(pdfFiles, 'exam')
     }
-  }, [profileId, uploadPdf])
+  }, [profileId, uploadMultiplePdfs])
 
   const handleAnalyze = useCallback(async () => {
     if (!profileId || examDocs.length === 0) return
@@ -138,10 +143,15 @@ export default function ExamDNAPage() {
           </div>
 
           {/* Analyze button */}
+          <p className="text-xs text-[var(--text-faint)] mt-2">
+            {t('examDNA.analyzeHint', 'All papers above will be analyzed for the selected subject ({{subject}}).', {
+              subject: SUBJECT_OPTIONS.find(s => s.value === subject)?.labelFr ?? subject,
+            })}
+          </p>
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing || examDocs.length === 0}
-            className="btn-primary w-full py-2.5 text-sm mt-3 flex items-center justify-center gap-2 disabled:opacity-50"
+            className="btn-primary w-full py-2.5 text-sm mt-2 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isAnalyzing ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> {t('examDNA.analyzing', 'Analyzing...')}</>
