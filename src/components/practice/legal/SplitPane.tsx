@@ -2,7 +2,7 @@
  * Resizable split pane — left/right on desktop, stacked on mobile.
  * No external library — pure CSS flexbox + mouse drag.
  */
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 
 interface SplitPaneProps {
   left: React.ReactNode
@@ -22,6 +22,12 @@ export function SplitPane({
   const [leftPercent, setLeftPercent] = useState(defaultLeftPercent)
   const containerRef = useRef<HTMLDivElement>(null)
   const isDragging = useRef(false)
+  const cleanupRef = useRef<(() => void) | null>(null)
+
+  // Clean up listeners on unmount (fix: leak if unmount during drag)
+  useEffect(() => {
+    return () => { cleanupRef.current?.() }
+  }, [])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -34,18 +40,20 @@ export function SplitPane({
       setLeftPercent(Math.min(maxLeftPercent, Math.max(minLeftPercent, percent)))
     }
 
-    const onMouseUp = () => {
+    const cleanup = () => {
       isDragging.current = false
       document.removeEventListener('mousemove', onMouseMove)
-      document.removeEventListener('mouseup', onMouseUp)
+      document.removeEventListener('mouseup', cleanup)
       document.body.style.userSelect = ''
       document.body.style.cursor = ''
+      cleanupRef.current = null
     }
 
+    cleanupRef.current = cleanup
     document.body.style.userSelect = 'none'
     document.body.style.cursor = 'col-resize'
     document.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseup', onMouseUp)
+    document.addEventListener('mouseup', cleanup)
   }, [minLeftPercent, maxLeftPercent])
 
   return (

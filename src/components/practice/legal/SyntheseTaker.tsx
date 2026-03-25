@@ -2,14 +2,13 @@
  * Main renderer for the CRFPA Note de Synthèse exercise.
  * Split-pane: dossier browser (left) + writing area (right).
  */
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle } from 'lucide-react'
 import { SplitPane } from './SplitPane'
 import { DossierPanel } from './DossierPanel'
 import type { DossierDoc } from './DossierPanel'
 import { SynthesisWritingArea } from './SynthesisWritingArea'
-import { useDocumentAutoSave } from '../../../hooks/useDocumentAutoSave'
 import { db } from '../../../db'
 
 interface SyntheseTakerProps {
@@ -31,45 +30,68 @@ export function SyntheseTaker({
   const [answer, setAnswer] = useState(savedAnswer ?? '')
   const [timeRemaining, setTimeRemaining] = useState(timeLimitSeconds ?? 0)
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const onSubmitRef = useRef(onSubmit)
+  onSubmitRef.current = onSubmit
 
-  // Auto-save: reuse the document auto-save hook with a wrapper
-  // We store the synthesis answer under key "0" in the answers map
-  const answersForSave = { 0: answer } as Record<number, string>
-  const { isSaving, lastSaved } = useDocumentAutoSave(sessionId, answersForSave, 1000)
+  // Fix #11: Sync savedAnswer when it arrives from async live query
+  const initializedRef = useRef(false)
+  useEffect(() => {
+    if (!initializedRef.current && savedAnswer && !answer) {
+      setAnswer(savedAnswer)
+      initializedRef.current = true
+    }
+  }, [savedAnswer, answer])
 
-  // Also persist to synthesisAnswer field directly
+  // Fix #3: Sync timeRemaining when timeLimitSeconds arrives async
+  useEffect(() => {
+    if (timeLimitSeconds && timeLimitSeconds > 0 && timeRemaining === 0) {
+      setTimeRemaining(timeLimitSeconds)
+    }
+  }, [timeLimitSeconds, timeRemaining])
+
+  // Auto-save synthesisAnswer directly (fix #1: no useDocumentAutoSave)
   useEffect(() => {
     if (!answer) return
+    setIsSaving(true)
     const timer = setTimeout(() => {
       db.practiceExamSessions.update(sessionId, {
         synthesisAnswer: answer,
-      }).catch(() => {})
+      }).then(() => setLastSaved(new Date()))
+        .catch(() => {})
+        .finally(() => setIsSaving(false))
     }, 1000)
-    return () => clearTimeout(timer)
+    return () => { clearTimeout(timer); setIsSaving(false) }
   }, [answer, sessionId])
 
-  // Timer
+  // Timer (fix #4: use ref for onSubmit; fix #6: no side effect in updater)
   useEffect(() => {
-    if (!timeLimitSeconds) return
+    if (!timeLimitSeconds || timeRemaining <= 0) return
     const interval = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev <= 1) {
           clearInterval(interval)
-          onSubmit()
           return 0
         }
         return prev - 1
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [timeLimitSeconds, onSubmit])
+  }, [timeLimitSeconds, timeRemaining > 0]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-submit when timer hits 0 (separate from the timer effect)
+  useEffect(() => {
+    if (timeRemaining === 0 && timeLimitSeconds && timeLimitSeconds > 0) {
+      onSubmitRef.current()
+    }
+  }, [timeRemaining, timeLimitSeconds])
 
   const handleSubmit = useCallback(() => {
-    // Flush answer before submitting
     db.practiceExamSessions.update(sessionId, {
       synthesisAnswer: answer,
-    }).then(() => onSubmit()).catch(() => onSubmit())
-  }, [sessionId, answer, onSubmit])
+    }).then(() => onSubmitRef.current()).catch(() => onSubmitRef.current())
+  }, [sessionId, answer])
 
   const wordCount = answer.trim() ? answer.trim().split(/\s+/).length : 0
 

@@ -127,9 +127,23 @@ Corrige selon le barème. Retourne UNIQUEMENT le JSON :
 
           let gradeResult: SynthesisGradeResult
           try {
-            const parsed = JSON.parse(
-              raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1)
-            )
+            const jsonStart = raw.indexOf('{')
+            const jsonEnd = raw.lastIndexOf('}')
+            if (jsonStart < 0 || jsonEnd < jsonStart) throw new Error('No JSON found')
+            let jsonStr = raw.slice(jsonStart, jsonEnd + 1)
+            let parsed: Record<string, unknown>
+            try {
+              parsed = JSON.parse(jsonStr)
+            } catch {
+              // Try to repair truncated JSON
+              const lastBrace = jsonStr.lastIndexOf('}', jsonStr.length - 2)
+              if (lastBrace > 0) {
+                jsonStr = jsonStr.slice(0, lastBrace + 1) + '}'
+                parsed = JSON.parse(jsonStr)
+              } else {
+                throw new Error('JSON parse failed')
+              }
+            }
             const totalEarned = (parsed.criterionScores ?? []).reduce(
               (s: number, c: { earned: number }) => s + c.earned, 0
             )

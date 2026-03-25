@@ -239,9 +239,8 @@ Tu dois vérifier :
 2. La cohérence des faits (dates, noms des parties, numéros de décisions)
 3. La couverture du plan (chaque sous-partie I/A, I/B, II/A, II/B est alimentée par suffisamment de documents)
 4. La diversité des types de documents
-5. La longueur totale (~25-30 pages)
 
-Si tu trouves des incohérences, tu RÉÉCRIS les passages problématiques. Tu retournes le dossier corrigé.`
+Ne retourne PAS le dossier complet. Retourne UNIQUEMENT la liste des corrections à apporter.`
 
   const docsText = documents.map(d =>
     `--- DOCUMENT ${d.docNumber} ---\nType: ${d.type}\nTitre: ${d.title}\n\n${d.content}`
@@ -254,12 +253,16 @@ ${JSON.stringify(blueprint, null, 2)}
 ${docsText}
 
 ## INSTRUCTIONS
-Vérifie la cohérence du dossier. Si tout est correct, retourne le dossier tel quel. Si des corrections sont nécessaires, retourne le dossier corrigé.
+Vérifie la cohérence du dossier. Retourne UNIQUEMENT un tableau JSON de corrections à appliquer. Si aucune correction n'est nécessaire, retourne un tableau vide [].
 
-Retourne un tableau JSON des documents corrigés :
+Format :
 [
-  { "docNumber": 1, "title": "...", "type": "...", "content": "..." },
-  ...
+  {
+    "docNumber": 2,
+    "issue": "Description du problème",
+    "searchText": "Le texte exact à remplacer dans le document (copier-coller)",
+    "replaceWith": "Le texte corrigé"
+  }
 ]
 
 Retourne UNIQUEMENT le JSON, sans texte autour.`

@@ -47,21 +47,22 @@ async function llmMain(prompt: string, system: string, ctx: WorkflowContext, max
 }
 
 function extractJson<T>(raw: string): T {
-  const start = raw.indexOf('{') < raw.indexOf('[')
-    ? (raw.indexOf('{') >= 0 ? raw.indexOf('{') : raw.indexOf('['))
-    : (raw.indexOf('[') >= 0 ? raw.indexOf('[') : raw.indexOf('{'))
+  const objIdx = raw.indexOf('{')
+  const arrIdx = raw.indexOf('[')
+  // Pick whichever comes first; prefer array if both at same position
+  const start = arrIdx >= 0 && (objIdx < 0 || arrIdx < objIdx) ? arrIdx : objIdx
+  if (start < 0) throw new Error('No JSON found in response')
   const isArray = raw[start] === '['
   const end = isArray ? raw.lastIndexOf(']') : raw.lastIndexOf('}')
-  if (start < 0 || end < 0) throw new Error('No JSON found in response')
+  if (end < start) throw new Error('No JSON found in response')
   let jsonStr = raw.slice(start, end + 1)
   try {
     return JSON.parse(jsonStr)
   } catch {
-    // Try to repair truncated JSON
-    const closingChar = isArray ? ']' : '}'
-    const lastComplete = jsonStr.lastIndexOf(isArray ? '}' : '}')
-    if (lastComplete > 0) {
-      jsonStr = jsonStr.slice(0, lastComplete + 1) + closingChar
+    // Try to repair truncated JSON — find last complete object and close the container
+    const lastBrace = jsonStr.lastIndexOf('}')
+    if (lastBrace > 0) {
+      jsonStr = jsonStr.slice(0, lastBrace + 1) + (isArray ? ']' : '')
       return JSON.parse(jsonStr)
     }
     throw new Error('Failed to parse JSON from response')
@@ -113,7 +114,7 @@ export function createSyntheseGenerationWorkflow(config: SyntheseGenerationConfi
           const blueprint = extractJson<DossierBlueprint>(raw)
 
           // Validate blueprint
-          if (!blueprint.theme || !blueprint.documents || blueprint.documents.length < 10) {
+          if (!blueprint.theme || !blueprint.documents || blueprint.documents.length < 12) {
             throw new Error(`Blueprint has only ${blueprint.documents?.length ?? 0} documents. Expected 15-18.`)
           }
 
@@ -189,34 +190,43 @@ export function createSyntheseGenerationWorkflow(config: SyntheseGenerationConfi
       },
 
       // ── Step 4: Coherence Reviewer ────────────────────────────
+      // Returns corrections (not full dossier) to stay within token budget
       {
         id: 'coherenceReviewer',
         name: 'Reviewing dossier coherence',
         async execute(_input: unknown, ctx: WorkflowContext): Promise<DossierDocument[]> {
           const blueprint = ctx.results['themeArchitect'].data as DossierBlueprint
-          const documents = ctx.results['documentGenerators'].data as DossierDocument[]
+          const documents = [...(ctx.results['documentGenerators'].data as DossierDocument[])]
 
           const { system, user } = buildCoherenceReviewerPrompt(blueprint, documents)
 
           ctx.updateProgress?.('Reviewing cross-references and coherence...')
-          const raw = await llmMain(user, system, ctx, 16384)
+          const raw = await llmMain(user, system, ctx, 8192)
 
-          let reviewed: DossierDocument[]
+          // Apply corrections to documents
           try {
-            reviewed = extractJson<DossierDocument[]>(raw)
-            // Validate that we got back all documents
-            if (reviewed.length < documents.length * 0.8) {
-              // Reviewer returned too few documents — use originals
-              reviewed = documents
+            const corrections = extractJson<Array<{
+              docNumber: number
+              issue: string
+              searchText: string
+              replaceWith: string
+            }>>(raw)
+
+            if (Array.isArray(corrections)) {
+              for (const fix of corrections) {
+                const doc = documents.find(d => d.docNumber === fix.docNumber)
+                if (doc && fix.searchText && fix.replaceWith) {
+                  doc.content = doc.content.replace(fix.searchText, fix.replaceWith)
+                }
+              }
             }
           } catch {
-            // If parsing fails, keep original documents
-            reviewed = documents
+            // No corrections or parse failure — keep originals as-is
           }
 
           // Persist reviewed documents
           await db.practiceExamSessions.update(config.sessionId, {
-            dossierContent: JSON.stringify(reviewed),
+            dossierContent: JSON.stringify(documents),
           })
 
           return reviewed

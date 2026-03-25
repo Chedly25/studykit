@@ -108,7 +108,7 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
             {t('syntheseExam.documentCoverage', 'Document Coverage')}
           </h3>
           <div className="flex flex-wrap gap-1.5">
-            {[...(grading.documentsCited ?? []), ...(grading.documentsMissed ?? [])]
+            {[...new Set([...(grading.documentsCited ?? []), ...(grading.documentsMissed ?? [])])]
               .sort((a, b) => a - b)
               .map(num => {
                 const cited = grading.documentsCited?.includes(num)
