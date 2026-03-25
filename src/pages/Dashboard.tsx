@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Zap, MessageCircle, Loader2, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react'
+import { ArrowRight, Zap, MessageCircle, Loader2, AlertTriangle, TrendingUp, TrendingDown, FolderOpen, ClipboardCheck } from 'lucide-react'
 import { useUser } from '@clerk/clerk-react'
 import { isCramModeActive } from '../lib/cramModeEngine'
 import { db } from '../db'
@@ -267,19 +267,40 @@ export default function Dashboard() {
             }
             <ArrowRight className="w-4 h-4" />
           </Link>
-        ) : (
-          <div className="glass-card p-4 mt-4 text-center">
-            <p className="text-sm font-medium text-[var(--text-heading)]">{t('dashboard.allCaughtUp')}</p>
-            <div className="flex gap-2 mt-3 justify-center">
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel', { detail: {} }))}
-                className="btn-secondary py-2 px-4 text-sm flex items-center gap-2"
-              >
-                <MessageCircle className="w-4 h-4" /> {t('dashboard.talkToTutor')}
-              </button>
+        ) : (() => {
+          // Check if user is new (low mastery, hasn't really started)
+          const avgMastery = topics.length > 0
+            ? topics.reduce((s, t) => s + t.mastery, 0) / topics.length
+            : 0
+          const isNewUser = avgMastery < 0.15 && topics.length > 0
+
+          return isNewUser ? (
+            <div className="glass-card p-5 mt-4 text-center space-y-3">
+              <p className="text-sm font-semibold text-[var(--text-heading)]">{t('dashboard.getStarted', "Get started")}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('dashboard.getStartedHint', 'Upload your course materials or take a practice exam to begin.')}</p>
+              <div className="flex gap-2 justify-center flex-wrap">
+                <Link to="/sources" className="btn-secondary py-2 px-4 text-sm flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4" /> {t('dashboard.uploadMaterials', 'Upload materials')}
+                </Link>
+                <Link to="/practice-exam" className="btn-primary py-2 px-4 text-sm flex items-center gap-2">
+                  <ClipboardCheck className="w-4 h-4" /> {t('dashboard.startFirstExam', 'Take a practice exam')}
+                </Link>
+              </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="glass-card p-4 mt-4 text-center">
+              <p className="text-sm font-medium text-[var(--text-heading)]">{t('dashboard.allCaughtUp')}</p>
+              <div className="flex gap-2 mt-3 justify-center">
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel', { detail: {} }))}
+                  className="btn-secondary py-2 px-4 text-sm flex items-center gap-2"
+                >
+                  <MessageCircle className="w-4 h-4" /> {t('dashboard.talkToTutor')}
+                </button>
+              </div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* ─── This Week Schedule ─── */}

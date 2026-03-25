@@ -624,34 +624,63 @@ function DailyQueueContent() {
         </div>
       ) : queue.length === 0 ? (
         <div className="glass-card p-8 text-center">
-          <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-          <h2 className="text-lg font-bold text-[var(--text-heading)] mb-2">
-            {completedCount > 0 ? t('queue.beautifulSession') : t('queue.allCaughtUp')}
-          </h2>
-          <p className="text-sm text-[var(--text-muted)] mb-4">
-            {completedCount > 0
-              ? t('queue.coveredItems', { count: completedCount })
-              : t('queue.takeABreak')
+          {(() => {
+            const avgMastery = topics.length > 0
+              ? topics.reduce((s, t) => s + t.mastery, 0) / topics.length
+              : 0
+            const isNewUser = avgMastery < 0.15 && completedCount === 0
+
+            if (isNewUser) {
+              return (
+                <>
+                  <h2 className="text-lg font-bold text-[var(--text-heading)] mb-2">
+                    {t('queue.notStartedYet', 'Nothing scheduled yet')}
+                  </h2>
+                  <p className="text-sm text-[var(--text-muted)] mb-4">
+                    {t('queue.notStartedHint', 'Start studying to build your daily queue.')}
+                  </p>
+                  <div className="flex flex-col gap-2 max-w-xs mx-auto">
+                    <button onClick={() => navigate('/practice-exam')} className="btn-primary w-full py-2 text-sm">
+                      {t('queue.takePracticeExam', 'Take a practice exam')}
+                    </button>
+                    <button onClick={() => navigate('/sources')} className="btn-secondary w-full py-2 text-sm">
+                      {t('dashboard.uploadMaterials', 'Upload materials')}
+                    </button>
+                  </div>
+                </>
+              )
             }
-          </p>
-          {tomorrowDueCount > 0 && (
-            <p className="text-xs text-[var(--text-faint)] mb-4">
-              {t('session.tomorrowDue', { count: tomorrowDueCount })}
-            </p>
-          )}
-          <div className="flex flex-col gap-2 max-w-xs mx-auto">
-            {topics.some(tp => tp.mastery < 0.3) && isPro && (
-              <button onClick={() => navigate('/practice-exam')} className="btn-primary w-full py-2 text-sm">
-                {t('queue.takePracticeExam', 'Take a practice exam')}
-              </button>
-            )}
-            <button onClick={() => navigate('/analytics')} className="btn-secondary w-full py-2 text-sm">
-              {t('queue.viewProgress', 'View your progress')}
-            </button>
-            <button onClick={() => navigate('/dashboard')} className="btn-secondary w-full py-2 text-sm">
-              {t('queue.backToDashboard')}
-            </button>
-          </div>
+
+            return (
+              <>
+                <CheckCircle2 className="w-12 h-12 text-[var(--color-success)] mx-auto mb-3" />
+                <h2 className="text-lg font-bold text-[var(--text-heading)] mb-2">
+                  {completedCount > 0 ? t('queue.beautifulSession') : t('queue.allCaughtUp')}
+                </h2>
+                <p className="text-sm text-[var(--text-muted)] mb-4">
+                  {completedCount > 0
+                    ? t('queue.coveredItems', { count: completedCount })
+                    : t('queue.takeABreak')
+                  }
+                </p>
+                {tomorrowDueCount > 0 && (
+                  <p className="text-xs text-[var(--text-faint)] mb-4">
+                    {t('session.tomorrowDue', { count: tomorrowDueCount })}
+                  </p>
+                )}
+                <div className="flex flex-col gap-2 max-w-xs mx-auto">
+                  {topics.some(tp => tp.mastery < 0.3) && isPro && (
+                    <button onClick={() => navigate('/practice-exam')} className="btn-primary w-full py-2 text-sm">
+                      {t('queue.takePracticeExam', 'Take a practice exam')}
+                    </button>
+                  )}
+                  <button onClick={() => navigate('/analytics')} className="btn-secondary w-full py-2 text-sm">
+                    {t('queue.viewProgress', 'View your progress')}
+                  </button>
+                </div>
+              </>
+            )
+          })()}
         </div>
       ) : null}
 

@@ -118,9 +118,9 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
             <span className="text-xs text-[var(--text-muted)] ml-1">{t('dashboard.briefReadiness', 'Readiness')}</span>
           </div>
           <div className="flex items-center gap-1 text-xs">
-            {readiness.trend === 'improving' && <><TrendingUp className="w-3.5 h-3.5 text-emerald-500" /><span className="text-emerald-500">{t('dashboard.briefTrendImproving', 'Improving')}</span></>}
+            {readiness.trend === 'improving' && <><TrendingUp className="w-3.5 h-3.5 text-[var(--color-success)]" /><span className="text-[var(--color-success)]">{t('dashboard.briefTrendImproving', 'Improving')}</span></>}
             {readiness.trend === 'stable' && <><Minus className="w-3.5 h-3.5 text-[var(--text-muted)]" /><span className="text-[var(--text-muted)]">{t('dashboard.briefTrendStable', 'Stable')}</span></>}
-            {readiness.trend === 'declining' && <><TrendingDown className="w-3.5 h-3.5 text-red-500" /><span className="text-red-500">{t('dashboard.briefTrendDeclining', 'Declining')}</span></>}
+            {readiness.trend === 'declining' && <><TrendingDown className="w-3.5 h-3.5 text-[var(--color-error)]" /><span className="text-[var(--color-error)]">{t('dashboard.briefTrendDeclining', 'Declining')}</span></>}
           </div>
         </div>
       )}
@@ -141,7 +141,7 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
             {priorities.map((p, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
                 <span className="mt-0.5 shrink-0">
-                  <span className={`inline-block w-2 h-2 rounded-full ${p.urgency === 'critical' ? 'bg-red-500' : p.urgency === 'high' ? 'bg-orange-500' : 'bg-blue-500'}`} />
+                  <span className={`inline-block w-2 h-2 rounded-full ${p.urgency === 'critical' ? 'bg-[var(--color-error)]' : p.urgency === 'high' ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-info)]'}`} />
                 </span>
                 <span className="text-[var(--text-body)]">
                   <Link to={`/topic/${p.topicId}`} className="font-medium text-[var(--text-heading)] hover:text-[var(--accent-text)] transition-colors">{p.topicName}</Link>
@@ -155,12 +155,12 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
         <p className="text-sm text-[var(--text-muted)] mb-3">{t('dashboard.briefNoPriorities', "No urgent items — you're on track")}</p>
       )}
 
-      {/* Urgent progress insight */}
+      {/* Urgent progress insight — only show title (message may be in wrong language) */}
       {urgentInsight && (
         <div className={`text-xs p-2 rounded-lg mb-3 ${
-          urgentInsight.urgency === 'urgent' ? 'bg-red-500/10 text-red-600' : 'bg-amber-500/10 text-amber-600'
+          urgentInsight.urgency === 'urgent' ? 'bg-[var(--color-error-bg)] text-[var(--color-error)]' : 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'
         }`}>
-          <span className="font-medium">{urgentInsight.title}</span>: {urgentInsight.message}
+          <span className="font-medium">{urgentInsight.title}</span>
         </div>
       )}
 

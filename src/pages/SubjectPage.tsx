@@ -236,8 +236,8 @@ export default function SubjectPage() {
                   </div>
 
                   {/* Topic name */}
-                  <span className="flex-1 text-xs text-[var(--text-body)] truncate min-w-0 pr-2">
-                    {topic.name}
+                  <span className="flex-1 text-xs text-[var(--text-body)] truncate min-w-0 pr-2" style={{ minWidth: '120px' }}>
+                    {topic.name || `Topic ${topic.id.slice(0, 6)}`}
                   </span>
 
                   {/* Docs */}
