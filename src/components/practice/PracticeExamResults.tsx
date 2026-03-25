@@ -287,6 +287,9 @@ export function PracticeExamResults({
         </div>
       )}
 
+      {/* Exam Strategy (from Exam Strategist agent) */}
+      {session?.id && <ExamStrategySection sessionId={session.id} />}
+
       {/* Question-by-question review */}
       <div className="glass-card p-6">
         <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-4">
@@ -408,6 +411,77 @@ export function PracticeExamResults({
           {t('dashboard.title')}
         </a>
       </div>
+    </div>
+  )
+}
+
+// ─── Exam Strategy Section (from Exam Strategist agent) ─────────
+
+function ExamStrategySection({ sessionId }: { sessionId: string }) {
+  const { t } = useTranslation()
+
+  const insight = useLiveQuery(
+    () => db.agentInsights.get(`exam-strategist:${sessionId}`),
+    [sessionId],
+  )
+
+  if (!insight?.data) return null
+
+  let strategy: import('../../ai/agents/examStrategist').ExamStrategy
+  try { strategy = JSON.parse(insight.data) } catch { return null }
+
+  const { attemptEfficiency: ae, recommendations } = strategy
+
+  return (
+    <div className="glass-card p-6">
+      <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-4 flex items-center gap-2">
+        <BarChart3 className="w-5 h-5" />
+        {t('practiceExam.strategy', 'Exam Strategy')}
+      </h3>
+
+      {/* Attempt efficiency */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div className="text-center p-2 rounded-lg bg-[var(--bg-input)]">
+          <div className="text-lg font-bold text-[var(--text-heading)]">{ae.attempted}/{ae.totalQuestions}</div>
+          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.attempted', 'Attempted')}</div>
+        </div>
+        <div className="text-center p-2 rounded-lg bg-[var(--bg-input)]">
+          <div className="text-lg font-bold text-[var(--color-success)]">{ae.correct}</div>
+          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.correct', 'Correct')}</div>
+        </div>
+        <div className="text-center p-2 rounded-lg bg-[var(--bg-input)]">
+          <div className="text-lg font-bold text-[var(--color-error)]">{ae.wrong}</div>
+          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.wrong', 'Wrong')}</div>
+        </div>
+        <div className="text-center p-2 rounded-lg bg-[var(--bg-input)]">
+          <div className="text-lg font-bold text-[var(--text-muted)]">{ae.skipped}</div>
+          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.skipped', 'Skipped')}</div>
+        </div>
+      </div>
+
+      {/* Points analysis */}
+      {(ae.pointsLostOnWrongAttempts > 0 || ae.pointsPossibleFromSkipped > 0) && (
+        <div className="text-xs text-[var(--text-muted)] mb-4 space-y-1">
+          {ae.pointsLostOnWrongAttempts > 0 && (
+            <p>{t('practiceExam.pointsLostWrong', '{{points}} pts spent on wrong attempts', { points: ae.pointsLostOnWrongAttempts })}</p>
+          )}
+          {ae.pointsPossibleFromSkipped > 0 && (
+            <p>{t('practiceExam.pointsSkipped', '{{points}} pts available from skipped questions', { points: ae.pointsPossibleFromSkipped })}</p>
+          )}
+        </div>
+      )}
+
+      {/* Recommendations */}
+      {recommendations.length > 0 && (
+        <div className="space-y-2">
+          {recommendations.map((rec, i) => (
+            <p key={i} className="text-sm text-[var(--text-body)] flex items-start gap-2">
+              <span className="text-[var(--accent-text)] shrink-0 mt-0.5">→</span>
+              {rec}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

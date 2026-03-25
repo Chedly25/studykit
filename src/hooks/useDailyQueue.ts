@@ -95,6 +95,16 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
     [examProfileId]
   ) ?? []
 
+  // Swarm insights for queue injection (remediation + decay alerts)
+  const swarmInsights = useLiveQuery(
+    () => examProfileId
+      ? db.agentInsights.where('examProfileId').equals(examProfileId)
+          .filter(i => i.agentId === 'swarm-orchestrator')
+          .toArray()
+      : [],
+    [examProfileId]
+  ) ?? []
+
   // Build topic map
   const topicMap = useMemo(() => {
     const subjectMap = new Map(subjects.map(s => [s.id, s.name]))
@@ -129,7 +139,7 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
     })
 
     // Compute feedback actions
-    let feedbackActions
+    let feedbackActions: import('../lib/feedbackLoopEngine').FeedbackAction[] | undefined
     try {
       const errorPatterns = computeErrorPatterns(questionResults, topics)
       const calibrationData = getMiscalibratedTopicsFromRaw(topics, subjects)
@@ -142,6 +152,45 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
       })
     } catch { /* non-critical */ }
 
+    // Inject swarm remediation + decay items as high-priority feedback actions
+    try {
+      if (feedbackActions === undefined) feedbackActions = []
+      // Remediation from recent exams
+      const remediationInsight = swarmInsights.find(i => i.id?.startsWith('remediation:'))
+      if (remediationInsight?.data) {
+        const { weakTopics: weakTopicNames } = JSON.parse(remediationInsight.data) as { weakTopics: string[] }
+        for (const name of weakTopicNames ?? []) {
+          const topic = topics.find(t => t.name === name)
+          if (topic) {
+            feedbackActions.push({
+              type: 'queue-concept-review',
+              topicId: topic.id,
+              topicName: topic.name,
+              priority: 15, // Will be added to base 80 = 95
+              reason: 'Remediation from recent exam',
+            })
+          }
+        }
+      }
+      // Decay alerts
+      const decayInsight = swarmInsights.find(i => i.id?.startsWith('decay-alert:'))
+      if (decayInsight?.data) {
+        const { topics: decayedTopicIds } = JSON.parse(decayInsight.data) as { topics: string[] }
+        for (const tid of decayedTopicIds ?? []) {
+          const info = topicMap.get(tid)
+          if (info) {
+            feedbackActions.push({
+              type: 'queue-concept-review',
+              topicId: tid,
+              topicName: info.name,
+              priority: 12, // Will be added to base 80 = 92
+              reason: 'Mastery decayed — quick refresh',
+            })
+          }
+        }
+      }
+    } catch { /* non-critical */ }
+
     return buildDailyQueue({
       dueFlashcards,
       recommendations,
@@ -152,7 +201,7 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
       cramMode,
       topicMap,
     })
-  }, [topics, subjects, dueFlashcards, exercises, conceptCards, questionResults, profile, timeAvailableMinutes, cramMode, topicMap])
+  }, [topics, subjects, dueFlashcards, exercises, conceptCards, questionResults, profile, timeAvailableMinutes, cramMode, topicMap, swarmInsights])
 
   // Retry queue — items re-inserted after struggle
   const [retryQueue, setRetryQueue] = useState<typeof queue>([])
