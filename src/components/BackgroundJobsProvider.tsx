@@ -7,6 +7,7 @@ import { useAuth, useUser } from '@clerk/clerk-react'
 import { JobRunner } from '../ai/orchestrator/jobRunner'
 import { AgentRunner } from '../ai/agents/runner'
 import '../ai/agents/index' // Side-effect: registers all agents
+import { initSwarmOrchestrator } from '../ai/agents/swarmOrchestrator'
 import { useExamProfile } from '../hooks/useExamProfile'
 import type { JobType } from '../db/schema'
 import type { AgentId } from '../ai/agents/types'
@@ -45,6 +46,14 @@ export function BackgroundJobsProvider({ children }: { children: React.ReactNode
   // Start job runner on mount (auto-resume interrupted jobs)
   useEffect(() => {
     runnerRef.current?.start()
+
+    // Initialize swarm orchestrator — connects events to agent chains
+    const cleanupSwarm = initSwarmOrchestrator(
+      (type, examProfileId, config, totalSteps) => runnerRef.current!.enqueue(type as any, examProfileId, config, totalSteps),
+      (agentId, examProfileId) => agentRunnerRef.current!.runAgent(agentId as any, examProfileId),
+    )
+
+    return () => { cleanupSwarm() }
   }, [])
 
   const { activeProfile } = useExamProfile()

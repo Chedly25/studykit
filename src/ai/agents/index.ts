@@ -9,6 +9,7 @@ import { misconceptionHunterAgent } from './misconceptionHunter'
 import { strategistAgent } from './strategist'
 import { contentArchitectAgent } from './contentArchitect'
 import { resourceScoutAgent } from './resourceScout'
+import { examStrategistAgent } from './examStrategist'
 
 agentRegistry.register(diagnosticianAgent)
 agentRegistry.register(progressMonitorAgent)
@@ -16,3 +17,4 @@ agentRegistry.register(misconceptionHunterAgent)
 agentRegistry.register(strategistAgent)
 agentRegistry.register(contentArchitectAgent)
 agentRegistry.register(resourceScoutAgent)
+agentRegistry.register(examStrategistAgent)

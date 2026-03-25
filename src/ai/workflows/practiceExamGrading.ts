@@ -457,6 +457,18 @@ Return ONLY a JSON object:
         overallFeedback: feedbackData ? JSON.stringify(feedbackData) : undefined,
       })
 
+      // Dispatch swarm event: exam graded
+      try {
+        const { dispatchSwarmEvent } = require('../agents/eventBus')
+        dispatchSwarmEvent({
+          type: 'exam-graded',
+          sessionId: config.sessionId,
+          examProfileId: ctx.examProfileId,
+          totalScore,
+          maxScore,
+        })
+      } catch { /* swarm dispatch is non-critical */ }
+
       return { grades: allGrades, totalScore, maxScore }
     },
   }

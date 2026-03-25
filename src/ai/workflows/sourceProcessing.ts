@@ -458,6 +458,22 @@ Respond ONLY with valid JSON (an array).`,
 
     aggregate(ctx) {
       const result = ctx.results['save-results']?.data as SourceProcessingResult | undefined
+
+      // Dispatch swarm event: document processed
+      try {
+        const { dispatchSwarmEvent } = require('../agents/eventBus')
+        const doc = ctx.results['gather-context']?.data as { documentId?: string; category?: string; mappedTopicIds?: string[] } | undefined
+        if (doc?.documentId) {
+          dispatchSwarmEvent({
+            type: 'document-processed',
+            documentId: doc.documentId,
+            examProfileId: ctx.examProfileId,
+            category: doc.category,
+            topicIds: doc.mappedTopicIds,
+          })
+        }
+      } catch { /* swarm dispatch is non-critical */ }
+
       return result ?? { summary: '', conceptsFound: [], mappingsApplied: 0 }
     },
   }
