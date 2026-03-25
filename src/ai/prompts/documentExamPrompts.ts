@@ -63,8 +63,8 @@ const CONCOURS_PROFILES: Record<ConcoursType, string> = {
 
 function buildMathsPrompt(config: DocumentExamPromptConfig): { system: string; user: string } {
   const domain = config.subject === 'maths-analyse'
-    ? `Analyse. Choisis un théorème adapté au niveau ${concoursDisplayName(config.concours)} MP dans l'un des domaines suivants : séries et séries de fonctions, intégrales à paramètre, espaces de fonctions, équations différentielles, calcul différentiel, topologie des espaces métriques, ou un croisement de ces domaines.`
-    : `Algèbre linéaire. Choisis un théorème adapté au niveau ${concoursDisplayName(config.concours)} MP. Évite le théorème de Gerstenhaber sur les endomorphismes nilpotents (déjà utilisé en 2020).`
+    ? `Analyse. Choisis un théorème de niveau recherche dans l'un des domaines suivants : séries et séries de fonctions, intégrales à paramètre, espaces de fonctions, équations différentielles, calcul différentiel, topologie des espaces métriques. Le sujet peut ponctuellement utiliser des outils d'un autre domaine si cela sert la preuve, mais le cœur du sujet doit rester en analyse.`
+    : `Algèbre. Choisis un théorème de niveau recherche en algèbre linéaire, algèbre bilinéaire, théorie des groupes, ou polynômes. Le sujet peut ponctuellement utiliser des outils d'un autre domaine si cela sert la preuve, mais le cœur du sujet doit rester en algèbre. Évite le théorème de Gerstenhaber (Mines 2020) et la décomposition de Dunford.`
 
   const topicHint = config.topics.length > 0
     ? `\n\nLes sujets étudiés par le candidat incluent : ${config.topics.join(', ')}. Tu peux choisir un thème qui touche un ou plusieurs de ces domaines.`
@@ -84,6 +84,30 @@ Tu dois produire un SUJET D'ÉPREUVE COMPLET — un document mathématique conti
 
 ## ${CONCOURS_PROFILES[config.concours]}
 
+## CE QUI DISTINGUE UN VRAI SUJET DE CONCOURS D'UN DEVOIR DE PRÉPA
+
+Un sujet de concours n'est PAS un enchaînement de résultats de cours. Il a les caractéristiques suivantes :
+
+1. **Théorème cible non trivial** : Le résultat final est un théorème de RECHERCHE, pas un résultat du programme. Exemples : théorème de Gerstenhaber (Mines 2020), théorème de Perron-Frobenius, inégalité de Hadamard par méthode originale. Le candidat ne doit PAS reconnaître le résultat à l'avance.
+
+2. **Questions sans indication** : Au moins 3-4 questions par partie ne donnent AUCUNE indication sur la méthode. Le candidat doit trouver seul l'approche. NE PAS abuser des "On pourra utiliser le résultat de la question N" — réserver ces indications aux 2-3 questions les plus difficiles de la Partie IV uniquement.
+
+3. **Questions où le candidat doit trouver le résultat** : Ne pas uniquement poser des "Montrer que [résultat donné]". Inclure aussi des "Déterminer...", "Que peut-on dire de...", "Exprimer... en fonction de..." où le candidat doit découvrir la réponse.
+
+4. **Sauts de difficulté** : Certaines questions demandent une idée non évidente (changement de point de vue, introduction d'un objet auxiliaire, argument inattendu). Ce ne sont pas des applications directes du cours.
+
+5. **Notations et objets originaux** : Le sujet introduit des objets et notations spécifiques au problème, pas les notations standard du cours. Exemples : $\\mathcal{V}^\\bullet$, $K(\\mathcal{V})$, $a \\otimes x$ défini de façon ad hoc.
+
+6. **Prose mathématique dense entre les questions** : Des paragraphes de 5-10 lignes entre certains blocs de questions, introduisant de nouveaux objets, posant de nouvelles hypothèses, donnant du contexte.
+
+## ERREURS À ÉVITER ABSOLUMENT
+
+- NE PAS choisir comme théorème cible un résultat du programme MP (Cayley-Hamilton, Dunford, spectral, Bolzano-Weierstrass, rang, noyau-image, etc.) — ce sont des OUTILS, pas des CIBLES
+- NE PAS mettre "On pourra utiliser..." à chaque question — signe d'un sujet trop guidé
+- NE PAS faire uniquement des petites questions prévisibles qui s'enchaînent mécaniquement — inclure des questions qui demandent une vraie idée
+- NE PAS rester dans les bornes du cours — le sujet doit aller AU-DELÀ du programme tout en restant accessible avec les outils du programme
+- NE PAS faire un sujet qui ressemble à un chapitre de Gourdon ou Roger-Casella
+
 ## CONTRAINTES DE FORMAT
 
 - Tout le contenu mathématique est en LaTeX (délimiteurs $...$ et $$...$$)
@@ -100,7 +124,7 @@ Tu dois produire un SUJET D'ÉPREUVE COMPLET — un document mathématique conti
 4. **Paragraphe de navigation** : "Les trois premières parties sont largement indépendantes les unes des autres. La partie I est constituée de... Dans la partie II... Dans la partie III... Dans la partie IV, les résultats des parties précédentes sont combinés pour établir le théorème de [X]."
 
 5. **Parties I à IV** : Chaque partie a :
-   - Un titre (ex: "I  Généralités sur les endomorphismes nilpotents")
+   - Un titre
    - Un paragraphe d'introduction posant le cadre spécifique de la partie (nouvelles hypothèses, nouveaux objets, nouvelles notations)
    - Des questions numérotées séquentiellement (la numérotation continue entre parties)
 
@@ -108,25 +132,16 @@ Tu dois produire un SUJET D'ÉPREUVE COMPLET — un document mathématique conti
 
 ## STYLE DES QUESTIONS
 
-- Jamais de QCM. Les questions sont TOUJOURS de la forme :
+- Jamais de QCM. Les questions sont de la forme :
   - "Montrer que..." / "Démontrer que..."
   - "Justifier que..."
-  - "En déduire que..." (résultat qui découle de la question précédente)
-  - "Déterminer..." / "Calculer..."
-  - "Donner une expression simplifiée de..."
+  - "En déduire que..."
+  - "Déterminer..." / "Calculer..." / "Exprimer... en fonction de..."
+  - "Que peut-on dire de... ?"
   - "Conclure." (sans préciser quoi — le candidat doit comprendre)
 
-- Les questions s'enchaînent : le résultat de la question k est utilisé dans la question k+1 ou une question ultérieure
-- Les renvois explicites sont de la forme : "On pourra utiliser les résultats des questions 5 et 20."
-- La dernière question de chaque partie est plus difficile et synthétise les résultats précédents
-
-## CONSTRUCTION MATHÉMATIQUE
-
-- Le domaine doit être au programme de MP : algèbre linéaire, algèbre bilinéaire, analyse (séries, intégrales, espaces de fonctions), topologie, probabilités, ou un croisement de ces domaines
-- Le théorème cible doit être un résultat RÉEL, NON TRIVIAL, idéalement d'un mathématicien identifiable
-- Les premières questions de chaque partie sont accessibles (vérifications directes, cas particuliers, calculs de dimension)
-- La difficulté monte progressivement au sein de chaque partie
-- La Partie IV est la plus technique : elle combine les outils des parties précédentes pour la preuve finale, souvent par récurrence
+- Questions multi-lignes avec sous-parties a), b), c) quand nécessaire
+- La dernière question de chaque partie est nettement plus difficile et synthétise les résultats précédents
 - Introduire des notations et objets ENTRE les questions (pas dans les questions elles-mêmes) quand de nouveaux concepts sont nécessaires`
 
   const user = `## THÈME DEMANDÉ
@@ -135,7 +150,7 @@ ${domain}${topicHint}${avoidHint}${sourceHint}
 
 ## CE QUE TU DOIS PRODUIRE
 
-Produis le sujet d'épreuve complet en Markdown avec LaTeX. Ce document doit être DIRECTEMENT utilisable comme énoncé d'épreuve. Il doit ressembler exactement à un vrai sujet ${concoursDisplayName(config.concours)} : même ton, même rigueur, même densité mathématique, même progression.
+Produis le sujet d'épreuve complet en Markdown avec LaTeX. Il doit être INDISTINGUABLE d'un vrai sujet ${concoursDisplayName(config.concours)} en termes de ton, rigueur, densité mathématique et difficulté.
 
 Ne produis PAS de corrigé, PAS de barème, PAS de commentaires. Uniquement l'énoncé.`
 
@@ -161,6 +176,25 @@ Tu dois produire un SUJET D'ÉPREUVE COMPLET — un problème de physique contin
 
 ## ${CONCOURS_PROFILES[config.concours]}
 
+## CE QUI DISTINGUE UN VRAI SUJET DE CONCOURS D'UN TD DE PRÉPA
+
+1. **Système physique riche et réaliste** : Le sujet étudie un système réel (tokamak, laser à fibre, étoile à neutrons, moteur Stirling, piégeage magnéto-optique) — PAS un oscillateur harmonique générique ou un condensateur plan. Le système doit être suffisamment complexe pour nécessiter plusieurs modèles physiques.
+
+2. **Modélisation progressive** : Chaque partie introduit un modèle plus raffiné du même système. Partie I = modèle simplifié, Partie II = on ajoute un effet, Partie III = modèle complet, Partie IV = cas limites ou applications. Le candidat voit le système se complexifier.
+
+3. **Questions ouvertes** : Ne pas toujours donner le résultat à démontrer. Inclure des "Déterminer l'expression de...", "Quelle est la condition pour que...", "Représenter l'allure de..." où le candidat doit trouver la réponse. Au moins 2-3 par partie.
+
+4. **Interprétation physique exigeante** : Pas juste "interpréter" — mais "Discuter la validité du modèle dans la limite où...", "Comparer avec le résultat expérimental donné", "Expliquer pourquoi cette approximation est légitime pour les paramètres considérés".
+
+5. **Applications numériques non triviales** : Les A.N. ne sont pas de simples substitutions — elles doivent mener à une conclusion physique ("Le temps caractéristique est de l'ordre de... Ce résultat est-il cohérent avec l'observation que... ?").
+
+## ERREURS À ÉVITER
+
+- NE PAS faire un sujet qui ressemble à un exercice de Tout-en-un ou de Hprépa
+- NE PAS choisir un système physique banal (pendule simple, circuit RLC basique, lentille mince)
+- NE PAS mettre des indications à chaque question
+- NE PAS séparer les parties en domaines déconnectés (Partie I = méca, Partie II = thermo, sans lien)
+
 ## CONTRAINTES DE FORMAT
 
 - Calculatrice autorisée
@@ -171,39 +205,25 @@ Tu dois produire un SUJET D'ÉPREUVE COMPLET — un problème de physique contin
 ## STRUCTURE OBLIGATOIRE
 
 1. **Titre** : Décrit le système physique étudié
-
-2. **Introduction** : 1 à 2 paragraphes décrivant le contexte physique réel du problème
-
+2. **Introduction** : 1 à 2 paragraphes décrivant le contexte physique réel du problème et pourquoi il est intéressant
 3. **Données numériques** : Un bloc listant toutes les constantes et valeurs numériques
-
 4. **Paragraphe de navigation** : "Le problème comporte quatre parties largement indépendantes..."
-
-5. **Parties I à IV** : Chaque partie a :
-   - Un titre décrivant l'aspect du système étudié
-   - Un paragraphe d'introduction posant les hypothèses et le modèle
-   - Des questions numérotées séquentiellement
-   - [FIGURE : description précise] quand un schéma est nécessaire
-
-6. **"Fin du problème."** à la fin
+5. **Parties I à IV** : Titre, introduction avec hypothèses et modèle, questions numérotées séquentiellement, [FIGURE : description] quand nécessaire
+6. **"Fin du problème."**
 
 ## STYLE DES QUESTIONS
 
-- **Dérivation** : "Établir l'équation différentielle vérifiée par $x(t)$."
-- **Expression** : "Exprimer $\\omega_0$ en fonction de $k$, $m$ et $L$."
-- **Application numérique** : "Faire l'application numérique." ou "A.N."
-- **Interprétation** : "Interpréter physiquement ce résultat."
-- **Vérification** : "Vérifier l'homogénéité de l'expression obtenue."
-- **Approximation** : "À quelle condition peut-on négliger le terme en $x^3$ ?"
-- **Représentation** : "Représenter l'allure de $V(r)$ en fonction de $r$."
+- **Dérivation** : "Établir l'équation différentielle vérifiée par..."
+- **Expression** : "Exprimer $\\omega_0$ en fonction de..."
+- **Détermination** : "Déterminer la condition sur... pour que..."
+- **Application numérique** : "A.N." suivi d'une question d'interprétation
+- **Interprétation** : "Discuter la validité de ce résultat." / "Commenter l'ordre de grandeur."
+- **Vérification** : "Vérifier l'homogénéité." / "Retrouver ce résultat par analyse dimensionnelle."
+- **Approximation** : "À quelle condition peut-on négliger... ? Justifier pour les valeurs numériques données."
+- **Représentation** : "Représenter l'allure de..."
+- **Synthèse** : "En déduire..." / "Conclure sur la stabilité du système."
 
-Chaque partie doit contenir au moins une application numérique et au moins une question d'interprétation physique.
-
-## CONSTRUCTION PHYSIQUE
-
-- Le système étudié doit être un système RÉEL
-- Domaines au programme MP : mécanique, thermodynamique, électromagnétisme, optique ondulatoire, physique quantique introductive, mécanique des fluides, électrocinétique
-- Le problème doit croiser au moins 2 domaines de la physique
-- Les ordres de grandeur doivent être réalistes`
+Chaque partie doit contenir au moins une A.N. et au moins une question d'interprétation physique.`
 
   const user = `## THÈME DEMANDÉ
 
@@ -211,7 +231,7 @@ ${topicHint}${avoidHint}${sourceHint}
 
 ## CE QUE TU DOIS PRODUIRE
 
-Produis le sujet d'épreuve complet en Markdown avec LaTeX. Le document doit ressembler exactement à un vrai sujet ${concoursDisplayName(config.concours)} Physique.
+Produis le sujet d'épreuve complet en Markdown avec LaTeX. Il doit être INDISTINGUABLE d'un vrai sujet ${concoursDisplayName(config.concours)} Physique.
 
 Ne produis PAS de corrigé, PAS de barème, PAS de commentaires. Uniquement l'énoncé.`
 
@@ -237,6 +257,25 @@ Tu dois produire un SUJET D'ÉPREUVE COMPLET — un problème d'informatique con
 
 ## ${CONCOURS_PROFILES[config.concours]}
 
+## CE QUI DISTINGUE UN VRAI SUJET DE CONCOURS D'UN TP DE PRÉPA
+
+1. **Problème algorithmique profond** : Le sujet ne demande pas juste d'implémenter un algorithme classique. Il explore un problème qui a une structure mathématique riche (combinatoire, théorie des graphes, langages formels) et où la solution optimale n'est pas évidente.
+
+2. **Progression non linéaire** : La Partie I ne se contente pas de "coder les bases". Elle établit des propriétés structurelles (lemmes, bornes) qui seront NÉCESSAIRES dans les parties suivantes. Le code et la théorie sont entrelacés dès le début.
+
+3. **Questions de conception ouverte** : Au moins 2-3 questions où le candidat doit CONCEVOIR un algorithme ou une structure de données, pas juste implémenter une spécification donnée. "Proposer un algorithme qui...", "Quelle structure de données permet de..."
+
+4. **Preuves non triviales** : Les preuves de correction/terminaison ne sont pas de simples récurrences structurelles. Elles peuvent nécessiter un invariant subtil, un argument d'amortissement, ou une réduction.
+
+5. **Questions sans indication** : Ne pas toujours donner la complexité cible. "Proposer l'algorithme le plus efficace possible" plutôt que "Proposer un algorithme en $O(n \\log n)$".
+
+## ERREURS À ÉVITER
+
+- NE PAS faire un sujet qui est juste "implémenter un arbre BST puis faire des opérations dessus"
+- NE PAS donner systématiquement la complexité cible dans l'énoncé
+- NE PAS séparer code et théorie (partie 1 = que du code, partie 2 = que des preuves)
+- NE PAS demander uniquement des fonctions de 3-5 lignes triviales
+
 ## CONTRAINTES DE FORMAT
 
 - Tout le code est en OCaml, présenté dans des blocs \`\`\`ocaml
@@ -247,32 +286,23 @@ Tu dois produire un SUJET D'ÉPREUVE COMPLET — un problème d'informatique con
 ## STRUCTURE OBLIGATOIRE
 
 1. **Titre** : Décrit le thème algorithmique
-
-2. **Préambule** : Paragraphe posant le cadre et les notations
-
+2. **Préambule** : Paragraphe posant le cadre, les notations, la motivation
 3. **Définitions et types OCaml** : Les types de données utilisés dans tout le sujet
-
-4. **Paragraphe de navigation** : "Les parties I et II sont indépendantes..."
-
-5. **Parties I à IV** : Chaque partie a un titre, une introduction, des questions numérotées
-
-6. **"Fin du problème."** à la fin
+4. **Paragraphe de navigation**
+5. **Parties I à IV** : Titre, introduction avec nouvelles définitions, questions numérotées
+6. **"Fin du problème."**
 
 ## STYLE DES QUESTIONS
 
-- **Code** : "Écrire une fonction \`f : int -> int list -> int\` qui prend en entrée... et renvoie..." — Le type OCaml est TOUJOURS donné.
-- **Complexité** : "Quelle est la complexité en temps de la fonction \`f\` dans le pire cas ? Justifier."
-- **Preuve** : "Montrer que l'algorithme termine." / "Donner un invariant de boucle pour..."
-- **Conception** : "Proposer un algorithme de complexité $O(n \\log n)$ pour résoudre ce problème."
-- **Contre-exemple** : "Donner un exemple montrant que l'algorithme glouton ne donne pas toujours la solution optimale."
+- **Code** : "Écrire une fonction \`f : int -> int list -> int\` qui..." — Type TOUJOURS donné. Spécification précise.
+- **Complexité** : "Quelle est la complexité en temps dans le pire cas ? Justifier." / "Proposer l'algorithme le plus efficace possible."
+- **Preuve** : "Montrer que l'algorithme termine." / "Montrer la correction." / "Donner un invariant de boucle."
+- **Conception** : "Proposer un algorithme pour..." / "Quelle structure de données permet de..."
+- **Contre-exemple** : "Donner un exemple montrant que l'approche naïve échoue."
+- **Borne inférieure** : "Montrer qu'aucun algorithme ne peut résoudre ce problème en moins de..."
 
-Le code OCaml doit être SYNTAXIQUEMENT CORRECT et IDIOMATIQUE.
-
-## CONSTRUCTION ALGORITHMIQUE
-
-- Thème au programme MP option info : graphes, arbres, tris, programmation dynamique, automates et langages formels, logique, bases de données
-- La partie I pose les bases, la partie II développe un algorithme, la partie III analyse, la partie IV optimise ou généralise
-- Questions de code et questions théoriques ENTRELACÉES`
+Le code OCaml doit être SYNTAXIQUEMENT CORRECT et IDIOMATIQUE (pattern matching, récursion, types algébriques).
+Questions de code et questions théoriques ENTRELACÉES dans chaque partie.`
 
   const user = `## THÈME DEMANDÉ
 
@@ -280,7 +310,7 @@ ${topicHint}${avoidHint}${sourceHint}
 
 ## CE QUE TU DOIS PRODUIRE
 
-Produis le sujet d'épreuve complet en Markdown avec LaTeX et blocs OCaml. Le document doit ressembler exactement à un vrai sujet ${concoursDisplayName(config.concours)} Informatique.
+Produis le sujet d'épreuve complet en Markdown avec LaTeX et blocs OCaml. Il doit être INDISTINGUABLE d'un vrai sujet ${concoursDisplayName(config.concours)} Informatique.
 
 Ne produis PAS de corrigé, PAS de barème, PAS de commentaires. Uniquement l'énoncé.`
 
