@@ -198,6 +198,7 @@ export default function PracticeExam() {
         )}
         <PracticeExamSetup
           examProfileId={activeProfile.id}
+          profileName={activeProfile.name}
           subjects={subjects}
           topics={topics}
           weakTopics={weakTopics}

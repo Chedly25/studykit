@@ -5,7 +5,8 @@ import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react'
 import {
   Menu, X, BarChart3, MessageCircle,
   BookOpen, Shield, Zap, FolderOpen,
-  PanelLeftClose, PanelLeftOpen, Search, Settings, LayoutGrid,
+  PanelLeftClose, PanelLeftOpen, Search, Settings,
+  ClipboardCheck, CalendarDays,
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 import { LanguageToggle } from './LanguageToggle'
@@ -25,7 +26,7 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { ContextualAssistant } from './ContextualAssistant'
 import { UpdatePrompt } from './UpdatePrompt'
 import { InstallPrompt } from './InstallPrompt'
-import { ActionsMenu } from './ActionsMenu'
+// ActionsMenu removed — features now in sidebar directly
 import { useJobCompletionToasts } from '../hooks/useJobCompletionToasts'
 import { useWeeklyDigest } from '../hooks/useWeeklyDigest'
 import { identify } from '../lib/analytics'
@@ -37,7 +38,6 @@ export function Layout() {
   const [chatContext, setChatContext] = useState<Record<string, string> | null>(null)
   const [chatSubjectName, setChatSubjectName] = useState<string | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
-  const [actionsOpen, setActionsOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false) // mobile drawer
   const [sidebarPinned, setSidebarPinned] = useState(false) // desktop pin
   const [sidebarHovered, setSidebarHovered] = useState(false) // desktop hover
@@ -142,7 +142,7 @@ export function Layout() {
           </div>
 
           {/* Right */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <SignedIn>
               <ExamProfileSelector />
               <button
@@ -153,22 +153,6 @@ export function Layout() {
                 <Search size={18} />
               </button>
               <BackgroundJobsIndicator />
-              <SyncIndicator />
-              <NotificationBell examProfileId={activeProfile?.id} />
-              <div className="relative hidden md:block">
-                <button
-                  onClick={() => setActionsOpen(!actionsOpen)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    actionsOpen
-                      ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
-                      : 'text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)]'
-                  }`}
-                  title={t('nav.actions', 'Actions')}
-                >
-                  <LayoutGrid size={18} />
-                </button>
-                <ActionsMenu open={actionsOpen} onClose={() => setActionsOpen(false)} mode="dropdown" />
-              </div>
               <button
                 onClick={() => setChatOpen(!chatOpen)}
                 className={`p-2 rounded-lg transition-colors ${
@@ -181,19 +165,8 @@ export function Layout() {
                 <MessageCircle size={18} />
               </button>
             </SignedIn>
-            <LanguageToggle />
             <ThemeToggle />
             <SignedIn>
-              {isPro ? (
-                <ProBadge />
-              ) : (
-                <Link
-                  to="/pricing"
-                  className="btn-secondary text-xs px-3 py-1 hidden sm:block"
-                >
-                  {t('common.upgrade')}
-                </Link>
-              )}
               <UserButton afterSignOutUrl="/" />
             </SignedIn>
             <SignedOut>
@@ -226,12 +199,14 @@ export function Layout() {
               </button>
             </div>
 
-            {/* Nav links — 4 focused items */}
+            {/* Nav links — 6 core items */}
             <nav className="flex-1 px-2 py-2 space-y-0.5">
-              <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'My Tasks' : "Today's Session"} active={location.pathname === '/queue'} collapsed={collapsed} />
-              <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'My Research' : 'My Studies'} active={location.pathname === '/dashboard' || location.pathname === '/'} collapsed={collapsed} />
-              <SidebarLink to="/sources" icon={FolderOpen} label={isResearch ? 'My Sources' : 'My Materials'} active={location.pathname === '/sources'} collapsed={collapsed} />
-              <SidebarLink to="/analytics" icon={BarChart3} label="My Progress" active={location.pathname === '/analytics'} collapsed={collapsed} />
+              <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} collapsed={collapsed} />
+              <SidebarLink to="/practice-exam" icon={ClipboardCheck} label="Exams" active={location.pathname === '/practice-exam'} collapsed={collapsed} />
+              <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} collapsed={collapsed} />
+              <SidebarLink to="/sources" icon={FolderOpen} label="Library" active={location.pathname === '/sources'} collapsed={collapsed} />
+              <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} collapsed={collapsed} />
+              <SidebarLink to="/study-plan" icon={CalendarDays} label="Plan" active={location.pathname === '/study-plan'} collapsed={collapsed} />
             </nav>
 
             {/* Settings at bottom */}
@@ -282,12 +257,14 @@ export function Layout() {
                 </button>
               </div>
 
-              {/* Nav links — 4 focused items */}
+              {/* Nav links — 6 core items */}
               <nav className="flex-1 px-3 py-4 space-y-1">
-                <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'My Tasks' : "Today's Session"} active={location.pathname === '/queue'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'My Research' : 'My Studies'} active={location.pathname === '/dashboard' || location.pathname === '/'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/sources" icon={FolderOpen} label={isResearch ? 'My Sources' : 'My Materials'} active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/analytics" icon={BarChart3} label="My Progress" active={location.pathname === '/analytics'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/practice-exam" icon={ClipboardCheck} label="Exams" active={location.pathname === '/practice-exam'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/sources" icon={FolderOpen} label="Library" active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/study-plan" icon={CalendarDays} label="Plan" active={location.pathname === '/study-plan'} onClick={closeSidebar} collapsed={false} />
 
                 <div className="pt-3 mt-3 border-t border-[var(--border-card)]">
                   <SidebarLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} onClick={closeSidebar} collapsed={false} />
@@ -323,27 +300,30 @@ export function Layout() {
         </main>
       </div>
 
-      {!isChatPage && (
-        <footer className="border-t border-[var(--border-header)] py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
-                <img src="/favicon-32x32.png" alt="" className="w-4 h-4" />
-                <span>{t('footer.tagline')}</span>
-              </div>
-              <div className="flex items-center gap-4 text-sm">
-                <Link to="/all-tools" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
-                  {t('footer.freeTools')}
-                </Link>
-                <Link to="/pricing" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
-                  {t('footer.pricing')}
-                </Link>
-                <span className="text-[var(--text-faint)]">{t('footer.dataLocal')}</span>
+      {/* Footer — only on public pages (not shown for authenticated users) */}
+      <SignedOut>
+        {!isChatPage && (
+          <footer className="border-t border-[var(--border-header)] py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm">
+                  <img src="/favicon-32x32.png" alt="" className="w-4 h-4" />
+                  <span>{t('footer.tagline')}</span>
+                </div>
+                <div className="flex items-center gap-4 text-sm">
+                  <Link to="/all-tools" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
+                    {t('footer.freeTools')}
+                  </Link>
+                  <Link to="/pricing" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
+                    {t('footer.pricing')}
+                  </Link>
+                  <span className="text-[var(--text-faint)]">{t('footer.dataLocal')}</span>
+                </div>
               </div>
             </div>
-          </div>
-        </footer>
-      )}
+          </footer>
+        )}
+      </SignedOut>
 
       {/* Mobile Bottom Nav */}
       <SignedIn>

@@ -39,8 +39,7 @@ const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'))
 const Onboarding = lazyWithRetry(() => import('./pages/Onboarding'))
 const ExamProfile = lazyWithRetry(() => import('./pages/ExamProfile'))
 const Analytics = lazyWithRetry(() => import('./pages/Analytics'))
-const Report = lazyWithRetry(() => import('./pages/Report'))
-const FocusMode = lazyWithRetry(() => import('./pages/FocusMode'))
+// Report and FocusMode removed — merged into Analytics and Queue respectively
 const SubjectPage = lazyWithRetry(() => import('./pages/SubjectPage'))
 const TopicPage = lazyWithRetry(() => import('./pages/TopicPage'))
 
@@ -49,7 +48,7 @@ const PracticeExam = lazyWithRetry(() => import('./pages/PracticeExam'))
 const StudyPlan = lazyWithRetry(() => import('./pages/StudyPlan'))
 const StudySession = lazyWithRetry(() => import('./pages/StudySession'))
 const Exercises = lazyWithRetry(() => import('./pages/Exercises'))
-const MockExam = lazyWithRetry(() => import('./pages/MockExam'))
+// MockExam removed — superseded by PracticeExam simulation mode
 const DailyQueue = lazyWithRetry(() => import('./pages/DailyQueue'))
 const DocumentReader = lazyWithRetry(() => import('./pages/DocumentReader'))
 const Settings = lazyWithRetry(() => import('./pages/Settings'))
@@ -68,10 +67,7 @@ const SubscriptionSuccess = lazyWithRetry(() => import('./pages/SubscriptionSucc
 // Sources
 const Sources = lazyWithRetry(() => import('./pages/Sources'))
 
-// Research
-const Writing = lazyWithRetry(() => import('./pages/Writing'))
-const Meetings = lazyWithRetry(() => import('./pages/Meetings'))
-const Notes = lazyWithRetry(() => import('./pages/Notes'))
+// Research — removed from routing (Writing, Meetings, Notes merged/deprecated)
 
 // Article Review
 const ArticleReview = lazyWithRetry(() => import('./pages/ArticleReview'))
@@ -146,22 +142,19 @@ export default function App() {
           <Route path="topic/:topicId" element={<ProtectedRoute><TopicPage /></ProtectedRoute>} />
           <Route path="exam-profile" element={<ProtectedRoute><ExamProfile /></ProtectedRoute>} />
           <Route path="analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-          <Route path="report" element={<ProtectedRoute><Report /></ProtectedRoute>} />
-          <Route path="focus" element={<ProtectedRoute><FocusMode /></ProtectedRoute>} />
+          {/* /report and /focus removed — merged into analytics and queue */}
 
           {/* Protected — AI */}
           <Route path="practice-exam" element={<ProtectedRoute><PracticeExam /></ProtectedRoute>} />
           <Route path="study-plan" element={<ProtectedRoute><StudyPlan /></ProtectedRoute>} />
           <Route path="session" element={<ProtectedRoute><StudySession /></ProtectedRoute>} />
           <Route path="exercises" element={<ProtectedRoute><Exercises /></ProtectedRoute>} />
-          <Route path="mock-exam" element={<ProtectedRoute><MockExam /></ProtectedRoute>} />
+          {/* /mock-exam removed — superseded by practice-exam simulation mode */}
           <Route path="queue" element={<ProtectedRoute><DailyQueue /></ProtectedRoute>} />
           <Route path="settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="sources" element={<ProtectedRoute><Sources /></ProtectedRoute>} />
           <Route path="read/:documentId" element={<ProtectedRoute><DocumentReader /></ProtectedRoute>} />
-          <Route path="writing" element={<ProtectedRoute><Writing /></ProtectedRoute>} />
-          <Route path="meetings" element={<ProtectedRoute><Meetings /></ProtectedRoute>} />
-          <Route path="notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
+          {/* /writing, /meetings, /notes removed — research features deprecated */}
           <Route path="article-review" element={<ProtectedRoute><ArticleReview /></ProtectedRoute>} />
 
           {/* Public — Grades */}

@@ -1,14 +1,13 @@
 /**
- * Mobile bottom navigation — 4 nav tabs + 1 actions tab.
+ * Mobile bottom navigation — 5 direct nav tabs.
  * Hidden on desktop (md+).
  */
-import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Zap, BookOpen, FolderOpen, BarChart3, LayoutGrid } from 'lucide-react'
-import { ActionsMenu } from './ActionsMenu'
+import { Zap, BookOpen, FolderOpen, BarChart3, ClipboardCheck } from 'lucide-react'
 
 const NAV_ITEMS = [
   { to: '/queue', icon: Zap, label: 'Today' },
+  { to: '/practice-exam', icon: ClipboardCheck, label: 'Exams' },
   { to: '/dashboard', icon: BookOpen, label: 'Study' },
   { to: '/sources', icon: FolderOpen, label: 'Library' },
   { to: '/analytics', icon: BarChart3, label: 'Progress' },
@@ -16,62 +15,28 @@ const NAV_ITEMS = [
 
 export function BottomNav() {
   const { pathname } = useLocation()
-  const [actionsOpen, setActionsOpen] = useState(false)
 
   return (
-    <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[var(--bg-card)] border-t border-[var(--border-card)]">
-        <div className="flex items-stretch h-16 pb-[env(safe-area-inset-bottom)]">
-          {NAV_ITEMS.slice(0, 2).map(({ to, icon: Icon, label }) => {
-            const active = pathname === to || (to === '/dashboard' && pathname === '/')
-            return (
-              <Link
-                key={to}
-                to={to}
-                className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
-                  active
-                    ? 'text-[var(--accent-text)]'
-                    : 'text-[var(--text-muted)]'
-                }`}
-              >
-                <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-                <span className={`text-[10px] font-medium ${active ? 'font-semibold' : ''}`}>{label}</span>
-              </Link>
-            )
-          })}
-
-          {/* Center: Actions button */}
-          <button
-            onClick={() => setActionsOpen(true)}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
-              actionsOpen ? 'text-[var(--accent-text)]' : 'text-[var(--text-muted)]'
-            }`}
-          >
-            <LayoutGrid size={20} strokeWidth={2} />
-            <span className="text-[10px] font-medium">More</span>
-          </button>
-
-          {NAV_ITEMS.slice(2).map(({ to, icon: Icon, label }) => {
-            const active = pathname === to
-            return (
-              <Link
-                key={to}
-                to={to}
-                className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
-                  active
-                    ? 'text-[var(--accent-text)]'
-                    : 'text-[var(--text-muted)]'
-                }`}
-              >
-                <Icon size={20} strokeWidth={active ? 2.5 : 2} />
-                <span className={`text-[10px] font-medium ${active ? 'font-semibold' : ''}`}>{label}</span>
-              </Link>
-            )
-          })}
-        </div>
-      </nav>
-
-      <ActionsMenu open={actionsOpen} onClose={() => setActionsOpen(false)} mode="sheet" />
-    </>
+    <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[var(--bg-card)] border-t border-[var(--border-card)]">
+      <div className="flex items-stretch h-16 pb-[env(safe-area-inset-bottom)]">
+        {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
+          const active = pathname === to || (to === '/dashboard' && pathname === '/')
+          return (
+            <Link
+              key={to}
+              to={to}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
+                active
+                  ? 'text-[var(--accent-text)]'
+                  : 'text-[var(--text-muted)]'
+              }`}
+            >
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+              <span className={`text-[10px] font-medium ${active ? 'font-semibold' : ''}`}>{label}</span>
+            </Link>
+          )
+        })}
+      </div>
+    </nav>
   )
 }

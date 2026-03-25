@@ -46,6 +46,19 @@
   --text-faint: var(--color-surface-400);
   --accent-text: var(--color-primary-700);
   --accent-bg: var(--color-primary-50);
+  /* Semantic feedback colors */
+  --color-success: #059669;
+  --color-success-bg: rgba(16, 185, 129, 0.1);
+  --color-success-border: rgba(16, 185, 129, 0.3);
+  --color-error: #dc2626;
+  --color-error-bg: rgba(239, 68, 68, 0.08);
+  --color-error-border: rgba(239, 68, 68, 0.25);
+  --color-warning: #d97706;
+  --color-warning-bg: rgba(245, 158, 11, 0.08);
+  --color-warning-border: rgba(245, 158, 11, 0.25);
+  --color-info: #2563eb;
+  --color-info-bg: rgba(59, 130, 246, 0.08);
+  --color-info-border: rgba(59, 130, 246, 0.25);
 }
 
 /* ─── Semantic tokens: dark mode ─── */
@@ -63,6 +76,19 @@
   --text-faint: var(--color-surface-500);
   --accent-text: var(--color-primary-400);
   --accent-bg: rgba(16, 185, 129, 0.1);
+  /* Semantic feedback colors (dark) */
+  --color-success: #34d399;
+  --color-success-bg: rgba(16, 185, 129, 0.12);
+  --color-success-border: rgba(16, 185, 129, 0.3);
+  --color-error: #f87171;
+  --color-error-bg: rgba(239, 68, 68, 0.12);
+  --color-error-border: rgba(239, 68, 68, 0.3);
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(245, 158, 11, 0.12);
+  --color-warning-border: rgba(245, 158, 11, 0.3);
+  --color-info: #60a5fa;
+  --color-info-bg: rgba(59, 130, 246, 0.12);
+  --color-info-border: rgba(59, 130, 246, 0.3);
 }
 
 /* ─── Base ─── */
@@ -180,6 +206,44 @@ body {
 .btn-secondary:active {
   transform: scale(0.97);
   opacity: 0.75;
+  transition: all 0.08s ease;
+}
+
+/* ─── Ghost button (tertiary) ─── */
+.btn-ghost {
+  background: transparent;
+  color: var(--text-body);
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-card);
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover {
+  background: var(--bg-input);
+  border-color: var(--text-faint);
+}
+.btn-ghost:active {
+  transform: scale(0.97);
+  opacity: 0.75;
+  transition: all 0.08s ease;
+}
+
+/* ─── Destructive button ─── */
+.btn-destructive {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-error-border);
+  transition: all 0.2s ease;
+}
+.btn-destructive:hover {
+  opacity: 0.85;
+}
+.btn-destructive:active {
+  transform: scale(0.97);
   transition: all 0.08s ease;
 }
 

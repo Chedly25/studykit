@@ -12,8 +12,19 @@ import type { DocumentExamSubject, ConcoursType } from '../../ai/prompts/documen
 import { SPECIALTY_OPTIONS } from '../../ai/prompts/casPratiquePrompts'
 import type { CasPratiqueSpecialty } from '../../ai/prompts/casPratiquePrompts'
 
+type ExamCategory = 'cpge' | 'crfpa' | 'medical' | 'general'
+
+function detectExamCategory(profileName: string): ExamCategory {
+  const lower = profileName.toLowerCase()
+  if (/cpge|mines|polytechnique|centrale|ccinp|ccp|concours|mp\b|pc\b|psi\b|prépa/i.test(lower)) return 'cpge'
+  if (/crfpa|barreau|avocat|droit des obligations|note de synth/i.test(lower)) return 'crfpa'
+  if (/usmle|ecni?|médecine|medicine|nclex|step\s*[123]/i.test(lower)) return 'medical'
+  return 'general'
+}
+
 interface PracticeExamSetupProps {
   examProfileId: string
+  profileName?: string
   subjects: Subject[]
   topics: Topic[]
   weakTopics: Topic[]
@@ -23,6 +34,7 @@ interface PracticeExamSetupProps {
 
 export function PracticeExamSetup({
   examProfileId,
+  profileName,
   subjects,
   topics,
   weakTopics,
@@ -30,6 +42,7 @@ export function PracticeExamSetup({
   onStart,
 }: PracticeExamSetupProps) {
   const { t } = useTranslation()
+  const examCategory = detectExamCategory(profileName ?? '')
   const [questionCount, setQuestionCount] = useState(10)
   const [focusSubject, setFocusSubject] = useState('')
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
@@ -384,105 +397,112 @@ export function PracticeExamSetup({
             </button>
           )}
 
-          {/* Document exam (Type B — CPGE concours-style problem) */}
-          <button
-            onClick={() => setShowDocumentExam(!showDocumentExam)}
-            className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2 border-2 border-amber-500/30"
-          >
-            <FileText className="w-4 h-4" /> {t('documentExam.startDocument', 'Start Document Exam (CPGE)')}
-          </button>
+          {/* CPGE: Document Exam */}
+          {(examCategory === 'cpge' || examCategory === 'general') && (
+            <button
+              onClick={() => setShowDocumentExam(!showDocumentExam)}
+              className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2"
+            >
+              <FileText className="w-4 h-4" /> {t('documentExam.startDocument', 'Document Exam (CPGE)')}
+            </button>
+          )}
         </div>
 
-        {/* Note de synthèse (Type C — CRFPA) */}
-        <button
-          onClick={() => {
-            onStart({
-              questionCount: 0,
-              sourcesEnabled,
-              examMode: 'synthesis',
-              timeLimitSeconds: 5 * 3600,
-            })
-          }}
-          className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2 border-2 border-purple-500/30"
-        >
-          <Scale className="w-4 h-4" /> {t('syntheseExam.startSynthese', 'Note de Synthèse (CRFPA)')}
-        </button>
-
-        {/* Cas pratique (CRFPA) */}
-        <button
-          onClick={() => setShowCasPratique(!showCasPratique)}
-          className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2 border-2 border-purple-500/30"
-        >
-          <Scale className="w-4 h-4" /> {t('casPratique.start', 'Cas Pratique / Consultation (CRFPA)')}
-        </button>
-
-        {showCasPratique && (
-          <div className="space-y-3 p-4 rounded-xl border border-purple-500/30 bg-purple-500/5">
-            <div>
-              <label className="block text-xs font-medium text-[var(--text-body)] mb-1">
-                {t('casPratique.specialty', 'Specialty')}
-              </label>
-              <select
-                value={cpSpecialty}
-                onChange={e => setCpSpecialty(e.target.value as CasPratiqueSpecialty)}
-                className="select-field w-full"
-              >
-                <optgroup label="Tronc commun">
-                  {SPECIALTY_OPTIONS.filter(s => s.category === 'obligations').map(s => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Spécialité">
-                  {SPECIALTY_OPTIONS.filter(s => s.category === 'specialite').map(s => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Procédure">
-                  {SPECIALTY_OPTIONS.filter(s => s.category === 'procedure').map(s => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </optgroup>
-              </select>
-            </div>
+        {/* CRFPA exam types */}
+        {(examCategory === 'crfpa' || examCategory === 'general') && (
+          <div className="space-y-2">
+            {examCategory === 'crfpa' && (
+              <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-semibold px-1">CRFPA</p>
+            )}
             <button
               onClick={() => {
-                const durations: Record<string, number> = {
-                  obligations: 3 * 3600,
-                  'procedure-civile': 2 * 3600, 'procedure-penale': 2 * 3600, 'procedure-administrative': 2 * 3600,
-                }
                 onStart({
                   questionCount: 0,
                   sourcesEnabled,
-                  examMode: 'cas-pratique',
-                  documentSubject: cpSpecialty,
-                  timeLimitSeconds: durations[cpSpecialty] ?? 3 * 3600,
+                  examMode: 'synthesis',
+                  timeLimitSeconds: 5 * 3600,
                 })
               }}
-              className="btn-primary px-6 py-2.5 w-full flex items-center justify-center gap-2"
+              className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2"
             >
-              <Play className="w-4 h-4" /> {t('casPratique.generate', 'Generate Cas Pratique')}
+              <Scale className="w-4 h-4" /> {t('syntheseExam.startSynthese', 'Note de Synthèse')}
+            </button>
+
+            <button
+              onClick={() => setShowCasPratique(!showCasPratique)}
+              className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2"
+            >
+              <Scale className="w-4 h-4" /> {t('casPratique.start', 'Cas Pratique / Consultation')}
+            </button>
+
+            {showCasPratique && (
+              <div className="space-y-3 p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-input)]">
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-body)] mb-1">
+                    {t('casPratique.specialty', 'Specialty')}
+                  </label>
+                  <select
+                    value={cpSpecialty}
+                    onChange={e => setCpSpecialty(e.target.value as CasPratiqueSpecialty)}
+                    className="select-field w-full"
+                  >
+                    <optgroup label="Tronc commun">
+                      {SPECIALTY_OPTIONS.filter(s => s.category === 'obligations').map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Spécialité">
+                      {SPECIALTY_OPTIONS.filter(s => s.category === 'specialite').map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Procédure">
+                      {SPECIALTY_OPTIONS.filter(s => s.category === 'procedure').map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+                <button
+                  onClick={() => {
+                    const durations: Record<string, number> = {
+                      obligations: 3 * 3600,
+                      'procedure-civile': 2 * 3600, 'procedure-penale': 2 * 3600, 'procedure-administrative': 2 * 3600,
+                    }
+                    onStart({
+                      questionCount: 0,
+                      sourcesEnabled,
+                      examMode: 'cas-pratique',
+                      documentSubject: cpSpecialty,
+                      timeLimitSeconds: durations[cpSpecialty] ?? 3 * 3600,
+                    })
+                  }}
+                  className="btn-primary px-6 py-2.5 w-full flex items-center justify-center gap-2"
+                >
+                  <Play className="w-4 h-4" /> {t('casPratique.generate', 'Generate')}
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                onStart({
+                  questionCount: 0,
+                  sourcesEnabled: false,
+                  examMode: 'grand-oral',
+                  timeLimitSeconds: 3600,
+                })
+              }}
+              className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2"
+            >
+              <Scale className="w-4 h-4" /> {t('grandOral.start', 'Grand Oral')}
             </button>
           </div>
         )}
 
-        {/* Grand Oral (CRFPA) */}
-        <button
-          onClick={() => {
-            onStart({
-              questionCount: 0,
-              sourcesEnabled: false,
-              examMode: 'grand-oral',
-              timeLimitSeconds: 3600, // 1h prep
-            })
-          }}
-          className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2 border-2 border-purple-500/30"
-        >
-          <Scale className="w-4 h-4" /> {t('grandOral.start', 'Grand Oral (CRFPA)')}
-        </button>
-
-        {/* Document exam configuration panel */}
-        {showDocumentExam && (
-          <div className="space-y-3 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
+        {/* Document exam configuration panel (CPGE only) */}
+        {showDocumentExam && (examCategory === 'cpge' || examCategory === 'general') && (
+          <div className="space-y-3 p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-input)]">
             <h3 className="text-sm font-semibold text-[var(--text-heading)]">
               {t('documentExam.configTitle', 'Document Exam Configuration')}
             </h3>
