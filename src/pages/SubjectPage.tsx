@@ -191,7 +191,16 @@ export default function SubjectPage() {
         {profileId && allSubjectTopics.length > 0 && (
           <button
             onClick={async () => {
+              // Skip topics that already have a pending fiche-generation job
+              const pendingJobs = await db.backgroundJobs
+                .where('examProfileId').equals(profileId)
+                .filter(j => j.type === 'fiche-generation' && (j.status === 'queued' || j.status === 'running'))
+                .toArray()
+              const pendingTopicIds = new Set(
+                pendingJobs.map(j => { try { return (JSON.parse(j.config) as { topicId: string }).topicId } catch { return '' } })
+              )
               for (const t of allSubjectTopics) {
+                if (pendingTopicIds.has(t.id)) continue
                 await enqueue('fiche-generation', profileId, {
                   topicId: t.id,
                   topicName: t.name || `Topic ${t.id.slice(0, 6)}`,

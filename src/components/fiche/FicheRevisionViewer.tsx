@@ -136,7 +136,8 @@ export default function FicheRevisionPage() {
           <div className="flex gap-2">
             <button
               onClick={handleRegenerate}
-              className="btn-ghost px-3 py-2 text-xs flex items-center gap-1.5"
+              disabled={!topic || !subject}
+              className="btn-ghost px-3 py-2 text-xs flex items-center gap-1.5 disabled:opacity-40"
               title={t('fiche.regenerate', 'Regenerate')}
             >
               <RefreshCw className="w-3.5 h-3.5" />

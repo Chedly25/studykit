@@ -52,10 +52,13 @@ export function createFicheGenerationWorkflow(config: FicheGenerationConfig): Wo
             // Fallback: get chunks from any document in this profile, limited
             const allChunks = await db.documentChunks
               .where('examProfileId').equals(ctx.examProfileId)
-              .limit(30)
+              .limit(50)
               .toArray()
+            // Use longest word (>3 chars) from topic name to avoid stopwords like "Les", "The"
+            const searchTerm = config.topicName.toLowerCase().split(/\s+/).find(w => w.length > 3)
+              ?? config.topicName.toLowerCase()
             courseContent = allChunks
-              .filter(c => c.content.toLowerCase().includes(config.topicName.toLowerCase().split(' ')[0]))
+              .filter(c => c.content.toLowerCase().includes(searchTerm))
               .map(c => c.content)
               .join('\n\n---\n\n')
               .slice(0, 30000)
@@ -83,11 +86,13 @@ export function createFicheGenerationWorkflow(config: FicheGenerationConfig): Wo
             examName: config.examName,
             mastery,
             courseContent: courseContent.slice(0, 40000),
-            conceptCards: conceptCards.map(c => ({
-              title: c.title,
-              content: c.content ?? c.keyPoints,
-              mastery: c.mastery,
-            })),
+            conceptCards: conceptCards.map(c => {
+              let cardContent = c.content ?? ''
+              if (!cardContent && c.keyPoints) {
+                try { cardContent = (JSON.parse(c.keyPoints) as string[]).join('. ') } catch { cardContent = c.keyPoints }
+              }
+              return { title: c.title, content: cardContent, mastery: c.mastery }
+            }),
             personalMistakes: misconceptions.map(m => m.description),
             language: (config.language ?? 'fr') as 'fr' | 'en',
           })
@@ -110,6 +115,9 @@ export function createFicheGenerationWorkflow(config: FicheGenerationConfig): Wo
             await db.revisionFiches.update(existing.id, {
               content: content.trim(),
               sourceChunkIds: JSON.stringify(chunks.map(c => c.id)),
+              personalMistakes: JSON.stringify(
+                misconceptions.map(m => ({ text: m.description, date: m.lastSeenAt }))
+              ),
               version: existing.version + 1,
               updatedAt: now,
             })
@@ -155,8 +163,10 @@ export function appendMistakeToFiche(content: string, mistake: string, examDate:
     return content + `\n\n## Erreurs fréquentes ⚠️\n- ${mistake} *(exam du ${examDate})*\n`
   }
 
-  // Find the next ## section after the mistakes section
-  const nextSection = content.indexOf('\n## ', sectionStart + 10)
+  // Skip past the heading line itself before searching for the next ## section
+  const headingEnd = content.indexOf('\n', sectionStart)
+  const searchFrom = headingEnd >= 0 ? headingEnd + 1 : sectionStart + 40
+  const nextSection = content.indexOf('\n## ', searchFrom)
   const insertPoint = nextSection >= 0 ? nextSection : content.length
 
   const newLine = `\n- *${mistake}* *(exam du ${examDate})*`
