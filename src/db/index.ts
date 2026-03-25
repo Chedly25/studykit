@@ -57,6 +57,7 @@ import type {
   StrategyEffectiveness,
   SyncQueueEntry,
   SyncMeta,
+  RevisionFiche,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -116,6 +117,7 @@ export class StudiesKitDB extends Dexie {
   contentEffectiveness!: Table<ContentEffectiveness>
   strategyEffectiveness!: Table<StrategyEffectiveness>
   macroRoadmaps!: Table<import('./schema').MacroRoadmap>
+  revisionFiches!: Table<RevisionFiche>
   _syncQueue!: Table<SyncQueueEntry>
   _syncMeta!: Table<SyncMeta>
 
@@ -355,6 +357,11 @@ export class StudiesKitDB extends Dexie {
 
     // v31: Cas pratique + Grand Oral exam modes (no schema changes, just new ExamMode values)
     this.version(31).stores({})
+
+    // v32: Revision fiches (topic-level revision sheets)
+    this.version(32).stores({
+      revisionFiches: 'id, examProfileId, topicId, [examProfileId+topicId], [examProfileId+subjectId]',
+    })
   }
 }
 

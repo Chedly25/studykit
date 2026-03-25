@@ -281,6 +281,21 @@ export interface ConceptCardConnection {
   label: string           // e.g. "requires", "extends", "contrasts"
 }
 
+// ─── Revision Fiches (topic-level revision sheets) ──────────────
+export interface RevisionFiche {
+  id: string
+  examProfileId: string
+  topicId: string
+  subjectId: string
+  title: string
+  content: string              // Full Markdown+LaTeX fiche
+  sourceChunkIds: string       // JSON string[]
+  personalMistakes: string     // JSON Array<{text, date, examId}>
+  version: number
+  generatedAt: string
+  updatedAt: string
+}
+
 // ─── Error Types ────────────────────────────────────────────────
 export type ErrorType = 'recall' | 'conceptual' | 'application' | 'distractor'
 
@@ -818,6 +833,7 @@ export type JobType =
   | 'synthesis-grading'
   | 'cas-pratique-generation'
   | 'grand-oral-generation'
+  | 'fiche-generation'
 
 export interface BackgroundJob {
   id: string

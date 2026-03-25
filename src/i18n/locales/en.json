@@ -782,6 +782,16 @@
     "keyPoints": "Key Points",
     "subsidiaryQuestions": "Subsidiary Questions"
   },
+  "fiche": {
+    "notFound": "No revision fiche for this topic yet.",
+    "generate": "Generate fiche",
+    "regenerate": "Regenerate",
+    "print": "Print / Export PDF",
+    "lastUpdated": "Updated {{when}}",
+    "today": "today",
+    "yesterday": "yesterday",
+    "daysAgo": "{{count}} days ago"
+  },
   "syntheseExam": {
     "startSynthese": "Note de Synthèse (CRFPA)",
     "noDossier": "No dossier documents.",

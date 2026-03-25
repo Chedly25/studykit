@@ -4,7 +4,9 @@
  */
 import { useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Search, ChevronDown, ChevronRight, Lock, MessageCircle, BookOpen } from 'lucide-react'
+import { ArrowLeft, Search, ChevronDown, ChevronRight, Lock, MessageCircle, BookOpen, FileText } from 'lucide-react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { isTopicLocked } from '../lib/knowledgeGraph'
@@ -31,6 +33,14 @@ export default function SubjectPage() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null)
+
+  // Track which topics have fiches
+  const ficheTopicIds = useLiveQuery(
+    () => profileId
+      ? db.revisionFiches.where('examProfileId').equals(profileId).toArray().then(fs => new Set(fs.map(f => f.topicId)))
+      : new Set<string>(),
+    [profileId],
+  ) ?? new Set<string>()
 
   const subject = subjects.find(s => s.id === subjectId)
   const subjectChapters = subjectId ? getChaptersForSubject(subjectId) : []
@@ -121,6 +131,15 @@ export default function SubjectPage() {
               >
                 <MessageCircle className="w-3 h-3" /> Ask AI
               </button>
+              {ficheTopicIds.has(topic.id) && (
+                <Link
+                  to={`/fiche/${topic.id}`}
+                  onClick={e => e.stopPropagation()}
+                  className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-text)] flex items-center gap-1 transition-colors"
+                >
+                  <FileText className="w-3 h-3" /> Fiche
+                </Link>
+              )}
             </div>
           )}
         </div>

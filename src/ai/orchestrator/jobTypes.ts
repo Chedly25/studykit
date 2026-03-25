@@ -19,6 +19,7 @@ import { createSyntheseGenerationWorkflow } from '../workflows/syntheseGeneratio
 import { createSyntheseGradingWorkflow } from '../workflows/syntheseGrading'
 import { createCasPratiqueGenerationWorkflow } from '../workflows/casPratiqueGeneration'
 import { createGrandOralGenerationWorkflow } from '../workflows/grandOralGeneration'
+import { createFicheGenerationWorkflow } from '../workflows/ficheGeneration'
 
 /**
  * Reconstruct a WorkflowDefinition from a job type and its serialized config.
@@ -129,6 +130,16 @@ export function reconstructWorkflow(type: JobType, config: Record<string, unknow
     case 'grand-oral-generation':
       return createGrandOralGenerationWorkflow({
         sessionId: config.sessionId as string,
+      })
+
+    case 'fiche-generation':
+      return createFicheGenerationWorkflow({
+        topicId: config.topicId as string,
+        topicName: config.topicName as string,
+        subjectId: config.subjectId as string,
+        subjectName: config.subjectName as string,
+        examName: config.examName as string,
+        language: config.language as 'fr' | 'en' | undefined,
       })
 
     default:
