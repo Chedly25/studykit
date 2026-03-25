@@ -352,6 +352,9 @@ export class StudiesKitDB extends Dexie {
 
     // v30: Note de synthèse fields on PracticeExamSession (optional, no index changes)
     this.version(30).stores({})
+
+    // v31: Cas pratique + Grand Oral exam modes (no schema changes, just new ExamMode values)
+    this.version(31).stores({})
   }
 }
 

@@ -18,6 +18,7 @@ import { DocumentExamTaker } from '../components/practice/DocumentExamTaker'
 import { DocumentExamResults } from '../components/practice/DocumentExamResults'
 import { SyntheseTaker } from '../components/practice/legal/SyntheseTaker'
 import { SyntheseResults } from '../components/practice/legal/SyntheseResults'
+import { CasPratiqueTaker } from '../components/practice/legal/CasPratiqueTaker'
 import { PracticeExamHistory } from '../components/practice/PracticeExamHistory'
 import { SessionCompletionOverlay, type SessionCompletionData } from '../components/SessionCompletionOverlay'
 import { decayedMastery } from '../lib/knowledgeGraph'
@@ -244,6 +245,34 @@ export default function PracticeExam() {
       </div>
     ) : null
 
+    // Cas pratique mode (CRFPA)
+    if (exam.session?.examMode === 'cas-pratique' && exam.session.documentContent) {
+      return (
+        <CasPratiqueTaker
+          sessionId={exam.session.id}
+          scenarioContent={exam.session.documentContent}
+          timeLimitSeconds={exam.session.timeLimitSeconds}
+          savedAnswer={exam.session.synthesisAnswer}
+          onSubmit={() => exam.submitCasPratique()}
+          mode="cas-pratique"
+        />
+      )
+    }
+
+    // Grand Oral prep mode (CRFPA)
+    if (exam.session?.examMode === 'grand-oral' && exam.session.documentContent) {
+      return (
+        <CasPratiqueTaker
+          sessionId={exam.session.id}
+          scenarioContent={exam.session.documentContent}
+          timeLimitSeconds={exam.session.timeLimitSeconds}
+          savedAnswer={exam.session.synthesisAnswer}
+          onSubmit={() => exam.submitGrandOral()}
+          mode="grand-oral"
+        />
+      )
+    }
+
     // Note de synthèse mode (Type C — CRFPA)
     if (exam.session?.examMode === 'synthesis' && exam.session.dossierContent) {
       let documents: Array<{ docNumber: number; title: string; type: string; content: string }> = []
@@ -319,6 +348,23 @@ export default function PracticeExam() {
   }
 
   // grading or results
+  // Cas pratique results
+  if (exam.session?.examMode === 'cas-pratique') {
+    if (exam.phase === 'grading') {
+      return <PracticeExamGenerator progress={exam.gradingProgress} error={exam.gradingError} onCancel={() => {}} />
+    }
+    return (
+      <SyntheseResults session={exam.session} onRetake={exam.resetToSetup} />
+    )
+  }
+
+  // Grand Oral results (show model plan + subsidiary questions)
+  if (exam.session?.examMode === 'grand-oral') {
+    return (
+      <SyntheseResults session={exam.session} onRetake={exam.resetToSetup} />
+    )
+  }
+
   // Note de synthèse (Type C)
   if (exam.session?.examMode === 'synthesis') {
     if (exam.phase === 'grading') {

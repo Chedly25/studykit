@@ -745,6 +745,26 @@
     "subject": "Matière",
     "generate": "Générer le sujet"
   },
+  "casPratique": {
+    "start": "Cas Pratique / Consultation (CRFPA)",
+    "specialty": "Matière",
+    "generate": "Générer le cas pratique",
+    "yourConsultation": "Votre consultation",
+    "placeholder": "Rédigez votre consultation ici...",
+    "shortWarning": "Votre consultation semble courte."
+  },
+  "grandOral": {
+    "start": "Grand Oral (CRFPA)",
+    "subject": "Sujet",
+    "prepOver": "Temps de préparation écoulé",
+    "prepNotes": "Vos notes de préparation",
+    "notesPlaceholder": "Préparez votre exposé ici...\n\nIntroduction :\n\nI.\n  A.\n  B.\n\nII.\n  A.\n  B.",
+    "finish": "Fin de la préparation",
+    "confirmEnd": "Fin de la préparation ?",
+    "modelPlan": "Plan modèle",
+    "keyPoints": "Points clés",
+    "subsidiaryQuestions": "Questions subsidiaires"
+  },
   "syntheseExam": {
     "startSynthese": "Note de Synthèse (CRFPA)",
     "noDossier": "Aucun document dans le dossier.",

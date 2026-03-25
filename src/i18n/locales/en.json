@@ -745,6 +745,26 @@
     "subject": "Subject",
     "generate": "Generate Document Exam"
   },
+  "casPratique": {
+    "start": "Cas Pratique / Consultation (CRFPA)",
+    "specialty": "Specialty",
+    "generate": "Generate Cas Pratique",
+    "yourConsultation": "Your consultation",
+    "placeholder": "Write your consultation here...",
+    "shortWarning": "Your consultation seems short."
+  },
+  "grandOral": {
+    "start": "Grand Oral (CRFPA)",
+    "subject": "Subject",
+    "prepOver": "Preparation time over",
+    "prepNotes": "Your preparation notes",
+    "notesPlaceholder": "Plan your exposé here...\n\nIntroduction:\n\nI.\n  A.\n  B.\n\nII.\n  A.\n  B.",
+    "finish": "End preparation",
+    "confirmEnd": "End preparation?",
+    "modelPlan": "Model Plan",
+    "keyPoints": "Key Points",
+    "subsidiaryQuestions": "Subsidiary Questions"
+  },
   "syntheseExam": {
     "startSynthese": "Note de Synthèse (CRFPA)",
     "noDossier": "No dossier documents.",

@@ -9,6 +9,8 @@ import { ExamFormatEditor } from '../knowledge/ExamFormatEditor'
 import type { PracticeExamOptions } from '../../hooks/usePracticeExam'
 import { CONCOURS_OPTIONS, SUBJECT_OPTIONS } from '../../ai/prompts/documentExamPrompts'
 import type { DocumentExamSubject, ConcoursType } from '../../ai/prompts/documentExamPrompts'
+import { SPECIALTY_OPTIONS } from '../../ai/prompts/casPratiquePrompts'
+import type { CasPratiqueSpecialty } from '../../ai/prompts/casPratiquePrompts'
 
 interface PracticeExamSetupProps {
   examProfileId: string
@@ -60,6 +62,10 @@ export function PracticeExamSetup({
   const [showDocumentExam, setShowDocumentExam] = useState(false)
   const [docConcours, setDocConcours] = useState<ConcoursType>('mines')
   const [docSubject, setDocSubject] = useState<DocumentExamSubject>('maths-algebre')
+
+  // Cas pratique (CRFPA)
+  const [showCasPratique, setShowCasPratique] = useState(false)
+  const [cpSpecialty, setCpSpecialty] = useState<CasPratiqueSpecialty>('obligations')
 
   const examFormats = useLiveQuery(
     () => db.examFormats.where('examProfileId').equals(examProfileId).toArray(),
@@ -394,12 +400,84 @@ export function PracticeExamSetup({
               questionCount: 0,
               sourcesEnabled,
               examMode: 'synthesis',
-              timeLimitSeconds: 5 * 3600, // 5 hours
+              timeLimitSeconds: 5 * 3600,
             })
           }}
           className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2 border-2 border-purple-500/30"
         >
           <Scale className="w-4 h-4" /> {t('syntheseExam.startSynthese', 'Note de Synthèse (CRFPA)')}
+        </button>
+
+        {/* Cas pratique (CRFPA) */}
+        <button
+          onClick={() => setShowCasPratique(!showCasPratique)}
+          className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2 border-2 border-purple-500/30"
+        >
+          <Scale className="w-4 h-4" /> {t('casPratique.start', 'Cas Pratique / Consultation (CRFPA)')}
+        </button>
+
+        {showCasPratique && (
+          <div className="space-y-3 p-4 rounded-xl border border-purple-500/30 bg-purple-500/5">
+            <div>
+              <label className="block text-xs font-medium text-[var(--text-body)] mb-1">
+                {t('casPratique.specialty', 'Specialty')}
+              </label>
+              <select
+                value={cpSpecialty}
+                onChange={e => setCpSpecialty(e.target.value as CasPratiqueSpecialty)}
+                className="select-field w-full"
+              >
+                <optgroup label="Tronc commun">
+                  {SPECIALTY_OPTIONS.filter(s => s.category === 'obligations').map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Spécialité">
+                  {SPECIALTY_OPTIONS.filter(s => s.category === 'specialite').map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Procédure">
+                  {SPECIALTY_OPTIONS.filter(s => s.category === 'procedure').map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
+            <button
+              onClick={() => {
+                const durations: Record<string, number> = {
+                  obligations: 3 * 3600,
+                  'procedure-civile': 2 * 3600, 'procedure-penale': 2 * 3600, 'procedure-administrative': 2 * 3600,
+                }
+                onStart({
+                  questionCount: 0,
+                  sourcesEnabled,
+                  examMode: 'cas-pratique',
+                  documentSubject: cpSpecialty,
+                  timeLimitSeconds: durations[cpSpecialty] ?? 3 * 3600,
+                })
+              }}
+              className="btn-primary px-6 py-2.5 w-full flex items-center justify-center gap-2"
+            >
+              <Play className="w-4 h-4" /> {t('casPratique.generate', 'Generate Cas Pratique')}
+            </button>
+          </div>
+        )}
+
+        {/* Grand Oral (CRFPA) */}
+        <button
+          onClick={() => {
+            onStart({
+              questionCount: 0,
+              sourcesEnabled: false,
+              examMode: 'grand-oral',
+              timeLimitSeconds: 3600, // 1h prep
+            })
+          }}
+          className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2 border-2 border-purple-500/30"
+        >
+          <Scale className="w-4 h-4" /> {t('grandOral.start', 'Grand Oral (CRFPA)')}
         </button>
 
         {/* Document exam configuration panel */}

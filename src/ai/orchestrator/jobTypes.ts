@@ -17,6 +17,8 @@ import { createDocumentExamWorkflow } from '../workflows/documentExam'
 import { createDocumentExamGradingWorkflow } from '../workflows/documentExamGrading'
 import { createSyntheseGenerationWorkflow } from '../workflows/syntheseGeneration'
 import { createSyntheseGradingWorkflow } from '../workflows/syntheseGrading'
+import { createCasPratiqueGenerationWorkflow } from '../workflows/casPratiqueGeneration'
+import { createGrandOralGenerationWorkflow } from '../workflows/grandOralGeneration'
 
 /**
  * Reconstruct a WorkflowDefinition from a job type and its serialized config.
@@ -114,6 +116,18 @@ export function reconstructWorkflow(type: JobType, config: Record<string, unknow
 
     case 'synthesis-grading':
       return createSyntheseGradingWorkflow({
+        sessionId: config.sessionId as string,
+      })
+
+    case 'cas-pratique-generation':
+      return createCasPratiqueGenerationWorkflow({
+        sessionId: config.sessionId as string,
+        specialty: config.specialty as import('../prompts/casPratiquePrompts').CasPratiqueSpecialty,
+        duration: config.duration as number,
+      })
+
+    case 'grand-oral-generation':
+      return createGrandOralGenerationWorkflow({
         sessionId: config.sessionId as string,
       })
 

@@ -385,7 +385,7 @@ export interface MockExam {
 
 // ─── Practice Exam Sessions ────────────────────────────────────
 export type PracticeExamPhase = 'generating' | 'ready' | 'in-progress' | 'grading' | 'graded'
-export type ExamMode = 'standard' | 'document' | 'synthesis'
+export type ExamMode = 'standard' | 'document' | 'synthesis' | 'cas-pratique' | 'grand-oral'
 
 export interface PracticeExamSession {
   id: string
@@ -816,6 +816,8 @@ export type JobType =
   | 'document-exam-grading'
   | 'synthesis-generation'
   | 'synthesis-grading'
+  | 'cas-pratique-generation'
+  | 'grand-oral-generation'
 
 export interface BackgroundJob {
   id: string

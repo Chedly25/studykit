@@ -199,7 +199,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
     setAdaptiveState(createAdaptiveState())
     // Document/synthesis exams manage their own timer; simulation exams use per-section timers
     setTimeLimitForSession(
-      (options.simulationMode || options.examMode === 'document' || options.examMode === 'synthesis') ? undefined : options.timeLimitSeconds
+      (options.simulationMode || options.examMode === 'document' || options.examMode === 'synthesis' || options.examMode === 'cas-pratique' || options.examMode === 'grand-oral') ? undefined : options.timeLimitSeconds
     )
 
     // Choose pipeline based on exam mode
@@ -207,7 +207,19 @@ export function usePracticeExam(examProfileId: string | undefined) {
     let jobConfig: Record<string, unknown>
     let totalSteps: number
 
-    if (options.examMode === 'synthesis') {
+    if (options.examMode === 'cas-pratique') {
+      jobType = 'cas-pratique-generation'
+      jobConfig = {
+        sessionId: id,
+        specialty: options.documentSubject ?? 'obligations',
+        duration: (options.timeLimitSeconds ?? 10800) / 60,
+      }
+      totalSteps = 3
+    } else if (options.examMode === 'grand-oral') {
+      jobType = 'grand-oral-generation'
+      jobConfig = { sessionId: id }
+      totalSteps = 2
+    } else if (options.examMode === 'synthesis') {
       // Type C: note de synthèse (CRFPA)
       jobType = 'synthesis-generation'
       jobConfig = {
@@ -508,5 +520,16 @@ export function usePracticeExam(examProfileId: string | undefined) {
     submitDocumentExam,
     // Synthesis exam (Type C)
     submitSyntheseExam,
+    // Cas pratique + Grand Oral
+    submitCasPratique: submitSyntheseExam, // Same grading pipeline (evaluate text against rubric)
+    submitGrandOral: async () => {
+      // Grand Oral has no grading — just mark as complete
+      if (!sessionId) return
+      await db.practiceExamSessions.update(sessionId, {
+        phase: 'graded',
+        completedAt: new Date().toISOString(),
+      })
+      setPhase('results')
+    },
   }
 }
