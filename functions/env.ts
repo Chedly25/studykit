@@ -14,4 +14,7 @@ export interface Env {
   STRIPE_PRO_MONTHLY_PRICE_ID: string
   STRIPE_PRO_YEARLY_PRICE_ID: string
   TAVILY_API_KEY?: string
+  JUDILIBRE_API_KEY?: string
+  PISTE_OAUTH_CLIENT_ID?: string
+  PISTE_OAUTH_CLIENT_SECRET?: string
 }

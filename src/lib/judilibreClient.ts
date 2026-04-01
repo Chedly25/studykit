@@ -1,15 +1,11 @@
 /**
- * Client for the Judilibre API (Cour de cassation open data).
- * Sandbox: https://sandbox-api.piste.gouv.fr/cassation/judilibre/v1.0
- * Production: https://api.piste.gouv.fr/cassation/judilibre/v1.0
- *
- * Auth: KeyId header (from PISTE sandbox/production app).
+ * Client for Judilibre (Cour de cassation case law).
+ * Calls /api/judilibre proxy — API key stays server-side.
  */
 
-const JUDILIBRE_BASE = import.meta.env.VITE_JUDILIBRE_URL
-  ?? 'https://sandbox-api.piste.gouv.fr/cassation/judilibre/v1.0'
-
-const JUDILIBRE_KEY = import.meta.env.VITE_JUDILIBRE_KEY ?? ''
+const API_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/\/chat$/, '/judilibre')
+  : '/api/judilibre'
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -72,38 +68,46 @@ export function formatDecisionTitle(d: { chamber: string; decision_date: string;
   return `Cour de cassation, ${formatChamber(d.chamber)}, ${date}, n° ${d.number}`
 }
 
-// ─── API calls ───────────────────────────────────────────────────
+// ─── API calls (via server proxy) ────────────────────────────────
+
+async function callProxy(body: Record<string, unknown>, authToken: string): Promise<unknown> {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`Judilibre proxy ${res.status}: ${text.slice(0, 200)}`)
+  }
+  return res.json()
+}
 
 export async function searchDecisions(
   query: string,
+  authToken: string,
   options: {
     pageSize?: number
     chamber?: string
     dateStart?: string
     dateEnd?: string
-    publication?: string  // 'b' = published au bulletin
+    publication?: string
   } = {},
 ): Promise<JudilibreSearchResponse> {
-  const params = new URLSearchParams({
+  return callProxy({
+    action: 'search',
     query,
-    page_size: String(options.pageSize ?? 10),
-  })
-  if (options.chamber) params.set('chamber', options.chamber)
-  if (options.dateStart) params.set('date_start', options.dateStart)
-  if (options.dateEnd) params.set('date_end', options.dateEnd)
-  if (options.publication) params.set('publication', options.publication)
-
-  const res = await fetch(`${JUDILIBRE_BASE}/search?${params}`, {
-    headers: { KeyId: JUDILIBRE_KEY },
-  })
-  if (!res.ok) throw new Error(`Judilibre search failed: ${res.status}`)
-  return res.json()
+    pageSize: options.pageSize ?? 10,
+    chamber: options.chamber,
+    dateStart: options.dateStart,
+    dateEnd: options.dateEnd,
+    publication: options.publication,
+  }, authToken) as Promise<JudilibreSearchResponse>
 }
 
-export async function getDecision(id: string): Promise<JudilibreDecision> {
-  const res = await fetch(`${JUDILIBRE_BASE}/decision?id=${id}`, {
-    headers: { KeyId: JUDILIBRE_KEY },
-  })
-  if (!res.ok) throw new Error(`Judilibre decision failed: ${res.status}`)
-  return res.json()
+export async function getDecision(id: string, authToken: string): Promise<JudilibreDecision> {
+  return callProxy({ action: 'decision', id }, authToken) as Promise<JudilibreDecision>
 }

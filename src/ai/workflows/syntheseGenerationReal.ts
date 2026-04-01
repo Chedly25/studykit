@@ -112,14 +112,14 @@ interface SourcedDocument {
 }
 
 /** Search Judilibre and fetch the best matching decision */
-async function sourceFromJudilibre(slot: DocumentSlot): Promise<SourcedDocument | null> {
+async function sourceFromJudilibre(slot: DocumentSlot, authToken: string): Promise<SourcedDocument | null> {
   for (const query of slot.searchQueries) {
     try {
-      const results = await searchDecisions(query, { pageSize: 3, publication: 'b' })
+      const results = await searchDecisions(query, authToken, { pageSize: 3, publication: 'b' })
       if (results.results.length === 0) continue
 
       const best = results.results[0]
-      const decision = await getDecision(best.id)
+      const decision = await getDecision(best.id, authToken)
       return {
         slot,
         title: formatDecisionTitle(best),
@@ -241,7 +241,7 @@ export function createSyntheseRealGenerationWorkflow(config: SyntheseRealGenerat
             let doc: SourcedDocument | null = null
             try {
               if (slot.type === 'jurisprudence-cass') {
-                doc = await sourceFromJudilibre(slot)
+                doc = await sourceFromJudilibre(slot, ctx.authToken)
               } else {
                 doc = await sourceFromWeb(slot, ctx.authToken)
               }
