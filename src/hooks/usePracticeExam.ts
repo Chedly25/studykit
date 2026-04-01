@@ -226,7 +226,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
         sessionId: id,
         sourcesEnabled: options.sourcesEnabled,
       }
-      totalSteps = 6 // gatherContext + architect + docGenerators + reviewer + synthesisWriter + rubricBuilder
+      totalSteps = 7 // gatherContext + architect + sourcing + curation + synthesisWriter + qualityPass + rubricBuilder
     } else if (options.examMode === 'document') {
       // Type B: document exam (CPGE concours)
       jobType = 'document-exam-generation'

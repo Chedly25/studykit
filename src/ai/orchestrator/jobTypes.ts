@@ -15,7 +15,7 @@ import { createMisconceptionExerciseWorkflow } from '../workflows/misconceptionE
 import { createExamSimulationWorkflow } from '../workflows/examSimulation'
 import { createDocumentExamWorkflow } from '../workflows/documentExam'
 import { createDocumentExamGradingWorkflow } from '../workflows/documentExamGrading'
-import { createSyntheseGenerationWorkflow } from '../workflows/syntheseGeneration'
+import { createSyntheseRealGenerationWorkflow } from '../workflows/syntheseGenerationReal'
 import { createSyntheseGradingWorkflow } from '../workflows/syntheseGrading'
 import { createCasPratiqueGenerationWorkflow } from '../workflows/casPratiqueGeneration'
 import { createGrandOralGenerationWorkflow } from '../workflows/grandOralGeneration'
@@ -111,7 +111,7 @@ export function reconstructWorkflow(type: JobType, config: Record<string, unknow
       })
 
     case 'synthesis-generation':
-      return createSyntheseGenerationWorkflow({
+      return createSyntheseRealGenerationWorkflow({
         sessionId: config.sessionId as string,
         sourcesEnabled: config.sourcesEnabled as boolean,
       })

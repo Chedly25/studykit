@@ -1,6 +1,7 @@
 /**
- * Results view for the CRFPA Note de Synthèse.
- * Shows: score card, per-criterion breakdown, document coverage, model answer.
+ * Results view for CRFPA exams: Note de Synthèse, Cas Pratique, Grand Oral.
+ * Shows: score card, per-criterion breakdown, document coverage (synthesis only),
+ * model answer / model plan depending on exam mode.
  */
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -11,6 +12,12 @@ import { DocumentMarkdown } from '../document/DocumentMarkdown'
 interface SyntheseResultsProps {
   session: PracticeExamSession | undefined
   onRetake: () => void
+}
+
+interface GrandOralModel {
+  expectedPlan?: { I: string; IA: string; IB: string; II: string; IIA: string; IIB: string }
+  keyPoints?: string[]
+  subsidiaryQuestions?: string[]
 }
 
 interface CriterionScore {
@@ -44,8 +51,17 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
 
   if (!session) return null
 
+  const examMode = session.examMode ?? 'synthesis'
+  const isGrandOral = examMode === 'grand-oral'
+  const isSynthesis = examMode === 'synthesis'
   const percentage = totalMax > 0 ? Math.round((totalEarned / totalMax) * 100) : 0
   const passed = percentage >= 50
+
+  // Parse Grand Oral model answer (stored as JSON, not text)
+  const grandOralModel = useMemo<GrandOralModel | null>(() => {
+    if (!isGrandOral || !session.synthesisModelAnswer) return null
+    try { return JSON.parse(session.synthesisModelAnswer) } catch { return null }
+  }, [isGrandOral, session.synthesisModelAnswer])
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
@@ -101,8 +117,8 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
         </div>
       )}
 
-      {/* Document coverage */}
-      {grading && (
+      {/* Document coverage — only for note de synthèse */}
+      {isSynthesis && grading && (grading.documentsCited?.length > 0 || grading.documentsMissed?.length > 0) && (
         <div className="glass-card p-5 space-y-3">
           <h3 className="text-sm font-semibold text-[var(--text-heading)]">
             {t('syntheseExam.documentCoverage', 'Document Coverage')}
@@ -135,11 +151,13 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
         </div>
       )}
 
-      {/* Student's synthesis */}
+      {/* Student's answer */}
       {session.synthesisAnswer && (
         <div className="glass-card p-5 space-y-3">
           <h3 className="text-sm font-semibold text-[var(--text-heading)]">
-            {t('syntheseExam.yourSynthesis', 'Your Synthesis')}
+            {isGrandOral
+              ? t('grandOral.yourNotes', 'Your Preparation Notes')
+              : t('syntheseExam.yourSynthesis', 'Your Synthesis')}
           </h3>
           <div className="text-sm text-[var(--text-body)] whitespace-pre-wrap leading-relaxed">
             {session.synthesisAnswer}
@@ -147,15 +165,69 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
         </div>
       )}
 
-      {/* Model synthesis (collapsible) */}
-      {session.synthesisModelAnswer && (
+      {/* Grand Oral: structured model plan + subsidiary questions */}
+      {isGrandOral && grandOralModel && (
         <div className="glass-card p-5 space-y-3">
           <button
             onClick={() => setShowModel(!showModel)}
             className="flex items-center gap-2 text-sm font-semibold text-[var(--text-heading)] hover:text-[var(--accent-text)] transition-colors"
           >
             {showModel ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            {t('syntheseExam.modelSynthesis', 'Model Synthesis')}
+            {t('grandOral.modelPlan', 'Model Plan & Key Points')}
+          </button>
+          {showModel && (
+            <div className="border-t border-[var(--border-card)] pt-3 space-y-4">
+              {grandOralModel.expectedPlan && (
+                <div>
+                  <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+                    {t('grandOral.expectedPlan', 'Expected Plan')}
+                  </h4>
+                  <div className="text-sm text-[var(--text-body)] space-y-1 pl-1">
+                    <p className="font-semibold">I. {grandOralModel.expectedPlan.I}</p>
+                    <p className="pl-4">A. {grandOralModel.expectedPlan.IA}</p>
+                    <p className="pl-4">B. {grandOralModel.expectedPlan.IB}</p>
+                    <p className="font-semibold mt-2">II. {grandOralModel.expectedPlan.II}</p>
+                    <p className="pl-4">A. {grandOralModel.expectedPlan.IIA}</p>
+                    <p className="pl-4">B. {grandOralModel.expectedPlan.IIB}</p>
+                  </div>
+                </div>
+              )}
+              {grandOralModel.keyPoints && grandOralModel.keyPoints.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+                    {t('grandOral.keyPoints', 'Key Points')}
+                  </h4>
+                  <ul className="text-sm text-[var(--text-body)] space-y-1 list-disc pl-5">
+                    {grandOralModel.keyPoints.map((pt, i) => <li key={i}>{pt}</li>)}
+                  </ul>
+                </div>
+              )}
+              {grandOralModel.subsidiaryQuestions && grandOralModel.subsidiaryQuestions.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+                    {t('grandOral.subsidiaryQuestions', 'Subsidiary Questions (Jury)')}
+                  </h4>
+                  <ol className="text-sm text-[var(--text-body)] space-y-1 list-decimal pl-5">
+                    {grandOralModel.subsidiaryQuestions.map((q, i) => <li key={i}>{q}</li>)}
+                  </ol>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Model synthesis / consultation (non-grand-oral) */}
+      {!isGrandOral && session.synthesisModelAnswer && (
+        <div className="glass-card p-5 space-y-3">
+          <button
+            onClick={() => setShowModel(!showModel)}
+            className="flex items-center gap-2 text-sm font-semibold text-[var(--text-heading)] hover:text-[var(--accent-text)] transition-colors"
+          >
+            {showModel ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            {isSynthesis
+              ? t('syntheseExam.modelSynthesis', 'Model Synthesis')
+              : t('casPratique.modelAnswer', 'Model Consultation')}
           </button>
           {showModel && (
             <div className="border-t border-[var(--border-card)] pt-3">

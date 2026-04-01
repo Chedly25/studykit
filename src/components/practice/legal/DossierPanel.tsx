@@ -4,7 +4,7 @@
  */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, ChevronRight, FileText, Scale, BookOpen, Newspaper, FileCheck } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, Scale, BookOpen, Newspaper, FileCheck, ExternalLink } from 'lucide-react'
 import { DocumentMarkdown } from '../document/DocumentMarkdown'
 
 export interface DossierDoc {
@@ -12,6 +12,7 @@ export interface DossierDoc {
   title: string
   type: string
   content: string
+  sourceUrl?: string
 }
 
 interface DossierPanelProps {
@@ -90,6 +91,17 @@ export function DossierPanel({ documents }: DossierPanelProps) {
           <h3 className="text-sm font-semibold text-[var(--text-heading)] leading-snug">
             {doc.title}
           </h3>
+          {doc.sourceUrl && (
+            <a
+              href={doc.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 mt-1 text-[10px] text-[var(--accent-text)] hover:underline"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Source
+            </a>
+          )}
         </div>
       )}
 

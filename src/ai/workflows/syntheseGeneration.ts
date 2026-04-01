@@ -97,7 +97,7 @@ export function createSyntheseGenerationWorkflow(config: SyntheseGenerationConfi
         return { topics: topicNames, avoidThemes }
       }),
 
-      // ── Step 2: Theme Architect ───────────────────────────────
+      // ── Step 2: Theme Architect (with retry) ─────────────────
       {
         id: 'themeArchitect',
         name: 'Designing dossier blueprint',
@@ -109,13 +109,23 @@ export function createSyntheseGenerationWorkflow(config: SyntheseGenerationConfi
             avoidThemes: context.avoidThemes,
           })
 
-          ctx.updateProgress?.('Designing the dossier theme and structure...')
-          const raw = await llmMain(user, system, ctx, 8192)
-          const blueprint = extractJson<DossierBlueprint>(raw)
+          let blueprint: DossierBlueprint | null = null
+          for (let attempt = 0; attempt < 2; attempt++) {
+            ctx.updateProgress?.(attempt === 0
+              ? 'Designing the dossier theme and structure...'
+              : 'Retrying blueprint generation...')
+            try {
+              const raw = await llmMain(user, system, ctx, 8192)
+              blueprint = extractJson<DossierBlueprint>(raw)
+              if (blueprint.theme && blueprint.documents && blueprint.documents.length >= 12) break
+              blueprint = null
+            } catch {
+              if (attempt === 1) throw new Error('Failed to generate a valid blueprint after 2 attempts.')
+            }
+          }
 
-          // Validate blueprint
-          if (!blueprint.theme || !blueprint.documents || blueprint.documents.length < 12) {
-            throw new Error(`Blueprint has only ${blueprint.documents?.length ?? 0} documents. Expected 15-18.`)
+          if (!blueprint) {
+            throw new Error('Blueprint validation failed: insufficient documents.')
           }
 
           // Persist blueprint
@@ -144,8 +154,11 @@ export function createSyntheseGenerationWorkflow(config: SyntheseGenerationConfi
             const batchResults = await Promise.all(
               batch.map(async (docSpec) => {
                 const { system, user } = buildDocumentGeneratorPrompt(blueprint, docSpec)
+                // Jurisprudence and doctrine need more tokens for realistic length
+                const isLong = docSpec.type.startsWith('jurisprudence') || docSpec.type === 'doctrine' || docSpec.type === 'rapport'
+                const docMaxTokens = isLong ? 6144 : 4096
                 try {
-                  const content = await llmMain(user, system, ctx, 4096)
+                  const content = await llmMain(user, system, ctx, docMaxTokens)
                   return {
                     docNumber: docSpec.docNumber,
                     title: docSpec.title,
@@ -155,7 +168,7 @@ export function createSyntheseGenerationWorkflow(config: SyntheseGenerationConfi
                 } catch {
                   // Retry once on failure
                   try {
-                    const content = await llmMain(user, system, ctx, 4096)
+                    const content = await llmMain(user, system, ctx, docMaxTokens)
                     return {
                       docNumber: docSpec.docNumber,
                       title: docSpec.title,
@@ -229,7 +242,7 @@ export function createSyntheseGenerationWorkflow(config: SyntheseGenerationConfi
             dossierContent: JSON.stringify(documents),
           })
 
-          return reviewed
+          return documents
         },
       },
 

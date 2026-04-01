@@ -89,25 +89,38 @@ export function createSyntheseGradingWorkflow(config: SyntheseGradingConfig): Wo
             return result
           }
 
-          const system = `Tu es un correcteur agrégé de l'épreuve de note de synthèse CRFPA. Tu corriges la copie d'un candidat avec rigueur et bienveillance.
+          const isSynthesis = session.examMode === 'synthesis'
+
+          const system = isSynthesis
+            ? `Tu es un correcteur agrégé de l'épreuve de note de synthèse CRFPA. Tu corriges la copie d'un candidat avec rigueur et bienveillance.
 
 Évalue la note de synthèse du candidat selon chaque critère du barème. Sois précis dans tes commentaires : indique ce qui est bien fait et ce qui manque.
 
 Vérifie quels documents du dossier sont cités (notation "(Doc. N)" ou "document N") et lesquels sont manquants.`
+            : `Tu es un correcteur agrégé de l'épreuve de cas pratique / consultation juridique CRFPA. Tu corriges la copie d'un candidat avec rigueur et bienveillance.
+
+Évalue la consultation du candidat selon chaque critère du barème. Sois précis dans tes commentaires : indique ce qui est bien fait et ce qui manque.
+
+Vérifie la qualité du syllogisme juridique (majeure, mineure, conclusion) pour chaque problème identifié.`
 
           const rubricText = rubric.criteria.map(c =>
             `- ${c.criterion} (${c.points} pts)${c.details ? ` — ${c.details}` : ''}`
           ).join('\n')
 
+          const docsSection = isSynthesis && documents.length > 0
+            ? `\n## DOCUMENTS DU DOSSIER\n${documents.map(d => `Doc ${d.docNumber}: ${d.title}`).join('\n')}\n`
+            : ''
+
+          const docsCitedInstruction = isSynthesis
+            ? `\n  "documentsCited": [1, 3, 5, 7],\n  "documentsMissed": [2, 4, 6]`
+            : `\n  "documentsCited": [],\n  "documentsMissed": []`
+
           const prompt = `## BARÈME
 ${rubricText}
 Total : ${rubric.criteria.reduce((s, c) => s + c.points, 0)} points
-
-## DOCUMENTS DU DOSSIER
-${documents.map(d => `Doc ${d.docNumber}: ${d.title}`).join('\n')}
-
-## SYNTHÈSE MODÈLE (extrait pour référence)
-${modelAnswer.slice(0, 3000)}
+${docsSection}
+## ${isSynthesis ? 'SYNTHÈSE' : 'CONSULTATION'} MODÈLE (pour référence)
+${modelAnswer}
 
 ## COPIE DU CANDIDAT
 ${studentAnswer}
@@ -117,9 +130,7 @@ Corrige selon le barème. Retourne UNIQUEMENT le JSON :
 {
   "criterionScores": [
     { "criterion": "Nom du critère", "earned": 3, "max": 4, "comment": "Explication" }
-  ],
-  "documentsCited": [1, 3, 5, 7],
-  "documentsMissed": [2, 4, 6]
+  ],${docsCitedInstruction}
 }`
 
           ctx.updateProgress?.('Grading synthesis...')
