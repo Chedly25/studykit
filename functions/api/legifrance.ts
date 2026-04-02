@@ -118,6 +118,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     if (body.action === 'search') {
+      const filtres: unknown[] = []
+      if (body.codeNames && Array.isArray(body.codeNames)) {
+        filtres.push({ facette: 'NOM_CODE', valeurs: body.codeNames })
+      }
       const res = await fetch(`${LEGIFRANCE_BASE}/search`, {
         method: 'POST',
         headers: apiHeaders,
@@ -125,13 +129,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           fond: body.fond ?? 'CODE_ETAT',
           recherche: {
             champs: [{
-              typeChamp: 'ALL',
+              typeChamp: String(body.typeChamp ?? 'ALL'),
               criteres: [{
-                typeRecherche: 'EXACTE',
+                typeRecherche: String(body.typeRecherche ?? 'UN_DES_MOTS'),
                 valeur: String(body.query ?? ''),
                 operateur: 'ET',
               }],
+              operateur: 'ET',
             }],
+            filtres,
+            operateur: 'ET',
             pageNumber: body.page ?? 1,
             pageSize: body.pageSize ?? 5,
             sort: 'PERTINENCE',
