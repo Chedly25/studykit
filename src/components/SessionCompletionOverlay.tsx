@@ -1,6 +1,7 @@
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, Link } from 'react-router-dom'
-import { CheckCircle2, Flame, Clock, ArrowRight, Check, Home, BookOpen, ClipboardCheck, Target, Sparkles, Loader2 } from 'lucide-react'
+import { CheckCircle2, Flame, Clock, ArrowRight, Check, Home, BookOpen, ClipboardCheck, Target, Sparkles, Loader2, Star } from 'lucide-react'
 import { MathText } from './MathText'
 
 export interface SessionCompletionData {
@@ -29,6 +30,7 @@ interface Props {
   onAction?: (linkTo: string) => void
   aiDebrief?: string
   isDebriefStreaming?: boolean
+  isFirstSession?: boolean
 }
 
 const MILESTONES = [7, 14, 30, 60, 100]
@@ -55,10 +57,17 @@ function formatDuration(seconds: number): string {
   return remainMins > 0 ? `${hrs}h ${remainMins}m` : `${hrs}h`
 }
 
-export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief, isDebriefStreaming }: Props) {
+export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief, isDebriefStreaming, isFirstSession }: Props) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const milestone = MILESTONES.includes(data.streak) ? data.streak : null
+
+  // First session celebration confetti
+  useEffect(() => {
+    if (isFirstSession) {
+      import('../lib/confetti').then(({ fireConfetti }) => fireConfetti('celebration')).catch(() => {})
+    }
+  }, [isFirstSession])
 
   const handleAction = (linkTo: string) => {
     if (onAction) {
@@ -69,14 +78,22 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+    <div role="dialog" aria-modal="true" aria-labelledby="session-complete-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="glass-card p-6 max-w-md w-full mx-4 space-y-5 animate-scale-in">
         {/* Header */}
         <div className="text-center">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 flex items-center justify-center mx-auto mb-3">
-            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 ${isFirstSession ? 'bg-amber-500/15' : 'bg-emerald-500/15'}`}>
+            {isFirstSession
+              ? <Star className="w-8 h-8 text-amber-500" />
+              : <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+            }
           </div>
-          <h2 className="text-xl font-bold text-[var(--text-heading)]">{t('session.greatWork')}</h2>
+          <h2 id="session-complete-title" className="text-xl font-bold text-[var(--text-heading)]">
+            {isFirstSession ? t('celebrate.firstSessionTitle') : t('session.greatWork')}
+          </h2>
+          {isFirstSession && (
+            <p className="text-sm text-[var(--text-muted)] mt-1">{t('celebrate.firstSessionSubtitle')}</p>
+          )}
         </div>
 
         {/* Stats row */}

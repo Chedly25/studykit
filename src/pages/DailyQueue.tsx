@@ -28,13 +28,15 @@ import { decayedMastery } from '../lib/knowledgeGraph'
 import { recomputeTopicMastery, advanceTopicSRS } from '../lib/topicMastery'
 import { generateNotifications } from '../lib/notificationGenerator'
 import { scheduleDailyReminder } from '../lib/pushNotifications'
-import { checkAchievements } from '../lib/achievements'
+import { checkAchievements, type AchievementDef } from '../lib/achievements'
 import { showAchievementToast } from '../components/AchievementToast'
+import { AchievementUnlockModal, MAJOR_ACHIEVEMENTS } from '../components/AchievementUnlockModal'
 import { computeNudge, type SessionResult, type Nudge } from '../lib/queueNudges'
 import { streamChat } from '../ai/client'
 import { MathText } from '../components/MathText'
 import { track } from '../lib/analytics'
 import { trackContentInteraction } from '../lib/effectivenessTracker'
+import { EmptyState } from '../components/EmptyState'
 import { useSubscription } from '../hooks/useSubscription'
 import { useVoiceInput } from '../hooks/useVoiceInput'
 import { useAnswerEvaluator } from '../hooks/useAnswerEvaluator'
@@ -104,6 +106,8 @@ function DailyQueueContent() {
   const [showStartOverlay, setShowStartOverlay] = useState(false)
   const [timeAvailable, setTimeAvailable] = useState<number | undefined>(undefined)
   const [showCompletion, setShowCompletion] = useState(false)
+  const [isFirstSession, setIsFirstSession] = useState(false)
+  const [achievementToShow, setAchievementToShow] = useState<AchievementDef | null>(null)
   const [conceptRevealed, setConceptRevealed] = useState(false)
   const [coachDismissed, setCoachDismissed] = useState(false)
 
@@ -214,11 +218,23 @@ function DailyQueueContent() {
 
       track('queue_completed', { completedCount, timeSpent })
 
+      // Detect first-ever session for celebration
+      if (profileId && !localStorage.getItem(`firstSessionDone_${profileId}`)) {
+        localStorage.setItem(`firstSessionDone_${profileId}`, 'true')
+        setIsFirstSession(true)
+      }
+
       if (profileId) {
         generateNotifications(profileId).catch(() => {})
         scheduleDailyReminder(profileId).catch(() => {})
         checkAchievements(profileId).then(newlyUnlocked => {
-          for (const a of newlyUnlocked) showAchievementToast(a)
+          for (const a of newlyUnlocked) {
+            if (MAJOR_ACHIEVEMENTS.has(a.id)) {
+              setAchievementToShow(a)
+            } else {
+              showAchievementToast(a)
+            }
+          }
         }).catch(() => {})
       }
 
@@ -395,8 +411,13 @@ function DailyQueueContent() {
 
   if (!activeProfile) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-        <p className="text-[var(--text-muted)]">{t('queue.createProfile')}</p>
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <EmptyState
+          icon={ListChecks}
+          title={t('emptyState.queueNoProfile.title')}
+          subtitle={t('emptyState.queueNoProfile.subtitle')}
+          actions={[{ label: t('emptyState.queueNoProfile.cta'), to: '/exam-profile' }]}
+        />
       </div>
     )
   }
@@ -467,6 +488,14 @@ function DailyQueueContent() {
           }}
           aiDebrief={aiDebrief}
           isDebriefStreaming={isDebriefStreaming}
+          isFirstSession={isFirstSession}
+        />
+      )}
+
+      {achievementToShow && (
+        <AchievementUnlockModal
+          achievement={achievementToShow}
+          onDismiss={() => setAchievementToShow(null)}
         />
       )}
 
@@ -522,7 +551,7 @@ function DailyQueueContent() {
       </div>
 
       {/* Progress bar — colored segments per item type */}
-      <div className="w-full h-2 rounded-full bg-[var(--bg-input)] mb-6 overflow-hidden flex">
+      <div role="progressbar" aria-valuenow={Math.round(progressPct)} aria-valuemin={0} aria-valuemax={100} aria-label="Session progress" className="w-full h-2 rounded-full bg-[var(--bg-input)] mb-6 overflow-hidden flex">
         {completedSegments.length > 0 ? (
           completedSegments.map((seg, i) => (
             <div key={i} className={`h-full transition-all duration-500 ${seg.color}`} style={{ width: `${seg.pct}%` }} />
@@ -632,22 +661,15 @@ function DailyQueueContent() {
 
             if (isNewUser) {
               return (
-                <>
-                  <h2 className="text-lg font-bold text-[var(--text-heading)] mb-2">
-                    {t('queue.notStartedYet', 'Nothing scheduled yet')}
-                  </h2>
-                  <p className="text-sm text-[var(--text-muted)] mb-4">
-                    {t('queue.notStartedHint', 'Start studying to build your daily queue.')}
-                  </p>
-                  <div className="flex flex-col gap-2 max-w-xs mx-auto">
-                    <button onClick={() => navigate('/practice-exam')} className="btn-primary w-full py-2 text-sm">
-                      {t('queue.takePracticeExam', 'Take a practice exam')}
-                    </button>
-                    <button onClick={() => navigate('/sources')} className="btn-secondary w-full py-2 text-sm">
-                      {t('dashboard.uploadMaterials', 'Upload materials')}
-                    </button>
-                  </div>
-                </>
+                <EmptyState
+                  icon={BookOpen}
+                  title={t('emptyState.queueNotStarted.title')}
+                  subtitle={t('emptyState.queueNotStarted.subtitle')}
+                  actions={[
+                    { label: t('emptyState.queueNotStarted.ctaExam'), to: '/practice-exam' },
+                    { label: t('emptyState.queueNotStarted.ctaUpload'), to: '/sources' },
+                  ]}
+                />
               )
             }
 

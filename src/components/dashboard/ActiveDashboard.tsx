@@ -5,8 +5,11 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight, MessageCircle } from 'lucide-react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { ArrowRight, MessageCircle, Sparkles, Target } from 'lucide-react'
+import { EmptyState } from '../EmptyState'
 import type { ExamProfile, Subject, Topic } from '../../db/schema'
+import { db } from '../../db'
 import { ReadinessBar } from './ReadinessBar'
 import { TutorDirectory } from '../TutorDirectory'
 
@@ -52,10 +55,22 @@ export function ActiveDashboard({
     return sorted.slice(0, 3)
   }, [topics])
 
+  // Swarm activity log — last 24h entries
+  const recentActivity = useLiveQuery(async () => {
+    const key = `swarm-activity-log:${profile.id}`
+    const insight = await db.agentInsights.get(key)
+    if (!insight?.data) return []
+    try {
+      const entries = JSON.parse(insight.data) as { action: string; summary: string; timestamp: string }[]
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000
+      return entries.filter(e => new Date(e.timestamp).getTime() > cutoff)
+    } catch { return [] }
+  }, [profile.id]) ?? []
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
       {/* ─── Hero Section ─── */}
-      <div className="glass-card p-6 mb-4">
+      <div className="glass-card p-6 mb-4 animate-fade-in-up stagger-1">
         {/* Greeting */}
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-heading)]">
           {t(greetingKey, { name: userName || profile.name })}
@@ -105,14 +120,46 @@ export function ActiveDashboard({
         </div>
       </div>
 
-      {/* ─── Focus List ─── */}
-      {focusTopics.length > 0 && (
-        <div className="glass-card p-4 mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-3">
-            {t('dashboard.focusTitle', 'Focus on')}
+      {/* ─── Working for you ─── */}
+      {recentActivity.length > 0 ? (
+        <div className="glass-card p-4 mb-4 animate-fade-in-up stagger-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[var(--accent-text)] animate-gentle-pulse" />
+            <span className="text-xs font-semibold text-[var(--text-heading)]">
+              {t('dashboard.workingForYou', 'Working for you')}
+            </span>
+          </div>
+          <p className="text-xs text-[var(--text-muted)] mt-1.5 leading-relaxed">
+            {recentActivity.map(e => e.summary).join(' · ')}
           </p>
+        </div>
+      ) : topics.length > 0 ? (
+        <div className="glass-card p-4 mb-4 animate-fade-in-up stagger-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[var(--accent-text)] animate-gentle-pulse" />
+            <span className="text-xs font-semibold text-[var(--text-heading)]">
+              {t('emptyState.dashboardAiStarting.title')}
+            </span>
+          </div>
+          <p className="text-xs text-[var(--text-muted)] mt-1.5 leading-relaxed">
+            {t('emptyState.dashboardAiStarting.subtitle')}
+          </p>
+        </div>
+      ) : null}
+
+      {/* ─── Focus List ─── */}
+      {focusTopics.length > 0 ? (
+        <div className="glass-card p-4 mb-4 animate-fade-in-up stagger-3">
+          <div className="mb-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)]">
+              {t('dashboard.focusTitle', 'Focus on')}
+            </p>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
+              {t('dashboard.focusSubtitle', 'Weakest topics weighted by exam importance')}
+            </p>
+          </div>
           <div className="space-y-2">
-            {focusTopics.map(topic => (
+            {focusTopics.map((topic) => (
               <Link
                 key={topic.id}
                 to={`/topic/${topic.id}`}
@@ -135,11 +182,30 @@ export function ActiveDashboard({
             ))}
           </div>
         </div>
-      )}
+      ) : topics.length > 0 ? (
+        <div className="glass-card p-4 mb-4 animate-fade-in-up stagger-3">
+          <EmptyState
+            icon={Target}
+            title={t('emptyState.dashboardNoFocus.title')}
+            subtitle={t('emptyState.dashboardNoFocus.subtitle')}
+            compact
+          />
+        </div>
+      ) : null}
 
       {/* ─── Subject Cards ─── */}
       {subjects.length > 0 && (
-        <TutorDirectory subjects={subjects} topics={topics} />
+        <div className="animate-fade-in-up stagger-4">
+          <div className="mb-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)]">
+              {t('dashboard.yourTutors', 'Your Subjects')}
+            </p>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
+              {t('dashboard.subjectsSubtitle', 'Tap a subject to see topics and study')}
+            </p>
+          </div>
+          <TutorDirectory subjects={subjects} topics={topics} />
+        </div>
       )}
     </div>
   )

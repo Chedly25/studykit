@@ -1,5 +1,6 @@
 /**
  * Overall readiness progress bar — shows avg mastery as a percentage.
+ * At 0%: shows neutral "Just getting started" instead of alarming red.
  */
 import { useTranslation } from 'react-i18next'
 
@@ -14,7 +15,9 @@ export function ReadinessBar({ percent }: ReadinessBarProps) {
     ? 'bg-[var(--accent-text)]'
     : clamped >= 25
     ? 'bg-[var(--color-warning)]'
-    : 'bg-[var(--color-error)]'
+    : clamped > 0
+    ? 'bg-[var(--color-warning)]'
+    : 'bg-[var(--accent-text)]/30'
 
   return (
     <div className="flex items-center gap-3">
@@ -24,8 +27,11 @@ export function ReadinessBar({ percent }: ReadinessBarProps) {
           style={{ width: `${clamped}%` }}
         />
       </div>
-      <span className="text-sm font-semibold text-[var(--text-heading)] tabular-nums shrink-0">
-        {t('dashboard.readiness', '{{percent}}% ready', { percent: clamped })}
+      <span key={clamped} className="text-sm font-semibold text-[var(--text-heading)] tabular-nums shrink-0 animate-count-up">
+        {clamped === 0
+          ? t('dashboard.readinessJustStarted', 'Just getting started')
+          : t('dashboard.readiness', '{{percent}}% ready', { percent: clamped })
+        }
       </span>
     </div>
   )

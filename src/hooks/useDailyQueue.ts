@@ -158,17 +158,24 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
       // Remediation from recent exams
       const remediationInsight = swarmInsights.find(i => i.id?.startsWith('remediation:'))
       if (remediationInsight?.data) {
-        const { weakTopics: weakTopicNames } = JSON.parse(remediationInsight.data) as { weakTopics: string[] }
-        for (const name of weakTopicNames ?? []) {
-          const topic = topics.find(t => t.name === name)
-          if (topic) {
-            feedbackActions.push({
-              type: 'queue-concept-review',
-              topicId: topic.id,
-              topicName: topic.name,
-              priority: 15, // Will be added to base 80 = 95
-              reason: 'Remediation from recent exam',
-            })
+        const parsed = JSON.parse(remediationInsight.data) as { weakTopics: string[]; generatedAt?: string }
+        // Skip stale remediation data (older than 7 days)
+        const generatedAt = parsed.generatedAt ? new Date(parsed.generatedAt).getTime() : 0
+        const isStale = generatedAt > 0 && Date.now() - generatedAt > 7 * 86400000
+        const { weakTopics: weakTopicNames } = parsed
+        if (!isStale) {
+          for (const name of weakTopicNames ?? []) {
+            const topic = topics.find(t => t.name === name)
+            if (topic) {
+              const masteryPct = Math.round(topic.mastery * 100)
+              feedbackActions.push({
+                type: 'queue-concept-review',
+                topicId: topic.id,
+                topicName: topic.name,
+                priority: 15, // Will be added to base 80 = 95
+                reason: `From your last exam — scored below 50% on ${topic.name} (${masteryPct}% mastery)`,
+              })
+            }
           }
         }
       }
@@ -179,12 +186,13 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
         for (const tid of decayedTopicIds ?? []) {
           const info = topicMap.get(tid)
           if (info) {
+            const masteryPct = Math.round(info.mastery * 100)
             feedbackActions.push({
               type: 'queue-concept-review',
               topicId: tid,
               topicName: info.name,
               priority: 12, // Will be added to base 80 = 92
-              reason: 'Mastery decayed — quick refresh',
+              reason: `${info.name} mastery dropped to ${masteryPct}% — refresh recommended`,
             })
           }
         }

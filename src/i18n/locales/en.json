@@ -162,6 +162,7 @@
     "startFirstExam": "Take a practice exam",
     "welcomeName": "Welcome, {{name}}!",
     "readiness": "{{percent}}% ready",
+    "readinessJustStarted": "Just getting started",
     "focusTitle": "Focus on",
     "step1Title": "Upload your courses",
     "step1Hint": "Drop your PDFs, photos or notes so the AI can analyze your program",
@@ -298,6 +299,24 @@
     "uploadDocuments": "Upload documents to cover them",
     "daysToGo": "{{count}} day to go",
     "daysToGo_plural": "{{count}} days to go",
+    "postOnboarding": {
+      "title": "You're all set, {{name}}!",
+      "subtitle": "Here's what we've prepared for you",
+      "topicsSeeded": "{{count}} topics mapped",
+      "docsProcessing": "{{count}} document being analyzed",
+      "docsProcessing_plural": "{{count}} documents being analyzed",
+      "docsReady": "All documents processed",
+      "aiWorking": "Your AI tutor is analyzing your materials...",
+      "aiWorkingSubtitle": "This usually takes 1–2 minutes per document",
+      "firstAction": "Ready for your first question?",
+      "firstActionHint": "Start with a quick study session to see how it works",
+      "startFirstSession": "Start studying",
+      "exploreTopics": "Explore your topics"
+    },
+    "levelUp": {
+      "title": "Dashboard unlocked",
+      "subtitle": "Your personalized command center is ready"
+    },
     "nextStepsTitle": "Next steps",
     "nextSteps": {
       "uploadFirst": "Upload your first course materials",
@@ -352,7 +371,10 @@
     "exportData": "Export",
     "behindSchedule": "You're {{count}} days behind schedule",
     "predicted": "Predicted: {{score}}%",
-    "passing": "passing: {{threshold}}%"
+    "passing": "passing: {{threshold}}%",
+    "workingForYou": "Working for you",
+    "focusSubtitle": "Weakest topics weighted by exam importance",
+    "subjectsSubtitle": "Tap a subject to see topics and study"
   },
   "tutor": {
     "topics": "{{count}} topic",
@@ -373,7 +395,62 @@
     "subjectCoverageTitle": "All topics in {{name}} above 60%!",
     "subjectCoverageSubtitle": "Solid coverage across the board.",
     "firstExamTitle": "First practice exam completed!",
-    "firstExamSubtitle": "Now you know where you stand. Each exam makes you sharper."
+    "firstExamSubtitle": "Now you know where you stand. Each exam makes you sharper.",
+    "achievementUnlocked": "Achievement Unlocked",
+    "dismiss": "Tap anywhere to dismiss",
+    "firstSessionTitle": "First session complete!",
+    "firstSessionSubtitle": "You've taken the first step. Consistency is everything."
+  },
+  "emptyState": {
+    "queueNoProfile": {
+      "title": "No study profile yet",
+      "subtitle": "Create a study profile to unlock your daily queue.",
+      "cta": "Create Study Profile"
+    },
+    "queueNotStarted": {
+      "title": "Nothing scheduled yet",
+      "subtitle": "Upload materials or take a practice exam so the AI can build your daily study queue.",
+      "ctaExam": "Take a practice exam",
+      "ctaUpload": "Upload materials"
+    },
+    "analyticsNoProfile": {
+      "title": "No analytics yet",
+      "subtitle": "Create a study profile to start tracking your progress.",
+      "cta": "Create Study Profile"
+    },
+    "analyticsNoData": {
+      "title": "Not enough data yet",
+      "subtitle": "Complete a few study sessions to see insights here."
+    },
+    "topicNotFound": {
+      "title": "Topic not found",
+      "subtitle": "This topic may have been removed or the link is outdated.",
+      "cta": "Go to Dashboard"
+    },
+    "topicNoExercises": {
+      "title": "No exercises yet",
+      "subtitle": "Upload past exam papers to automatically extract exercises.",
+      "cta": "Upload materials"
+    },
+    "topicNoConcepts": {
+      "title": "No concept cards yet",
+      "subtitle": "Start a study session to generate concept cards, or upload course materials.",
+      "ctaStudy": "Start studying",
+      "ctaUpload": "Upload materials"
+    },
+    "topicNoSources": {
+      "title": "No source material",
+      "subtitle": "Upload PDFs about this topic in the Library.",
+      "cta": "Go to Library"
+    },
+    "dashboardNoFocus": {
+      "title": "No weak topics yet",
+      "subtitle": "Complete a few study sessions so we can identify where to focus."
+    },
+    "dashboardAiStarting": {
+      "title": "Your AI is getting started",
+      "subtitle": "It's analyzing your materials and building your study plan. Check back soon."
+    }
   },
   "scout": {
     "title": "Resources Found",
@@ -1227,7 +1304,12 @@
     "coachReviewing": "Reviewing your session...",
     "dayStreak": "{{count}}-day streak",
     "tomorrowDue": "Tomorrow: {{count}} item due",
-    "tomorrowDue_plural": "Tomorrow: {{count}} items due"
+    "tomorrowDue_plural": "Tomorrow: {{count}} items due",
+    "milestone1Week": "1 Week!",
+    "milestone2Weeks": "2 Weeks!",
+    "milestone1Month": "1 Month!",
+    "milestone2Months": "2 Months!",
+    "milestone100Days": "100 Days!"
   },
   "assistant": {
     "askSubjectTutor": "Ask {{subject}} Tutor",
@@ -1265,7 +1347,10 @@
     "sourceMaterial": "Source Material",
     "stats": "Statistics",
     "questionsAttempted": "Attempted",
-    "accuracy": "Accuracy"
+    "accuracy": "Accuracy",
+    "exercisesEmpty": "No exercises yet. Upload past exam papers to automatically extract exercises.",
+    "conceptCardsEmpty": "No concept cards yet. Start a study session to generate them, or upload course materials.",
+    "sourceEmpty": "No source material linked. Upload PDFs about this topic in the Library."
   },
   "settings": {
     "language": "Language",

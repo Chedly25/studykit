@@ -111,6 +111,14 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
     setDismissed(c => c + 1)
   }
 
+  // Subtle confetti on streak milestones
+  useEffect(() => {
+    if (!current) return
+    if (current.id.startsWith('streak_')) {
+      import('../lib/confetti').then(({ fireConfetti }) => fireConfetti('subtle')).catch(() => {})
+    }
+  }, [current?.id])
+
   // Auto-dismiss after 8 seconds
   useEffect(() => {
     if (!current) return

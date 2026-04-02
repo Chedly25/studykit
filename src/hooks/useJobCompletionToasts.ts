@@ -12,7 +12,7 @@ import type { BackgroundJob } from '../db/schema'
 interface ToastConfig {
   message: string | ((job: BackgroundJob) => string)
   cta: string
-  link: string
+  link: string | ((job: BackgroundJob) => string)
 }
 
 function getSourceProcessingMessage(job: BackgroundJob): string {
@@ -48,6 +48,22 @@ const JOB_TOAST_CONFIG: Record<string, ToastConfig> = {
     message: getSourceProcessingMessage,
     cta: 'View in library',
     link: '/sources',
+  },
+  'fiche-generation': {
+    message: (job) => {
+      try {
+        const config = JSON.parse(job.config) as { topicName?: string }
+        return `✨ Revision fiche ready for ${config.topicName ?? 'topic'}`
+      } catch { return '✨ Revision fiche generated' }
+    },
+    cta: 'View fiche',
+    link: (job) => {
+      try {
+        const config = JSON.parse(job.config) as { topicId?: string }
+        if (config.topicId) return `/fiche/${config.topicId}`
+      } catch { /* fall through */ }
+      return '/dashboard'
+    },
   },
   'exam-exercise-processing': {
     message: 'Exercises extracted from your exam',
@@ -99,13 +115,14 @@ export function useJobCompletionToasts() {
       if (!config) continue
 
       const message = typeof config.message === 'function' ? config.message(job) : config.message
+      const link = typeof config.link === 'function' ? config.link(job) : config.link
 
       toast.success(message, {
         duration: 8000,
         action: {
           label: config.cta,
           onClick: () => {
-            window.location.href = config.link
+            window.location.href = link
           },
         },
       })

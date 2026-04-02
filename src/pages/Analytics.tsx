@@ -10,6 +10,7 @@ import { useSourceCoverage } from '../hooks/useSourceCoverage'
 import { useStudentModel } from '../hooks/useStudentModel'
 import { Link } from 'react-router-dom'
 import { BarChart3, FileText, Lightbulb, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react'
+import { EmptyState } from '../components/EmptyState'
 import { useTranslation, Trans } from 'react-i18next'
 import { CalibrationChart } from '../components/analytics/CalibrationChart'
 import { ErrorPatternChart } from '../components/analytics/ErrorPatternChart'
@@ -120,10 +121,13 @@ export default function Analytics() {
 
   if (!activeProfile) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('analytics.title')}</h1>
-        <p className="text-[var(--text-muted)]">{t('analytics.noData')}</p>
-        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">{t('common.createProfile')}</Link>
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <EmptyState
+          icon={BarChart3}
+          title={t('emptyState.analyticsNoProfile.title')}
+          subtitle={t('emptyState.analyticsNoProfile.subtitle')}
+          actions={[{ label: t('emptyState.analyticsNoProfile.cta'), to: '/exam-profile' }]}
+        />
       </div>
     )
   }
@@ -175,7 +179,7 @@ export default function Analytics() {
         <div className="glass-card p-4">
           <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.subjectBalance')}</h2>
           {subjectBalance.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">{t('analytics.noData')}</p>
+            <EmptyState icon={BarChart3} title={t('emptyState.analyticsNoData.title')} subtitle={t('emptyState.analyticsNoData.subtitle')} compact />
           ) : (
             <div className="space-y-3">
               {subjectBalance.map(s => (
@@ -207,7 +211,7 @@ export default function Analytics() {
         <div className="glass-card p-4">
           <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.sessionTypes')}</h2>
           {sessionDistribution.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">{t('analytics.noData')}</p>
+            <EmptyState icon={BarChart3} title={t('emptyState.analyticsNoData.title')} subtitle={t('emptyState.analyticsNoData.subtitle')} compact />
           ) : (
             <div className="space-y-2">
               {sessionDistribution.map(s => (
@@ -224,7 +228,7 @@ export default function Analytics() {
         <div className="glass-card p-4 md:col-span-2">
           <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.scoreTrend')}</h2>
           {scoreTrend.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">{t('analytics.noData')}</p>
+            <EmptyState icon={BarChart3} title={t('emptyState.analyticsNoData.title')} subtitle={t('emptyState.analyticsNoData.subtitle')} compact />
           ) : (
             <div className="h-32 flex items-end gap-px">
               {scoreTrend.map((point, i) => (

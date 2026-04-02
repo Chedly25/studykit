@@ -35,11 +35,11 @@ export function SessionStartOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+    <div role="dialog" aria-modal="true" aria-labelledby="session-start-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="glass-card p-6 max-w-md w-full mx-4 space-y-5 animate-scale-in">
         {/* Header */}
         <div className="text-center">
-          <h2 className="text-xl font-bold text-[var(--text-heading)]">{t('session.welcomeBack')}</h2>
+          <h2 id="session-start-title" className="text-xl font-bold text-[var(--text-heading)]">{t('session.welcomeBack')}</h2>
           <p className="text-sm text-[var(--text-muted)] mt-1">{t('session.linedUpForYou')}</p>
         </div>
 

@@ -162,6 +162,7 @@
     "startFirstExam": "Passer un examen blanc",
     "welcomeName": "Bienvenue, {{name}} !",
     "readiness": "{{percent}}% prêt",
+    "readinessJustStarted": "C'est parti !",
     "focusTitle": "À travailler",
     "step1Title": "Importez vos cours",
     "step1Hint": "Glissez vos PDF, photos ou notes pour que l'IA analyse votre programme",
@@ -298,6 +299,24 @@
     "uploadDocuments": "Importez des documents pour les couvrir",
     "daysToGo": "{{count}} jour restant",
     "daysToGo_plural": "{{count}} jours restants",
+    "postOnboarding": {
+      "title": "Tout est prêt, {{name}} !",
+      "subtitle": "Voici ce qu'on a préparé pour vous",
+      "topicsSeeded": "{{count}} sujets identifiés",
+      "docsProcessing": "{{count}} document en cours d'analyse",
+      "docsProcessing_plural": "{{count}} documents en cours d'analyse",
+      "docsReady": "Tous les documents sont traités",
+      "aiWorking": "Votre tuteur IA analyse vos documents...",
+      "aiWorkingSubtitle": "Cela prend généralement 1 à 2 minutes par document",
+      "firstAction": "Prêt pour votre première question ?",
+      "firstActionHint": "Commencez par une session rapide pour voir comment ça marche",
+      "startFirstSession": "Commencer à réviser",
+      "exploreTopics": "Explorer vos sujets"
+    },
+    "levelUp": {
+      "title": "Tableau de bord débloqué",
+      "subtitle": "Votre centre de commande personnalisé est prêt"
+    },
     "nextStepsTitle": "Prochaines étapes",
     "nextSteps": {
       "uploadFirst": "Importez vos premiers supports de cours",
@@ -352,7 +371,10 @@
     "exportData": "Exporter",
     "behindSchedule": "Vous avez {{count}} jours de retard",
     "predicted": "Prédit : {{score}} %",
-    "passing": "passage : {{threshold}} %"
+    "passing": "passage : {{threshold}} %",
+    "workingForYou": "Travaille pour vous",
+    "focusSubtitle": "Sujets les plus faibles pondérés par importance à l'examen",
+    "subjectsSubtitle": "Appuyez sur une matière pour voir les sujets et étudier"
   },
   "tutor": {
     "topics": "{{count}} sujet",
@@ -373,7 +395,62 @@
     "subjectCoverageTitle": "Tous les sujets de {{name}} au-dessus de 60 % !",
     "subjectCoverageSubtitle": "Bonne couverture sur tous les fronts.",
     "firstExamTitle": "Premier examen blanc terminé !",
-    "firstExamSubtitle": "Maintenant vous savez où vous en êtes. Chaque examen vous rend plus affûté."
+    "firstExamSubtitle": "Maintenant vous savez où vous en êtes. Chaque examen vous rend plus affûté.",
+    "achievementUnlocked": "Succès débloqué",
+    "dismiss": "Appuyez n'importe où pour fermer",
+    "firstSessionTitle": "Première session terminée !",
+    "firstSessionSubtitle": "Vous avez fait le premier pas. La régularité est la clé."
+  },
+  "emptyState": {
+    "queueNoProfile": {
+      "title": "Pas encore de profil",
+      "subtitle": "Créez un profil d'étude pour débloquer votre file quotidienne.",
+      "cta": "Créer un profil"
+    },
+    "queueNotStarted": {
+      "title": "Rien de prévu pour le moment",
+      "subtitle": "Importez des documents ou passez un examen blanc pour que l'IA construise votre file quotidienne.",
+      "ctaExam": "Passer un examen blanc",
+      "ctaUpload": "Importer des documents"
+    },
+    "analyticsNoProfile": {
+      "title": "Pas encore d'analytiques",
+      "subtitle": "Créez un profil d'étude pour commencer à suivre votre progression.",
+      "cta": "Créer un profil"
+    },
+    "analyticsNoData": {
+      "title": "Pas assez de données",
+      "subtitle": "Complétez quelques sessions d'étude pour voir des analyses ici."
+    },
+    "topicNotFound": {
+      "title": "Sujet introuvable",
+      "subtitle": "Ce sujet a peut-être été supprimé ou le lien est obsolète.",
+      "cta": "Aller au tableau de bord"
+    },
+    "topicNoExercises": {
+      "title": "Pas encore d'exercices",
+      "subtitle": "Importez des sujets d'examen pour extraire automatiquement des exercices.",
+      "cta": "Importer des documents"
+    },
+    "topicNoConcepts": {
+      "title": "Pas encore de fiches",
+      "subtitle": "Lancez une session d'étude pour générer des fiches, ou importez vos cours.",
+      "ctaStudy": "Commencer à réviser",
+      "ctaUpload": "Importer des documents"
+    },
+    "topicNoSources": {
+      "title": "Pas de source",
+      "subtitle": "Importez des PDF sur ce sujet dans la Bibliothèque.",
+      "cta": "Aller à la Bibliothèque"
+    },
+    "dashboardNoFocus": {
+      "title": "Pas de points faibles identifiés",
+      "subtitle": "Complétez quelques sessions pour que l'on puisse identifier vos axes de travail."
+    },
+    "dashboardAiStarting": {
+      "title": "Votre IA se met en route",
+      "subtitle": "Elle analyse vos documents et construit votre plan d'étude. Revenez dans un instant."
+    }
   },
   "scout": {
     "title": "Ressources trouvées",
@@ -1227,7 +1304,12 @@
     "coachReviewing": "Analyse de votre session...",
     "dayStreak": "Série de {{count}} jours",
     "tomorrowDue": "Demain : {{count}} élément à réviser",
-    "tomorrowDue_plural": "Demain : {{count}} éléments à réviser"
+    "tomorrowDue_plural": "Demain : {{count}} éléments à réviser",
+    "milestone1Week": "1 semaine !",
+    "milestone2Weeks": "2 semaines !",
+    "milestone1Month": "1 mois !",
+    "milestone2Months": "2 mois !",
+    "milestone100Days": "100 jours !"
   },
   "assistant": {
     "askSubjectTutor": "Demander au tuteur {{subject}}",
@@ -1265,7 +1347,10 @@
     "sourceMaterial": "Documents sources",
     "stats": "Statistiques",
     "questionsAttempted": "Tentées",
-    "accuracy": "Précision"
+    "accuracy": "Précision",
+    "exercisesEmpty": "Pas encore d'exercices. Importez des annales pour en extraire automatiquement.",
+    "conceptCardsEmpty": "Pas encore de cartes de concepts. Lancez une session d'étude ou importez des supports de cours.",
+    "sourceEmpty": "Aucun document source lié. Importez des PDF sur ce sujet dans la Bibliothèque."
   },
   "settings": {
     "language": "Langue",

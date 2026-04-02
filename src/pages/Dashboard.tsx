@@ -1,12 +1,14 @@
 /**
  * Dashboard — command center style.
  * Delegates to NewUserDashboard or ActiveDashboard based on user state.
+ * Shows "level up" banner when transitioning from new → active.
  */
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
+import { Sparkles } from 'lucide-react'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
@@ -58,6 +60,41 @@ export default function Dashboard() {
     } catch { return false }
   }, [profileId])
 
+  // Check if user just completed onboarding (may have docs uploaded but mastery still 0)
+  const hasPostOnboarding = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('postOnboarding')
+      if (!raw) return false
+      const data = JSON.parse(raw)
+      return data.profileId === profileId && (Date.now() - data.completedAt < 30 * 60 * 1000)
+    } catch { return false }
+  }, [profileId])
+
+  // New user → guided onboarding cards
+  const isNewUser = (avgMastery < 0.1 && documentCount === 0 && practiceExamCount === 0) || hasPostOnboarding
+
+  // Track "was new user" for level-up transition detection
+  useEffect(() => {
+    if (isNewUser && profileId) {
+      localStorage.setItem(`wasNewUser_${profileId}`, 'true')
+    }
+  }, [isNewUser, profileId])
+
+  // Level-up banner when transitioning from new → active
+  const [showLevelUp, setShowLevelUp] = useState(false)
+  useEffect(() => {
+    if (!isNewUser && profileId) {
+      const wasNew = localStorage.getItem(`wasNewUser_${profileId}`)
+      const alreadyShown = localStorage.getItem(`levelUpShown_${profileId}`)
+      if (wasNew && !alreadyShown) {
+        setShowLevelUp(true)
+        localStorage.setItem(`levelUpShown_${profileId}`, 'true')
+        import('../lib/confetti').then(({ fireConfetti }) => fireConfetti('subtle')).catch(() => {})
+        setTimeout(() => setShowLevelUp(false), 5000)
+      }
+    }
+  }, [isNewUser, profileId])
+
   // No profile → create one
   if (!activeProfile) {
     return (
@@ -69,8 +106,6 @@ export default function Dashboard() {
     )
   }
 
-  // New user → guided onboarding cards
-  const isNewUser = avgMastery < 0.1 && documentCount === 0 && practiceExamCount === 0
   if (isNewUser) {
     return (
       <NewUserDashboard
@@ -85,16 +120,31 @@ export default function Dashboard() {
 
   // Active user → command center
   return (
-    <ActiveDashboard
-      profile={activeProfile}
-      userName={user?.firstName ?? undefined}
-      topics={topics}
-      subjects={subjects}
-      dailyQueue={dailyQueue}
-      streak={streak}
-      avgMastery={avgMastery}
-      daysUntilExam={daysUntilExam}
-      queueInProgress={queueInProgress}
-    />
+    <>
+      {showLevelUp && (
+        <div className="max-w-2xl mx-auto px-4 pt-6">
+          <div className="glass-card p-4 mb-0 flex items-center gap-3 animate-fade-in-up bg-emerald-500/5 border-emerald-500/20">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5 text-emerald-500" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[var(--text-heading)]">{t('dashboard.levelUp.title')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('dashboard.levelUp.subtitle')}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      <ActiveDashboard
+        profile={activeProfile}
+        userName={user?.firstName ?? undefined}
+        topics={topics}
+        subjects={subjects}
+        dailyQueue={dailyQueue}
+        streak={streak}
+        avgMastery={avgMastery}
+        daysUntilExam={daysUntilExam}
+        queueInProgress={queueInProgress}
+      />
+    </>
   )
 }

@@ -487,6 +487,14 @@ export function useOnboarding() {
           updatedAt: now,
         })
       }
+      // Save post-onboarding context for the dashboard
+      const topicCount = await db.topics.where('examProfileId').equals(profileId).count()
+      localStorage.setItem('postOnboarding', JSON.stringify({
+        profileId,
+        completedAt: Date.now(),
+        topicCount,
+        docsQueuedCount: unprocessed.length,
+      }))
     } catch { /* non-blocking */ }
 
     sessionStorage.removeItem(STORAGE_KEY)

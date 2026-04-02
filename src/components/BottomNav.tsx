@@ -25,6 +25,7 @@ export function BottomNav() {
             <Link
               key={to}
               to={to}
+              aria-current={active ? 'page' : undefined}
               className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
                 active
                   ? 'text-[var(--accent-text)]'

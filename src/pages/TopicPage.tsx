@@ -15,6 +15,7 @@ import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useTopicDetail } from '../hooks/useTopicDetail'
 import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
+import { EmptyState } from '../components/EmptyState'
 import { decayedMastery } from '../lib/knowledgeGraph'
 import type { Subject } from '../db/schema'
 
@@ -79,10 +80,15 @@ export default function TopicPage() {
   const nextReview = topic?.nextReviewDate
   const isDueToday = nextReview ? nextReview <= new Date().toISOString().slice(0, 10) : false
 
-  if (!topicId) {
+  if (!topicId || topicResult === null) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-        <p className="text-[var(--text-muted)]">{t('topic.notFound')}</p>
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <EmptyState
+          icon={BookOpen}
+          title={t('emptyState.topicNotFound.title')}
+          subtitle={t('emptyState.topicNotFound.subtitle')}
+          actions={[{ label: t('emptyState.topicNotFound.cta'), to: '/dashboard' }]}
+        />
       </div>
     )
   }
@@ -92,15 +98,6 @@ export default function TopicPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 text-center">
         <div className="w-6 h-6 border-2 border-[var(--accent-text)]/30 border-t-[var(--accent-text)] rounded-full animate-spin mx-auto" />
-      </div>
-    )
-  }
-
-  // Not found
-  if (topicResult === null) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-        <p className="text-[var(--text-muted)]">{t('topic.notFound')}</p>
       </div>
     )
   }
@@ -246,11 +243,11 @@ export default function TopicPage() {
       </div>
 
       {/* Exercises section */}
-      {detail.exerciseGroups.length > 0 && (
-        <div className="glass-card p-4 mb-4">
-          <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2 mb-2">
-            <ClipboardCheck className="w-4 h-4 text-orange-500" /> {t('topic.exercises')}
-          </h3>
+      <div className="glass-card p-4 mb-4">
+        <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2 mb-2">
+          <ClipboardCheck className="w-4 h-4 text-orange-500" /> {t('topic.exercises')}
+        </h3>
+        {detail.exerciseGroups.length > 0 ? (
           <div className="space-y-2">
             {detail.exerciseGroups.map(group => {
               const attempted = group.exercises.filter(e => e.attemptCount > 0).length
@@ -266,15 +263,23 @@ export default function TopicPage() {
               )
             })}
           </div>
-        </div>
-      )}
+        ) : (
+          <EmptyState
+            icon={ClipboardCheck}
+            title={t('emptyState.topicNoExercises.title')}
+            subtitle={t('emptyState.topicNoExercises.subtitle')}
+            actions={[{ label: t('emptyState.topicNoExercises.cta'), to: '/sources' }]}
+            compact
+          />
+        )}
+      </div>
 
       {/* Concept cards section */}
-      {detail.conceptCards.length > 0 && (
-        <div className="glass-card p-4 mb-4">
-          <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2 mb-2">
-            <Brain className="w-4 h-4 text-blue-500" /> {t('topic.conceptCards')}
-          </h3>
+      <div className="glass-card p-4 mb-4">
+        <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2 mb-2">
+          <Brain className="w-4 h-4 text-blue-500" /> {t('topic.conceptCards')}
+        </h3>
+        {detail.conceptCards.length > 0 ? (
           <div className="space-y-1.5">
             {detail.conceptCards.map(card => {
               const cardMastery = card.mastery ?? 0
@@ -287,15 +292,26 @@ export default function TopicPage() {
               )
             })}
           </div>
-        </div>
-      )}
+        ) : (
+          <EmptyState
+            icon={Brain}
+            title={t('emptyState.topicNoConcepts.title')}
+            subtitle={t('emptyState.topicNoConcepts.subtitle')}
+            actions={[
+              { label: t('emptyState.topicNoConcepts.ctaStudy'), to: '/queue' },
+              { label: t('emptyState.topicNoConcepts.ctaUpload'), to: '/sources' },
+            ]}
+            compact
+          />
+        )}
+      </div>
 
       {/* Source material */}
-      {detail.documentSections.length > 0 && (
-        <div className="glass-card p-4 mb-4">
-          <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2 mb-2">
-            <FileText className="w-4 h-4 text-blue-500" /> {t('topic.sourceMaterial')}
-          </h3>
+      <div className="glass-card p-4 mb-4">
+        <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2 mb-2">
+          <FileText className="w-4 h-4 text-blue-500" /> {t('topic.sourceMaterial')}
+        </h3>
+        {detail.documentSections.length > 0 ? (
           <div className="space-y-1.5">
             {detail.documentSections.map(section => (
               <Link
@@ -310,8 +326,16 @@ export default function TopicPage() {
               </Link>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <EmptyState
+            icon={FileText}
+            title={t('emptyState.topicNoSources.title')}
+            subtitle={t('emptyState.topicNoSources.subtitle')}
+            actions={[{ label: t('emptyState.topicNoSources.cta'), to: '/sources' }]}
+            compact
+          />
+        )}
+      </div>
 
       {/* Stats */}
       {(topic.questionsAttempted > 0) && (
