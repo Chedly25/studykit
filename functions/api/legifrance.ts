@@ -13,9 +13,8 @@ import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 
-// Sandbox for now — switch to production URL when ready
-const PISTE_OAUTH_URL = 'https://sandbox-oauth.piste.gouv.fr/api/oauth/token'
-const LEGIFRANCE_BASE = 'https://sandbox-api.piste.gouv.fr/dila/legifrance/lf-engine-app'
+const PISTE_OAUTH_URL = 'https://oauth.piste.gouv.fr/api/oauth/token'
+const LEGIFRANCE_BASE = 'https://api.piste.gouv.fr/dila/legifrance/lf-engine-app'
 
 // Cache OAuth token in-memory (Cloudflare Workers have per-request isolation,
 // so this only helps within a single request with multiple API calls)

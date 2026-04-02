@@ -12,7 +12,7 @@ import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 
-const JUDILIBRE_BASE = 'https://sandbox-api.piste.gouv.fr/cassation/judilibre/v1.0'
+const JUDILIBRE_BASE = 'https://api.piste.gouv.fr/cassation/judilibre/v1.0'
 
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
   return new Response(null, { status: 204, headers: corsHeaders(context.env) })
