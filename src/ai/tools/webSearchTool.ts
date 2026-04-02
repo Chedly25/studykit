@@ -7,7 +7,7 @@ const SEARCH_URL = import.meta.env.VITE_API_URL
   ? import.meta.env.VITE_API_URL.replace(/\/chat$/, '/search')
   : '/api/search'
 
-interface SearchResult {
+export interface SearchResult {
   title: string
   url: string
   content: string
@@ -56,5 +56,57 @@ export async function searchWeb(
     return parts.join('\n\n---\n\n')
   } catch {
     return ''
+  }
+}
+
+/**
+ * Search web and return structured results (not formatted string).
+ */
+export async function searchWebStructured(
+  query: string,
+  authToken: string,
+  maxResults = 5,
+): Promise<SearchResult[]> {
+  try {
+    const response = await fetch(SEARCH_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ query, maxResults }),
+    })
+    if (!response.ok) return []
+    const data = (await response.json()) as SearchResponse
+    if (data.unavailable) return []
+    return data.results ?? []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Extract full page content from a URL via Tavily extract.
+ */
+export async function extractUrlContent(
+  url: string,
+  authToken: string,
+): Promise<{ content: string; title: string } | null> {
+  try {
+    const response = await fetch(SEARCH_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ action: 'extract', urls: [url] }),
+    })
+    if (!response.ok) return null
+    const data = (await response.json()) as { results?: Array<{ url: string; raw_content?: string; title?: string }> }
+    const result = data.results?.[0]
+    if (!result?.raw_content) return null
+    return { content: result.raw_content, title: result.title ?? '' }
+  } catch {
+    return null
   }
 }

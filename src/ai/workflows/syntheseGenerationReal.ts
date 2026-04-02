@@ -12,12 +12,12 @@
  * synthesisModelAnswer, synthesisRubric.
  */
 import { db } from '../../db'
-import { dbQueryStep, localStep } from '../orchestrator/steps'
+import { dbQueryStep } from '../orchestrator/steps'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { streamChat } from '../client'
-import { searchDecisions, getDecision, formatDecisionTitle } from '../../lib/judilibreClient'
-import { searchAndFetchArticle, searchLegifrance, getArticle, stripHtml } from '../../lib/legifranceClient'
-import { searchWeb } from '../tools/webSearchTool'
+import { searchUnusedDecision, formatDecisionTitle } from '../../lib/judilibreClient'
+import { searchAndFetchSection } from '../../lib/legifranceClient'
+import { searchWebStructured, extractUrlContent } from '../tools/webSearchTool'
 import {
   buildRealThemeArchitectPrompt,
   buildDocumentCuratorPrompt,
@@ -103,6 +103,15 @@ function cleanDissertationTone(text: string): string {
   return result
 }
 
+// ─── Pipeline logging ───────────────────────────────────────────
+
+function pipelineLog(level: 'info' | 'warn' | 'error', msg: string) {
+  const prefix = '[synthese-real]'
+  if (level === 'error') console.error(prefix, msg)
+  else if (level === 'warn') console.warn(prefix, msg)
+  else console.log(prefix, msg)
+}
+
 // ─── Document sourcing helpers ──────────────────────────────────
 
 interface SourcedDocument {
@@ -112,107 +121,110 @@ interface SourcedDocument {
   rawContent: string
 }
 
-/** Search Judilibre and fetch the best matching decision */
-async function sourceFromJudilibre(slot: DocumentSlot, authToken: string): Promise<SourcedDocument | null> {
+const MIN_WORDS = 300
+
+/** Search Judilibre for case law, with deduplication and minimum word count */
+async function sourceFromJudilibre(
+  slot: DocumentSlot,
+  authToken: string,
+  usedIds: Set<string>,
+): Promise<SourcedDocument | null> {
   for (const query of slot.searchQueries) {
     try {
-      const results = await searchDecisions(query, authToken, { pageSize: 3, publication: 'b' })
-      if (results.results.length === 0) continue
+      const result = await searchUnusedDecision(query, authToken, usedIds, {
+        chamber: slot.chamberHint,
+        minWords: MIN_WORDS,
+      })
+      if (!result) continue
 
-      const best = results.results[0]
-      const decision = await getDecision(best.id, authToken)
+      usedIds.add(result.searchResult.id)
       return {
         slot,
-        title: formatDecisionTitle(best),
-        sourceUrl: `https://www.courdecassation.fr/decision/${best.id}`,
-        rawContent: decision.text,
+        title: formatDecisionTitle(result.searchResult),
+        sourceUrl: `https://www.courdecassation.fr/decision/${result.searchResult.id}`,
+        rawContent: result.decision.text,
       }
-    } catch { continue }
-  }
-  return null
-}
-
-/** Search Legifrance for legislation (code articles + laws/decrees) */
-async function sourceFromLegifrance(slot: DocumentSlot, authToken: string): Promise<SourcedDocument | null> {
-  for (const query of slot.searchQueries) {
-    // Try CODE_ETAT first (code articles in force), then LODA_ETAT (laws/decrees)
-    for (const fond of ['CODE_ETAT', 'LODA_ETAT'] as const) {
-      try {
-        const result = await searchAndFetchArticle(query, authToken, { fond })
-        if (result) {
-          const content = stripHtml(result.article.texteHtml ?? result.article.texte ?? '')
-          if (content.length < 50) continue
-          return {
-            slot,
-            title: result.title,
-            sourceUrl: result.sourceUrl,
-            rawContent: content,
-          }
-        }
-      } catch { continue }
+    } catch (err) {
+      pipelineLog('warn', `Judilibre query "${query}" failed: ${(err as Error).message}`)
     }
-    // If individual article search didn't work, try fetching multiple articles from search
-    try {
-      const searchResult = await searchLegifrance(query, authToken, { fond: 'LODA_ETAT', pageSize: 3 })
-      if (searchResult.results?.length) {
-        const top = searchResult.results[0]
-        const topTitle = top.titles?.[0]?.title?.replace(/<[^>]+>/g, '') ?? 'Texte législatif'
-        // Collect article texts from extracts
-        const articleTexts: string[] = []
-        for (const section of top.sections ?? []) {
-          for (const extract of section.extracts ?? []) {
-            if (!extract.id?.startsWith('LEGIARTI')) continue
-            const art = await getArticle(extract.id, authToken)
-            if (art) {
-              const text = stripHtml(art.texteHtml ?? art.texte ?? '')
-              if (text.length > 30) articleTexts.push(`Art. ${art.num} — ${text}`)
-            }
-            if (articleTexts.length >= 5) break // cap at 5 articles
-          }
-          if (articleTexts.length >= 5) break
-        }
-        if (articleTexts.length > 0) {
-          return {
-            slot,
-            title: topTitle,
-            sourceUrl: `https://www.legifrance.gouv.fr/loda/id/${top.titles?.[0]?.cid ?? ''}`,
-            rawContent: articleTexts.join('\n\n'),
-          }
-        }
-      }
-    } catch { continue }
   }
   return null
 }
 
-/** Search web via Tavily and fetch the best result's content */
-async function sourceFromWeb(
+/** Search Legifrance for legislation — fetches entire sections with relevance scoring */
+async function sourceFromLegifrance(
   slot: DocumentSlot,
   authToken: string,
 ): Promise<SourcedDocument | null> {
   for (const query of slot.searchQueries) {
     try {
-      const searchResults = await searchWeb(query, authToken, 5)
-      if (!searchResults) continue
+      const section = await searchAndFetchSection(query, authToken, {
+        codeNames: slot.codeNames,
+        minWords: MIN_WORDS,
+      })
+      if (!section) continue
 
-      // Parse formatted search results by splitting on separator
-      const segments = searchResults.split('\n\n---\n\n')
-      for (const segment of segments) {
-        // Each segment: "[Title](URL)\nContent..."
-        const headerMatch = segment.match(/^\[([^\]]+)\]\((https?:\/\/[^)]+)\)\n/)
-        if (!headerMatch) continue
-        const [fullMatch, title, url] = headerMatch
-        const content = segment.slice(fullMatch.length).trim()
-        if (content.length < 100) continue
+      const title = section.sectionTitle
+        ? `${section.codeName} — ${section.sectionTitle}`
+        : section.codeName
+      return {
+        slot,
+        title,
+        sourceUrl: section.sourceUrl,
+        rawContent: section.concatenatedText,
+      }
+    } catch (err) {
+      pipelineLog('warn', `Legifrance query "${query}" failed: ${(err as Error).message}`)
+    }
+  }
+  return null
+}
 
+/** Search web via Tavily, then fetch full page content */
+async function sourceFromWeb(
+  slot: DocumentSlot,
+  authToken: string,
+  usedUrls: Set<string>,
+): Promise<SourcedDocument | null> {
+  for (const query of slot.searchQueries) {
+    try {
+      const results = await searchWebStructured(query, authToken, 5)
+      if (results.length === 0) continue
+
+      for (const result of results) {
+        if (usedUrls.has(result.url)) continue
+
+        // Try to fetch full page content
+        let content = ''
+        let title = result.title
+        try {
+          const extracted = await extractUrlContent(result.url, authToken)
+          if (extracted && extracted.content.split(/\s+/).length >= MIN_WORDS) {
+            content = extracted.content
+            if (extracted.title) title = extracted.title
+          }
+        } catch {
+          pipelineLog('info', `Extract failed for ${result.url}, using snippet`)
+        }
+
+        // Fall back to Tavily snippet if extract failed
+        if (!content && result.content.split(/\s+/).length >= MIN_WORDS) {
+          content = result.content
+        }
+
+        if (!content || content.split(/\s+/).length < MIN_WORDS) continue
+
+        usedUrls.add(result.url)
         return {
           slot,
-          title: title.trim(),
-          sourceUrl: url,
-          rawContent: content,
+          title,
+          sourceUrl: result.url,
+          rawContent: content.slice(0, 30000),
         }
       }
-    } catch { continue }
+    } catch (err) {
+      pipelineLog('warn', `Web search "${query}" failed: ${(err as Error).message}`)
+    }
   }
   return null
 }
@@ -286,6 +298,8 @@ export function createSyntheseRealGenerationWorkflow(config: SyntheseRealGenerat
         async execute(_input: unknown, ctx: WorkflowContext): Promise<SourcedDocument[]> {
           const blueprint = ctx.results['themeArchitect'].data as RealDossierBlueprint
           const sourced: SourcedDocument[] = []
+          const usedJudilibreIds = new Set<string>()
+          const usedWebUrls = new Set<string>()
 
           // Process slots sequentially to avoid rate limits
           for (let i = 0; i < blueprint.documentSlots.length; i++) {
@@ -295,19 +309,57 @@ export function createSyntheseRealGenerationWorkflow(config: SyntheseRealGenerat
             let doc: SourcedDocument | null = null
             try {
               if (slot.type === 'jurisprudence-cass') {
-                doc = await sourceFromJudilibre(slot, ctx.authToken)
+                doc = await sourceFromJudilibre(slot, ctx.authToken, usedJudilibreIds)
               } else if (slot.type === 'legislation') {
                 doc = await sourceFromLegifrance(slot, ctx.authToken)
-                // Fallback to web search if Legifrance didn't find anything
-                if (!doc) doc = await sourceFromWeb(slot, ctx.authToken)
+                if (!doc) doc = await sourceFromWeb(slot, ctx.authToken, usedWebUrls)
               } else {
-                doc = await sourceFromWeb(slot, ctx.authToken)
+                doc = await sourceFromWeb(slot, ctx.authToken, usedWebUrls)
               }
-            } catch { /* skip on error */ }
+            } catch (err) {
+              pipelineLog('warn', `Slot ${i + 1} (${slot.type}) failed: ${(err as Error).message}`)
+            }
 
             if (doc) {
               sourced.push(doc)
+            } else {
+              pipelineLog('warn', `Slot ${i + 1} (${slot.type}): no document found`)
             }
+          }
+
+          // Balance validation — try to fill gaps
+          const typeCounts = {
+            jurisprudence: sourced.filter(d => d.slot.type.startsWith('jurisprudence')).length,
+            legislation: sourced.filter(d => d.slot.type === 'legislation').length,
+            other: sourced.filter(d => !d.slot.type.startsWith('jurisprudence') && d.slot.type !== 'legislation').length,
+          }
+
+          if (typeCounts.jurisprudence < 2) {
+            pipelineLog('warn', `Dossier imbalanced: only ${typeCounts.jurisprudence} jurisprudence — attempting supplemental search`)
+            try {
+              const suppSlot: DocumentSlot = {
+                slotNumber: 99, type: 'jurisprudence-cass',
+                description: 'Supplemental case law',
+                feedsPlanSection: 'IA',
+                searchQueries: [blueprint.theme],
+              }
+              const doc = await sourceFromJudilibre(suppSlot, ctx.authToken, usedJudilibreIds)
+              if (doc) sourced.push(doc)
+            } catch { /* best effort */ }
+          }
+
+          if (typeCounts.legislation < 1) {
+            pipelineLog('warn', 'Dossier imbalanced: no legislation — attempting supplemental search')
+            try {
+              const suppSlot: DocumentSlot = {
+                slotNumber: 98, type: 'legislation',
+                description: 'Supplemental legislation',
+                feedsPlanSection: 'IA',
+                searchQueries: [blueprint.theme],
+              }
+              const doc = await sourceFromLegifrance(suppSlot, ctx.authToken)
+              if (doc) sourced.push(doc)
+            } catch { /* best effort */ }
           }
 
           if (sourced.length < 5) {
@@ -331,6 +383,19 @@ export function createSyntheseRealGenerationWorkflow(config: SyntheseRealGenerat
             const src = sourced[i]
             ctx.updateProgress?.(`Curating document ${i + 1}/${sourced.length}...`)
 
+            // Legislation: use VERBATIM text — no LLM rewriting
+            if (src.slot.type === 'legislation') {
+              curated.push({
+                docNumber: curated.length + 1,
+                type: src.slot.type,
+                title: src.title,
+                sourceUrl: src.sourceUrl,
+                content: src.rawContent,
+              })
+              continue
+            }
+
+            // Other types: LLM curation
             const { system, user } = buildDocumentCuratorPrompt(
               blueprint.theme,
               blueprint.problematique,
@@ -344,23 +409,60 @@ export function createSyntheseRealGenerationWorkflow(config: SyntheseRealGenerat
               const excerpt = await llmCall(user, system, ctx, 4096)
               const excerptText = excerpt.trim()
               const excerptWords = excerptText.split(/\s+/).length
-              // If LLM returned garbage (< 100 words), fall back to raw content
-              const finalContent = excerptWords < 100 ? src.rawContent.slice(0, 3000) : excerptText
+
+              // If LLM returned garbage (< 400 words), fall back to raw content
+              if (excerptWords < 400) {
+                pipelineLog('warn', `Curation too short (${excerptWords}w) for "${src.title}" — using raw`)
+                curated.push({
+                  docNumber: curated.length + 1,
+                  type: src.slot.type,
+                  title: src.title,
+                  sourceUrl: src.sourceUrl,
+                  content: src.rawContent.slice(0, 5000),
+                })
+                continue
+              }
+
+              // Post-curation verification: check key legal references preserved
+              const refPattern = /(?:n°\s*[\d\-\.]+|\d{1,2}\s+(?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+\d{4}|art(?:icle)?\.?\s*[A-Z]?\d[\d\-]*)/gi
+              const rawRefs = new Set<string>()
+              let m: RegExpExecArray | null
+              while ((m = refPattern.exec(src.rawContent.slice(0, 10000))) !== null) {
+                rawRefs.add(m[0].toLowerCase().trim())
+              }
+              if (rawRefs.size > 3) {
+                let found = 0
+                for (const ref of rawRefs) {
+                  if (excerptText.toLowerCase().includes(ref)) found++
+                }
+                if (found / rawRefs.size < 0.4) {
+                  pipelineLog('warn', `Curation lost references (${found}/${rawRefs.size}) for "${src.title}" — using raw`)
+                  curated.push({
+                    docNumber: curated.length + 1,
+                    type: src.slot.type,
+                    title: src.title,
+                    sourceUrl: src.sourceUrl,
+                    content: src.rawContent.slice(0, 5000),
+                  })
+                  continue
+                }
+              }
+
               curated.push({
                 docNumber: curated.length + 1,
                 type: src.slot.type,
                 title: src.title,
                 sourceUrl: src.sourceUrl,
-                content: finalContent,
+                content: excerptText,
               })
-            } catch {
-              // Use raw content truncated as fallback
+            } catch (err) {
+              pipelineLog('warn', `Curation LLM failed for "${src.title}": ${(err as Error).message}`)
               curated.push({
                 docNumber: curated.length + 1,
                 type: src.slot.type,
                 title: src.title,
                 sourceUrl: src.sourceUrl,
-                content: src.rawContent.slice(0, 3000),
+                content: src.rawContent.slice(0, 5000),
               })
             }
           }

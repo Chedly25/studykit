@@ -11,10 +11,25 @@ const API_URL = import.meta.env.VITE_API_URL
 
 export interface LegifranceArticle {
   id: string
-  num: string       // e.g. "L135-4"
-  etat: string      // "VIGUEUR", "MODIFIE", "ABROGE"
-  texteHtml: string  // HTML content
-  texte?: string     // plain text fallback
+  num: string
+  etat: string
+  texteHtml: string
+  texte?: string
+}
+
+export interface LegifranceSearchExtract {
+  id: string
+  num: string
+  legalStatus: string
+  dateDebut?: string
+  dateFin?: string
+  values?: string[]
+}
+
+export interface LegifranceSearchSection {
+  id: string
+  title: string | null
+  extracts?: LegifranceSearchExtract[]
 }
 
 export interface LegifranceSearchResult {
@@ -25,16 +40,7 @@ export interface LegifranceSearchResult {
     legalStatus: string | null
     nature: string | null
   }>
-  sections?: Array<{
-    id: string
-    title: string | null
-    extracts?: Array<{
-      id: string       // LEGIARTI ID — usable with getArticle
-      num: string      // article number
-      legalStatus: string
-      values?: string[]
-    }>
-  }>
+  sections?: LegifranceSearchSection[]
   extracts?: string[]
   nature: string
 }
@@ -45,7 +51,16 @@ export interface LegifranceSearchResponse {
   executionTime: number
 }
 
-// ─── API calls (via server proxy) ────────────────────────────────
+export interface LegifranceSectionResult {
+  sectionTitle: string
+  codeName: string
+  articles: LegifranceArticle[]
+  concatenatedText: string
+  wordCount: number
+  sourceUrl: string
+}
+
+// ─── API calls ───────────────────────────────────────────────────
 
 async function callProxy(body: Record<string, unknown>, authToken: string): Promise<unknown> {
   const res = await fetch(API_URL, {
@@ -63,10 +78,6 @@ async function callProxy(body: Record<string, unknown>, authToken: string): Prom
   return res.json()
 }
 
-/**
- * Search legislation (codes or laws/decrees).
- * fond: "CODE_ETAT" for current code articles, "LODA_ETAT" for laws/decrees
- */
 export async function searchLegifrance(
   query: string,
   authToken: string,
@@ -87,71 +98,147 @@ export async function searchLegifrance(
   }, authToken) as Promise<LegifranceSearchResponse>
 }
 
-/**
- * Get a specific article by its LEGIARTI ID.
- */
-export async function getArticle(
-  id: string,
-  authToken: string,
-): Promise<LegifranceArticle | null> {
-  const data = await callProxy({ action: 'getArticle', id }, authToken) as {
-    article: LegifranceArticle | null
-  }
+export async function getArticle(id: string, authToken: string): Promise<LegifranceArticle | null> {
+  const data = await callProxy({ action: 'getArticle', id }, authToken) as { article: LegifranceArticle | null }
   return data.article ?? null
 }
 
+export async function getArticlesBatch(ids: string[], authToken: string): Promise<LegifranceArticle[]> {
+  const data = await callProxy({ action: 'getArticles', ids: ids.slice(0, 10) }, authToken) as {
+    articles: LegifranceArticle[]
+  }
+  return data.articles ?? []
+}
+
+// ─── Relevance scoring ──────────────────────────────────────────
+
+function scoreExtractRelevance(
+  extract: LegifranceSearchExtract,
+  queryTerms: string[],
+): number {
+  const text = [
+    extract.num ?? '',
+    ...(extract.values ?? []),
+  ].join(' ').toLowerCase()
+  let score = 0
+  for (const term of queryTerms) {
+    if (text.includes(term)) score++
+  }
+  // Bonus for VIGUEUR (in force)
+  if (extract.legalStatus === 'VIGUEUR') score += 2
+  // Penalty for ABROGE
+  if (extract.legalStatus === 'ABROGE') score -= 10
+  return score
+}
+
+function scoreSectionRelevance(
+  section: LegifranceSearchSection,
+  queryTerms: string[],
+): number {
+  const titleText = (section.title ?? '').replace(/<[^>]+>/g, '').toLowerCase()
+  let score = 0
+  for (const term of queryTerms) {
+    if (titleText.includes(term)) score += 3 // title match is strong signal
+  }
+  // Add best extract score
+  for (const extract of section.extracts ?? []) {
+    score += scoreExtractRelevance(extract, queryTerms)
+  }
+  return score
+}
+
+// ─── Section-level fetch ────────────────────────────────────────
+
+interface ScoredSection {
+  section: LegifranceSearchSection
+  codeName: string
+  codeCid: string
+  score: number
+  articleIds: string[] // LEGIARTI IDs to fetch
+}
+
 /**
- * Search and return the first matching article with its full text.
- * Searches both CODE_ETAT and LODA_ETAT, extracts article IDs from results,
- * then fetches the full article content.
+ * Search Legifrance and fetch an entire relevant section with all its articles.
+ * Scores candidates by query relevance, fetches the best section.
  */
-export async function searchAndFetchArticle(
+export async function searchAndFetchSection(
   query: string,
   authToken: string,
   options: {
     fond?: 'CODE_ETAT' | 'LODA_ETAT'
     codeNames?: string[]
+    minWords?: number
   } = {},
-): Promise<{ article: LegifranceArticle; title: string; sourceUrl: string } | null> {
-  try {
-    const searchResult = await searchLegifrance(query, authToken, {
-      fond: options.fond ?? 'CODE_ETAT',
-      codeNames: options.codeNames,
-      pageSize: 3,
-    })
+): Promise<LegifranceSectionResult | null> {
+  const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2)
+  const minWords = options.minWords ?? 300
 
-    if (!searchResult.results?.length) return null
+  for (const fond of [options.fond ?? 'CODE_ETAT', 'LODA_ETAT'] as const) {
+    try {
+      const searchResult = await searchLegifrance(query, authToken, {
+        fond,
+        codeNames: options.codeNames,
+        pageSize: 5,
+      })
+      if (!searchResult.results?.length) continue
 
-    // Extract LEGIARTI IDs from search results (in sections > extracts)
-    for (const result of searchResult.results) {
-      // Get the code/law title
-      const topTitle = result.titles?.[0]
-      const codeName = topTitle?.title?.replace(/<[^>]+>/g, '') ?? ''
+      // Collect and score ALL sections across ALL results
+      const scoredSections: ScoredSection[] = []
 
-      for (const section of result.sections ?? []) {
-        for (const extract of section.extracts ?? []) {
-          if (!extract.id?.startsWith('LEGIARTI')) continue
-          if (extract.legalStatus === 'ABROGE') continue // skip abrogated
+      for (const result of searchResult.results) {
+        const topTitle = result.titles?.[0]
+        const codeName = (topTitle?.title ?? '').replace(/<[^>]+>/g, '')
+        const codeCid = topTitle?.cid ?? ''
 
-          const article = await getArticle(extract.id, authToken)
-          if (!article || article.etat === 'ABROGE') continue
+        for (const section of result.sections ?? []) {
+          const articleIds = (section.extracts ?? [])
+            .filter(e => e.id?.startsWith('LEGIARTI') && e.legalStatus !== 'ABROGE')
+            .map(e => e.id)
 
-          const sectionTitle = section.title?.replace(/<[^>]+>/g, '') ?? ''
-          return {
-            article,
-            title: `${codeName} — Art. ${article.num}${sectionTitle ? ` (${sectionTitle})` : ''}`,
-            sourceUrl: `https://www.legifrance.gouv.fr/codes/article_lc/${extract.id}`,
-          }
+          if (articleIds.length === 0) continue
+
+          const score = scoreSectionRelevance(section, queryTerms)
+          scoredSections.push({ section, codeName, codeCid, score, articleIds })
         }
       }
-    }
-  } catch { /* fall through */ }
+
+      // Sort by score descending
+      scoredSections.sort((a, b) => b.score - a.score)
+
+      // Try each section until we find one with enough content
+      for (const candidate of scoredSections) {
+        const articles = await getArticlesBatch(candidate.articleIds.slice(0, 10), authToken)
+        if (articles.length === 0) continue
+
+        // Filter out abrogated and build concatenated text
+        const validArticles = articles.filter(a => a.etat !== 'ABROGE')
+        if (validArticles.length === 0) continue
+
+        const concatenated = validArticles
+          .map(a => `Art. ${a.num} — ${stripHtml(a.texteHtml ?? a.texte ?? '')}`)
+          .join('\n\n')
+
+        const wordCount = concatenated.split(/\s+/).length
+        if (wordCount < minWords) continue
+
+        const sectionTitle = (candidate.section.title ?? '').replace(/<[^>]+>/g, '')
+
+        return {
+          sectionTitle,
+          codeName: candidate.codeName,
+          articles: validArticles,
+          concatenatedText: concatenated,
+          wordCount,
+          sourceUrl: `https://www.legifrance.gouv.fr/codes/section_lc/${candidate.section.id}`,
+        }
+      }
+    } catch { continue }
+  }
   return null
 }
 
-/**
- * Strip HTML tags from Legifrance article content.
- */
+// ─── HTML stripping ─────────────────────────────────────────────
+
 export function stripHtml(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, '\n')

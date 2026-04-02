@@ -16,6 +16,8 @@ export interface DocumentSlot {
   description: string
   feedsPlanSection: string  // "IA" | "IB" | "IIA" | "IIB"
   searchQueries: string[]   // targeted search queries
+  codeNames?: string[]      // e.g. ["Code du travail"] for Legifrance code filtering
+  chamberHint?: string      // e.g. "soc" for Judilibre chamber filter
 }
 
 export interface RealDossierBlueprint {
@@ -51,58 +53,77 @@ export function buildRealThemeArchitectPrompt(config: {
 
   const system = `Tu es le président de la Commission nationale de l'examen d'accès au CRFPA, chargé de concevoir le sujet de l'épreuve de note de synthèse.
 
-Tu dois concevoir un DOSSIER DOCUMENTAIRE basé sur des SOURCES RÉELLES disponibles publiquement. Tu ne génères PAS les documents — tu spécifies des REQUÊTES DE RECHERCHE pour trouver de vrais textes juridiques.
+Tu dois concevoir un DOSSIER DOCUMENTAIRE basé sur des SOURCES RÉELLES. Tu ne génères PAS les documents — tu spécifies des REQUÊTES DE RECHERCHE PRÉCISES pour trouver de vrais textes juridiques dans les bases de données publiques.
 
 ## CONTRAINTES
 
-- Le thème doit porter sur un sujet juridique d'actualité pour lequel des sources publiques abondantes existent
-- Le dossier doit permettre un plan en I/A, I/B, II/A, II/B
-- Chaque sous-partie alimentée par au moins 3 documents
-- Mélange équilibré de types :
-  - 2-3 jurisprudence Cour de cassation (cherchables sur Judilibre)
-  - 1-2 textes législatifs (vie-publique.fr, résumés de lois)
-  - 2-3 rapports officiels (Défenseur des droits, Sénat, vie-publique.fr)
-  - 2-3 analyses juridiques / doctrine ouverte (Village Justice, blogs juridiques, HAL)
-  - 1-2 articles de presse juridique
+- Thème d'actualité juridique avec des sources publiques abondantes
+- Plan en I/A, I/B, II/A, II/B — chaque sous-partie alimentée par 3+ documents
+- Mélange équilibré — OBLIGATOIREMENT :
+  - 3-4 arrêts Cour de cassation (API Judilibre — recherche plein texte)
+  - 2-3 textes législatifs (API Legifrance — articles de codes, lois)
+  - 2-3 rapports officiels (recherche web — Défenseur des droits, Sénat, vie-publique.fr)
+  - 2-3 analyses juridiques (recherche web — Village Justice, blogs juridiques, HAL)
+  - 1-2 articles de presse juridique (recherche web)
 - Total : 12 à 15 documents
-- IMPORTANT : choisis un thème où tu es CERTAIN que des sources publiques réelles existent en abondance
 
-## CE QUE TU DOIS PRODUIRE
+## QUALITÉ DES REQUÊTES DE RECHERCHE — CRUCIAL
 
-Un blueprint JSON :
+Les requêtes doivent être SPÉCIFIQUES, pas vagues :
+
+Pour jurisprudence-cass (envoyées à Judilibre) :
+- MAUVAIS : "protection lanceur alerte"
+- BON : "lanceur alerte licenciement nullité L1132-3-3 charge preuve"
+- Ajouter chamberHint quand pertinent ("soc" pour social, "crim" pour pénal)
+
+Pour legislation (envoyées à Legifrance) :
+- MAUVAIS : "protection données personnelles"
+- BON : "lanceur alerte signalement protection représailles L1132-3-3"
+- TOUJOURS remplir codeNames avec le nom exact du code : ["Code du travail"]
+- Les articles seront récupérés par SECTION ENTIÈRE (tous les articles de la section pertinente)
+
+Pour doctrine/rapport/presse (recherche web) :
+- Citer des institutions : "Défenseur droits rapport lanceur alerte 2023"
+- Inclure des dates/années pour cibler des publications récentes
+- Être précis : "Village Justice panorama jurisprudence lanceur alerte 2023"
+
+## JSON À PRODUIRE
+
 {
   "theme": "Le thème en une phrase",
   "problematique": "La problématique juridique",
   "planSuggere": {
-    "I": "Titre partie I",
-    "IA": "Sous-partie I/A",
-    "IB": "Sous-partie I/B",
-    "II": "Titre partie II",
-    "IIA": "Sous-partie II/A",
-    "IIB": "Sous-partie II/B"
+    "I": "Titre partie I", "IA": "...", "IB": "...",
+    "II": "Titre partie II", "IIA": "...", "IIB": "..."
   },
   "documentSlots": [
     {
       "slotNumber": 1,
       "type": "jurisprudence-cass",
-      "description": "Arrêt sur le renversement de la charge de la preuve en matière de licenciement du lanceur d'alerte",
+      "description": "Arrêt sur la nullité du licenciement du lanceur d'alerte et la charge de la preuve",
       "feedsPlanSection": "IA",
-      "searchQueries": ["lanceur alerte licenciement charge preuve", "protection lanceur alerte chambre sociale"]
+      "searchQueries": ["lanceur alerte licenciement nullité L1132-3-3 charge preuve chambre sociale", "lanceur alerte représailles nullité"],
+      "chamberHint": "soc"
     },
     {
       "slotNumber": 2,
+      "type": "legislation",
+      "description": "Articles du Code du travail relatifs à la protection des lanceurs d'alerte (L1132-3-3 et suivants)",
+      "feedsPlanSection": "IA",
+      "searchQueries": ["lanceur alerte signalement protection L1132-3-3", "lanceur alerte représailles interdiction"],
+      "codeNames": ["Code du travail"]
+    },
+    {
+      "slotNumber": 3,
       "type": "rapport",
-      "description": "Rapport du Défenseur des droits sur la protection effective des lanceurs d'alerte",
+      "description": "Rapport du Défenseur des droits sur la protection des lanceurs d'alerte 2022-2023",
       "feedsPlanSection": "IB",
-      "searchQueries": ["défenseur droits lanceur alerte rapport 2023"]
+      "searchQueries": ["Défenseur droits rapport bisannuel lanceur alerte 2023 protection"]
     }
   ]
 }
 
-Pour les jurisprudence-cass, les searchQueries seront envoyées à l'API Judilibre (recherche plein texte dans les arrêts de la Cour de cassation).
-Pour les autres types, les searchQueries seront envoyées à un moteur de recherche web.
-
-Retourne UNIQUEMENT le JSON.`
+Retourne UNIQUEMENT le JSON (pas de backticks, pas de commentaire).`
 
   const user = `Conçois un dossier de note de synthèse CRFPA basé sur des sources réelles.${topicHint}${avoidHint}
 
@@ -129,9 +150,11 @@ RÈGLES IMPÉRATIVES :
 - Conserve les références exactes (numéros d'articles, dates, noms, numéros de pourvoi, ECLI)
 - Sois FIDÈLE au texte original — reformule pour la longueur mais n'invente RIEN
 - Ne modifie JAMAIS les citations, dates, noms de parties ou références juridiques
+- N'INVENTE AUCUNE référence juridique qui n'existe pas dans le contenu brut
 - Longueur cible : 600 à 1200 mots (1-2 pages)
 - Commence par un en-tête formel identifiant le document réel (type, date, source, référence)
-- L'extrait doit être autonome et compréhensible seul`
+- L'extrait doit être autonome et compréhensible seul
+- Pour les textes LÉGISLATIFS (articles de code, lois) : reproduis le texte VERBATIM avec un en-tête. NE JAMAIS reformuler un article de loi.`
 
   const user = `## THÈME DU DOSSIER
 ${theme}

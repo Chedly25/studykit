@@ -117,6 +117,31 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       return new Response(JSON.stringify(data), { headers: jsonHeaders })
     }
 
+    if (body.action === 'getArticles') {
+      const ids = ((body.ids as string[]) ?? []).slice(0, 10)
+      if (ids.length === 0) {
+        return new Response(JSON.stringify({ articles: [] }), { headers: jsonHeaders })
+      }
+      const articles = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const res = await fetch(`${LEGIFRANCE_BASE}/consult/getArticle`, {
+              method: 'POST',
+              headers: apiHeaders,
+              body: JSON.stringify({ id }),
+            })
+            if (!res.ok) return null
+            const data = (await res.json()) as { article?: unknown }
+            return data.article ?? null
+          } catch { return null }
+        })
+      )
+      return new Response(
+        JSON.stringify({ articles: articles.filter(Boolean) }),
+        { headers: jsonHeaders },
+      )
+    }
+
     if (body.action === 'search') {
       const filtres: unknown[] = []
       if (body.codeNames && Array.isArray(body.codeNames)) {

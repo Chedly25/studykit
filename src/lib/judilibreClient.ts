@@ -111,3 +111,35 @@ export async function searchDecisions(
 export async function getDecision(id: string, authToken: string): Promise<JudilibreDecision> {
   return callProxy({ action: 'decision', id }, authToken) as Promise<JudilibreDecision>
 }
+
+/**
+ * Search for a decision not already used. Skips IDs in usedIds set.
+ * Enforces minimum word count on full decision text.
+ */
+export async function searchUnusedDecision(
+  query: string,
+  authToken: string,
+  usedIds: Set<string>,
+  options: {
+    pageSize?: number
+    chamber?: string
+    publication?: string
+    minWords?: number
+  } = {},
+): Promise<{ searchResult: JudilibreSearchResult; decision: JudilibreDecision } | null> {
+  const results = await searchDecisions(query, authToken, {
+    pageSize: options.pageSize ?? 10,
+    chamber: options.chamber,
+    publication: options.publication ?? 'b',
+  })
+  for (const candidate of results.results) {
+    if (usedIds.has(candidate.id)) continue
+    try {
+      const decision = await getDecision(candidate.id, authToken)
+      const wordCount = decision.text.split(/\s+/).length
+      if (wordCount < (options.minWords ?? 300)) continue
+      return { searchResult: candidate, decision }
+    } catch { continue }
+  }
+  return null
+}

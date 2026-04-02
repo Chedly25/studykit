@@ -105,18 +105,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   // Parse request body
-  let query: string
-  let maxResults: number
+  let body: { query?: string; maxResults?: number; action?: string; urls?: string[] }
   try {
-    const body = (await request.json()) as { query?: string; maxResults?: number }
-    if (!body.query || typeof body.query !== 'string') {
-      return new Response(
-        JSON.stringify({ error: 'Missing required field: query' }),
-        { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } },
-      )
-    }
-    query = body.query.slice(0, 400) // Limit query length
-    maxResults = Math.min(body.maxResults ?? 5, 10)
+    body = (await request.json()) as typeof body
   } catch {
     return new Response(
       JSON.stringify({ error: 'Invalid JSON body' }),
@@ -124,7 +115,49 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     )
   }
 
-  // Call Tavily API
+  // ── Extract action: fetch full page content from URLs ──
+  if (body.action === 'extract') {
+    const urls = (body.urls ?? []).slice(0, 5)
+    if (urls.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'Missing urls array' }),
+        { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } },
+      )
+    }
+    try {
+      const extractResponse = await fetch('https://api.tavily.com/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ api_key: env.TAVILY_API_KEY, urls }),
+      })
+      if (!extractResponse.ok) {
+        return new Response(
+          JSON.stringify({ results: [], error: 'Extract service unavailable' }),
+          { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } },
+        )
+      }
+      const data = await extractResponse.json()
+      return new Response(JSON.stringify(data), {
+        status: 200, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    } catch {
+      return new Response(
+        JSON.stringify({ results: [], error: 'Extract request failed' }),
+        { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } },
+      )
+    }
+  }
+
+  // ── Search action (default) ──
+  if (!body.query || typeof body.query !== 'string') {
+    return new Response(
+      JSON.stringify({ error: 'Missing required field: query' }),
+      { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } },
+    )
+  }
+  const query = body.query.slice(0, 400)
+  const maxResults = Math.min(body.maxResults ?? 5, 10)
+
   try {
     const tavilyResponse = await fetch('https://api.tavily.com/search', {
       method: 'POST',
@@ -147,7 +180,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     const tavilyData = (await tavilyResponse.json()) as {
-      results?: Array<{ title: string; url: string; content: string; score: number }>
+      results?: Array<{ title: string; url: string; content: string; score: number; raw_content?: string }>
       answer?: string
     }
 
