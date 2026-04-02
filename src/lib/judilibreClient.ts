@@ -137,7 +137,10 @@ export async function searchUnusedDecision(
     try {
       const decision = await getDecision(candidate.id, authToken)
       const wordCount = decision.text.split(/\s+/).length
-      if (wordCount < (options.minWords ?? 300)) continue
+      if (wordCount < (options.minWords ?? 300)) {
+        usedIds.add(candidate.id) // prevent re-fetching this short decision
+        continue
+      }
       return { searchResult: candidate, decision }
     } catch { continue }
   }

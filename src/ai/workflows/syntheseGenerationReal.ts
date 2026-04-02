@@ -68,10 +68,12 @@ function extractJson<T>(raw: string): T {
   let jsonStr = cleaned.slice(start, end + 1)
   try { return JSON.parse(jsonStr) }
   catch {
-    const lastBrace = jsonStr.lastIndexOf('}')
-    if (lastBrace > 0) {
-      jsonStr = jsonStr.slice(0, lastBrace + 1) + (isArray ? ']' : '')
-      return JSON.parse(jsonStr)
+    // Only attempt repair for objects (not arrays — truncation corrupts nested structures)
+    if (!isArray) {
+      const lastBrace = jsonStr.lastIndexOf('}')
+      if (lastBrace > 0) {
+        return JSON.parse(jsonStr.slice(0, lastBrace + 1))
+      }
     }
     throw new Error('Failed to parse JSON from response')
   }
@@ -335,17 +337,25 @@ export function createSyntheseRealGenerationWorkflow(config: SyntheseRealGenerat
           }
 
           if (typeCounts.jurisprudence < 2) {
-            pipelineLog('warn', `Dossier imbalanced: only ${typeCounts.jurisprudence} jurisprudence — attempting supplemental search`)
-            try {
-              const suppSlot: DocumentSlot = {
-                slotNumber: 99, type: 'jurisprudence-cass',
-                description: 'Supplemental case law',
-                feedsPlanSection: 'IA',
-                searchQueries: [blueprint.theme],
-              }
-              const doc = await sourceFromJudilibre(suppSlot, ctx.authToken, usedJudilibreIds)
-              if (doc) sourced.push(doc)
-            } catch { /* best effort */ }
+            pipelineLog('warn', `Dossier imbalanced: only ${typeCounts.jurisprudence} jurisprudence — attempting supplemental searches`)
+            // Try up to 2 supplemental searches
+            for (let attempt = 0; attempt < 2; attempt++) {
+              if (sourced.filter(d => d.slot.type.startsWith('jurisprudence')).length >= 2) break
+              try {
+                const suppSlot: DocumentSlot = {
+                  slotNumber: 99 - attempt, type: 'jurisprudence-cass',
+                  description: 'Supplemental case law',
+                  feedsPlanSection: attempt === 0 ? 'IA' : 'IIA',
+                  searchQueries: [blueprint.theme, blueprint.problematique],
+                }
+                const doc = await sourceFromJudilibre(suppSlot, ctx.authToken, usedJudilibreIds)
+                if (doc) sourced.push(doc)
+              } catch { /* best effort */ }
+            }
+            const postCount = sourced.filter(d => d.slot.type.startsWith('jurisprudence')).length
+            if (postCount < 2) {
+              pipelineLog('warn', `Still only ${postCount} jurisprudence doc(s) after supplemental — dossier may be imbalanced`)
+            }
           }
 
           if (typeCounts.legislation < 1) {

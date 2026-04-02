@@ -138,12 +138,14 @@ function scoreSectionRelevance(
   const titleText = (section.title ?? '').replace(/<[^>]+>/g, '').toLowerCase()
   let score = 0
   for (const term of queryTerms) {
-    if (titleText.includes(term)) score += 3 // title match is strong signal
+    if (titleText.includes(term)) score += 5 // title match is strongest signal
   }
-  // Add best extract score
+  // Use best extract score only (not sum) to avoid inflating large sections
+  let bestExtractScore = 0
   for (const extract of section.extracts ?? []) {
-    score += scoreExtractRelevance(extract, queryTerms)
+    bestExtractScore = Math.max(bestExtractScore, scoreExtractRelevance(extract, queryTerms))
   }
+  score += bestExtractScore
   return score
 }
 
@@ -223,13 +225,18 @@ export async function searchAndFetchSection(
 
         const sectionTitle = (candidate.section.title ?? '').replace(/<[^>]+>/g, '')
 
+        const isCode = fond === 'CODE_ETAT'
+        const sourceUrl = isCode
+          ? `https://www.legifrance.gouv.fr/codes/section_lc/${candidate.section.id}`
+          : `https://www.legifrance.gouv.fr/loda/id/${candidate.codeCid}`
+
         return {
           sectionTitle,
           codeName: candidate.codeName,
           articles: validArticles,
           concatenatedText: concatenated,
           wordCount,
-          sourceUrl: `https://www.legifrance.gouv.fr/codes/section_lc/${candidate.section.id}`,
+          sourceUrl,
         }
       }
     } catch { continue }
