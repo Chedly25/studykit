@@ -16,6 +16,7 @@ import { dbQueryStep, localStep } from '../orchestrator/steps'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { streamChat } from '../client'
 import { searchDecisions, getDecision, formatDecisionTitle } from '../../lib/judilibreClient'
+import { searchAndFetchArticle, searchLegifrance, getArticle, stripHtml } from '../../lib/legifranceClient'
 import { searchWeb } from '../tools/webSearchTool'
 import {
   buildRealThemeArchitectPrompt,
@@ -125,6 +126,59 @@ async function sourceFromJudilibre(slot: DocumentSlot, authToken: string): Promi
         title: formatDecisionTitle(best),
         sourceUrl: `https://www.courdecassation.fr/decision/${best.id}`,
         rawContent: decision.text,
+      }
+    } catch { continue }
+  }
+  return null
+}
+
+/** Search Legifrance for legislation (code articles + laws/decrees) */
+async function sourceFromLegifrance(slot: DocumentSlot, authToken: string): Promise<SourcedDocument | null> {
+  for (const query of slot.searchQueries) {
+    // Try CODE_ETAT first (code articles in force), then LODA_ETAT (laws/decrees)
+    for (const fond of ['CODE_ETAT', 'LODA_ETAT'] as const) {
+      try {
+        const result = await searchAndFetchArticle(query, authToken, { fond })
+        if (result) {
+          const content = stripHtml(result.article.texteHtml ?? result.article.texte ?? '')
+          if (content.length < 50) continue
+          return {
+            slot,
+            title: result.title,
+            sourceUrl: result.sourceUrl,
+            rawContent: content,
+          }
+        }
+      } catch { continue }
+    }
+    // If individual article search didn't work, try fetching multiple articles from search
+    try {
+      const searchResult = await searchLegifrance(query, authToken, { fond: 'LODA_ETAT', pageSize: 3 })
+      if (searchResult.results?.length) {
+        const top = searchResult.results[0]
+        const topTitle = top.titles?.[0]?.title?.replace(/<[^>]+>/g, '') ?? 'Texte législatif'
+        // Collect article texts from extracts
+        const articleTexts: string[] = []
+        for (const section of top.sections ?? []) {
+          for (const extract of section.extracts ?? []) {
+            if (!extract.id?.startsWith('LEGIARTI')) continue
+            const art = await getArticle(extract.id, authToken)
+            if (art) {
+              const text = stripHtml(art.texteHtml ?? art.texte ?? '')
+              if (text.length > 30) articleTexts.push(`Art. ${art.num} — ${text}`)
+            }
+            if (articleTexts.length >= 5) break // cap at 5 articles
+          }
+          if (articleTexts.length >= 5) break
+        }
+        if (articleTexts.length > 0) {
+          return {
+            slot,
+            title: topTitle,
+            sourceUrl: `https://www.legifrance.gouv.fr/loda/id/${top.titles?.[0]?.cid ?? ''}`,
+            rawContent: articleTexts.join('\n\n'),
+          }
+        }
       }
     } catch { continue }
   }
@@ -242,6 +296,10 @@ export function createSyntheseRealGenerationWorkflow(config: SyntheseRealGenerat
             try {
               if (slot.type === 'jurisprudence-cass') {
                 doc = await sourceFromJudilibre(slot, ctx.authToken)
+              } else if (slot.type === 'legislation') {
+                doc = await sourceFromLegifrance(slot, ctx.authToken)
+                // Fallback to web search if Legifrance didn't find anything
+                if (!doc) doc = await sourceFromWeb(slot, ctx.authToken)
               } else {
                 doc = await sourceFromWeb(slot, ctx.authToken)
               }
