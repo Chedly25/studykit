@@ -14,7 +14,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
 
   // Admin access is verified server-side via ADMIN_EMAIL env var.
   // Client-side check uses Clerk publicMetadata.role (set by admin API).
-  const isAdmin = (user?.publicMetadata as any)?.role === 'admin'
+  const isAdmin = (user?.publicMetadata as { role?: string })?.role === 'admin'
   if (!isAdmin) {
     return <Navigate to="/" replace />
   }

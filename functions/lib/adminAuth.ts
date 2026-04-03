@@ -6,9 +6,6 @@
 import type { Env } from '../env'
 import { verifyClerkJWT } from './auth'
 
-// Admin email configured via ADMIN_EMAIL env var, with fallback
-const DEFAULT_ADMIN_EMAIL = 'chedlyboukhris21@gmail.com'
-
 export class AdminError extends Error {
   status: number
   constructor(message: string, status: number) {
@@ -26,6 +23,10 @@ export async function verifyAdmin(
     throw new AdminError('Unauthorized', 401)
   }
 
+  if (!env.ADMIN_EMAIL) {
+    throw new AdminError('Admin access not configured', 503)
+  }
+
   const { sub } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
 
   // Verify user email via Clerk Backend API
@@ -41,9 +42,8 @@ export async function verifyAdmin(
     email_addresses: Array<{ email_address: string }>
   }
 
-  const adminEmail = (env as any).ADMIN_EMAIL ?? DEFAULT_ADMIN_EMAIL
   const isAdmin = user.email_addresses.some(
-    (e) => e.email_address === adminEmail
+    (e) => e.email_address === env.ADMIN_EMAIL
   )
 
   if (!isAdmin) {

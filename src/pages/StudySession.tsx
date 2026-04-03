@@ -10,6 +10,7 @@ import { useTutorPreferences } from '../hooks/useTutorPreferences'
 import { useSessionInsights } from '../hooks/useSessionInsights'
 import { useStudentModel } from '../hooks/useStudentModel'
 import { useAttachments } from '../hooks/useAttachments'
+import { useDragAndDrop } from '../hooks/useDragAndDrop'
 import { useSources } from '../hooks/useSources'
 import { useStudyPlan } from '../hooks/useStudyPlan'
 import { useExerciseBank } from '../hooks/useExerciseBank'
@@ -38,6 +39,8 @@ import type { ChatAttachment } from '../hooks/useAttachments'
 
 type SessionView = 'course' | 'chat' | 'cards' | 'map' | 'review' | 'exercises'
 
+const CODING_KEYWORDS = ['python', 'java', 'javascript', 'c++', 'programming', 'code', 'coding', 'algorithm', 'data structure', 'web dev', 'react', 'sql']
+
 export default function StudySession() {
   const { t } = useTranslation()
   const { getToken } = useAuth()
@@ -56,11 +59,9 @@ export default function StudySession() {
   const { getExerciseStatsForTopic, getExerciseStatsByTopic: getExerciseStatsMap } = useExerciseBank(profileId)
   const exerciseStatsByTopic = useMemo(() => getExerciseStatsMap(), [getExerciseStatsMap])
 
-  const [isDragging, setIsDragging] = useState(false)
   const [activeView, setActiveView] = useState<SessionView>('course')
 
   // Determine layout variant based on exam type
-  const CODING_KEYWORDS = ['python', 'java', 'javascript', 'c++', 'programming', 'code', 'coding', 'algorithm', 'data structure', 'web dev', 'react', 'sql']
   const layoutVariant = useMemo(() => {
     if (!activeProfile) return 'default' as const
     const examType = activeProfile.examType
@@ -84,6 +85,7 @@ export default function StudySession() {
   const {
     attachments, addFiles, removeAttachment, clearAttachments, isParsing, getRelevantChunks,
   } = useAttachments()
+  const { isDragging, handleDragEnter, handleDragLeave, handleDragOver, handleDrop } = useDragAndDrop(addFiles)
 
   // Resolve current topic
   const topic = useMemo(() => {
@@ -108,7 +110,7 @@ export default function StudySession() {
       }
     }
     return topics[0] ?? null
-  }, [topicParam, topics, subjects, dailyLogs, activeProfile])
+  }, [topicParam, topics, subjects, activeProfile])
 
   // Resolve subject for the current topic
   const subject = useMemo(() => {
@@ -218,27 +220,6 @@ export default function StudySession() {
 
     await sendMessage(message, attachmentContext)
   }, [sendMessage, getRelevantChunks, clearAttachments])
-
-  // Drag-and-drop
-  const dragCounter = useRef(0)
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    dragCounter.current++
-    if (e.dataTransfer.types.includes('Files')) setIsDragging(true)
-  }, [])
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    dragCounter.current--
-    if (dragCounter.current === 0) setIsDragging(false)
-  }, [])
-  const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault() }, [])
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    dragCounter.current = 0
-    setIsDragging(false)
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length > 0) addFiles(files)
-  }, [addFiles])
 
   // No profile
   if (!activeProfile) {
@@ -356,13 +337,13 @@ export default function StudySession() {
                     />
                   ) : (
                     <div className="space-y-6">
-                      {messages.map((msg, i) => (
-                        <ChatMessageBubble key={i} message={msg} />
+                      {messages.map((msg) => (
+                        <ChatMessageBubble key={msg.id} message={msg} />
                       ))}
 
                       {streamingText && (
                         <ChatMessageBubble
-                          message={{ role: 'assistant', content: streamingText }}
+                          message={{ id: 'streaming', role: 'assistant', content: streamingText }}
                           isStreaming
                         />
                       )}

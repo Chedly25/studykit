@@ -7,6 +7,57 @@ import type { Env } from '../../env'
 import { verifyAdmin, AdminError } from '../../lib/adminAuth'
 import { corsHeaders } from '../../lib/cors'
 
+async function countProUsers(clerkHeaders: Record<string, string>): Promise<number> {
+  let count = 0
+  let offset = 0
+  const limit = 100
+  let hasMore = true
+
+  while (hasMore) {
+    const res = await fetch(
+      `https://api.clerk.com/v1/users?limit=${limit}&offset=${offset}`,
+      { headers: clerkHeaders }
+    )
+    const users = (await res.json()) as Array<{ public_metadata?: { plan?: string } }>
+    count += users.filter(u => u.public_metadata?.plan === 'pro').length
+    hasMore = users.length === limit
+    offset += limit
+  }
+
+  return count
+}
+
+async function calculateMRR(stripeKey: string): Promise<number> {
+  let mrr = 0
+  let startingAfter: string | undefined
+
+  while (true) {
+    const params = new URLSearchParams({ status: 'active', limit: '100' })
+    if (startingAfter) params.set('starting_after', startingAfter)
+
+    const res = await fetch(
+      `https://api.stripe.com/v1/subscriptions?${params}`,
+      { headers: { Authorization: `Basic ${btoa(stripeKey + ':')}` } }
+    )
+    const data = (await res.json()) as {
+      data: Array<{ id: string; items: { data: Array<{ price: { unit_amount: number; recurring: { interval: string } } }> } }>
+      has_more: boolean
+    }
+
+    for (const sub of data.data) {
+      for (const item of sub.items.data) {
+        const amount = item.price.unit_amount / 100
+        mrr += item.price.recurring.interval === 'year' ? amount / 12 : amount
+      }
+    }
+
+    if (!data.has_more || data.data.length === 0) break
+    startingAfter = data.data[data.data.length - 1]?.id
+  }
+
+  return mrr
+}
+
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
   return new Response(null, { status: 204, headers: corsHeaders(context.env) })
 }
@@ -36,7 +87,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const sevenDaysAgo = new Date(today.getTime() - 7 * 86400_000)
     const thirtyDaysAgo = new Date(today.getTime() - 30 * 86400_000)
 
-    const [totalCountRes, recentUsersRes, subscriptionsRes, chargesRes, aiCalls7d] =
+    const [totalCountRes, recentUsersRes, proUsers, mrr, chargesRes, aiCalls7d] =
       await Promise.all([
         // Total user count
         fetch('https://api.clerk.com/v1/users/count', { headers: clerkHeaders }),
@@ -45,15 +96,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
           `https://api.clerk.com/v1/users?limit=100&order_by=-created_at`,
           { headers: clerkHeaders }
         ),
-        // Active Stripe subscriptions
+        // Pro user count (paginated through all users)
+        countProUsers(clerkHeaders),
+        // MRR from Stripe (paginated through all active subscriptions)
         env.STRIPE_SECRET_KEY
-          ? fetch(
-              'https://api.stripe.com/v1/subscriptions?status=active&limit=100',
-              {
-                headers: { Authorization: `Basic ${btoa(env.STRIPE_SECRET_KEY + ':')}` },
-              }
-            )
-          : Promise.resolve(null),
+          ? calculateMRR(env.STRIPE_SECRET_KEY)
+          : 0,
         // Recent charges (last 30 days)
         env.STRIPE_SECRET_KEY
           ? fetch(
@@ -94,30 +142,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       ? recentUsers.filter((u) => u.created_at > sevenDaysAgo.getTime()).length
       : 0
 
-    const proUsers = Array.isArray(recentUsers)
-      ? recentUsers.filter((u) => u.public_metadata?.plan === 'pro').length
-      : 0
-
-    let mrr = 0
     let revenue30d = 0
-
-    if (subscriptionsRes) {
-      const subData = (await subscriptionsRes.json()) as {
-        data: Array<{
-          items: { data: Array<{ price: { unit_amount: number; recurring: { interval: string } } }> }
-        }>
-      }
-      for (const sub of subData.data) {
-        for (const item of sub.items.data) {
-          const amount = item.price.unit_amount / 100
-          if (item.price.recurring.interval === 'year') {
-            mrr += amount / 12
-          } else {
-            mrr += amount
-          }
-        }
-      }
-    }
 
     if (chargesRes) {
       const chargeData = (await chargesRes.json()) as {

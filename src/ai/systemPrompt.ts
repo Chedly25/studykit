@@ -6,6 +6,18 @@ import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPrefe
 import type { ExamType } from '../db/schema'
 import { computeReadiness, computeStreak, computeWeeklyHours, decayedMastery } from '../lib/knowledgeGraph'
 
+const MAX_SYSTEM_PROMPT_CHARS = 12_000
+
+function truncateSection(section: string, maxChars: number, label: string): string {
+  if (section.length <= maxChars) return section
+  return section.slice(0, maxChars) + `\n... (${label} truncated)`
+}
+
+function capPromptLength(prompt: string): string {
+  if (prompt.length <= MAX_SYSTEM_PROMPT_CHARS) return prompt
+  return prompt.slice(0, MAX_SYSTEM_PROMPT_CHARS) + '\n... (prompt truncated for context budget)'
+}
+
 function getFormatGuidance(examType: ExamType): string {
   switch (examType) {
     case 'university-course': return 'mix of multiple choice, short answer, and essay questions'
@@ -96,7 +108,7 @@ export function buildSystemPrompt(ctx: PromptContext): string {
 
   const formatGuidance = getFormatGuidance(profile.examType)
 
-  return `You are StudiesKit AI, an expert learning advisor. You are knowledgeable, informative, and data-driven. You present information and options — you never prescribe or command. When the student asks what to study, present 2-3 options with clear tradeoffs and let them choose.
+  const base = `You are StudiesKit AI, an expert learning advisor. You are knowledgeable, informative, and data-driven. You present information and options — you never prescribe or command. When the student asks what to study, present 2-3 options with clear tradeoffs and let them choose.
 
 ## Study Profile
 - Study goal: ${profile.name}
@@ -144,7 +156,23 @@ You have tools to read and write the student's data. Always use tools to access 
 20. CRITICAL — EXERCISES AND QUIZZES: When the student asks for an exercise, a quiz, "test me", "quiz me", "petit exercice", "fais-moi l'exercice", or ANY form of practice — IMMEDIATELY call the renderQuiz tool in your FIRST response. Do NOT ask them to try first. Do NOT write questions as plain text. Do NOT do Socratic coaching before giving the quiz. Just call renderQuiz right away with 2-5 multiple-choice questions. The tool renders beautiful interactive cards with instant feedback — that IS the exercise. You can add a brief encouraging sentence before or after the tool call, but the tool call MUST happen.
 21. WEB SEARCH: When the student asks about something not covered in their uploaded documents, use the searchWeb tool to find the answer. This includes: recent developments, specific cases/statutes, alternative explanations, practice resources. Always cite the source URL when using web results. Prefer uploaded sources first — only search the web when sources don't have the answer.
 22. TEACH MODE: When the student asks to be taught a topic ("teach me about X", "explain X", "I need to learn X", "walk me through X"): (a) First, use searchSources to find relevant content from their materials. (b) Create 2-4 focused concept cards — one per sub-concept, each with the content field using structured markdown sections appropriate to the subject. (c) After the cards, use renderQuiz with 2-3 questions to check understanding. (d) Use LaTeX for math when relevant. (e) Reference specific pages/sections from their materials.${isEmptyProfile ? `
-18. CRITICAL: The student's profile has no subjects or topics yet. Before using any tools that require topic data (generateStudyPlan, getWeakTopics, generateQuestions, etc.), you MUST first ask the student about what they're studying, their subjects/topics, exam date, and available study time. Do NOT call generateStudyPlan or generateQuestions when there are no topics — it will produce empty results.` : ''}${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.topics && ctx.topics.length > 0 ? buildCalibrationSection(ctx.topics) : ''}${ctx.topics && ctx.topics.length > 0 ? buildTopicDependencySection(ctx.topics) : ''}${ctx.examFormats && ctx.examFormats.length > 0 ? buildExamFormatSection(ctx.examFormats) : ''}${ctx.profile.examIntelligence ? buildExamIntelligenceSection(ctx.profile.examIntelligence) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${buildEmotionalIntelligenceSection()}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
+18. CRITICAL: The student's profile has no subjects or topics yet. Before using any tools that require topic data (generateStudyPlan, getWeakTopics, generateQuestions, etc.), you MUST first ask the student about what they're studying, their subjects/topics, exam date, and available study time. Do NOT call generateStudyPlan or generateQuestions when there are no topics — it will produce empty results.` : ''}`
+
+  // Append optional sections with per-section budget to stay within context limits
+  const sectionBudget = 1500
+  const optionalSections = [
+    ctx.studentModel ? truncateSection(buildStudentModelSection(ctx.studentModel), sectionBudget, 'student model') : '',
+    ctx.topics && ctx.topics.length > 0 ? truncateSection(buildCalibrationSection(ctx.topics), sectionBudget, 'calibration') : '',
+    ctx.topics && ctx.topics.length > 0 ? truncateSection(buildTopicDependencySection(ctx.topics), sectionBudget, 'topic dependencies') : '',
+    ctx.examFormats && ctx.examFormats.length > 0 ? truncateSection(buildExamFormatSection(ctx.examFormats), sectionBudget, 'exam format') : '',
+    ctx.profile.examIntelligence ? truncateSection(buildExamIntelligenceSection(ctx.profile.examIntelligence), sectionBudget, 'exam intelligence') : '',
+    ctx.sourceContext ? truncateSection(buildSourceSection(ctx.sourceContext), sectionBudget * 2, 'source context') : '',
+    ctx.tutorPreferences ? truncateSection(buildTutorPersonaSection(ctx.tutorPreferences), sectionBudget, 'tutor persona') : '',
+    truncateSection(buildEmotionalIntelligenceSection(), sectionBudget, 'emotional intelligence'),
+    ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : '',
+  ].filter(Boolean)
+
+  return capPromptLength(base + optionalSections.join(''))
 }
 
 export function buildSourceSection(sc: SourceContext): string {
@@ -448,7 +476,7 @@ export function buildResearchSystemPrompt(ctx: PromptContext): string {
     threadsByStatus.unset.length > 0 ? threadList('Unclassified', threadsByStatus.unset) : '',
   ].filter(Boolean).join('\n')
 
-  return `You are StudiesKit AI, an expert research advisor and thinking partner. You help researchers synthesize literature, develop arguments, identify connections across sources, and prepare for advisor meetings.
+  const base = `You are StudiesKit AI, an expert research advisor and thinking partner. You help researchers synthesize literature, develop arguments, identify connections across sources, and prepare for advisor meetings.
 
 ## Research Project
 - Project: ${profile.name}
@@ -481,7 +509,20 @@ You have tools to read and write the researcher's data. Always use tools to acce
 12. Reference past sessions for continuity using getRecentSessions
 13. When teaching concepts, explain directly and clearly — do not withhold answers
 14. Suggest relevant literature searches when gaps are identified
-15. NEVER use emojis in your responses. Use plain text only. No emoji characters whatsoever.${ctx.studentModel ? buildStudentModelSection(ctx.studentModel) : ''}${ctx.conversationSummaries && ctx.conversationSummaries.length > 0 ? buildConversationHistorySection(ctx.conversationSummaries) : ''}${ctx.flashcardPerformance && ctx.flashcardPerformance.length > 0 ? buildFlashcardPerformanceSection(ctx.flashcardPerformance) : ''}${ctx.sourceContext ? buildSourceSection(ctx.sourceContext) : ''}${ctx.tutorPreferences ? buildTutorPersonaSection(ctx.tutorPreferences) : ''}${ctx.sessionInsights && ctx.sessionInsights.length > 0 ? buildSessionMemorySection(ctx.sessionInsights) : ''}${ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : ''}`
+15. NEVER use emojis in your responses. Use plain text only. No emoji characters whatsoever.`
+
+  const sectionBudget = 1500
+  const optionalSections = [
+    ctx.studentModel ? truncateSection(buildStudentModelSection(ctx.studentModel), sectionBudget, 'student model') : '',
+    ctx.conversationSummaries && ctx.conversationSummaries.length > 0 ? truncateSection(buildConversationHistorySection(ctx.conversationSummaries), sectionBudget, 'conversation history') : '',
+    ctx.flashcardPerformance && ctx.flashcardPerformance.length > 0 ? truncateSection(buildFlashcardPerformanceSection(ctx.flashcardPerformance), sectionBudget, 'flashcard performance') : '',
+    ctx.sourceContext ? truncateSection(buildSourceSection(ctx.sourceContext), sectionBudget * 2, 'source context') : '',
+    ctx.tutorPreferences ? truncateSection(buildTutorPersonaSection(ctx.tutorPreferences), sectionBudget, 'tutor persona') : '',
+    ctx.sessionInsights && ctx.sessionInsights.length > 0 ? truncateSection(buildSessionMemorySection(ctx.sessionInsights), sectionBudget, 'session memory') : '',
+    ctx.language && ctx.language !== 'en' ? buildLanguageSection(ctx.language) : '',
+  ].filter(Boolean)
+
+  return capPromptLength(base + optionalSections.join(''))
 }
 
 export function buildWritingPartnerPrompt(ctx: PromptContext): string {
@@ -543,7 +584,7 @@ export function buildSessionPrompt(ctx: PromptContext, session: SessionContext):
     ? `${Math.round((session.questionsCorrect / session.questionsAttempted) * 100)}% correct`
     : 'no questions attempted yet'
 
-  return `${base}
+  const prompt = `${base}
 
 ## STUDY SESSION ACTIVE
 You are in a focused study session for "${session.topicName}" under the subject "${session.subjectName}".
@@ -574,4 +615,6 @@ SESSION RULES:
 9. Use the student's course terminology — match the language and terms from their uploaded materials.
 10. Remember: you are a knowledgeable tutor sitting next to them, not a lecturer at a podium.
 ${getExamTypeGuidance(ctx.profile.examType)}`
+
+  return capPromptLength(prompt)
 }

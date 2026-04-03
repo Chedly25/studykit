@@ -21,6 +21,7 @@ import { UpgradePrompt } from '../components/subscription/UpgradePrompt'
 import { SourcesToggle } from '../components/sources/SourcesToggle'
 import { AttachmentSavePrompt } from '../components/chat/AttachmentSavePrompt'
 import { useSources } from '../hooks/useSources'
+import { useDragAndDrop } from '../hooks/useDragAndDrop'
 import type { ChatAttachment } from '../hooks/useAttachments'
 
 const SIDEBAR_KEY = 'studykit_chat_sidebar'
@@ -41,11 +42,10 @@ export default function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try { return localStorage.getItem(SIDEBAR_KEY) !== 'closed' } catch { return true }
   })
-  const [isDragging, setIsDragging] = useState(false)
-
   const {
     attachments, addFiles, removeAttachment, clearAttachments, isParsing, getRelevantChunks,
   } = useAttachments()
+  const { isDragging, handleDragEnter, handleDragLeave, handleDragOver, handleDrop } = useDragAndDrop(addFiles)
 
   const {
     messages, isLoading, currentToolCall, streamingText, error,
@@ -91,27 +91,6 @@ export default function Chat() {
 
     await sendMessage(actualMessage, attachmentContext)
   }, [sendMessage, getRelevantChunks, clearAttachments])
-
-  // Drag-and-drop handlers
-  const dragCounter = useRef(0)
-  const handleDragEnter = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    dragCounter.current++
-    if (e.dataTransfer.types.includes('Files')) setIsDragging(true)
-  }, [])
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    dragCounter.current--
-    if (dragCounter.current === 0) setIsDragging(false)
-  }, [])
-  const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault() }, [])
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    dragCounter.current = 0
-    setIsDragging(false)
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length > 0) addFiles(files)
-  }, [addFiles])
 
   // Suggestion chips
   const suggestions = useMemo(() => {
@@ -252,13 +231,13 @@ export default function Chat() {
               <ChatEmptyState suggestions={suggestions} onSend={(prompt) => handleSend(prompt)} />
             ) : (
               <div className="space-y-6">
-                {messages.map((msg, i) => (
-                  <ChatMessageBubble key={i} message={msg} />
+                {messages.map((msg) => (
+                  <ChatMessageBubble key={msg.id} message={msg} />
                 ))}
 
                 {streamingText && (
                   <ChatMessageBubble
-                    message={{ role: 'assistant', content: streamingText }}
+                    message={{ id: 'streaming', role: 'assistant', content: streamingText }}
                     isStreaming
                   />
                 )}

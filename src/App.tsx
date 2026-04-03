@@ -5,6 +5,7 @@ import { Layout } from './components/Layout'
 import { BrandedLoader } from './components/BrandedLoader'
 import { AuthLayout } from './components/AuthLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { runMigration } from './db/migrations'
 
 // Run IndexedDB migration on app load
@@ -110,11 +111,11 @@ export default function App() {
       <ScrollToTop />
       <Routes>
         {/* Auth routes — outside Layout */}
-        <Route path="/sign-in/*" element={<AuthLayout><SignIn routing="path" path="/sign-in" /></AuthLayout>} />
-        <Route path="/sign-up/*" element={<AuthLayout><SignUp routing="path" path="/sign-up" /></AuthLayout>} />
+        <Route path="/sign-in/*" element={<ErrorBoundary><AuthLayout><SignIn routing="path" path="/sign-in" /></AuthLayout></ErrorBoundary>} />
+        <Route path="/sign-up/*" element={<ErrorBoundary><AuthLayout><SignUp routing="path" path="/sign-up" /></AuthLayout></ErrorBoundary>} />
 
         {/* Admin routes — outside Layout */}
-        <Route path="admin" element={<AdminLayout />}>
+        <Route path="admin" element={<ErrorBoundary><AdminLayout /></ErrorBoundary>}>
           <Route index element={<AdminOverview />} />
           <Route path="revenue" element={<AdminRevenue />} />
           <Route path="users" element={<AdminUsers />} />

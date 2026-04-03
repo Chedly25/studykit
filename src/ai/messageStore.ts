@@ -35,6 +35,7 @@ export async function loadMessages(conversationId: string): Promise<Message[]> {
     .sortBy('timestamp')
 
   return chatMessages.map(cm => ({
+    id: cm.id || crypto.randomUUID(),
     role: cm.role as 'user' | 'assistant',
     content: cm.toolCalls ? JSON.parse(cm.toolCalls) : cm.content,
   }))
@@ -45,7 +46,7 @@ export async function saveMessages(conversationId: string, messages: Message[]):
   await db.chatMessages.where('conversationId').equals(conversationId).delete()
 
   const chatMessages: ChatMessage[] = messages.map((m, i) => ({
-    id: `${conversationId}-${i}`,
+    id: m.id || `${conversationId}-${i}`,
     conversationId,
     role: m.role as 'user' | 'assistant' | 'system',
     content: typeof m.content === 'string' ? m.content : '',

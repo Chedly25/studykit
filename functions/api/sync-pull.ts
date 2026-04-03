@@ -40,16 +40,23 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     }
 
     const prefix = `changelog:${jwt.sub}:${profileId}:`
+    const MAX_CHANGES_PER_PULL = 500
 
-    // List all changelog keys for this profile
+    // List changelog keys for this profile, capped at MAX_CHANGES_PER_PULL
     const allChanges: Array<{ table: string; recordId: string; operation: string; data?: unknown; timestamp: string }> = []
     let cursor: string | undefined
+    let limitReached = false
 
     // Paginate through KV list (max 1000 per call)
     do {
       const list = await env.SYNC_KV.list({ prefix, cursor })
 
       for (const key of list.keys) {
+        if (allChanges.length >= MAX_CHANGES_PER_PULL) {
+          limitReached = true
+          break
+        }
+
         // Extract timestamp from key: changelog:userId:profileId:TIMESTAMP
         const keyTimestamp = key.name.slice(prefix.length)
         if (keyTimestamp <= since) continue // Skip entries older than since
@@ -63,6 +70,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         }
       }
 
+      if (limitReached) break
       cursor = list.list_complete ? undefined : list.cursor
     } while (cursor)
 
@@ -73,6 +81,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       changes: allChanges,
       serverTimestamp: new Date().toISOString(),
       changeCount: allChanges.length,
+      hasMore: limitReached,
     }), {
       headers: { ...cors, 'Content-Type': 'application/json' },
     })

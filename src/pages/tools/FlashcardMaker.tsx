@@ -229,7 +229,7 @@ export default function FlashcardMaker() {
       if (!token) throw new Error('Not authenticated')
 
       const response = await streamChat({
-        messages: [{ role: 'user', content: `Generate exactly ${aiCardCount} flashcards about: ${topic}` }],
+        messages: [{ id: crypto.randomUUID(), role: 'user', content: `Generate exactly ${aiCardCount} flashcards about: ${topic}` }],
         system: `You generate flashcards for studying. Return ONLY a JSON object with this exact format, no other text:\n{"cards":[{"front":"question or term","back":"answer or definition"}]}\n\nGenerate exactly ${aiCardCount} clear, concise flashcards that test key concepts. Each "front" should be a question or term, and "back" should be the answer or definition.`,
         tools: [],
         authToken: token,

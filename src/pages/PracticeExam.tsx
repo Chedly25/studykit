@@ -143,7 +143,7 @@ export default function PracticeExam() {
 
             let text = ''
             await streamChat({
-              messages: [{ role: 'user', content: prompt }],
+              messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
               system: 'You are a study coach giving a brief post-exam debrief. Be warm, honest, and actionable. Use LaTeX $...$ for math if relevant. Never use emojis.',
               tools: [],
               maxTokens: 1024,

@@ -533,11 +533,11 @@ export default function MockExam() {
         </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((msg, i) => (
-            <ChatMessageBubble key={i} message={msg} />
+          {messages.map((msg) => (
+            <ChatMessageBubble key={msg.id} message={msg} />
           ))}
           {streamingText && (
-            <ChatMessageBubble message={{ role: 'assistant', content: streamingText }} />
+            <ChatMessageBubble message={{ id: 'streaming', role: 'assistant', content: streamingText }} />
           )}
           <ToolCallIndicator toolName={currentToolCall} />
           {error && (

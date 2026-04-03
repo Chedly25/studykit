@@ -17,6 +17,7 @@ import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPrefe
 import { db } from '../db'
 import { hybridSearch } from '../lib/hybridSearch'
 
+// IMPORTANT: This limit must match FREE_TIER_DAILY_LIMIT in functions/api/chat.ts
 const FREE_DAILY_LIMIT = 25
 
 function getUsageKey(): string {
@@ -74,8 +75,43 @@ export function useAgent(options: UseAgentOptions) {
   const abortRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
+  // Refs for values read inside sendMessage — avoids recreating the callback on every DB change
+  const profileRef = useRef(profile)
+  const subjectsRef = useRef(subjects)
+  const topicsRef = useRef(topics)
+  const dailyLogsRef = useRef(dailyLogs)
+  const messagesRef = useRef(messages)
+  const conversationIdRef = useRef(conversationId)
+  const tutorPreferencesRef = useRef(tutorPreferences)
+  const sessionInsightsRef = useRef(sessionInsights)
+  const studentModelRef = useRef(studentModel)
+  const conversationSummariesRef = useRef(conversationSummaries)
+  profileRef.current = profile
+  subjectsRef.current = subjects
+  topicsRef.current = topics
+  dailyLogsRef.current = dailyLogs
+  messagesRef.current = messages
+  conversationIdRef.current = conversationId
+  tutorPreferencesRef.current = tutorPreferences
+  sessionInsightsRef.current = sessionInsights
+  studentModelRef.current = studentModel
+  conversationSummariesRef.current = conversationSummaries
+  const sessionContextRef = useRef(options.sessionContext)
+  sessionContextRef.current = options.sessionContext
+
   const sendMessage = useCallback(async (userMessage: string, attachmentContext?: { chunks: Array<{ content: string; documentTitle: string; chunkIndex: number }> }): Promise<Message[]> => {
-    if (!profile || isLoading) return []
+    const currentProfile = profileRef.current
+    const currentSubjects = subjectsRef.current
+    const currentTopics = topicsRef.current
+    const currentDailyLogs = dailyLogsRef.current
+    const currentMessages = messagesRef.current
+    const currentConversationId = conversationIdRef.current
+    const currentTutorPreferences = tutorPreferencesRef.current
+    const currentSessionInsights = sessionInsightsRef.current
+    const currentStudentModel = studentModelRef.current
+    const currentConversationSummaries = conversationSummariesRef.current
+
+    if (!currentProfile || isLoading) return []
 
     // Client-side quota pre-check for free users
     if (!isPro && messagesUsedToday >= FREE_DAILY_LIMIT) {
@@ -96,21 +132,21 @@ export function useAgent(options: UseAgentOptions) {
 
     try {
       // Get or create conversation
-      let convId = conversationId
+      let convId = currentConversationId
       if (!convId) {
-        convId = await createConversation(profile.id, userMessage.slice(0, 50))
+        convId = await createConversation(currentProfile.id, userMessage.slice(0, 50))
         setConversationId(convId)
       }
 
       // Build messages
-      const newMessages: Message[] = [...messages, { role: 'user', content: userMessage }]
+      const newMessages: Message[] = [...currentMessages, { id: crypto.randomUUID(), role: 'user', content: userMessage }]
       setMessages(newMessages)
 
       // Get context for system prompt
       const today = new Date().toISOString().slice(0, 10)
       // Scope due flashcards to current profile's decks
       const profileDecks = await db.flashcardDecks
-        .where('examProfileId').equals(profile.id).toArray()
+        .where('examProfileId').equals(currentProfile.id).toArray()
       const profileDeckIds = new Set(profileDecks.map(d => d.id))
       const dueFlashcardCount = await db.flashcards
         .where('nextReviewDate')
@@ -135,10 +171,10 @@ export function useAgent(options: UseAgentOptions) {
       if (sourcesEnabled) {
         const docCount = await db.documents
           .where('examProfileId')
-          .equals(profile.id)
+          .equals(currentProfile.id)
           .count()
         if (docCount > 0) {
-          const relevant = await hybridSearch(profile.id, userMessage, authToken ?? undefined, { topN: 5, subjectId: subjectId ?? undefined })
+          const relevant = await hybridSearch(currentProfile.id, userMessage, authToken ?? undefined, { topN: 5, subjectId: subjectId ?? undefined })
           let preRetrievedChunks: string | undefined
           if (relevant.length > 0) {
             preRetrievedChunks = relevant
@@ -164,11 +200,11 @@ export function useAgent(options: UseAgentOptions) {
       }
 
       // Load exam formats
-      const examFormats = await db.examFormats.where('examProfileId').equals(profile.id).toArray() as ExamFormat[]
+      const examFormats = await db.examFormats.where('examProfileId').equals(currentProfile.id).toArray() as ExamFormat[]
 
       // Build flashcard performance data
       let flashcardPerformance: Array<{ deckName: string; cardCount: number; retentionRate: number; dueCount: number; averageEaseFactor: number }> | undefined
-      const decks = await db.flashcardDecks.where('examProfileId').equals(profile.id).toArray()
+      const decks = await db.flashcardDecks.where('examProfileId').equals(currentProfile.id).toArray()
       if (decks.length > 0) {
         const today = new Date().toISOString().slice(0, 10)
         flashcardPerformance = await Promise.all(decks.map(async deck => {
@@ -187,18 +223,18 @@ export function useAgent(options: UseAgentOptions) {
       }
 
       const ctx = {
-        profile,
-        subjects,
-        topics,
-        dailyLogs,
+        profile: currentProfile,
+        subjects: currentSubjects,
+        topics: currentTopics,
+        dailyLogs: currentDailyLogs,
         dueFlashcardCount,
         upcomingAssignments: upcomingAssignments.slice(0, 5),
         sourceContext,
-        tutorPreferences,
-        sessionInsights,
+        tutorPreferences: currentTutorPreferences,
+        sessionInsights: currentSessionInsights,
         language: i18n.language,
-        studentModel,
-        conversationSummaries,
+        studentModel: currentStudentModel,
+        conversationSummaries: currentConversationSummaries,
         flashcardPerformance,
         examFormats: examFormats.length > 0 ? examFormats : undefined,
       }
@@ -213,11 +249,11 @@ export function useAgent(options: UseAgentOptions) {
         if (sourceContext) {
           systemPrompt += buildSourceSection(sourceContext)
         }
-      } else if (options.sessionContext) {
-        systemPrompt = buildSessionPrompt(ctx, options.sessionContext)
+      } else if (sessionContextRef.current) {
+        systemPrompt = buildSessionPrompt(ctx, sessionContextRef.current)
       } else {
         // Adaptive prompt: base + student model + episodes + calibration + misconceptions
-        const userId = profile.userId ?? ''
+        const userId = currentProfile.userId ?? ''
         systemPrompt = await buildAdaptivePrompt({
           ...ctx,
           userId,
@@ -230,7 +266,7 @@ export function useAgent(options: UseAgentOptions) {
           try {
             const { decomposeGoal, formatPlanForPrompt } = await import('../ai/planner/goalDecomposer')
             const { callFastModel } = await import('../ai/fastClient')
-            const diagnosticInsight = await db.agentInsights.get(`diagnostician:${profile.id}`)
+            const diagnosticInsight = await db.agentInsights.get(`diagnostician:${currentProfile.id}`)
             const report = diagnosticInsight ? JSON.parse(diagnosticInsight.data) : null
             const plan = await decomposeGoal(
               userMessage, topics, report,
@@ -245,7 +281,7 @@ export function useAgent(options: UseAgentOptions) {
         // Auto-route teaching approach (only after 3+ user messages for enough context)
         if (userMsgCount >= 3 && freshToken) {
           try {
-            const sm = await db.studentModels.get(profile.id)
+            const sm = await db.studentModels.get(currentProfile.id)
             const episodes = userId ? await recallEpisodes({ userId, limit: 5 }) : []
             const routing = await routeChat(newMessages, sm, null, episodes, freshToken)
             if (routing.addendum) {
@@ -264,7 +300,7 @@ export function useAgent(options: UseAgentOptions) {
       const result = await runAgentLoop({
         messages: newMessages,
         systemPrompt,
-        examProfileId: profile.id,
+        examProfileId: currentProfile.id,
         authToken: freshToken,
         getToken,
         signal: abortController.signal,
@@ -309,15 +345,7 @@ export function useAgent(options: UseAgentOptions) {
     } finally {
       setIsLoading(false)
     }
-  }, [profile, subjects, topics, dailyLogs, messages, conversationId, isLoading, getToken, isPro, messagesUsedToday, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, customSystemPrompt, subjectId, subjectName, i18n.language])
-
-  // Track conversation state in refs for beforeunload handler
-  const messagesRef = useRef(messages)
-  const conversationIdRef = useRef(conversationId)
-  const profileRef = useRef(profile)
-  messagesRef.current = messages
-  conversationIdRef.current = conversationId
-  profileRef.current = profile
+  }, [isLoading, getToken, isPro, messagesUsedToday, sourcesEnabled, customSystemPrompt, subjectId, subjectName, i18n.language])
 
   // Generate insight on page unload to prevent lost sessions
   useEffect(() => {

@@ -17,4 +17,5 @@ export interface Env {
   JUDILIBRE_API_KEY?: string
   PISTE_OAUTH_CLIENT_ID?: string
   PISTE_OAUTH_CLIENT_SECRET?: string
+  ADMIN_EMAIL: string
 }

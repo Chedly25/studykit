@@ -6,8 +6,41 @@ import { db } from '../db'
 interface ExportData {
   version: 1
   exportedAt: string
-  profile: any
-  tables: Record<string, any[]>
+  profile: Record<string, unknown>
+  tables: Record<string, Record<string, unknown>[]>
+}
+
+// Whitelist of tables that can be imported — must match what exportProfileData exports
+const IMPORTABLE_TABLES = new Set([
+  'subjects', 'chapters', 'topics', 'subtopics', 'studySessions',
+  'questionResults', 'documents', 'documentChunks', 'dailyStudyLogs',
+  'notifications', 'conceptCards', 'exercises', 'exerciseAttempts',
+  'examSources', 'masterySnapshots', 'pdfHighlights', 'flashcardDecks',
+  'flashcards', 'tutorPreferences', 'studentModels',
+  'notificationPreferences', 'documentFiles',
+])
+
+function validateExportData(data: unknown): data is ExportData {
+  if (!data || typeof data !== 'object') return false
+  const d = data as Record<string, unknown>
+  if (d.version !== 1) return false
+  if (typeof d.exportedAt !== 'string') return false
+  if (!d.profile || typeof d.profile !== 'object') return false
+  if (!d.tables || typeof d.tables !== 'object') return false
+
+  const profile = d.profile as Record<string, unknown>
+  if (!profile.id || typeof profile.id !== 'string') return false
+  if (!profile.name || typeof profile.name !== 'string') return false
+
+  for (const [tableName, records] of Object.entries(d.tables as Record<string, unknown>)) {
+    if (!IMPORTABLE_TABLES.has(tableName)) return false
+    if (!Array.isArray(records)) return false
+    for (const record of records) {
+      if (!record || typeof record !== 'object') return false
+      if (!('id' in record)) return false
+    }
+  }
+  return true
 }
 
 /**
@@ -80,24 +113,27 @@ export async function exportProfileData(examProfileId: string): Promise<Blob> {
 export async function importProfileData(file: File): Promise<{ success: boolean; error?: string }> {
   try {
     const text = await file.text()
-    const data = JSON.parse(text) as ExportData
+    const raw = JSON.parse(text)
 
-    if (data.version !== 1) {
-      return { success: false, error: `Unsupported export version: ${data.version}` }
+    if (!validateExportData(raw)) {
+      return { success: false, error: 'Invalid or corrupt export file. Required fields are missing or unknown tables detected.' }
     }
+
+    const data = raw as ExportData
 
     // Import profile
     if (data.profile) {
-      await db.examProfiles.put(data.profile)
+      await db.examProfiles.put(data.profile as any)
     }
 
-    // Import all tables
+    // Import validated tables only
     for (const [tableName, records] of Object.entries(data.tables)) {
       if (!records || records.length === 0) continue
+      if (!IMPORTABLE_TABLES.has(tableName)) continue
 
       if (tableName === 'documentFiles') {
         // Decode base64 back to Blob
-        for (const record of records) {
+        for (const record of records as any[]) {
           if (record._isBase64 && record.file) {
             try {
               record.file = base64ToBlob(record.file)

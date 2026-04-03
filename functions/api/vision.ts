@@ -86,7 +86,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
 
-    const prompt = (formData.get('prompt') as string) || DEFAULT_PROMPT
+    const prompt = DEFAULT_PROMPT
 
     // Convert to base64
     const imageBuffer = await imageFile.arrayBuffer()
@@ -130,7 +130,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       const errText = await llmResponse.text()
       console.error('[vision] Anthropic error:', llmResponse.status, errText.slice(0, 500))
       return new Response(JSON.stringify({ error: 'Vision processing failed. Please try again.' }), {
-        status: 200, headers: { ...cors, 'Content-Type': 'application/json' },
+        status: 502, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
 

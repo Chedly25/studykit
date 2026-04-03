@@ -24,6 +24,7 @@ export interface ToolResultBlock {
 export type ContentBlock = TextBlock | ToolUseBlock | ToolResultBlock
 
 export interface Message {
+  id: string
   role: 'user' | 'assistant'
   content: string | ContentBlock[]
   reasoning_content?: string

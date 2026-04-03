@@ -268,7 +268,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
           })
         }
       }
-      const assistantMsg: Message = { role: 'assistant', content: assistantContent }
+      const assistantMsg: Message = { id: crypto.randomUUID(), role: 'assistant', content: assistantContent }
       if (response.reasoningContent) assistantMsg.reasoning_content = response.reasoningContent
       messages.push(assistantMsg)
 
@@ -302,7 +302,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
         })
       )
       if (signal?.aborted) break
-      messages.push({ role: 'user', content: resultBlocks })
+      messages.push({ id: crypto.randomUUID(), role: 'user', content: resultBlocks })
       options.onMessagesUpdate?.([...messages])
 
       continue // Loop back
@@ -320,7 +320,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
     pendingMarkers.length = 0
 
     finalText += text
-    messages.push({ role: 'assistant', content: text })
+    messages.push({ id: crypto.randomUUID(), role: 'assistant', content: text })
     break
   }
 

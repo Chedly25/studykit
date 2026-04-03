@@ -14,7 +14,27 @@ const DEFAULT_API_URL = 'https://api.moonshot.ai/v1/chat/completions'
 const MAX_RETRIES = 1
 const PRO_DAILY_LIMIT = 500
 
-const FREE_TIER_DAILY_LIMIT = 5
+// IMPORTANT: This limit must match FREE_DAILY_LIMIT in src/hooks/useAgent.ts
+const FREE_TIER_DAILY_LIMIT = 25
+
+// ─── Quota helper (KV is eventually consistent — small over-count possible under concurrency) ───
+async function incrementQuota(
+  kv: KVNamespace,
+  userId: string,
+  today: string,
+  limit: number
+): Promise<{ allowed: boolean; count: number }> {
+  const kvKey = `quota:${userId}:${today}`
+  const currentStr = await kv.get(kvKey)
+  const current = currentStr ? parseInt(currentStr, 10) : 0
+
+  if (current >= limit) {
+    return { allowed: false, count: current }
+  }
+
+  await kv.put(kvKey, String(current + 1), { expirationTtl: 86400 })
+  return { allowed: true, count: current + 1 }
+}
 
 // ─── KV-based rate limiter (persistent across isolates) ─────────
 const RATE_LIMIT = 60
@@ -90,24 +110,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     )
   }
 
-  // Free-tier daily quota check (KV-based, optimistic increment to minimize TOCTOU window)
+  // Free-tier daily quota check
   if (userPlan !== 'pro' && env.USAGE_KV) {
     const today = new Date().toISOString().slice(0, 10)
-    const kvKey = `quota:${userId}:${today}`
-    const currentStr = await env.USAGE_KV.get(kvKey)
-    const current = currentStr ? parseInt(currentStr, 10) : 0
-    const newCount = current + 1
-
-    // Write the incremented value immediately to minimize race window
-    await env.USAGE_KV.put(kvKey, String(newCount), { expirationTtl: 86400 })
-
-    if (newCount > FREE_TIER_DAILY_LIMIT) {
+    const quota = await incrementQuota(env.USAGE_KV, userId, today, FREE_TIER_DAILY_LIMIT)
+    if (!quota.allowed) {
       return new Response(
         JSON.stringify({
           error: `You've used all ${FREE_TIER_DAILY_LIMIT} free AI messages for today. Upgrade to Pro for unlimited access.`,
           code: 'QUOTA_EXCEEDED',
           limit: FREE_TIER_DAILY_LIMIT,
-          used: Math.min(newCount, FREE_TIER_DAILY_LIMIT),
+          used: FREE_TIER_DAILY_LIMIT,
         }),
         { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
@@ -117,13 +130,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   // Pro-tier daily safety cap (prevents runaway costs)
   if (userPlan === 'pro' && env.USAGE_KV) {
     const today = new Date().toISOString().slice(0, 10)
-    const kvKey = `quota:${userId}:${today}`
-    const currentStr = await env.USAGE_KV.get(kvKey)
-    const current = currentStr ? parseInt(currentStr, 10) : 0
-    const newCount = current + 1
-    await env.USAGE_KV.put(kvKey, String(newCount), { expirationTtl: 86400 })
-
-    if (newCount > PRO_DAILY_LIMIT) {
+    const quota = await incrementQuota(env.USAGE_KV, userId, today, PRO_DAILY_LIMIT)
+    if (!quota.allowed) {
       return new Response(
         JSON.stringify({ error: 'Daily safety limit reached (500 requests). Resets at midnight UTC.' }),
         { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
