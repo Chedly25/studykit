@@ -76,7 +76,7 @@ export default function Sources() {
   // Count unprocessed and processed documents
   const unprocessedDocs = documents.filter(d => !d.summary)
   const processedCount = documents.filter(d => !!d.summary).length
-  const hasFreeProcessingSlot = !isPro && processedCount < 1
+  const hasFreeProcessingSlot = !isPro && processedCount < 3
 
   // Batch process all unprocessed documents sequentially
   const [isBatchProcessing, setIsBatchProcessing] = useState(false)

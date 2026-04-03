@@ -9,7 +9,7 @@ import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
 import { useBackgroundJob } from './useBackgroundJob'
 import { db } from '../db'
 
-const FREE_PROCESSING_LIMIT = 1
+const FREE_PROCESSING_LIMIT = 3
 
 export function useSourceProcessing(examProfileId: string | undefined) {
   const { isPro } = useSubscription()

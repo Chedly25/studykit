@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { ClipboardCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
@@ -59,6 +60,19 @@ export default function PracticeExam() {
   const [isDebriefStreaming, setIsDebriefStreaming] = useState(false)
   const debriefAbortRef = useRef<AbortController | null>(null)
   const { getToken } = useAuth()
+
+  // Monthly exam count for free users (2/month limit)
+  const FREE_MONTHLY_EXAM_LIMIT = 2
+  const monthlyExamCount = useLiveQuery(async () => {
+    if (isPro || !profileId) return 0
+    const monthStart = new Date()
+    monthStart.setDate(1)
+    monthStart.setHours(0, 0, 0, 0)
+    return db.practiceExamSessions
+      .where('examProfileId').equals(profileId)
+      .filter(s => s.createdAt >= monthStart.toISOString())
+      .count()
+  }, [profileId, isPro]) ?? 0
 
   // Scroll to top on phase change
   useEffect(() => { window.scrollTo(0, 0) }, [exam.phase])
@@ -155,15 +169,17 @@ export default function PracticeExam() {
     )
   }
 
-  if (exam.phase === 'setup' && !isPro) {
+  if (exam.phase === 'setup' && !isPro && monthlyExamCount >= FREE_MONTHLY_EXAM_LIMIT) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 text-center">
         <ClipboardCheck className="w-12 h-12 text-[var(--text-muted)] mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-[var(--text-heading)] mb-2">Practice Exams — Pro</h2>
+        <h2 className="text-xl font-bold text-[var(--text-heading)] mb-2">
+          {t('subscription.examLimitReached')}
+        </h2>
         <p className="text-sm text-[var(--text-muted)] mb-6">
-          Generate AI-powered practice exams from your study materials with automatic grading and feedback.
+          {t('subscription.examLimitDesc', { used: monthlyExamCount, limit: FREE_MONTHLY_EXAM_LIMIT })}
         </p>
-        <a href="/pricing" className="btn-primary px-6 py-2.5 inline-block">Upgrade to Pro</a>
+        <a href="/pricing" className="btn-primary px-6 py-2.5 inline-block">{t('subscription.upgradeNow')}</a>
       </div>
     )
   }
@@ -194,6 +210,13 @@ export default function PracticeExam() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+        {!isPro && (
+          <div className="max-w-3xl mx-auto px-4 mb-2">
+            <p className="text-xs text-[var(--text-muted)]">
+              {t('subscription.examsRemaining', { remaining: FREE_MONTHLY_EXAM_LIMIT - monthlyExamCount })}
+            </p>
           </div>
         )}
         <PracticeExamSetup

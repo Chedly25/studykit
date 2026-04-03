@@ -17,7 +17,7 @@ import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPrefe
 import { db } from '../db'
 import { hybridSearch } from '../lib/hybridSearch'
 
-const FREE_DAILY_LIMIT = 5
+const FREE_DAILY_LIMIT = 25
 
 function getUsageKey(): string {
   return `studieskit_ai_usage_${new Date().toISOString().slice(0, 10)}`

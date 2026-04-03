@@ -15,20 +15,25 @@ export default function Pricing() {
   const FREE_FEATURES = [
     t('subscription.freeFeatures.tools'),
     t('subscription.freeFeatures.profile'),
-    t('subscription.freeFeatures.messages', { count: 5 }),
+    t('subscription.freeFeatures.messages', { count: 25 }),
+    t('subscription.freeFeatures.documents', { count: 3 }),
+    t('subscription.freeFeatures.exams'),
   ]
 
   const PRO_FEATURES = [
     t('subscription.proFeatures.unlimited'),
+    t('subscription.proFeatures.unlimitedExams'),
+    t('subscription.proFeatures.unlimitedDocs'),
     t('subscription.proFeatures.profiles'),
-    t('subscription.proFeatures.sources'),
-    t('subscription.proFeatures.plan'),
+    t('subscription.proFeatures.cloudSync'),
+    t('subscription.proFeatures.voicePhoto'),
+    t('subscription.proFeatures.examDna'),
     t('subscription.proFeatures.priority'),
   ]
 
-  const price = interval === 'year' ? 99 : 9
-  const perMonth = interval === 'year' ? '8.25' : '9'
-  const savings = interval === 'year' ? 'Save EUR 9/yr' : null
+  const price = interval === 'year' ? 179 : 19
+  const perMonth = interval === 'year' ? '14.92' : '19'
+  const savings = interval === 'year' ? t('subscription.yearlySavings', 'Save €49/yr') : null
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 animate-fade-in">
@@ -37,7 +42,7 @@ export default function Pricing() {
           {t('subscription.pricing')}
         </h1>
         <p className="text-[var(--text-muted)] max-w-lg mx-auto">
-          All study tools are free forever. Upgrade to Pro for unlimited AI-powered features.
+          {t('subscription.pricingSubtitle', 'Study for free with 25 AI messages/day and 2 practice exams/month. Go Pro for unlimited everything.')}
         </p>
 
         {/* Interval toggle */}
