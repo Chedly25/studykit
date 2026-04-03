@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { SignIn, SignUp } from '@clerk/clerk-react'
 import { Layout } from './components/Layout'
+import { BrandedLoader } from './components/BrandedLoader'
 import { AuthLayout } from './components/AuthLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { runMigration } from './db/migrations'
@@ -103,17 +104,9 @@ function ScrollToTop() {
   return null
 }
 
-function Loading() {
-  return (
-    <div className="flex items-center justify-center py-24">
-      <div className="w-8 h-8 border-2 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
-    </div>
-  )
-}
-
 export default function App() {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<BrandedLoader />}>
       <ScrollToTop />
       <Routes>
         {/* Auth routes — outside Layout */}

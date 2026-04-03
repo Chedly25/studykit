@@ -2,7 +2,8 @@ import { useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { toast } from 'sonner'
-import { FileText, Loader2, ClipboardCheck, BookOpen, ListChecks, Sparkles, Lock } from 'lucide-react'
+import { FileText, Loader2, ClipboardCheck, BookOpen, ListChecks, Sparkles, Lock, FolderOpen } from 'lucide-react'
+import { FirstVisitHint } from '../components/FirstVisitHint'
 import { Link, useNavigate } from 'react-router-dom'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useSubscription } from '../hooks/useSubscription'
@@ -205,6 +206,15 @@ export default function Sources() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 animate-fade-in">
+      {profileId && (
+        <FirstVisitHint
+          hintKey="sources"
+          profileId={profileId}
+          icon={FolderOpen}
+          title={t('hints.sourcesTitle')}
+          description={t('hints.sourcesDescription')}
+        />
+      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-heading)] flex items-center gap-2">

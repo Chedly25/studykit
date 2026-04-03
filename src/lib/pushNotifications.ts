@@ -46,27 +46,19 @@ export async function scheduleLocalNotification(
 }
 
 export async function scheduleDailyReminder(profileId: string): Promise<void> {
-  // Dedup: only schedule once per profile per day
+  // Dedup: only fire once per profile per day
   const today = new Date().toISOString().slice(0, 10)
   const dedupKey = `reminder_scheduled_${profileId}_${today}`
   if (localStorage.getItem(dedupKey)) return
   localStorage.setItem(dedupKey, 'true')
 
-  // Schedule notification for tomorrow at 6 PM
-  const now = new Date()
-  const tomorrow6pm = new Date(now)
-  tomorrow6pm.setDate(tomorrow6pm.getDate() + 1)
-  tomorrow6pm.setHours(18, 0, 0, 0)
-  const delayMs = tomorrow6pm.getTime() - now.getTime()
-
-  if (delayMs > 0) {
-    await scheduleLocalNotification(
-      'Time to study!',
-      'Your daily queue is waiting. Keep your streak alive!',
-      delayMs,
-      '/queue'
-    )
-  }
+  // Session-complete confirmation (immediate — long delays are unreliable in service workers)
+  await scheduleLocalNotification(
+    'Session saved!',
+    'Great work. Your streak continues tomorrow.',
+    0,
+    '/queue'
+  )
 }
 
 export function getNotificationStatus(): 'granted' | 'denied' | 'default' | 'unsupported' {

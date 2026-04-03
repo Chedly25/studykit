@@ -23,6 +23,8 @@ import { BottomNav } from './BottomNav'
 import { SyncIndicator } from './SyncIndicator'
 import { ErrorBoundary } from './ErrorBoundary'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
+import { StreakAtRiskBanner } from './StreakAtRiskBanner'
+import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { ContextualAssistant } from './ContextualAssistant'
 import { UpdatePrompt } from './UpdatePrompt'
 import { InstallPrompt } from './InstallPrompt'
@@ -50,6 +52,10 @@ export function Layout() {
   const location = useLocation()
   const isOnline = useOnlineStatus()
   const isChatPage = location.pathname === '/session' || location.pathname.startsWith('/read/')
+
+  // Streak risk detection for banner
+  const { streak, dailyLogs } = useKnowledgeGraph(activeProfile?.id)
+  const hasStudiedToday = dailyLogs.some(l => l.date === new Date().toISOString().slice(0, 10))
 
   // Pipeline completion toasts + weekly email digest
   useJobCompletionToasts()
@@ -293,6 +299,9 @@ export function Layout() {
             <div className="mb-4 px-4 py-2 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)] text-sm text-[var(--color-warning)] text-center">
               You're offline. Some features may not work.
             </div>
+          )}
+          {activeProfile && streak > 0 && !hasStudiedToday && (
+            <StreakAtRiskBanner streak={streak} profileId={activeProfile.id} />
           )}
           <ErrorBoundary>
             <Outlet />

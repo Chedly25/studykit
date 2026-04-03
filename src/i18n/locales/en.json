@@ -1170,7 +1170,39 @@
     "parsingFile": "Reading your document...",
     "uploadPrompt": "Click to upload PDFs, syllabi, or course materials",
     "welcomeStart": "Let's get started",
-    "welcomeSkip": "Skip and explore on your own"
+    "welcomeSkip": "Skip and explore on your own",
+    "manualSetupTitle": "Set up manually",
+    "manualSetupSubtitle": "Enter your exam details to get started",
+    "examNameLabel": "What are you studying for?",
+    "examNamePlaceholder": "e.g., CPA Exam, Organic Chemistry, DELF B2",
+    "examTypeLabel": "Category",
+    "examDateLabel": "Exam date (optional)",
+    "createProfile": "Create Profile",
+    "orTryAgain": "Or try the AI setup again"
+  },
+  "streak": {
+    "atRiskTitle": "Your {{count}}-day streak is at risk",
+    "atRiskAction": "Study now"
+  },
+  "hints": {
+    "queueTitle": "Your Daily Study Queue",
+    "queueDescription": "The AI picks the right mix of flashcards, exercises, and concept quizzes based on your mastery levels. Items adapt as you study.",
+    "sourcesTitle": "Your Study Library",
+    "sourcesDescription": "Upload PDFs, notes, or past exams here. The AI extracts topics, generates flashcards, and builds exercises from your materials.",
+    "analyticsTitle": "Your Progress Dashboard",
+    "analyticsDescription": "Study trends, mastery changes, and AI coach insights appear here as you study more."
+  },
+  "loading": {
+    "tips": [
+      "Spaced repetition strengthens memory by up to 200%",
+      "Consistency beats intensity — 15 minutes daily outperforms weekend cramming",
+      "Testing yourself is one of the most effective study techniques",
+      "Sleep consolidates what you learn — study before bed for better retention",
+      "Teaching a concept to someone else is the fastest way to master it",
+      "Taking breaks between study sessions improves long-term recall",
+      "Mixing different types of problems strengthens understanding",
+      "Your brain forms stronger connections when you actively recall information"
+    ]
   },
   "nudge": {
     "revisited": "You've revisited {{topic}} {{count}} times now — that's how deep understanding forms",

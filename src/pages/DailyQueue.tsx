@@ -21,6 +21,7 @@ import { useDailyQueue } from '../hooks/useDailyQueue'
 import { useStudySession } from '../hooks/useStudySession'
 import { DailyCoachingBrief } from '../components/queue/DailyCoachingBrief'
 import { CelebrationBanner } from '../components/CelebrationBanner'
+import { FirstVisitHint } from '../components/FirstVisitHint'
 import { SessionStartOverlay } from '../components/SessionStartOverlay'
 import { SessionCompletionOverlay, type SessionCompletionData } from '../components/SessionCompletionOverlay'
 import { InlineAIExplanation } from '../components/queue/InlineAIExplanation'
@@ -37,6 +38,7 @@ import { MathText } from '../components/MathText'
 import { track } from '../lib/analytics'
 import { trackContentInteraction } from '../lib/effectivenessTracker'
 import { EmptyState } from '../components/EmptyState'
+import { BrandedLoader } from '../components/BrandedLoader'
 import { useSubscription } from '../hooks/useSubscription'
 import { useVoiceInput } from '../hooks/useVoiceInput'
 import { useAnswerEvaluator } from '../hooks/useAnswerEvaluator'
@@ -65,11 +67,7 @@ const TYPE_STYLES: Record<QueueItemType, { border: string; bg: string; icon: str
 
 export default function DailyQueue() {
   return (
-    <Suspense fallback={
-      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-        <Loader2 className="w-6 h-6 animate-spin text-[var(--text-muted)] mx-auto" />
-      </div>
-    }>
+    <Suspense fallback={<BrandedLoader compact />}>
       <DailyQueueContent />
     </Suspense>
   )
@@ -394,6 +392,19 @@ function DailyQueueContent() {
     skipItem(itemId)
   }, [skipItem])
 
+  // Global skip shortcut (S key)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if ((e.key === 's' || e.key === 'S') && currentItem && !showCompletion && !showStartOverlay) {
+        e.preventDefault()
+        handleSkip(currentItem.id)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [currentItem, showCompletion, showStartOverlay, handleSkip])
+
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   // Compute colored progress segments from session results
@@ -461,6 +472,15 @@ function DailyQueueContent() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
       {profileId && <CelebrationBanner examProfileId={profileId} streak={streak} />}
+      {profileId && !showStartOverlay && (
+        <FirstVisitHint
+          hintKey="queue"
+          profileId={profileId}
+          icon={ListChecks}
+          title={t('hints.queueTitle')}
+          description={t('hints.queueDescription')}
+        />
+      )}
       {showStartOverlay && (
         <SessionStartOverlay
           streak={streak}
@@ -648,6 +668,7 @@ function DailyQueueContent() {
             >
               <SkipForward className="w-4 h-4" />
               {t('common.skip')}
+              <span className="text-[10px] opacity-50">S</span>
             </button>
           </div>
         </div>
@@ -1151,6 +1172,24 @@ function ExerciseInline({
     }
   }
 
+  // Keyboard shortcuts for exercise self-rating (1/2/3) and continue (Enter)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (phase === 'self-rating' && !explanationCtx && !isSubmitting) {
+        if (!rated) {
+          const keyMap: Record<string, number> = { '1': 0.2, '2': 0.5, '3': 0.9 }
+          const score = keyMap[e.key]
+          if (score !== undefined) { e.preventDefault(); handleRate(score) }
+        } else if (e.key === 'Enter') {
+          e.preventDefault(); onComplete(item.id)
+        }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [phase, explanationCtx, isSubmitting, rated, item.id, onComplete])
+
   const handleAnswerSubmit = (answer: string) => {
     if (isPro && answer.trim() && exercise) {
       setPhase('grading')
@@ -1339,14 +1378,14 @@ function ExerciseInline({
         <div className="space-y-2">
           <p className="text-xs font-medium text-[var(--text-muted)]">{t('queue.howDidYouDo')}</p>
           <div className="flex gap-2">
-            {EXERCISE_RATINGS.map(btn => (
+            {EXERCISE_RATINGS.map((btn, idx) => (
               <button
                 key={btn.score}
                 onClick={() => handleRate(btn.score)}
                 disabled={isSubmitting}
                 className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
               >
-                {t(btn.labelKey)}
+                <span className="text-[10px] opacity-50 mr-1">{idx + 1}</span>{t(btn.labelKey)}
               </button>
             ))}
           </div>
@@ -1390,7 +1429,7 @@ function ExerciseInline({
             onClick={() => onComplete(item.id)}
             className="btn-primary text-sm px-4 py-2 mt-2"
           >
-            {t('common.continue')}
+            {t('common.continue')} <span className="text-[10px] opacity-60 ml-1">Enter</span>
           </button>
         </div>
       )}
@@ -1503,6 +1542,20 @@ function ConceptQuizInline({
     }
   }
 
+  // Keyboard shortcuts for concept quiz self-rating (1/2/3)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (phase === 'self-rating' && revealed && !explanationCtx && !isSubmitting) {
+        const keyMap: Record<string, number> = { '1': 1, '2': 3, '3': 5 }
+        const quality = keyMap[e.key]
+        if (quality !== undefined) { e.preventDefault(); handleRate(quality) }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [phase, revealed, explanationCtx, isSubmitting])
+
   const handleAnswerSubmit = (answer: string) => {
     setUserAnswer(answer)
     if (isPro && answer.trim()) {
@@ -1596,14 +1649,14 @@ function ConceptQuizInline({
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-[var(--text-muted)]">{t('queue.howWellExplain')}</p>
                   <div className="flex gap-2">
-                    {CONCEPT_RATINGS.map(btn => (
+                    {CONCEPT_RATINGS.map((btn, idx) => (
                       <button
                         key={btn.quality}
                         onClick={() => handleRate(btn.quality)}
                         disabled={isSubmitting}
                         className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 ${btn.color}`}
                       >
-                        {t(btn.labelKey)}
+                        <span className="text-[10px] opacity-50 mr-1">{idx + 1}</span>{t(btn.labelKey)}
                       </button>
                     ))}
                   </div>

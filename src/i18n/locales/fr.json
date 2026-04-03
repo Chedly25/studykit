@@ -1170,7 +1170,39 @@
     "parsingFile": "Lecture de votre document...",
     "uploadPrompt": "Cliquez pour importer des PDF, programmes ou supports de cours",
     "welcomeStart": "C'est parti",
-    "welcomeSkip": "Passer et explorer par vous-même"
+    "welcomeSkip": "Passer et explorer par vous-même",
+    "manualSetupTitle": "Configuration manuelle",
+    "manualSetupSubtitle": "Entrez les détails de votre examen pour commencer",
+    "examNameLabel": "Que préparez-vous ?",
+    "examNamePlaceholder": "ex : CRFPA, Chimie organique, DELF B2",
+    "examTypeLabel": "Catégorie",
+    "examDateLabel": "Date d'examen (optionnel)",
+    "createProfile": "Créer le profil",
+    "orTryAgain": "Ou réessayer la configuration IA"
+  },
+  "streak": {
+    "atRiskTitle": "Votre série de {{count}} jours est en danger",
+    "atRiskAction": "Étudier maintenant"
+  },
+  "hints": {
+    "queueTitle": "Votre file d'étude quotidienne",
+    "queueDescription": "L'IA sélectionne le bon mélange de cartes mémoire, exercices et quiz conceptuels selon vos niveaux de maîtrise. Les items s'adaptent au fil de votre étude.",
+    "sourcesTitle": "Votre bibliothèque d'étude",
+    "sourcesDescription": "Importez des PDF, notes ou examens passés ici. L'IA extrait les sujets, génère des cartes mémoire et crée des exercices à partir de vos documents.",
+    "analyticsTitle": "Votre tableau de bord de progression",
+    "analyticsDescription": "Les tendances d'étude, changements de maîtrise et conseils du coach IA apparaissent ici au fil de vos études."
+  },
+  "loading": {
+    "tips": [
+      "La répétition espacée renforce la mémoire jusqu'à 200%",
+      "La régularité bat l'intensité — 15 minutes par jour surpassent le bachotage du week-end",
+      "Se tester soi-même est l'une des techniques d'étude les plus efficaces",
+      "Le sommeil consolide l'apprentissage — étudiez avant de dormir pour mieux retenir",
+      "Enseigner un concept à quelqu'un est le moyen le plus rapide de le maîtriser",
+      "Les pauses entre les sessions d'étude améliorent la mémorisation à long terme",
+      "Mélanger différents types de problèmes renforce la compréhension",
+      "Votre cerveau forme des connexions plus fortes quand vous rappelez activement l'information"
+    ]
   },
   "nudge": {
     "revisited": "Vous avez revu {{topic}} {{count}} fois maintenant — c'est comme ça que se construit une compréhension profonde",

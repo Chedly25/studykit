@@ -11,6 +11,7 @@ import { useStudentModel } from '../hooks/useStudentModel'
 import { Link } from 'react-router-dom'
 import { BarChart3, FileText, Lightbulb, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react'
 import { EmptyState } from '../components/EmptyState'
+import { FirstVisitHint } from '../components/FirstVisitHint'
 import { useTranslation, Trans } from 'react-i18next'
 import { CalibrationChart } from '../components/analytics/CalibrationChart'
 import { ErrorPatternChart } from '../components/analytics/ErrorPatternChart'
@@ -138,6 +139,15 @@ export default function Analytics() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 animate-fade-in">
+      {activeProfile && (
+        <FirstVisitHint
+          hintKey="analytics"
+          profileId={activeProfile.id}
+          icon={BarChart3}
+          title={t('hints.analyticsTitle')}
+          description={t('hints.analyticsDescription')}
+        />
+      )}
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-2xl font-bold text-[var(--text-heading)]">{t('analytics.title')}</h1>
         <Link to="/report" className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5">

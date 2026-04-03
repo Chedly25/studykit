@@ -7,7 +7,11 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
-import { ArrowRight, Upload, ChevronDown, ChevronUp, Check, AlertCircle, RefreshCw } from 'lucide-react'
+import { ArrowRight, Upload, ChevronDown, ChevronUp, Check, AlertCircle, RefreshCw, BookOpen } from 'lucide-react'
+import { useAuth } from '@clerk/clerk-react'
+import { db } from '../db'
+import type { ExamType } from '../db/schema'
+import { getExamBlueprint } from '../lib/examTopicMaps'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useOnboarding } from '../hooks/useOnboarding'
@@ -413,31 +417,143 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
   )
 }
 
-// ─── Fallback when AI unavailable ─────────────────────────
+// ─── Manual setup form (fallback + skip) ──────────────────
 
-function FallbackOnboarding({ onReset, lastError }: { onReset: () => void; lastError?: string | null }) {
+const EXAM_TYPES: { value: ExamType; label: string }[] = [
+  { value: 'university-course', label: 'University Course' },
+  { value: 'professional-exam', label: 'Professional Exam' },
+  { value: 'graduate-research', label: 'Graduate & PhD' },
+  { value: 'language-learning', label: 'Language Learning' },
+  { value: 'custom', label: 'Custom' },
+]
+
+function ManualSetupForm({ onReset, navigate, userId }: {
+  onReset?: () => void
+  navigate: (path: string, opts?: { replace?: boolean }) => void
+  userId?: string
+}) {
+  const { t } = useTranslation()
+  const [examName, setExamName] = useState('')
+  const [examType, setExamType] = useState<ExamType>('university-course')
+  const [examDate, setExamDate] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!examName.trim() || isSubmitting) return
+    setIsSubmitting(true)
+
+    try {
+      const profileId = crypto.randomUUID()
+      const blueprint = getExamBlueprint(examType)
+
+      await db.examProfiles.put({
+        id: profileId,
+        name: examName.trim(),
+        examType,
+        examDate,
+        isActive: false,
+        passingThreshold: blueprint.defaultPassingThreshold,
+        weeklyTargetHours: 15,
+        userId: userId ?? 'local',
+        createdAt: new Date().toISOString(),
+        profileMode: 'study',
+      })
+
+      // Activate the profile
+      await db.examProfiles.toCollection().modify({ isActive: false })
+      await db.examProfiles.update(profileId, { isActive: true })
+
+      // Set post-onboarding context for dashboard
+      localStorage.setItem('postOnboarding', JSON.stringify({
+        profileId,
+        completedAt: Date.now(),
+        topicCount: 0,
+        docsQueuedCount: 0,
+      }))
+
+      sessionStorage.removeItem('onboarding_state_v2')
+      navigate('/dashboard', { replace: true })
+    } catch {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
-    <div className="max-w-xl mx-auto py-16 px-4 text-center animate-fade-in">
-      <div className="glass-card p-8 space-y-4">
-        <AlertCircle className="w-10 h-10 mx-auto text-amber-500" />
-        <h2 className="text-lg font-semibold text-[var(--text-heading)]">
-          AI temporarily unavailable
-        </h2>
-        <p className="text-sm text-[var(--text-muted)]">
-          We are using a guided setup experience that requires AI. Please try again in a moment.
-        </p>
-        {lastError && (
-          <details className="text-left">
-            <summary className="text-xs text-[var(--text-faint)] cursor-pointer">Debug info</summary>
-            <pre className="text-[10px] text-[var(--text-faint)] mt-1 p-2 bg-[var(--bg-input)] rounded overflow-x-auto whitespace-pre-wrap break-all">{lastError}</pre>
-          </details>
+    <div className="max-w-xl mx-auto py-16 px-4 animate-fade-in">
+      <div className="glass-card p-8">
+        <div className="text-center mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--accent-bg)] flex items-center justify-center mx-auto mb-4">
+            <BookOpen className="w-7 h-7 text-[var(--accent-text)]" />
+          </div>
+          <h2 className="text-lg font-semibold text-[var(--text-heading)]">
+            {t('onboarding.manualSetupTitle')}
+          </h2>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            {t('onboarding.manualSetupSubtitle')}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-[var(--text-heading)] mb-1 block">
+              {t('onboarding.examNameLabel')}
+            </label>
+            <input
+              type="text"
+              value={examName}
+              onChange={e => setExamName(e.target.value)}
+              placeholder={t('onboarding.examNamePlaceholder')}
+              className="input-field w-full"
+              required
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-[var(--text-heading)] mb-1 block">
+              {t('onboarding.examTypeLabel')}
+            </label>
+            <select
+              value={examType}
+              onChange={e => setExamType(e.target.value as ExamType)}
+              className="select-field w-full"
+            >
+              {EXAM_TYPES.map(et => (
+                <option key={et.value} value={et.value}>{et.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-[var(--text-heading)] mb-1 block">
+              {t('onboarding.examDateLabel')}
+            </label>
+            <input
+              type="date"
+              value={examDate}
+              onChange={e => setExamDate(e.target.value)}
+              className="input-field w-full"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={!examName.trim() || isSubmitting}
+            className="btn-primary w-full py-2.5 text-sm font-semibold rounded-xl"
+          >
+            {t('onboarding.createProfile')}
+          </button>
+        </form>
+
+        {onReset && (
+          <button
+            onClick={onReset}
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors mt-4 mx-auto block"
+          >
+            {t('onboarding.orTryAgain')}
+          </button>
         )}
-        <button
-          onClick={onReset}
-          className="btn-primary px-6 py-2.5 text-sm font-semibold rounded-xl inline-flex items-center gap-2"
-        >
-          <RefreshCw className="w-4 h-4" /> Try Again
-        </button>
       </div>
     </div>
   )
@@ -597,9 +713,11 @@ function WelcomeScreen({ firstName, onStart, onSkip }: { firstName?: string | nu
 export default function Onboarding() {
   const navigate = useNavigate()
   const { user } = useUser()
+  const { userId } = useAuth()
   const { state, sendMessage, respondToWidget, completeOnboarding, resetOnboarding } = useOnboarding()
   const { profiles, profilesLoaded } = useExamProfile()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [showManualSetup, setShowManualSetup] = useState(false)
 
   // Show welcome screen only for fresh onboarding (no messages yet)
   const [showWelcome, setShowWelcome] = useState(
@@ -637,6 +755,10 @@ export default function Onboarding() {
   }, [state.displayMessages.length, state.streamingText])
 
   // ── Welcome screen ───────────────────────────────────
+  if (showManualSetup) {
+    return <ManualSetupForm navigate={navigate} userId={userId ?? undefined} />
+  }
+
   if (showWelcome) {
     return (
       <WelcomeScreen
@@ -644,14 +766,14 @@ export default function Onboarding() {
         onStart={() => {
           setShowWelcome(false)
         }}
-        onSkip={() => navigate('/dashboard', { replace: true })}
+        onSkip={() => setShowManualSetup(true)}
       />
     )
   }
 
-  // ── Fallback ──────────────────────────────────────────
+  // ── Fallback — manual form with retry option ─────────
   if (state.useFallback) {
-    return <FallbackOnboarding onReset={resetOnboarding} lastError={state.error} />
+    return <ManualSetupForm onReset={resetOnboarding} navigate={navigate} userId={userId ?? undefined} />
   }
 
   // Determine if we should show the free-text input (hide when error is showing)
