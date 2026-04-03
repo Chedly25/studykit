@@ -31,8 +31,8 @@ export default function Pricing() {
     t('subscription.proFeatures.priority'),
   ]
 
-  const price = interval === 'year' ? '169.99' : '19.90'
-  const perMonth = interval === 'year' ? '14.17' : '19.90'
+  const price = interval === 'year' ? '199.99' : '19.99'
+  const perMonth = interval === 'year' ? '16.67' : '19.99'
   const savings = interval === 'year' ? t('subscription.yearlySavings') : null
 
   return (
