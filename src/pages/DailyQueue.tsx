@@ -1117,6 +1117,26 @@ function ExerciseInline({
     }
   }, [phase, exerciseAI.error, exerciseAI.isStreaming, exerciseAI.quotaExceeded])
 
+  // Keyboard shortcuts for exercise self-rating (1/2/3) and continue (Enter)
+  const handleRateExRef = useRef(handleRate)
+  handleRateExRef.current = handleRate
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (phase === 'self-rating' && !explanationCtx && !isSubmitting) {
+        if (!rated) {
+          const keyMap: Record<string, number> = { '1': 0.2, '2': 0.5, '3': 0.9 }
+          const score = keyMap[e.key]
+          if (score !== undefined) { e.preventDefault(); handleRateExRef.current(score) }
+        } else if (e.key === 'Enter') {
+          e.preventDefault(); onComplete(item.id)
+        }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [phase, explanationCtx, isSubmitting, rated, item.id, onComplete])
+
   // Early return AFTER all hooks
   if (!exercise) return <p className="text-sm text-[var(--text-muted)]">{t('queue.loadingExercise')}</p>
 
@@ -1171,24 +1191,6 @@ function ExerciseInline({
       setIsSubmitting(false)
     }
   }
-
-  // Keyboard shortcuts for exercise self-rating (1/2/3) and continue (Enter)
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (phase === 'self-rating' && !explanationCtx && !isSubmitting) {
-        if (!rated) {
-          const keyMap: Record<string, number> = { '1': 0.2, '2': 0.5, '3': 0.9 }
-          const score = keyMap[e.key]
-          if (score !== undefined) { e.preventDefault(); handleRate(score) }
-        } else if (e.key === 'Enter') {
-          e.preventDefault(); onComplete(item.id)
-        }
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [phase, explanationCtx, isSubmitting, rated, item.id, onComplete])
 
   const handleAnswerSubmit = (answer: string) => {
     if (isPro && answer.trim() && exercise) {
@@ -1494,6 +1496,21 @@ function ConceptQuizInline({
     }
   }, [phase, evaluator.quality, evaluator.error])
 
+  // Keyboard shortcuts for concept quiz self-rating (1/2/3)
+  const handleRateCqRef = useRef<((q: number) => void) | null>(null)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (phase === 'self-rating' && revealed && !explanationCtx && !isSubmitting) {
+        const keyMap: Record<string, number> = { '1': 1, '2': 3, '3': 5 }
+        const quality = keyMap[e.key]
+        if (quality !== undefined && handleRateCqRef.current) { e.preventDefault(); handleRateCqRef.current(quality) }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [phase, revealed, explanationCtx, isSubmitting])
+
   // Early return AFTER all hooks
   if (!card) return <p className="text-sm text-[var(--text-muted)]">{t('queue.loadingConcept')}</p>
 
@@ -1541,20 +1558,7 @@ function ConceptQuizInline({
       setIsSubmitting(false)
     }
   }
-
-  // Keyboard shortcuts for concept quiz self-rating (1/2/3)
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (phase === 'self-rating' && revealed && !explanationCtx && !isSubmitting) {
-        const keyMap: Record<string, number> = { '1': 1, '2': 3, '3': 5 }
-        const quality = keyMap[e.key]
-        if (quality !== undefined) { e.preventDefault(); handleRate(quality) }
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [phase, revealed, explanationCtx, isSubmitting])
+  handleRateCqRef.current = handleRate
 
   const handleAnswerSubmit = (answer: string) => {
     setUserAnswer(answer)
