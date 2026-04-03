@@ -31,9 +31,9 @@ export default function Pricing() {
     t('subscription.proFeatures.priority'),
   ]
 
-  const price = interval === 'year' ? 179 : 19
-  const perMonth = interval === 'year' ? '14.92' : '19'
-  const savings = interval === 'year' ? t('subscription.yearlySavings', 'Save €49/yr') : null
+  const price = interval === 'year' ? '169.99' : '19.90'
+  const perMonth = interval === 'year' ? '14.17' : '19.90'
+  const savings = interval === 'year' ? t('subscription.yearlySavings') : null
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 animate-fade-in">
