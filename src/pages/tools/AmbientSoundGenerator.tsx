@@ -19,13 +19,14 @@ interface SoundConfig {
   icon: typeof Volume2
   color: string
   activeColor: string
+  audioFile?: string // undefined = synthesized white noise
 }
 
 const SOUND_CONFIGS: SoundConfig[] = [
   { id: 'white', label: 'White Noise', icon: Volume2, color: 'text-[var(--text-muted)]', activeColor: 'text-emerald-400' },
-  { id: 'rain', label: 'Rain', icon: CloudRain, color: 'text-[var(--text-muted)]', activeColor: 'text-blue-400' },
-  { id: 'coffee', label: 'Coffee Shop', icon: Coffee, color: 'text-[var(--text-muted)]', activeColor: 'text-orange-400' },
-  { id: 'lofi', label: 'Lo-fi', icon: Music, color: 'text-[var(--text-muted)]', activeColor: 'text-purple-400' },
+  { id: 'rain', label: 'Rain', icon: CloudRain, color: 'text-[var(--text-muted)]', activeColor: 'text-blue-400', audioFile: '/sounds/rain.mp3' },
+  { id: 'coffee', label: 'Coffee Shop', icon: Coffee, color: 'text-[var(--text-muted)]', activeColor: 'text-orange-400', audioFile: '/sounds/cafe.mp3' },
+  { id: 'lofi', label: 'Lo-fi', icon: Music, color: 'text-[var(--text-muted)]', activeColor: 'text-purple-400', audioFile: '/sounds/lofi.mp3' },
 ]
 
 function generateWhiteNoiseBuffer(ctx: AudioContext, duration: number): AudioBuffer {
@@ -39,39 +40,15 @@ function generateWhiteNoiseBuffer(ctx: AudioContext, duration: number): AudioBuf
   return buffer
 }
 
-function generateBrownNoiseBuffer(ctx: AudioContext, duration: number): AudioBuffer {
-  const sampleRate = ctx.sampleRate
-  const length = sampleRate * duration
-  const buffer = ctx.createBuffer(1, length, sampleRate)
-  const data = buffer.getChannelData(0)
-
-  let lastSample = 0
-  for (let i = 0; i < length; i++) {
-    const white = Math.random() * 2 - 1
-    lastSample = lastSample * 0.99 + white * 0.02
-    data[i] = lastSample
-  }
-
-  let max = 0
-  for (let i = 0; i < length; i++) {
-    const abs = Math.abs(data[i])
-    if (abs > max) max = abs
-  }
-  if (max > 0) {
-    for (let i = 0; i < length; i++) {
-      data[i] /= max
-    }
-  }
-
-  return buffer
-}
-
 interface SourceRef {
-  source: AudioBufferSourceNode
+  type: 'synthesized' | 'audio-file'
+  // Synthesized (white noise)
+  source?: AudioBufferSourceNode
+  // Audio file
+  mediaElement?: HTMLAudioElement
+  mediaSource?: MediaElementAudioSourceNode
+  // Shared
   gain: GainNode
-  filter?: BiquadFilterNode
-  lfo?: OscillatorNode
-  lfoGain?: GainNode
 }
 
 export default function AmbientSoundGenerator() {
@@ -88,7 +65,6 @@ export default function AmbientSoundGenerator() {
   const masterGainRef = useRef<GainNode | null>(null)
   const sourcesRef = useRef<Partial<Record<SoundType, SourceRef>>>({})
   const whiteBufferRef = useRef<AudioBuffer | null>(null)
-  const brownBufferRef = useRef<AudioBuffer | null>(null)
 
   useEffect(() => {
     return () => {
@@ -96,9 +72,12 @@ export default function AmbientSoundGenerator() {
       if (ctx) {
         Object.values(sourcesRef.current).forEach(ref => {
           if (ref) {
-            try { ref.source.stop() } catch { /* already stopped */ }
-            if (ref.lfo) {
-              try { ref.lfo.stop() } catch { /* already stopped */ }
+            if (ref.source) {
+              try { ref.source.stop() } catch { /* already stopped */ }
+            }
+            if (ref.mediaElement) {
+              ref.mediaElement.pause()
+              ref.mediaElement.src = ''
             }
           }
         })
@@ -130,7 +109,6 @@ export default function AmbientSoundGenerator() {
     masterGainRef.current = masterGain
 
     whiteBufferRef.current = generateWhiteNoiseBuffer(ctx, 2)
-    brownBufferRef.current = generateBrownNoiseBuffer(ctx, 2)
 
     setAudioReady(true)
   }, [masterVolume])
@@ -147,84 +125,46 @@ export default function AmbientSoundGenerator() {
   const startSound = useCallback((type: SoundType, volume: number) => {
     const ctx = audioCtxRef.current
     const masterGain = masterGainRef.current
-    if (!ctx || !masterGain || !whiteBufferRef.current || !brownBufferRef.current) return
+    if (!ctx || !masterGain) return
 
+    // Stop existing
     const existing = sourcesRef.current[type]
     if (existing) {
-      try { existing.source.stop() } catch { /* already stopped */ }
-      if (existing.lfo) {
-        try { existing.lfo.stop() } catch { /* already stopped */ }
+      if (existing.source) {
+        try { existing.source.stop() } catch { /* already stopped */ }
+      }
+      if (existing.mediaElement) {
+        existing.mediaElement.pause()
+        existing.mediaElement.src = ''
       }
     }
 
     const gainNode = ctx.createGain()
     gainNode.gain.value = volume / 100
 
-    let source: AudioBufferSourceNode
-    let filter: BiquadFilterNode | undefined
-    let lfo: OscillatorNode | undefined
-    let lfoGain: GainNode | undefined
+    const config = SOUND_CONFIGS.find(c => c.id === type)
 
-    switch (type) {
-      case 'white': {
-        source = ctx.createBufferSource()
-        source.buffer = whiteBufferRef.current
-        source.loop = true
-        source.connect(gainNode)
-        gainNode.connect(masterGain)
-        break
-      }
-      case 'rain': {
-        source = ctx.createBufferSource()
-        source.buffer = whiteBufferRef.current
-        source.loop = true
-        filter = ctx.createBiquadFilter()
-        filter.type = 'lowpass'
-        filter.frequency.value = 800
-        filter.Q.value = 0.5
-        source.connect(filter)
-        filter.connect(gainNode)
-        gainNode.connect(masterGain)
-        break
-      }
-      case 'coffee': {
-        source = ctx.createBufferSource()
-        source.buffer = whiteBufferRef.current
-        source.loop = true
-        filter = ctx.createBiquadFilter()
-        filter.type = 'lowpass'
-        filter.frequency.value = 1000
-        filter.Q.value = 0.7
-        const filter2 = ctx.createBiquadFilter()
-        filter2.type = 'lowpass'
-        filter2.frequency.value = 500
-        filter2.Q.value = 0.5
-        source.connect(filter)
-        filter.connect(filter2)
-        filter2.connect(gainNode)
-        gainNode.connect(masterGain)
-        break
-      }
-      case 'lofi': {
-        source = ctx.createBufferSource()
-        source.buffer = brownBufferRef.current
-        source.loop = true
-        lfo = ctx.createOscillator()
-        lfo.type = 'sine'
-        lfo.frequency.value = 0.15
-        lfoGain = ctx.createGain()
-        lfoGain.gain.value = 0.15
-        lfo.connect(lfoGain)
-        lfoGain.connect(gainNode.gain)
-        lfo.start()
-        source.connect(gainNode)
-        gainNode.connect(masterGain)
-        break
-      }
+    if (config?.audioFile) {
+      // Play real audio file
+      const audio = new Audio(config.audioFile)
+      audio.loop = true
+      audio.crossOrigin = 'anonymous'
+      const mediaSource = ctx.createMediaElementSource(audio)
+      mediaSource.connect(gainNode)
+      gainNode.connect(masterGain)
+      audio.play().catch(() => { /* autoplay blocked — user gesture already handled via initAudio */ })
+      sourcesRef.current[type] = { type: 'audio-file', mediaElement: audio, mediaSource, gain: gainNode }
+    } else {
+      // Synthesize white noise
+      if (!whiteBufferRef.current) return
+      const source = ctx.createBufferSource()
+      source.buffer = whiteBufferRef.current
+      source.loop = true
+      source.connect(gainNode)
+      gainNode.connect(masterGain)
+      source.start()
+      sourcesRef.current[type] = { type: 'synthesized', source, gain: gainNode }
     }
-
-    source.start()
-    sourcesRef.current[type] = { source, gain: gainNode, filter, lfo, lfoGain }
   }, [])
 
   const stopSound = useCallback((type: SoundType) => {
@@ -234,9 +174,12 @@ export default function AmbientSoundGenerator() {
 
     ref.gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.05)
     setTimeout(() => {
-      try { ref.source.stop() } catch { /* already stopped */ }
-      if (ref.lfo) {
-        try { ref.lfo.stop() } catch { /* already stopped */ }
+      if (ref.source) {
+        try { ref.source.stop() } catch { /* already stopped */ }
+      }
+      if (ref.mediaElement) {
+        ref.mediaElement.pause()
+        ref.mediaElement.src = ''
       }
       delete sourcesRef.current[type]
     }, 60)
@@ -361,7 +304,7 @@ export default function AmbientSoundGenerator() {
               <ul className="text-[var(--text-muted)] text-sm space-y-1">
                 <li>Mix multiple sounds for your ideal study atmosphere.</li>
                 <li>Lower the master volume and adjust individual levels for a subtle background.</li>
-                <li>All sounds are synthesized in the browser — no downloads needed.</li>
+                <li>Rain, Coffee Shop, and Lo-fi use real audio recordings. White Noise is synthesized in the browser.</li>
               </ul>
             </div>
           </div>

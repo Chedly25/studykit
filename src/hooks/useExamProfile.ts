@@ -117,6 +117,49 @@ export function useExamProfile() {
     await db.topics.bulkPut(topics)
     await db.subtopics.bulkPut(subtopics)
 
+    // Seed CRFPA starter exercises if profile name contains CRFPA-related keywords
+    if (/crfpa|barreau|avocat/i.test(name)) {
+      try {
+        const { CRFPA_EXERCISES } = await import('../db/seed/crfpa')
+        const sourceId = crypto.randomUUID()
+        await db.examSources.put({
+          id: sourceId,
+          examProfileId: profileId,
+          documentId: '',
+          name: 'CRFPA Starter Exercises',
+          year: new Date().getFullYear(),
+          totalExercises: CRFPA_EXERCISES.length,
+          parsedAt: new Date().toISOString(),
+        })
+        const topicLookup = new Map(topics.map(t => [t.name.toLowerCase(), t.id]))
+        const today = new Date().toISOString().slice(0, 10)
+        await db.exercises.bulkPut(
+          CRFPA_EXERCISES.map((ex, i) => ({
+            id: crypto.randomUUID(),
+            examSourceId: sourceId,
+            examProfileId: profileId,
+            exerciseNumber: i + 1,
+            text: ex.text,
+            solutionText: ex.solutionText,
+            difficulty: ex.difficulty,
+            points: undefined,
+            topicIds: JSON.stringify(
+              [...topicLookup.entries()]
+                .filter(([name]) => name.includes(ex.topicName.toLowerCase()))
+                .map(([, id]) => id)
+            ),
+            status: 'not_attempted' as const,
+            attemptCount: 0,
+            createdAt: new Date().toISOString(),
+            easeFactor: 2.5,
+            interval: 0,
+            repetitions: 0,
+            nextReviewDate: today,
+          }))
+        )
+      } catch { /* non-critical — seed failure shouldn't block profile creation */ }
+    }
+
     return profileId
   }, [effectiveUserId])
 

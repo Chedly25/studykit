@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams, Link } from 'react-router-dom'
-import { ListChecks, Filter, Star, Check, Clock, Send, Bot, RotateCcw, Loader2 } from 'lucide-react'
+import { ListChecks, Filter, Star, Check, Clock, Send, Bot, RotateCcw, Loader2, Plus } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useExerciseBank } from '../hooks/useExerciseBank'
 import { useExerciseAI } from '../hooks/useExerciseAI'
 import { MathText } from '../components/MathText'
+import { CreateExerciseModal } from '../components/exercises/CreateExerciseModal'
 import type { Exercise } from '../db/schema'
 
 function DifficultyStars({ level }: { level: number }) {
@@ -79,6 +80,7 @@ export default function Exercises() {
   const { exercises, examSources } = useExerciseBank(profileId)
   const exerciseAI = useExerciseAI(profileId)
 
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [filterSubject, setFilterSubject] = useState('')
   const [filterChapter, setFilterChapter] = useState('')
   const [filterTopic, setFilterTopic] = useState('')
@@ -183,6 +185,12 @@ export default function Exercises() {
             {exercises.length} exercises from {examSources.length} exam{examSources.length !== 1 ? 's' : ''}
           </p>
         </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-1.5"
+        >
+          <Plus size={16} /> Add Exercise
+        </button>
       </div>
 
       {/* Filters */}
@@ -364,6 +372,15 @@ export default function Exercises() {
             </div>
           )}
         </>
+      )}
+
+      {showCreateModal && (
+        <CreateExerciseModal
+          examProfileId={activeProfile!.id}
+          topics={topics}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={() => {}}
+        />
       )}
     </div>
   )

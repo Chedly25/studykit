@@ -13,6 +13,8 @@ import { LanguageToggle } from './LanguageToggle'
 import { ExamProfileSelector } from './knowledge/ExamProfileSelector'
 const ChatPanel = lazy(() => import('./chat/ChatPanel').then(m => ({ default: m.ChatPanel })))
 const SearchModal = lazy(() => import('./SearchModal').then(m => ({ default: m.SearchModal })))
+import { KeyboardShortcutsModal } from './KeyboardShortcutsModal'
+import { OnboardingTour } from './OnboardingTour'
 import { ProBadge } from './subscription/ProBadge'
 import { NotificationBell } from './NotificationBell'
 import { useSubscription } from '../hooks/useSubscription'
@@ -73,17 +75,35 @@ export function Layout() {
 
   const closeSidebar = () => setSidebarOpen(false)
 
-  // Cmd+K search shortcut
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
+
+  // Global keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Cmd+K — toggle search
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
         setSearchOpen(prev => !prev)
+        return
+      }
+
+      // Escape — close overlays in priority order
+      if (e.key === 'Escape') {
+        if (shortcutsOpen) { setShortcutsOpen(false); return }
+        if (searchOpen) { setSearchOpen(false); return }
+        if (chatOpen) { setChatOpen(false); return }
+        return
+      }
+
+      // ? — show keyboard shortcuts (only when not typing in an input)
+      if (e.key === '?' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        e.preventDefault()
+        setShortcutsOpen(prev => !prev)
       }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [])
+  }, [searchOpen, chatOpen, shortcutsOpen])
 
   // Open chat panel from anywhere via custom event (with optional prefill)
   useEffect(() => {
@@ -207,11 +227,11 @@ export function Layout() {
 
             {/* Nav links — 6 core items */}
             <nav className="flex-1 px-2 py-2 space-y-0.5">
-              <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} collapsed={collapsed} />
-              <SidebarLink to="/practice-exam" icon={ClipboardCheck} label="Exams" active={location.pathname === '/practice-exam'} collapsed={collapsed} />
-              <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} collapsed={collapsed} />
-              <SidebarLink to="/sources" icon={FolderOpen} label="Library" active={location.pathname === '/sources'} collapsed={collapsed} />
-              <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} collapsed={collapsed} />
+              <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} collapsed={collapsed} dataTour="queue" />
+              <SidebarLink to="/practice-exam" icon={ClipboardCheck} label="Exams" active={location.pathname === '/practice-exam'} collapsed={collapsed} dataTour="exams" />
+              <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} collapsed={collapsed} dataTour="study" />
+              <SidebarLink to="/sources" icon={FolderOpen} label="Library" active={location.pathname === '/sources'} collapsed={collapsed} dataTour="library" />
+              <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} collapsed={collapsed} dataTour="progress" />
               <SidebarLink to="/study-plan" icon={CalendarDays} label="Plan" active={location.pathname === '/study-plan'} collapsed={collapsed} />
             </nav>
 
@@ -354,6 +374,12 @@ export function Layout() {
         <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
       </Suspense>
 
+      {/* Keyboard Shortcuts */}
+      {shortcutsOpen && <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} />}
+
+      {/* Onboarding Tour */}
+      {activeProfile && <OnboardingTour profileId={activeProfile.id} />}
+
       {/* PWA prompts */}
       <UpdatePrompt />
       <InstallPrompt />
@@ -365,7 +391,7 @@ export function Layout() {
 
 
 function SidebarLink({
-  to, icon: Icon, label, active, onClick, pro, collapsed,
+  to, icon: Icon, label, active, onClick, pro, collapsed, dataTour,
 }: {
   to: string
   icon: React.ComponentType<{ size?: number }>
@@ -374,12 +400,14 @@ function SidebarLink({
   onClick?: () => void
   pro?: boolean
   collapsed: boolean
+  dataTour?: string
 }) {
   if (collapsed) {
     return (
       <Link
         to={to}
         onClick={onClick}
+        data-tour={dataTour}
         className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors ${
           active
             ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
@@ -396,6 +424,7 @@ function SidebarLink({
     <Link
       to={to}
       onClick={onClick}
+      data-tour={dataTour}
       className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
         active
           ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'

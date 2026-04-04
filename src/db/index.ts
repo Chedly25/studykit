@@ -75,6 +75,7 @@ export class StudiesKitDB extends Dexie {
   assignments!: Table<Assignment>
   conversations!: Table<Conversation>
   chatMessages!: Table<ChatMessage>
+  chatFeedback!: Table<import('./schema').ChatFeedback>
   userPreferences!: Table<UserPreferences>
   dailyStudyLogs!: Table<DailyStudyLog>
   tutorPreferences!: Table<TutorPreferences>
@@ -368,6 +369,11 @@ export class StudiesKitDB extends Dexie {
     // v33: Exam DNA (style profiles from real past papers)
     this.version(33).stores({
       examDNA: 'id, examProfileId, [examProfileId+subject]',
+    })
+
+    // v34: Chat feedback (thumbs up/down on AI responses)
+    this.version(34).stores({
+      chatFeedback: 'id, conversationId, examProfileId, rating',
     })
   }
 }

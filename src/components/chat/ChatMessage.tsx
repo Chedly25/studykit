@@ -11,6 +11,7 @@ import { StudyPlanCanvas } from './StudyPlanCanvas'
 import { ConceptCardBlock } from './ConceptCardBlock'
 import { InlineQuiz } from './InlineQuiz'
 import { CodePlaygroundBlock } from './CodePlaygroundBlock'
+import { MessageFeedback } from './MessageFeedback'
 
 const CANVAS_MARKER = '[canvas:study-plan]'
 const CARD_RE = /\[card:([a-f0-9-]+)\]/g
@@ -20,11 +21,14 @@ const PARTIAL_MARKER_RE = /\[(?:card|quiz|code|canvas)(?::[^\]]*)?$/
 
 interface Props {
   message: Message
+  messageIndex?: number
+  conversationId?: string
+  examProfileId?: string
   onCitationClick?: (citation: Citation) => void
   isStreaming?: boolean
 }
 
-export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Props) {
+export function ChatMessageBubble({ message, messageIndex, conversationId, examProfileId, onCitationClick, isStreaming }: Props) {
   const isUser = message.role === 'user'
   const content = typeof message.content === 'string' ? message.content : ''
 
@@ -136,7 +140,7 @@ export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Pro
   const proseClass = `text-base prose prose-base max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-3 prose-code:text-[var(--accent-text)] prose-code:bg-[var(--accent-bg)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded ${isStreaming ? 'streaming-cursor' : ''}`
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3 group">
       <div className="w-8 h-8 rounded-full bg-[var(--accent-bg)] flex items-center justify-center flex-shrink-0 mt-0.5">
         <Bot className="w-4 h-4 text-[var(--accent-text)]" />
       </div>
@@ -174,6 +178,13 @@ export function ChatMessageBubble({ message, onCitationClick, isStreaming }: Pro
               />
             ))}
           </div>
+        )}
+        {!isStreaming && conversationId && examProfileId && messageIndex !== undefined && (
+          <MessageFeedback
+            messageIndex={messageIndex}
+            conversationId={conversationId}
+            examProfileId={examProfileId}
+          />
         )}
       </div>
     </div>

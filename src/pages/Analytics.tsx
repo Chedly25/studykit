@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useAnalytics } from '../hooks/useAnalytics'
@@ -11,6 +11,7 @@ import { useStudentModel } from '../hooks/useStudentModel'
 import { Link } from 'react-router-dom'
 import { BarChart3, FileText, Lightbulb, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react'
 import { EmptyState } from '../components/EmptyState'
+import { SkeletonBlock } from '../components/Skeleton'
 import { FirstVisitHint } from '../components/FirstVisitHint'
 import { useTranslation, Trans } from 'react-i18next'
 import { CalibrationChart } from '../components/analytics/CalibrationChart'
@@ -56,6 +57,13 @@ export default function Analytics() {
   const [drillDownTopic, setDrillDownTopic] = useState<string | null>(null)
   const [drillDownType, setDrillDownType] = useState<string | null>(null)
 
+  // Auto-select first topic for mastery trend chart
+  useEffect(() => {
+    if (selectedTrendTopic === '' && topics.length > 0) {
+      setSelectedTrendTopic(topics[0].id)
+    }
+  }, [topics, selectedTrendTopic])
+
   const masterySnapshots = useLiveQuery(
     () => profileId
       ? db.masterySnapshots.where('examProfileId').equals(profileId).toArray()
@@ -63,12 +71,14 @@ export default function Analytics() {
     [profileId]
   ) ?? []
 
-  const sessions = useLiveQuery(
+  const sessionsRaw = useLiveQuery(
     () => profileId
       ? db.studySessions.where('examProfileId').equals(profileId).toArray()
       : Promise.resolve([] as StudySession[]),
     [profileId]
-  ) ?? []
+  )
+  const sessions = sessionsRaw ?? []
+  const dataLoading = sessionsRaw === undefined && !!profileId
 
   const dueFlashcards = useLiveQuery(
     () => {
@@ -129,6 +139,21 @@ export default function Analytics() {
           subtitle={t('emptyState.analyticsNoProfile.subtitle')}
           actions={[{ label: t('emptyState.analyticsNoProfile.cta'), to: '/exam-profile' }]}
         />
+      </div>
+    )
+  }
+
+  if (dataLoading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-4">
+        <SkeletonBlock height="h-8" width="w-48" />
+        <SkeletonBlock height="h-24" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SkeletonBlock height="h-40" />
+          <SkeletonBlock height="h-40" />
+          <SkeletonBlock height="h-32" />
+          <SkeletonBlock height="h-32" />
+        </div>
       </div>
     )
   }

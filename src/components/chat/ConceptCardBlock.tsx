@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BookOpen, Check, HelpCircle } from 'lucide-react'
+import { SaveToDeckDropdown } from './SaveToDeckDropdown'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
@@ -230,6 +231,12 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
               <HelpCircle className="w-3 h-3" /> {t('cards.quizMe')}
             </button>
           )}
+          <SaveToDeckDropdown
+            examProfileId={card.examProfileId}
+            front={card.title}
+            back={card.content ?? (JSON.parse(card.keyPoints || '[]') as string[]).join('\n')}
+            topicId={card.topicId}
+          />
         </div>
       </div>
     </div>

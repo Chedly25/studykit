@@ -886,6 +886,17 @@ export interface MacroRoadmap {
   updatedAt: string
 }
 
+// ─── Chat Feedback ──────────────────────────────────────────────
+export interface ChatFeedback {
+  id: string
+  messageIndex: number
+  conversationId: string
+  examProfileId: string
+  rating: 'positive' | 'negative'
+  comment?: string
+  timestamp: string
+}
+
 export interface MacroPhase {
   name: string
   description: string

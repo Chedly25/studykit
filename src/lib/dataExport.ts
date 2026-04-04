@@ -258,3 +258,68 @@ export function downloadBlob(blob: Blob, filename: string) {
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
 }
+
+// ─── Anki Export ─────────────────────────────────────────────────
+
+function escapeAnkiField(s: string): string {
+  // Anki uses tab-separated; escape tabs and newlines within fields
+  return s.replace(/\t/g, '    ').replace(/\n/g, '<br>')
+}
+
+/**
+ * Export flashcards for a deck in Anki-compatible tab-separated format.
+ * Each line: front\tback
+ * Import in Anki via File > Import > select the .txt file.
+ */
+export async function exportFlashcardsAnki(deckId: string): Promise<Blob> {
+  const cards = await db.flashcards.where('deckId').equals(deckId).toArray()
+  const lines = cards.map(c => `${escapeAnkiField(c.front)}\t${escapeAnkiField(c.back)}`)
+  return new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' })
+}
+
+// ─── CSV Export ──────────────────────────────────────────────────
+
+function csvRow(fields: (string | number | null | undefined)[]): string {
+  return fields.map(f => {
+    const s = String(f ?? '')
+    return s.includes(',') || s.includes('"') || s.includes('\n')
+      ? `"${s.replace(/"/g, '""')}"`
+      : s
+  }).join(',')
+}
+
+/**
+ * Export study sessions, question results, and mastery snapshots as CSV.
+ */
+export async function exportStudyDataCSV(examProfileId: string): Promise<Blob> {
+  const sessions = await db.studySessions.where('examProfileId').equals(examProfileId).toArray()
+  const questions = await db.questionResults.where('examProfileId').equals(examProfileId).toArray()
+  const snapshots = await db.masterySnapshots.where('examProfileId').equals(examProfileId).toArray()
+  const topics = await db.topics.where('examProfileId').equals(examProfileId).toArray()
+  const topicMap = new Map(topics.map(t => [t.id, t.name]))
+
+  const lines: string[] = []
+
+  // Sessions
+  lines.push('# Study Sessions')
+  lines.push(csvRow(['id', 'type', 'startTime', 'endTime', 'durationSeconds', 'subjectId', 'topicId']))
+  for (const s of sessions) {
+    lines.push(csvRow([s.id, s.type, s.startTime, s.endTime, s.durationSeconds, s.subjectId ?? '', s.topicId ?? '']))
+  }
+
+  lines.push('')
+  lines.push('# Question Results')
+  lines.push(csvRow(['id', 'topicId', 'topicName', 'isCorrect', 'difficulty', 'format', 'timestamp']))
+  for (const q of questions) {
+    lines.push(csvRow([q.id, q.topicId, topicMap.get(q.topicId) ?? '', q.isCorrect ? '1' : '0', q.difficulty ?? '', q.format ?? '', q.timestamp]))
+  }
+
+  lines.push('')
+  lines.push('# Mastery Snapshots')
+  lines.push(csvRow(['topicId', 'topicName', 'date', 'mastery']))
+  for (const m of snapshots) {
+    lines.push(csvRow([m.topicId, topicMap.get(m.topicId) ?? '', m.date, m.mastery]))
+  }
+
+  return new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+}
