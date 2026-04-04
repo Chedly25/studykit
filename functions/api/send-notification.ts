@@ -5,6 +5,7 @@
 import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
+import { renderTemplate, VALID_TEMPLATES } from '../lib/emailTemplates'
 
 const RATE_LIMIT = 10
 const RATE_WINDOW_SECONDS = 3600
@@ -42,14 +43,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   // Rate limit (10 emails/hour per user)
-  const rateLimitKey = `email_rate:${userId}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
-  const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
-  if (currentCount >= RATE_LIMIT) {
-    return new Response(JSON.stringify({ error: 'Email rate limit exceeded' }), {
-      status: 429, headers: { ...cors, 'Content-Type': 'application/json' },
-    })
+  if (env.USAGE_KV) {
+    const rateLimitKey = `email_rate:${userId}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
+    const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
+    if (currentCount >= RATE_LIMIT) {
+      return new Response(JSON.stringify({ error: 'Email rate limit exceeded' }), {
+        status: 429, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+    await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
   }
-  await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
 
   // Fetch the user's own email from Clerk (never trust client-supplied "to")
   let userEmail: string
@@ -69,17 +72,35 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     })
   }
 
-  const apiKey = (env as any).RESEND_API_KEY as string | undefined
+  const apiKey = env.RESEND_API_KEY
   if (!apiKey) {
     return new Response(JSON.stringify({ error: 'Email service not configured' }), {
       status: 500, headers: { ...cors, 'Content-Type': 'application/json' },
     })
   }
 
-  const body = await context.request.json() as { subject: string; html: string }
+  let body: { template?: string; data?: Record<string, unknown> }
+  try {
+    body = await context.request.json()
+  } catch {
+    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
+      status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
+    })
+  }
 
-  if (!body.subject || !body.html) {
-    return new Response(JSON.stringify({ error: 'Missing required fields: subject, html' }), {
+  if (!body.template || !body.data) {
+    return new Response(JSON.stringify({
+      error: `Missing required fields: template, data. Valid templates: ${VALID_TEMPLATES.join(', ')}`,
+    }), {
+      status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
+    })
+  }
+
+  const rendered = renderTemplate(body.template, body.data)
+  if (!rendered) {
+    return new Response(JSON.stringify({
+      error: `Unknown template: ${body.template}. Valid templates: ${VALID_TEMPLATES.join(', ')}`,
+    }), {
       status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
     })
   }
@@ -94,8 +115,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       body: JSON.stringify({
         from: 'StudiesKit <noreply@studieskit.com>',
         to: userEmail, // Always the authenticated user's own email
-        subject: body.subject,
-        html: body.html,
+        subject: rendered.subject,
+        html: rendered.html,
       }),
     })
 

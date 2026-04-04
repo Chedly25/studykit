@@ -47,12 +47,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     let cursor: string | undefined
     let limitReached = false
 
-    // Paginate through KV list (max 1000 per call)
+    // Phase 1: collect all eligible key names
+    const keysToFetch: string[] = []
     do {
       const list = await env.SYNC_KV.list({ prefix, cursor })
 
       for (const key of list.keys) {
-        if (allChanges.length >= MAX_CHANGES_PER_PULL) {
+        if (keysToFetch.length >= MAX_CHANGES_PER_PULL) {
           limitReached = true
           break
         }
@@ -61,18 +62,28 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         const keyTimestamp = key.name.slice(prefix.length)
         if (keyTimestamp <= since) continue // Skip entries older than since
 
-        const value = await env.SYNC_KV.get(key.name, 'json') as {
-          changes: Array<{ table: string; recordId: string; operation: string; data?: unknown; timestamp: string }>
-        } | null
-
-        if (value?.changes) {
-          allChanges.push(...value.changes)
-        }
+        keysToFetch.push(key.name)
       }
 
       if (limitReached) break
       cursor = list.list_complete ? undefined : list.cursor
     } while (cursor)
+
+    // Phase 2: fetch values in parallel batches of 50
+    const BATCH_SIZE = 50
+    for (let i = 0; i < keysToFetch.length; i += BATCH_SIZE) {
+      const batch = keysToFetch.slice(i, i + BATCH_SIZE)
+      const results = await Promise.all(
+        batch.map(k => env.SYNC_KV.get(k, 'json') as Promise<{
+          changes: Array<{ table: string; recordId: string; operation: string; data?: unknown; timestamp: string }>
+        } | null>)
+      )
+      for (const value of results) {
+        if (value?.changes) {
+          allChanges.push(...value.changes)
+        }
+      }
+    }
 
     // Sort by timestamp ascending
     allChanges.sort((a, b) => a.timestamp.localeCompare(b.timestamp))

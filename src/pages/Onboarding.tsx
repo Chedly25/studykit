@@ -460,8 +460,8 @@ function ManualSetupForm({ onReset, navigate, userId }: {
         profileMode: 'study',
       })
 
-      // Activate the profile
-      await db.examProfiles.toCollection().modify({ isActive: false })
+      // Activate the profile (scoped to current user)
+      await db.examProfiles.where('userId').equals(userId ?? 'local').modify({ isActive: false })
       await db.examProfiles.update(profileId, { isActive: true })
 
       // Set post-onboarding context for dashboard

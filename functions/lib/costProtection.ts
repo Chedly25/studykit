@@ -4,16 +4,20 @@
  */
 import type { Env } from '../env'
 
-// ─── Daily per-user caps (hard stop, resets at midnight UTC) ─────
-const DAILY_CAPS: Record<string, number> = {
-  chat: 500,       // Interactive LLM (Kimi) — matches PRO_DAILY_LIMIT
-  fast: 300,       // Pipeline LLM (Haiku) — background jobs only
-  embed: 200,      // Embedding generation (Cloudflare AI)
-  search: 100,     // Web search (Tavily)
-  email: 5,        // Outbound emails (Resend)
-  push: 50,        // Push subscription management
-  transcribe: 100, // Whisper STT (Pro only)
-  vision: 50,      // Anthropic vision (Pro only)
+// ─── Daily per-user caps (resets at midnight UTC) ────────────────
+// Plan-aware: { free, pro }. KV get-then-put is non-atomic; soft cap
+// at 80% absorbs worst-case concurrent over-count.
+const SOFT_CAP_RATIO = 0.8
+
+const DAILY_CAPS: Record<string, { free: number; pro: number }> = {
+  chat:       { free: 25,  pro: 500 },
+  fast:       { free: 0,   pro: 300 },
+  embed:      { free: 50,  pro: 200 },
+  search:     { free: 20,  pro: 100 },
+  email:      { free: 2,   pro: 5 },
+  push:       { free: 10,  pro: 50 },
+  transcribe: { free: 0,   pro: 100 },
+  vision:     { free: 0,   pro: 50 },
 }
 
 // ─── Global kill switch threshold (all users combined) ───────────
@@ -32,26 +36,31 @@ function todayKey(): string {
 
 /**
  * Check and increment the per-user daily cap for a given endpoint.
- * Returns { allowed: true } if under the cap, { allowed: false } if exceeded.
+ * Uses plan-aware limits and a soft cap at 80% to mitigate KV race conditions.
  */
 export async function checkDailyCap(
   kv: KVNamespace,
   userId: string,
   endpoint: string,
-): Promise<{ allowed: boolean; remaining: number }> {
-  const cap = DAILY_CAPS[endpoint]
-  if (!cap) return { allowed: true, remaining: 999 }
+  plan?: string,
+): Promise<{ allowed: boolean; remaining: number; limit: number }> {
+  const caps = DAILY_CAPS[endpoint]
+  if (!caps) return { allowed: true, remaining: 999, limit: 999 }
 
+  const hardCap = plan === 'pro' ? caps.pro : caps.free
+  if (hardCap === 0) return { allowed: false, remaining: 0, limit: 0 }
+
+  const softCap = Math.floor(hardCap * SOFT_CAP_RATIO)
   const key = `daily:${endpoint}:${userId}:${todayKey()}`
   const current = parseInt((await kv.get(key)) ?? '0', 10)
 
-  if (current >= cap) {
-    return { allowed: false, remaining: 0 }
+  if (current >= softCap) {
+    return { allowed: false, remaining: 0, limit: hardCap }
   }
 
   // Increment (TTL 48h to auto-cleanup after day ends)
   await kv.put(key, String(current + 1), { expirationTtl: 172800 })
-  return { allowed: true, remaining: cap - current - 1 }
+  return { allowed: true, remaining: softCap - current - 1, limit: hardCap }
 }
 
 /**
@@ -66,10 +75,11 @@ export async function checkGlobalCap(
   const cap = GLOBAL_DAILY_CAP[endpoint]
   if (!cap) return { allowed: true }
 
+  const softCap = Math.floor(cap * SOFT_CAP_RATIO)
   const key = `global:${endpoint}:${todayKey()}`
   const current = parseInt((await kv.get(key)) ?? '0', 10)
 
-  if (current >= cap) {
+  if (current >= softCap) {
     return { allowed: false }
   }
 
@@ -78,22 +88,33 @@ export async function checkGlobalCap(
 }
 
 /**
- * Full cost check: global cap + per-user daily cap.
- * Call this at the top of every paid endpoint.
+ * Full cost check: per-user daily cap + global kill switch.
+ * Daily cap is checked first so free users on pro-only endpoints
+ * are rejected early without burning global quota.
  */
 export async function checkCostLimits(
   env: Env,
   userId: string,
   endpoint: string,
-): Promise<{ allowed: boolean; reason?: string }> {
+  plan?: string,
+): Promise<{ allowed: boolean; reason?: string; limit?: number }> {
+  if (!env.USAGE_KV) return { allowed: true }
+
+  // Check per-user daily cap first (avoids incrementing global counter for blocked users)
+  const dailyCheck = await checkDailyCap(env.USAGE_KV, userId, endpoint, plan)
+  if (!dailyCheck.allowed) {
+    const upgradeHint = plan !== 'pro' ? ' Upgrade to Pro for higher limits.' : ''
+    return {
+      allowed: false,
+      reason: `Daily limit reached (${dailyCheck.limit} requests). Resets at midnight UTC.${upgradeHint}`,
+      limit: dailyCheck.limit,
+    }
+  }
+
+  // Global kill switch — checked after per-user cap to avoid burning global quota for blocked users
   const globalCheck = await checkGlobalCap(env.USAGE_KV, endpoint)
   if (!globalCheck.allowed) {
     return { allowed: false, reason: 'Service at capacity. Please try again tomorrow.' }
-  }
-
-  const dailyCheck = await checkDailyCap(env.USAGE_KV, userId, endpoint)
-  if (!dailyCheck.allowed) {
-    return { allowed: false, reason: `Daily limit reached for this feature. Resets at midnight UTC.` }
   }
 
   return { allowed: true }

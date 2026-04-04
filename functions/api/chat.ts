@@ -12,29 +12,6 @@ import { checkCostLimits } from '../lib/costProtection'
 const DEFAULT_MODEL = 'kimi-k2.5'
 const DEFAULT_API_URL = 'https://api.moonshot.ai/v1/chat/completions'
 const MAX_RETRIES = 1
-const PRO_DAILY_LIMIT = 500
-
-// IMPORTANT: This limit must match FREE_DAILY_LIMIT in src/hooks/useAgent.ts
-const FREE_TIER_DAILY_LIMIT = 25
-
-// ─── Quota helper (KV is eventually consistent — small over-count possible under concurrency) ───
-async function incrementQuota(
-  kv: KVNamespace,
-  userId: string,
-  today: string,
-  limit: number
-): Promise<{ allowed: boolean; count: number }> {
-  const kvKey = `quota:${userId}:${today}`
-  const currentStr = await kv.get(kvKey)
-  const current = currentStr ? parseInt(currentStr, 10) : 0
-
-  if (current >= limit) {
-    return { allowed: false, count: current }
-  }
-
-  await kv.put(kvKey, String(current + 1), { expirationTtl: 86400 })
-  return { allowed: true, count: current + 1 }
-}
 
 // ─── KV-based rate limiter (persistent across isolates) ─────────
 const RATE_LIMIT = 60
@@ -44,17 +21,19 @@ async function checkRateLimitKV(
   kv: KVNamespace,
   userId: string
 ): Promise<{ allowed: boolean; remaining: number }> {
-  const windowKey = `ratelimit:${userId}:${Math.floor(Date.now() / 1000 / RATE_WINDOW_SECONDS)}`
+  const windowKey = `ratelimit:chat:${userId}:${Math.floor(Date.now() / 1000 / RATE_WINDOW_SECONDS)}`
   const currentStr = await kv.get(windowKey)
   const current = currentStr ? parseInt(currentStr, 10) : 0
 
-  if (current >= RATE_LIMIT) {
+  // Soft cap at 80% absorbs concurrent over-count from non-atomic KV reads
+  const softLimit = Math.floor(RATE_LIMIT * 0.8)
+  if (current >= softLimit) {
     return { allowed: false, remaining: 0 }
   }
 
   const newCount = current + 1
   await kv.put(windowKey, String(newCount), { expirationTtl: RATE_WINDOW_SECONDS })
-  return { allowed: true, remaining: RATE_LIMIT - newCount }
+  return { allowed: true, remaining: softLimit - newCount }
 }
 
 // ─── Handler ─────────────────────────────────────────────────────
@@ -110,41 +89,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     )
   }
 
-  // Free-tier daily quota check
-  if (userPlan !== 'pro' && env.USAGE_KV) {
-    const today = new Date().toISOString().slice(0, 10)
-    const quota = await incrementQuota(env.USAGE_KV, userId, today, FREE_TIER_DAILY_LIMIT)
-    if (!quota.allowed) {
+  // Daily quota + global kill switch (plan-aware: free=25, pro=500)
+  {
+    const costCheck = await checkCostLimits(env, userId, 'chat', userPlan)
+    if (!costCheck.allowed) {
+      const isFree = userPlan !== 'pro'
       return new Response(
         JSON.stringify({
-          error: `You've used all ${FREE_TIER_DAILY_LIMIT} free AI messages for today. Upgrade to Pro for unlimited access.`,
-          code: 'QUOTA_EXCEEDED',
-          limit: FREE_TIER_DAILY_LIMIT,
-          used: FREE_TIER_DAILY_LIMIT,
+          error: costCheck.reason,
+          ...(isFree ? { code: 'QUOTA_EXCEEDED', limit: costCheck.limit, used: costCheck.limit } : {}),
         }),
-        { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
-      )
-    }
-  }
-
-  // Pro-tier daily safety cap (prevents runaway costs)
-  if (userPlan === 'pro' && env.USAGE_KV) {
-    const today = new Date().toISOString().slice(0, 10)
-    const quota = await incrementQuota(env.USAGE_KV, userId, today, PRO_DAILY_LIMIT)
-    if (!quota.allowed) {
-      return new Response(
-        JSON.stringify({ error: 'Daily safety limit reached (500 requests). Resets at midnight UTC.' }),
-        { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
-      )
-    }
-  }
-
-  // Global kill switch — if total daily chat calls exceed threshold, block everyone
-  {
-    const costCheck = await checkCostLimits(env, userId, 'chat')
-    if (!costCheck.allowed) {
-      return new Response(
-        JSON.stringify({ error: costCheck.reason }),
         { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }

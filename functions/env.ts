@@ -1,6 +1,6 @@
 export interface Env {
   AI: Ai
-  USAGE_KV: KVNamespace
+  USAGE_KV?: KVNamespace
   SYNC_KV: KVNamespace
   ALLOWED_ORIGIN?: string
   LLM_API_KEY: string
@@ -18,4 +18,8 @@ export interface Env {
   PISTE_OAUTH_CLIENT_ID?: string
   PISTE_OAUTH_CLIENT_SECRET?: string
   ADMIN_EMAIL: string
+  VAPID_PUBLIC_KEY?: string
+  VAPID_PRIVATE_KEY?: string
+  PUSH_SUBSCRIPTIONS?: KVNamespace
+  RESEND_API_KEY?: string
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, UserPlus, Crown, DollarSign, TrendingUp, Cpu } from 'lucide-react'
+import { Users, UserPlus, Crown, Euro, TrendingUp, Cpu } from 'lucide-react'
 import { StatCard } from '../../components/admin/StatCard'
 import { useAdmin } from '../../hooks/useAdmin'
 
@@ -51,14 +51,14 @@ export default function Overview() {
         <StatCard icon={UserPlus} label="New Users (7d)" value={stats.newUsers7d} />
         <StatCard icon={Crown} label="Pro Users" value={stats.proUsers} />
         <StatCard
-          icon={DollarSign}
+          icon={Euro}
           label="MRR"
-          value={`$${stats.mrr.toFixed(2)}`}
+          value={`\u20AC${stats.mrr.toFixed(2)}`}
         />
         <StatCard
           icon={TrendingUp}
           label="Revenue (30d)"
-          value={`$${stats.revenue30d.toFixed(2)}`}
+          value={`\u20AC${stats.revenue30d.toFixed(2)}`}
         />
         <StatCard icon={Cpu} label="AI Calls (7d)" value={stats.aiCalls7d} />
       </div>

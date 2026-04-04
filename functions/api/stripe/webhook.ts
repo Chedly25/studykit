@@ -103,6 +103,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
             stripeCustomerId: customerId,
             stripeSubscriptionId: subscriptionId,
           })
+          // Increment cached pro user count
+          if (env.USAGE_KV) {
+            const countStr = await env.USAGE_KV.get('stats:pro_users')
+            if (countStr !== null) {
+              await env.USAGE_KV.put('stats:pro_users', String(parseInt(countStr, 10) + 1), { expirationTtl: 3600 })
+            }
+          }
         }
         break
       }
@@ -144,6 +151,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           cancelAtPeriodEnd: undefined,
           paymentFailed: undefined,
         })
+        // Decrement cached pro user count
+        if (env.USAGE_KV) {
+          const countStr = await env.USAGE_KV.get('stats:pro_users')
+          if (countStr !== null) {
+            await env.USAGE_KV.put('stats:pro_users', String(Math.max(0, parseInt(countStr, 10) - 1)), { expirationTtl: 3600 })
+          }
+        }
         break
       }
 

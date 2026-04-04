@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { DollarSign, TrendingUp } from 'lucide-react'
+import { Euro, TrendingUp } from 'lucide-react'
 import { StatCard } from '../../components/admin/StatCard'
 import { useAdmin } from '../../hooks/useAdmin'
 
@@ -80,8 +80,8 @@ export default function Revenue() {
       ) : data ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <StatCard icon={DollarSign} label="MRR" value={`$${data.mrr.toFixed(2)}`} />
-            <StatCard icon={TrendingUp} label="ARR" value={`$${data.arr.toFixed(2)}`} />
+            <StatCard icon={Euro} label="MRR" value={`\u20AC${data.mrr.toFixed(2)}`} />
+            <StatCard icon={TrendingUp} label="ARR" value={`\u20AC${data.arr.toFixed(2)}`} />
           </div>
 
           {/* Active Subscriptions */}
@@ -105,7 +105,7 @@ export default function Revenue() {
                         <div className="text-[var(--text-heading)]">{sub.customerName || 'N/A'}</div>
                         <div className="text-[var(--text-muted)] text-xs">{sub.customerEmail}</div>
                       </td>
-                      <td className="py-2 px-3 text-[var(--text-body)]">${sub.mrr.toFixed(2)}</td>
+                      <td className="py-2 px-3 text-[var(--text-body)]">{'\u20AC'}{sub.mrr.toFixed(2)}</td>
                       <td className="py-2 px-3 text-[var(--text-muted)]">
                         {new Date(sub.currentPeriodEnd * 1000).toLocaleDateString()}
                       </td>
@@ -141,7 +141,7 @@ export default function Revenue() {
                   {data.recentCharges.map((charge) => (
                     <tr key={charge.id} className="border-b border-[var(--border-card)] last:border-0">
                       <td className="py-2 px-3 text-[var(--text-heading)] font-medium">
-                        ${charge.amount.toFixed(2)}
+                        {'\u20AC'}{charge.amount.toFixed(2)}
                       </td>
                       <td className="py-2 px-3 text-[var(--text-muted)]">
                         {new Date(charge.created * 1000).toLocaleDateString()}

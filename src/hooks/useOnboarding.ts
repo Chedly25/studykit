@@ -463,7 +463,7 @@ export function useOnboarding() {
     const profileId = stateRef.current.profileId
     if (!profileId) return
 
-    await db.examProfiles.toCollection().modify({ isActive: false })
+    await db.examProfiles.where('userId').equals(effectiveUserId).modify({ isActive: false })
     await db.examProfiles.update(profileId, { isActive: true })
 
     // Auto-process uploaded documents

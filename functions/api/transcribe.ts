@@ -44,17 +44,19 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     // Rate limit
-    const rateLimitKey = `transcribe_rate:${jwt.sub}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
-    const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
-    if (currentCount >= RATE_LIMIT) {
-      return new Response(JSON.stringify({ error: 'Transcription rate limit exceeded' }), {
-        status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
-      })
+    if (env.USAGE_KV) {
+      const rateLimitKey = `transcribe_rate:${jwt.sub}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
+      const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
+      if (currentCount >= RATE_LIMIT) {
+        return new Response(JSON.stringify({ error: 'Transcription rate limit exceeded' }), {
+          status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
+        })
+      }
+      await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
     }
-    await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
 
     // Cost protection
-    const costCheck = await checkCostLimits(env, jwt.sub, 'transcribe')
+    const costCheck = await checkCostLimits(env, jwt.sub, 'transcribe', jwt.metadata?.plan)
     if (!costCheck.allowed) {
       return new Response(JSON.stringify({ error: costCheck.reason }), {
         status: 429, headers: { ...cors, 'Content-Type': 'application/json' },

@@ -122,7 +122,7 @@ export default function App() {
           <Route path="usage" element={<AdminUsage />} />
         </Route>
 
-        <Route element={<Layout />}>
+        <Route element={<ErrorBoundary><Layout /></ErrorBoundary>}>
           {/* Public */}
           <Route index element={<Home />} />
           <Route path="all-tools" element={<AllTools />} />

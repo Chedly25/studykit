@@ -1,10 +1,47 @@
-import { useUser } from '@clerk/clerk-react'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@clerk/clerk-react'
 import { Navigate } from 'react-router-dom'
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { user, isLoaded } = useUser()
+  const { getToken, isLoaded, userId } = useAuth()
+  const [status, setStatus] = useState<'loading' | 'admin' | 'denied'>('loading')
 
-  if (!isLoaded) {
+  useEffect(() => {
+    if (!isLoaded || !userId) return
+
+    // Check sessionStorage cache keyed by userId (avoids re-fetching on every navigation,
+    // but invalidates if a different user signs in within the same tab)
+    const cached = sessionStorage.getItem('adminVerified')
+    if (cached === userId) {
+      setStatus('admin')
+      return
+    }
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const token = await getToken()
+        const res = await fetch('/api/admin/verify', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const data = await res.json() as { admin: boolean }
+        if (cancelled) return
+        if (data.admin) {
+          sessionStorage.setItem('adminVerified', userId)
+          setStatus('admin')
+        } else {
+          sessionStorage.removeItem('adminVerified')
+          setStatus('denied')
+        }
+      } catch {
+        if (!cancelled) setStatus('denied')
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [isLoaded, userId, getToken])
+
+  if (status === 'loading') {
     return (
       <div className="flex items-center justify-center py-24">
         <div className="w-8 h-8 border-2 border-primary-500/30 border-t-primary-500 rounded-full animate-spin" />
@@ -12,10 +49,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Admin access is verified server-side via ADMIN_EMAIL env var.
-  // Client-side check uses Clerk publicMetadata.role (set by admin API).
-  const isAdmin = (user?.publicMetadata as { role?: string })?.role === 'admin'
-  if (!isAdmin) {
+  if (status === 'denied') {
     return <Navigate to="/" replace />
   }
 

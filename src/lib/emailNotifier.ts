@@ -50,8 +50,8 @@ export async function sendDailyEmail(
       method: 'POST',
       headers,
       body: JSON.stringify({
-        subject: `StudiesKit Daily: ${summary.daysLeft} days until ${esc(summary.profileName)}`,
-        html: buildEmailHtml(summary),
+        template: 'daily-summary',
+        data: summary,
       }),
     })
 
@@ -63,27 +63,4 @@ export async function sendDailyEmail(
   } catch {
     return false
   }
-}
-
-function esc(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-}
-
-function buildEmailHtml(s: DailySummary): string {
-  return `
-<div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
-  <h2>Daily Study Summary</h2>
-  <p><strong>${esc(s.profileName)}</strong> — ${s.daysLeft} days left</p>
-  <ul>
-    <li>Readiness: ${s.readiness}%</li>
-    <li>Study streak: ${s.streak} days</li>
-    <li>This week: ${s.weeklyHours}h studied</li>
-    <li>Flashcards due: ${s.dueFlashcards}</li>
-  </ul>
-  ${s.topWeakTopics.length > 0 ? `
-  <p><strong>Focus areas:</strong></p>
-  <ul>${s.topWeakTopics.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
-  ` : ''}
-  <p><a href="https://studieskit.com/dashboard">Open StudiesKit</a></p>
-</div>`
 }

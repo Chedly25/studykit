@@ -32,8 +32,8 @@ export function useExamProfile() {
     const blueprint = getExamBlueprint(examType)
     const profileId = crypto.randomUUID()
 
-    // Deactivate all existing profiles
-    await db.examProfiles.toCollection().modify({ isActive: false })
+    // Deactivate all existing profiles for this user
+    await db.examProfiles.where('userId').equals(effectiveUserId).modify({ isActive: false })
 
     // Create the profile
     const profile: ExamProfile = {
@@ -121,9 +121,9 @@ export function useExamProfile() {
   }, [effectiveUserId])
 
   const setActiveProfile = useCallback(async (profileId: string) => {
-    await db.examProfiles.toCollection().modify({ isActive: false })
+    await db.examProfiles.where('userId').equals(effectiveUserId).modify({ isActive: false })
     await db.examProfiles.update(profileId, { isActive: true })
-  }, [])
+  }, [effectiveUserId])
 
   const seedTopicsForProfile = useCallback(async (
     profileId: string,

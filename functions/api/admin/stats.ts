@@ -7,7 +7,23 @@ import type { Env } from '../../env'
 import { verifyAdmin, AdminError } from '../../lib/adminAuth'
 import { corsHeaders } from '../../lib/cors'
 
-async function countProUsers(clerkHeaders: Record<string, string>): Promise<number> {
+/** Read cached pro user count from KV, or do a full recount if absent. */
+async function getProUserCount(env: Env, clerkHeaders: Record<string, string>): Promise<number> {
+  // Try cached value first
+  if (env.USAGE_KV) {
+    const cached = await env.USAGE_KV.get('stats:pro_users')
+    if (cached !== null) return parseInt(cached, 10)
+  }
+
+  // Cache miss — do full count and cache for 1 hour
+  const count = await fullCountProUsers(clerkHeaders)
+  if (env.USAGE_KV) {
+    await env.USAGE_KV.put('stats:pro_users', String(count), { expirationTtl: 3600 })
+  }
+  return count
+}
+
+async function fullCountProUsers(clerkHeaders: Record<string, string>): Promise<number> {
   let count = 0
   let offset = 0
   const limit = 100
@@ -96,8 +112,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
           `https://api.clerk.com/v1/users?limit=100&order_by=-created_at`,
           { headers: clerkHeaders }
         ),
-        // Pro user count (paginated through all users)
-        countProUsers(clerkHeaders),
+        // Pro user count (KV-cached, falls back to full Clerk scan)
+        getProUserCount(env, clerkHeaders),
         // MRR from Stripe (paginated through all active subscriptions)
         env.STRIPE_SECRET_KEY
           ? calculateMRR(env.STRIPE_SECRET_KEY)

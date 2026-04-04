@@ -55,9 +55,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   let userId: string
+  let userPlan: string | undefined
   try {
-    const { sub } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
+    const { sub, metadata } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
     userId = sub
+    userPlan = metadata?.plan
   } catch {
     return new Response(
       JSON.stringify({ error: 'Authentication failed' }),
@@ -78,7 +80,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   // Daily cap + global kill switch
   {
-    const costCheck = await checkCostLimits(env, userId, 'embed')
+    const costCheck = await checkCostLimits(env, userId, 'embed', userPlan)
     if (!costCheck.allowed) {
       return new Response(
         JSON.stringify({ error: costCheck.reason }),

@@ -20,7 +20,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   if (action === 'vapid-key') {
     // VAPID public key is safe to expose (needed by browser for push subscription)
-    return new Response(JSON.stringify({ publicKey: (context.env as any).VAPID_PUBLIC_KEY || '' }), {
+    return new Response(JSON.stringify({ publicKey: context.env.VAPID_PUBLIC_KEY || '' }), {
       headers: { ...cors, 'Content-Type': 'application/json' },
     })
   }
@@ -59,16 +59,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   // Rate limit
-  const rateLimitKey = `push_rate:${userId}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
-  const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
-  if (currentCount >= RATE_LIMIT) {
-    return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
-      status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
-    })
+  if (env.USAGE_KV) {
+    const rateLimitKey = `push_rate:${userId}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
+    const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
+    if (currentCount >= RATE_LIMIT) {
+      return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+        status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
+      })
+    }
+    await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
   }
-  await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
 
-  const kv = (env as any).PUSH_SUBSCRIPTIONS as KVNamespace | undefined
+  const kv = env.PUSH_SUBSCRIPTIONS
   if (!kv) {
     return new Response(JSON.stringify({ error: 'Push not configured' }), {
       status: 500, headers: { ...cors, 'Content-Type': 'application/json' },

@@ -17,17 +17,19 @@ async function checkRateLimitKV(
   kv: KVNamespace,
   userId: string,
 ): Promise<{ allowed: boolean; remaining: number }> {
-  const windowKey = `ratelimit:${userId}:${Math.floor(Date.now() / 1000 / RATE_WINDOW_SECONDS)}`
+  const windowKey = `ratelimit:search:${userId}:${Math.floor(Date.now() / 1000 / RATE_WINDOW_SECONDS)}`
   const currentStr = await kv.get(windowKey)
   const current = currentStr ? parseInt(currentStr, 10) : 0
 
-  if (current >= RATE_LIMIT) {
+  // Soft cap at 80% absorbs concurrent over-count from non-atomic KV reads
+  const softLimit = Math.floor(RATE_LIMIT * 0.8)
+  if (current >= softLimit) {
     return { allowed: false, remaining: 0 }
   }
 
   const newCount = current + 1
   await kv.put(windowKey, String(newCount), { expirationTtl: RATE_WINDOW_SECONDS })
-  return { allowed: true, remaining: RATE_LIMIT - newCount }
+  return { allowed: true, remaining: softLimit - newCount }
 }
 
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
@@ -56,9 +58,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   let userId: string
+  let userPlan: string | undefined
   try {
-    const { sub } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
+    const { sub, metadata } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
     userId = sub
+    userPlan = metadata?.plan
   } catch {
     return new Response(
       JSON.stringify({ error: 'Authentication failed' }),
@@ -79,7 +83,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   // Daily cap + global kill switch
   {
-    const costCheck = await checkCostLimits(env, userId, 'search')
+    const costCheck = await checkCostLimits(env, userId, 'search', userPlan)
     if (!costCheck.allowed) {
       return new Response(
         JSON.stringify({ error: costCheck.reason }),

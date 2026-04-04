@@ -12,10 +12,6 @@ import { decayedMastery } from '../lib/knowledgeGraph'
 const DIGEST_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 const LAST_SENT_KEY = (pid: string) => `weekly_digest_sent_${pid}`
 
-function escHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-}
-
 export function useWeeklyDigest() {
   const { getToken } = useAuth()
   const { user } = useUser()
@@ -50,7 +46,6 @@ export function useWeeklyDigest() {
         const token = await getToken()
         if (!token) return
 
-        const html = buildDigestHtml(activeProfile.name, stats)
         await fetch('/api/send-notification', {
           method: 'POST',
           headers: {
@@ -58,8 +53,8 @@ export function useWeeklyDigest() {
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
-            subject: `Your weekly study report — ${activeProfile.name}`,
-            html,
+            template: 'weekly-digest',
+            data: { profileName: activeProfile.name, ...stats },
           }),
         })
 
@@ -156,57 +151,3 @@ async function assembleWeeklyStats(profileId: string): Promise<WeeklyStats> {
   }
 }
 
-function buildDigestHtml(profileName: string, stats: WeeklyStats): string {
-  const hoursDiff = stats.studyHours - stats.prevWeekHours
-  const hoursTrend = hoursDiff > 0 ? `+${hoursDiff}h vs last week` : hoursDiff < 0 ? `${hoursDiff}h vs last week` : 'same as last week'
-
-  const masteryLines = stats.masteryChanges.map(m =>
-    m.delta > 0
-      ? `<li style="color:#10b981">&uarr; ${escHtml(m.name)} +${m.delta}%</li>`
-      : `<li style="color:#ef4444">&darr; ${escHtml(m.name)} ${m.delta}%</li>`
-  ).join('')
-
-  const weakLines = stats.weakTopics.map(t =>
-    `<li>${escHtml(t.name)} (${t.mastery}%)</li>`
-  ).join('')
-
-  return `
-<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:500px;margin:0 auto;padding:24px;color:#1a1a2e">
-  <div style="text-align:center;margin-bottom:24px">
-    <img src="https://studieskit.com/favicon-48x48.png" width="32" height="32" style="border-radius:8px" />
-    <h2 style="margin:8px 0 0;font-size:18px">Weekly Study Report</h2>
-    <p style="color:#666;font-size:13px;margin:4px 0">${escHtml(profileName)}</p>
-  </div>
-
-  <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin-bottom:16px">
-    <h3 style="font-size:14px;margin:0 0 12px;color:#333">This Week</h3>
-    <ul style="list-style:none;padding:0;margin:0;font-size:13px;line-height:1.8">
-      <li><strong>${stats.studyHours}h</strong> studied (${hoursTrend})</li>
-      <li><strong>${stats.questionsAnswered}</strong> questions answered (${stats.accuracy}% accuracy)</li>
-      <li><strong>${stats.streak}</strong> day streak</li>
-      ${stats.dueFlashcards > 0 ? `<li><strong>${stats.dueFlashcards}</strong> flashcards due</li>` : ''}
-      ${stats.daysUntilExam !== null ? `<li><strong>${stats.daysUntilExam}</strong> days until exam</li>` : ''}
-    </ul>
-  </div>
-
-  ${masteryLines ? `
-  <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin-bottom:16px">
-    <h3 style="font-size:14px;margin:0 0 8px;color:#333">Mastery Changes</h3>
-    <ul style="list-style:none;padding:0;margin:0;font-size:13px;line-height:1.6">${masteryLines}</ul>
-  </div>` : ''}
-
-  ${weakLines ? `
-  <div style="background:#fff3cd;border-radius:12px;padding:16px;margin-bottom:16px">
-    <h3 style="font-size:14px;margin:0 0 8px;color:#856404">Focus This Week</h3>
-    <ul style="list-style:none;padding:0;margin:0;font-size:13px;line-height:1.6;color:#856404">${weakLines}</ul>
-  </div>` : ''}
-
-  <div style="text-align:center;margin-top:24px">
-    <a href="https://studieskit.com/queue" style="display:inline-block;background:#10b981;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">Open StudiesKit</a>
-  </div>
-
-  <p style="text-align:center;font-size:11px;color:#999;margin-top:24px">
-    <a href="https://studieskit.com/settings?unsubscribe=weekly" style="color:#999">Unsubscribe from weekly digest</a>
-  </p>
-</div>`
-}
