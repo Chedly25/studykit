@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { X, Keyboard } from 'lucide-react'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.userAgent)
 const mod = isMac ? '\u2318' : 'Ctrl'
@@ -15,6 +16,7 @@ const SHORTCUTS = [
 
 export function KeyboardShortcutsModal({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
+  useFocusTrap(ref)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

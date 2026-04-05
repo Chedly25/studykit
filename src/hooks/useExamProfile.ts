@@ -290,62 +290,80 @@ export function useExamProfile() {
   }, [])
 
   const deleteProfile = useCallback(async (profileId: string) => {
-    await db.transaction('rw', [
-      db.examProfiles, db.subjects, db.topics, db.subtopics,
-      db.studySessions, db.questionResults, db.documents, db.documentChunks,
-      db.flashcardDecks, db.flashcards, db.assignments, db.conversations,
-      db.chatMessages, db.dailyStudyLogs,
-      db.tutorPreferences, db.sessionInsights, db.studyPlans, db.studyPlanDays,
+    // All tables with examProfileId — delete children first, profile last
+    const allTables = [
+      db.examProfiles, db.subjects, db.topics, db.subtopics, db.chapters,
+      db.studySessions, db.questionResults, db.documents, db.documentChunks, db.documentFiles,
+      db.flashcardDecks, db.flashcards, db.assignments, db.conversations, db.chatMessages, db.chatFeedback,
+      db.dailyStudyLogs, db.masterySnapshots,
+      db.tutorPreferences, db.sessionInsights, db.studentModels, db.conversationSummaries,
+      db.studyPlans, db.studyPlanDays,
+      db.notifications, db.notificationPreferences,
       db.milestones, db.researchNotes, db.annotations, db.habitGoals, db.habitLogs,
       db.writingSessions, db.advisorMeetings,
-      db.chapters, db.examSources, db.exercises, db.exerciseAttempts,
+      db.examSources, db.exercises, db.exerciseAttempts,
       db.conceptCards, db.conceptCardConnections,
-    ], async () => {
-      await db.subtopics.where('examProfileId').equals(profileId).delete()
-      await db.topics.where('examProfileId').equals(profileId).delete()
-      await db.subjects.where('examProfileId').equals(profileId).delete()
-      await db.studySessions.where('examProfileId').equals(profileId).delete()
-      await db.questionResults.where('examProfileId').equals(profileId).delete()
-      await db.documentChunks.where('examProfileId').equals(profileId).delete()
-      await db.documents.where('examProfileId').equals(profileId).delete()
+      db.examFormats, db.mockExams, db.practiceExamSessions, db.generatedQuestions,
+      db.chunkEmbeddings, db.topicEmbeddings, db.pdfHighlights,
+      db.achievements, db.misconceptions,
+      db.agentRuns, db.agentInsights, db.contentEffectiveness,
+      db.reviewProjects, db.reviewArticles, db.backgroundJobs,
+      db.revisionFiches, db.examDNA, db.macroRoadmaps,
+    ]
+
+    await db.transaction('rw', allTables, async () => {
+      // Simple examProfileId-indexed deletes
+      const simple = [
+        db.subtopics, db.topics, db.subjects, db.chapters,
+        db.studySessions, db.questionResults, db.documentChunks, db.documents, db.documentFiles,
+        db.assignments, db.dailyStudyLogs, db.masterySnapshots,
+        db.tutorPreferences, db.sessionInsights, db.studentModels, db.conversationSummaries,
+        db.notifications, db.notificationPreferences,
+        db.milestones, db.researchNotes, db.annotations,
+        db.writingSessions, db.advisorMeetings,
+        db.exerciseAttempts, db.exercises, db.examSources,
+        db.conceptCardConnections, db.conceptCards,
+        db.examFormats, db.mockExams, db.practiceExamSessions, db.generatedQuestions,
+        db.chunkEmbeddings, db.topicEmbeddings, db.pdfHighlights,
+        db.achievements, db.misconceptions,
+        db.agentRuns, db.agentInsights, db.contentEffectiveness,
+        db.reviewProjects, db.reviewArticles, db.backgroundJobs,
+        db.revisionFiches, db.examDNA, db.macroRoadmaps,
+        db.chatFeedback,
+      ]
+      for (const table of simple) {
+        await table.where('examProfileId').equals(profileId).delete()
+      }
+
+      // Flashcards (FK via deckId)
       const decks = await db.flashcardDecks.where('examProfileId').equals(profileId).toArray()
       for (const deck of decks) {
         await db.flashcards.where('deckId').equals(deck.id).delete()
       }
       await db.flashcardDecks.where('examProfileId').equals(profileId).delete()
-      await db.assignments.where('examProfileId').equals(profileId).delete()
-      await db.dailyStudyLogs.where('examProfileId').equals(profileId).delete()
-      await db.tutorPreferences.where('examProfileId').equals(profileId).delete()
-      await db.sessionInsights.where('examProfileId').equals(profileId).delete()
+
+      // Study plan days (FK via planId)
       const plans = await db.studyPlans.where('examProfileId').equals(profileId).toArray()
       for (const plan of plans) {
         await db.studyPlanDays.where('planId').equals(plan.id).delete()
       }
       await db.studyPlans.where('examProfileId').equals(profileId).delete()
-      // conversations & messages
+
+      // Chat messages (FK via conversationId)
       const convos = await db.conversations.where('examProfileId').equals(profileId).toArray()
       for (const c of convos) {
         await db.chatMessages.where('conversationId').equals(c.id).delete()
       }
       await db.conversations.where('examProfileId').equals(profileId).delete()
-      // Research mode tables
-      await db.milestones.where('examProfileId').equals(profileId).delete()
-      await db.researchNotes.where('examProfileId').equals(profileId).delete()
-      await db.annotations.where('examProfileId').equals(profileId).delete()
+
+      // Habit logs (FK via goalId)
       const goals = await db.habitGoals.where('examProfileId').equals(profileId).toArray()
       for (const goal of goals) {
         await db.habitLogs.where('goalId').equals(goal.id).delete()
       }
       await db.habitGoals.where('examProfileId').equals(profileId).delete()
-      await db.writingSessions.where('examProfileId').equals(profileId).delete()
-      await db.advisorMeetings.where('examProfileId').equals(profileId).delete()
-      // v16 tables
-      await db.chapters.where('examProfileId').equals(profileId).delete()
-      await db.exerciseAttempts.where('examProfileId').equals(profileId).delete()
-      await db.exercises.where('examProfileId').equals(profileId).delete()
-      await db.examSources.where('examProfileId').equals(profileId).delete()
-      await db.conceptCardConnections.where('examProfileId').equals(profileId).delete()
-      await db.conceptCards.where('examProfileId').equals(profileId).delete()
+
+      // Finally, delete the profile itself
       await db.examProfiles.delete(profileId)
     })
   }, [])

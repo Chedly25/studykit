@@ -67,10 +67,10 @@ export function PracticeExamHistory({ sessions, onReview, onRetake }: Props) {
                   <span className={`text-sm font-medium ${percentage >= 60 ? 'text-emerald-500' : 'text-orange-500'}`}>
                     {percentage}%
                   </span>
-                  <span className="text-xs text-[var(--text-muted)]">
+                  <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
                     {session.totalScore ?? 0}/{maxScore} pts
                   </span>
-                  <span className="text-xs text-[var(--text-faint)]">
+                  <span className="text-xs text-[var(--text-faint)] hidden sm:inline">
                     {session.questionCount} Q
                   </span>
                 </div>

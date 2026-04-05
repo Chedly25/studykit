@@ -1426,5 +1426,24 @@
     "noExams": "Aucun examen blanc passé pour le moment",
     "passed": "Réussi",
     "failed": "Échoué"
+  },
+  "admin": {
+    "overview": "Vue d'ensemble",
+    "totalUsers": "Utilisateurs totaux",
+    "newUsers7d": "Nouveaux (7j)",
+    "proUsers": "Utilisateurs Pro",
+    "mrr": "MRR",
+    "revenue30d": "Revenus (30j)",
+    "aiCalls7d": "Appels IA (7j)",
+    "revenue": "Revenus",
+    "activeSubscriptions": "Abonnements actifs",
+    "recentCharges": "Paiements récents",
+    "noSubscriptions": "Aucun abonnement actif",
+    "noCharges": "Aucun paiement sur cette période",
+    "users": "Utilisateurs",
+    "searchUsers": "Rechercher par nom ou email...",
+    "noUsers": "Aucun utilisateur trouvé",
+    "usage": "Utilisation API",
+    "byFeature": "Par fonctionnalité"
   }
 }

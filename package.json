@@ -21,6 +21,7 @@
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.40.0",
+    "@sentry/react": "^10.47.0",
     "@stripe/stripe-js": "^8.9.0",
     "@tailwindcss/vite": "^4.2.1",
     "@types/canvas-confetti": "^1.9.0",

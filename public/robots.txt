@@ -1,0 +1,30 @@
+User-agent: *
+Allow: /
+
+Disallow: /dashboard
+Disallow: /session
+Disallow: /queue
+Disallow: /exercises
+Disallow: /practice-exam
+Disallow: /analytics
+Disallow: /settings
+Disallow: /sources
+Disallow: /read/
+Disallow: /admin
+Disallow: /welcome
+Disallow: /exam-profile
+Disallow: /study-plan
+Disallow: /article-review
+Disallow: /exam-dna
+Disallow: /fiche/
+Disallow: /subject/
+Disallow: /topic/
+Disallow: /subscription/
+Disallow: /pomodoro-timer
+Disallow: /exam-countdown
+Disallow: /study-time-tracker
+Disallow: /flashcard-maker
+Disallow: /assignment-tracker
+Disallow: /ambient-sound-generator
+
+Sitemap: https://studieskit.com/sitemap.xml

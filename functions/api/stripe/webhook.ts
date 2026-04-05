@@ -84,8 +84,19 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   const event = JSON.parse(rawBody) as {
+    id: string
     type: string
     data: { object: Record<string, unknown> }
+  }
+
+  // Idempotency: skip already-processed events (Stripe retries on timeout)
+  if (env.USAGE_KV && event.id) {
+    const already = await env.USAGE_KV.get(`webhook:${event.id}`)
+    if (already) {
+      return new Response(JSON.stringify({ received: true, deduplicated: true }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      })
+    }
   }
 
   try {
@@ -176,6 +187,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         })
         break
       }
+    }
+
+    // Mark event as processed (24h TTL — Stripe stops retrying after ~3 days)
+    if (env.USAGE_KV && event.id) {
+      await env.USAGE_KV.put(`webhook:${event.id}`, '1', { expirationTtl: 86400 })
     }
 
     return new Response(JSON.stringify({ received: true }), {

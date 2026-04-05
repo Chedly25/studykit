@@ -145,6 +145,10 @@ export function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:bg-[var(--accent-text)] focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm">
+        Skip to content
+      </a>
+
       {/* ─── Header ─────────────────────────────────────────── */}
       <header className="border-b border-[var(--border-header)] backdrop-blur-md bg-[var(--bg-header)] sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
@@ -175,6 +179,7 @@ export function Layout() {
                 onClick={() => setSearchOpen(true)}
                 className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
                 title={`${t('search.title', 'Search')} (⌘K)`}
+                aria-label="Search"
               >
                 <Search size={18} />
               </button>
@@ -187,6 +192,7 @@ export function Layout() {
                     : 'text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)]'
                 }`}
                 title={t('nav.aiChat')}
+                aria-label="AI Chat"
               >
                 <MessageCircle size={18} />
               </button>
@@ -220,6 +226,7 @@ export function Layout() {
                 onClick={() => setSidebarPinned(!sidebarPinned)}
                 className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
                 title={sidebarPinned ? 'Collapse sidebar' : 'Pin sidebar'}
+                aria-label={sidebarPinned ? 'Collapse sidebar' : 'Pin sidebar'}
               >
                 {sidebarPinned ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
               </button>
@@ -314,7 +321,7 @@ export function Layout() {
         )}
 
         {/* ─── Main content ───────────────────────────────────── */}
-        <main className={isChatPage ? 'flex-1 w-full min-w-0 pb-16 md:pb-0' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0 pb-16 md:pb-0'}>
+        <main id="main-content" className={isChatPage ? 'flex-1 w-full min-w-0 pb-16 md:pb-0' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0 pb-16 md:pb-0'}>
           {!isOnline && (
             <div className="mb-4 px-4 py-2 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)] text-sm text-[var(--color-warning)] text-center">
               You're offline. Some features may not work.

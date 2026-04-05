@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Users, UserPlus, Crown, Euro, TrendingUp, Cpu } from 'lucide-react'
 import { StatCard } from '../../components/admin/StatCard'
 import { useAdmin } from '../../hooks/useAdmin'
@@ -13,6 +14,7 @@ interface Stats {
 }
 
 export default function Overview() {
+  const { t } = useTranslation()
   const { fetchAdmin } = useAdmin()
   const [stats, setStats] = useState<Stats | null>(null)
   const [error, setError] = useState('')
@@ -45,22 +47,22 @@ export default function Overview() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-6">Overview</h1>
+      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-6">{t('admin.overview')}</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard icon={Users} label="Total Users" value={stats.totalUsers} />
-        <StatCard icon={UserPlus} label="New Users (7d)" value={stats.newUsers7d} />
-        <StatCard icon={Crown} label="Pro Users" value={stats.proUsers} />
+        <StatCard icon={Users} label={t('admin.totalUsers')} value={stats.totalUsers} />
+        <StatCard icon={UserPlus} label={t('admin.newUsers7d')} value={stats.newUsers7d} />
+        <StatCard icon={Crown} label={t('admin.proUsers')} value={stats.proUsers} />
         <StatCard
           icon={Euro}
-          label="MRR"
+          label={t('admin.mrr')}
           value={`\u20AC${stats.mrr.toFixed(2)}`}
         />
         <StatCard
           icon={TrendingUp}
-          label="Revenue (30d)"
+          label={t('admin.revenue30d')}
           value={`\u20AC${stats.revenue30d.toFixed(2)}`}
         />
-        <StatCard icon={Cpu} label="AI Calls (7d)" value={stats.aiCalls7d} />
+        <StatCard icon={Cpu} label={t('admin.aiCalls7d')} value={stats.aiCalls7d} />
       </div>
     </div>
   )

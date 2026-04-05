@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { X, Plus } from 'lucide-react'
 import { db } from '../../db'
 import { toast } from 'sonner'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 import type { Topic } from '../../db/schema'
 
 interface CreateExerciseModalProps {
@@ -12,6 +13,8 @@ interface CreateExerciseModalProps {
 }
 
 export function CreateExerciseModal({ examProfileId, topics, onClose, onCreated }: CreateExerciseModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(modalRef)
   const [text, setText] = useState('')
   const [solutionText, setSolutionText] = useState('')
   const [difficulty, setDifficulty] = useState(3)
@@ -66,7 +69,7 @@ export function CreateExerciseModal({ examProfileId, topics, onClose, onCreated 
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
-      <div className="glass-card w-full max-w-lg mx-4 p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div ref={modalRef} className="glass-card w-full max-w-lg mx-4 p-6 shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-[var(--text-heading)]">Add Exercise</h2>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-body)]">

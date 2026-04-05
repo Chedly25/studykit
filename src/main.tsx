@@ -4,11 +4,24 @@ import { BrowserRouter } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { ClerkProvider } from '@clerk/clerk-react'
 import { Toaster } from 'sonner'
+import * as Sentry from '@sentry/react'
 import './i18n'
 import './styles/globals.css'
 import App from './App'
 import { BackgroundJobsProvider } from './components/BackgroundJobsProvider'
 import { initAnalytics } from './lib/analytics'
+
+// Initialize Sentry error monitoring (no-op if DSN not set)
+if (import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    environment: import.meta.env.MODE,
+    integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
+    tracesSampleRate: 0.1,
+    replaysSessionSampleRate: 0,
+    replaysOnErrorSampleRate: 1.0,
+  })
+}
 
 // Initialize PostHog analytics (no-op if VITE_POSTHOG_KEY not set)
 initAnalytics()
@@ -19,9 +32,7 @@ registerSW({
   onNeedRefresh() {
     window.dispatchEvent(new CustomEvent('sw-update-available'))
   },
-  onOfflineReady() {
-    console.log('[SW] Offline ready')
-  },
+  onOfflineReady() { /* Service worker ready for offline use */ },
 })
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined

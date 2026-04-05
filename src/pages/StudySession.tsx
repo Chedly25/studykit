@@ -274,7 +274,7 @@ export default function StudySession() {
       />
 
       {/* View toggle */}
-      <div className="flex items-center gap-1 px-4 py-1.5 border-b border-[var(--border-card)] bg-[var(--bg-card)]/30">
+      <div className="flex items-center gap-1 px-4 py-1.5 border-b border-[var(--border-card)] bg-[var(--bg-card)]/30 overflow-x-auto">
         {([
           { key: 'course' as const, icon: BookOpen, label: 'Course' },
           { key: 'cards' as const, icon: Layers, label: `Cards${conceptCards.length > 0 ? ` (${conceptCards.length})` : ''}` },
@@ -286,7 +286,7 @@ export default function StudySession() {
           <button
             key={key}
             onClick={() => setActiveView(key)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex-shrink-0 whitespace-nowrap ${
               activeView === key
                 ? 'bg-[var(--accent-text)] text-white'
                 : 'text-[var(--text-muted)] hover:bg-[var(--bg-input)] hover:text-[var(--text-body)]'

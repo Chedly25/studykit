@@ -290,6 +290,7 @@ export default function DocumentReader() {
       {isMobile && !chatOpen && (
         <button
           onClick={() => setChatOpen(true)}
+          aria-label="Open chat"
           className="fixed bottom-24 right-4 z-40 w-12 h-12 rounded-full bg-[var(--accent-text)] text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
         >
           <MessageCircle className="w-5 h-5" />

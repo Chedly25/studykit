@@ -1426,5 +1426,24 @@
     "noExams": "No practice exams taken yet",
     "passed": "Passed",
     "failed": "Failed"
+  },
+  "admin": {
+    "overview": "Overview",
+    "totalUsers": "Total Users",
+    "newUsers7d": "New Users (7d)",
+    "proUsers": "Pro Users",
+    "mrr": "MRR",
+    "revenue30d": "Revenue (30d)",
+    "aiCalls7d": "AI Calls (7d)",
+    "revenue": "Revenue",
+    "activeSubscriptions": "Active Subscriptions",
+    "recentCharges": "Recent Charges",
+    "noSubscriptions": "No active subscriptions",
+    "noCharges": "No charges in this period",
+    "users": "Users",
+    "searchUsers": "Search by name or email...",
+    "noUsers": "No users found",
+    "usage": "API Usage",
+    "byFeature": "By Feature"
   }
 }

@@ -111,7 +111,7 @@ function pipelineLog(level: 'info' | 'warn' | 'error', msg: string) {
   const prefix = '[synthese-real]'
   if (level === 'error') console.error(prefix, msg)
   else if (level === 'warn') console.warn(prefix, msg)
-  else console.log(prefix, msg)
+  else { /* info-level logs suppressed in production */ }
 }
 
 // ─── Document sourcing helpers ──────────────────────────────────

@@ -36,7 +36,7 @@ export function ToolSEO({ title, description, slug, keywords }: ToolSEOProps) {
           url,
           applicationCategory: 'EducationalApplication',
           operatingSystem: 'Any',
-          offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+          offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
         })}
       </script>
     </Helmet>
