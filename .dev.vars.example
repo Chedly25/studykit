@@ -3,6 +3,9 @@
 # Clerk JWT issuer URL (derived from your Clerk publishable key)
 CLERK_ISSUER_URL=https://your-instance.clerk.accounts.dev
 
+# Clerk JWT audience claim (configure in Clerk dashboard JWT template)
+CLERK_JWT_AUDIENCE=studieskit-api
+
 # Clerk Backend API secret key (for updating user metadata via webhook)
 CLERK_SECRET_KEY=sk_...
 

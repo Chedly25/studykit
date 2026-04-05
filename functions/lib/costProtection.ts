@@ -98,7 +98,7 @@ export async function checkCostLimits(
   endpoint: string,
   plan?: string,
 ): Promise<{ allowed: boolean; reason?: string; limit?: number }> {
-  if (!env.USAGE_KV) return { allowed: true }
+  if (!env.USAGE_KV) return { allowed: false, reason: 'Service temporarily unavailable (rate limiter not configured)' }
 
   // Check per-user daily cap first (avoids incrementing global counter for blocked users)
   const dailyCheck = await checkDailyCap(env.USAGE_KV, userId, endpoint, plan)

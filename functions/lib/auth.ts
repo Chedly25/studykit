@@ -7,7 +7,7 @@ let cachedJwks: { keys: JsonWebKey[]; fetchedAt: number } | null = null
 
 async function fetchJwks(issuerUrl: string): Promise<JsonWebKey[]> {
   const now = Date.now()
-  if (cachedJwks && now - cachedJwks.fetchedAt < 3600_000) {
+  if (cachedJwks && now - cachedJwks.fetchedAt < 300_000) {
     return cachedJwks.keys
   }
   const res = await fetch(`${issuerUrl}/.well-known/jwks.json`)
@@ -49,8 +49,15 @@ export async function verifyClerkJWT(
   const kid = headerJson.kid as string
   if (!kid) throw new Error('JWT missing kid')
 
-  const keys = await fetchJwks(issuerUrl)
-  const jwk = keys.find((k: Record<string, unknown>) => k.kid === kid)
+  let keys = await fetchJwks(issuerUrl)
+  let jwk = keys.find((k: Record<string, unknown>) => k.kid === kid)
+
+  // If kid not found and we were using cached keys, refetch (key may have rotated)
+  if (!jwk && cachedJwks) {
+    cachedJwks = null
+    keys = await fetchJwks(issuerUrl)
+    jwk = keys.find((k: Record<string, unknown>) => k.kid === kid)
+  }
   if (!jwk) throw new Error('No matching key found')
 
   const key = await crypto.subtle.importKey(
@@ -71,10 +78,11 @@ export async function verifyClerkJWT(
   const now = Math.floor(Date.now() / 1000)
   const GRACE_SECONDS = 5
 
-  if (payload.exp && payload.exp + GRACE_SECONDS < now) throw new Error('JWT expired')
+  if (!payload.exp || payload.exp + GRACE_SECONDS < now) throw new Error('JWT expired')
   if (payload.nbf && payload.nbf > now + GRACE_SECONDS) throw new Error('JWT not yet valid')
-  if (payload.iss && payload.iss !== issuerUrl) throw new Error('JWT issuer mismatch')
+  if (!payload.iss || payload.iss !== issuerUrl) throw new Error('JWT issuer mismatch')
   if (expectedAudience && payload.aud !== expectedAudience) throw new Error('JWT audience mismatch')
+  if (!payload.sub) throw new Error('JWT missing sub')
 
   return {
     sub: payload.sub,

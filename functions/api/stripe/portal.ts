@@ -27,7 +27,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   let stripeCustomerId: string | undefined
   try {
-    const jwt = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
+    const jwt = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
     stripeCustomerId = jwt.metadata?.stripeCustomerId
   } catch {
     return new Response(

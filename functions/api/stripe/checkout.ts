@@ -27,7 +27,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   let userId: string
   try {
-    const jwt = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
+    const jwt = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
     userId = jwt.sub
   } catch {
     return new Response(

@@ -9,6 +9,20 @@ import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 import { checkCostLimits } from '../lib/costProtection'
 
+const ALLOWED_TOOL_NAMES = new Set([
+  'getKnowledgeGraph', 'getWeakTopics', 'getReadinessScore', 'getStudyStats',
+  'getDueFlashcards', 'getUpcomingDeadlines', 'getFlashcardPerformance',
+  'getErrorPatterns', 'getCalibrationData', 'logQuestionResult',
+  'updateTopicConfidence', 'createFlashcardDeck', 'addAssignment',
+  'getStudyRecommendation', 'searchSources', 'getDocumentContent',
+  'listSources', 'searchWeb', 'generateStudyPlan', 'getStudyPlan',
+  'adjustStudyPlan', 'getStudentModel', 'updateStudentModel',
+  'getConversationHistory', 'getRecentSessions', 'getTopicDependencies',
+  'setTopicPrerequisites', 'autoMapSourceToTopics', 'startQuickReview',
+  'rateFlashcard', 'renderConceptCard', 'renderQuiz', 'renderCodePlayground',
+  'executeSequence', 'synthesizeLiterature', 'getMilestones', 'searchNotes',
+])
+
 const DEFAULT_MODEL = 'kimi-k2.5'
 const DEFAULT_API_URL = 'https://api.moonshot.ai/v1/chat/completions'
 const MAX_RETRIES = 1
@@ -66,7 +80,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   let userPlan: string | undefined
 
   try {
-    const { sub, metadata } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
+    const { sub, metadata } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
     userId = sub
     userPlan = metadata?.plan
   } catch (err) {
@@ -79,9 +93,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   // Rate limiting (KV-based, persistent across isolates)
-  const rl = env.USAGE_KV
-    ? await checkRateLimitKV(env.USAGE_KV, userId)
-    : { allowed: true, remaining: RATE_LIMIT }
+  if (!env.USAGE_KV) {
+    return new Response(
+      JSON.stringify({ error: 'Service temporarily unavailable' }),
+      { status: 503, headers: { ...cors, 'Content-Type': 'application/json' } }
+    )
+  }
+  const rl = await checkRateLimitKV(env.USAGE_KV, userId)
   if (!rl.allowed) {
     return new Response(
       JSON.stringify({ error: 'Rate limit exceeded. Try again later.' }),
@@ -191,9 +209,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       stream: shouldStream,
     }
 
-    // Add tools if provided
+    // Add tools if provided — filter against allowlist to prevent injection
     if (body.tools && Array.isArray(body.tools) && body.tools.length > 0) {
-      llmBody.tools = body.tools
+      const filtered = body.tools.filter(
+        (t: Record<string, unknown>) =>
+          t?.function && typeof (t.function as Record<string, unknown>).name === 'string' &&
+          ALLOWED_TOOL_NAMES.has((t.function as Record<string, unknown>).name as string)
+      ).slice(0, 40)
+      if (filtered.length > 0) llmBody.tools = filtered
     }
 
     // Fetch with retry for transient failures

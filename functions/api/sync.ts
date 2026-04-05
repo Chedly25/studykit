@@ -6,6 +6,27 @@ import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const SYNC_RATE_LIMIT = 30
+const SYNC_RATE_WINDOW_SECONDS = 3600
+
+async function checkSyncRateLimit(
+  kv: KVNamespace,
+  userId: string,
+  action: string,
+  cors: Record<string, string>,
+): Promise<Response | null> {
+  const rateLimitKey = `sync_rate:${action}:${userId}:${Math.floor(Date.now() / (SYNC_RATE_WINDOW_SECONDS * 1000))}`
+  const currentCount = parseInt((await kv.get(rateLimitKey)) ?? '0', 10)
+  if (currentCount >= SYNC_RATE_LIMIT) {
+    return new Response(JSON.stringify({ error: 'Sync rate limit exceeded. Try again later.' }), {
+      status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
+    })
+  }
+  await kv.put(rateLimitKey, String(currentCount + 1), { expirationTtl: SYNC_RATE_WINDOW_SECONDS })
+  return null
+}
+
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
   return new Response(null, { status: 204, headers: corsHeaders(context.env) })
 }
@@ -28,12 +49,21 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
 
-    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL)
+    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
     if (jwt.metadata?.plan !== 'pro') {
       return new Response(JSON.stringify({ error: 'Cloud sync requires Pro plan' }), {
         status: 403, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
+
+    // Rate limit
+    if (!env.USAGE_KV) {
+      return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
+        status: 503, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+    const rlResponse = await checkSyncRateLimit(env.USAGE_KV, jwt.sub, 'store', cors)
+    if (rlResponse) return rlResponse
 
     const body = await context.request.text()
     if (!body || body.length > 25_000_000) {
@@ -49,6 +79,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       if (!profileId) throw new Error('Missing profile ID')
     } catch {
       return new Response(JSON.stringify({ error: 'Invalid payload — missing profile.id' }), {
+        status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (!UUID_RE.test(profileId)) {
+      return new Response(JSON.stringify({ error: 'Invalid profileId' }), {
         status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
@@ -90,17 +126,26 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       })
     }
 
-    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL)
+    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
     if (jwt.metadata?.plan !== 'pro') {
       return new Response(JSON.stringify({ error: 'Cloud sync requires Pro plan' }), {
         status: 403, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
 
+    // Rate limit
+    if (!env.USAGE_KV) {
+      return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
+        status: 503, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+    const rlResponse = await checkSyncRateLimit(env.USAGE_KV, jwt.sub, 'pull', cors)
+    if (rlResponse) return rlResponse
+
     const url = new URL(context.request.url)
     const profileId = url.searchParams.get('profileId')
-    if (!profileId) {
-      return new Response(JSON.stringify({ error: 'Missing profileId parameter' }), {
+    if (!profileId || !UUID_RE.test(profileId)) {
+      return new Response(JSON.stringify({ error: 'Invalid or missing profileId' }), {
         status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
@@ -147,17 +192,26 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
       })
     }
 
-    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL)
+    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
     if (jwt.metadata?.plan !== 'pro') {
       return new Response(JSON.stringify({ error: 'Cloud sync requires Pro plan' }), {
         status: 403, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
 
+    // Rate limit
+    if (!env.USAGE_KV) {
+      return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
+        status: 503, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+    const rlResponse = await checkSyncRateLimit(env.USAGE_KV, jwt.sub, 'delete', cors)
+    if (rlResponse) return rlResponse
+
     const url = new URL(context.request.url)
     const profileId = url.searchParams.get('profileId')
-    if (!profileId) {
-      return new Response(JSON.stringify({ error: 'Missing profileId parameter' }), {
+    if (!profileId || !UUID_RE.test(profileId)) {
+      return new Response(JSON.stringify({ error: 'Invalid or missing profileId' }), {
         status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }

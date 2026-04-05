@@ -151,8 +151,9 @@ describe('checkCostLimits', () => {
     expect(result.reason).toContain('Upgrade to Pro')
   })
 
-  it('allows when USAGE_KV is absent', async () => {
+  it('blocks when USAGE_KV is absent (fail closed)', async () => {
     const result = await checkCostLimits({ USAGE_KV: undefined } as any, 'user1', 'chat')
-    expect(result.allowed).toBe(true)
+    expect(result.allowed).toBe(false)
+    expect(result.reason).toContain('rate limiter not configured')
   })
 })

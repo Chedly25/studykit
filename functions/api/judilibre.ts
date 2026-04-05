@@ -47,7 +47,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   try {
-    await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
+    await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
   } catch {
     return new Response(
       JSON.stringify({ error: 'Invalid token' }),

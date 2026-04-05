@@ -44,7 +44,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
 
-    const jwt = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
+    const jwt = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
 
     // Pro only
     if (jwt.metadata?.plan !== 'pro') {
@@ -54,7 +54,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     // Rate limit
-    if (env.USAGE_KV) {
+    if (!env.USAGE_KV) {
+      return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
+        status: 503, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+    {
       const rateLimitKey = `vision_rate:${jwt.sub}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
       const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
       if (currentCount >= RATE_LIMIT) {

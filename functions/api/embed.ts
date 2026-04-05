@@ -57,7 +57,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   let userId: string
   let userPlan: string | undefined
   try {
-    const { sub, metadata } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
+    const { sub, metadata } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
     userId = sub
     userPlan = metadata?.plan
   } catch {
@@ -68,7 +68,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   // Rate limiting (separate from chat)
-  if (env.USAGE_KV) {
+  if (!env.USAGE_KV) {
+    return new Response(
+      JSON.stringify({ error: 'Service temporarily unavailable' }),
+      { status: 503, headers: { ...cors, 'Content-Type': 'application/json' } }
+    )
+  }
+  {
     const rl = await checkRateLimitKV(env.USAGE_KV, userId)
     if (!rl.allowed) {
       return new Response(

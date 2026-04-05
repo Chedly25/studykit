@@ -8,6 +8,7 @@ export interface Env {
   LLM_MODEL?: string
   ANTHROPIC_API_KEY?: string
   CLERK_ISSUER_URL: string
+  CLERK_JWT_AUDIENCE?: string
   CLERK_SECRET_KEY: string
   STRIPE_SECRET_KEY: string
   STRIPE_WEBHOOK_SECRET: string

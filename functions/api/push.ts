@@ -50,7 +50,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   let userId: string
   try {
-    const jwt = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
+    const jwt = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
     userId = jwt.sub
   } catch {
     return new Response(JSON.stringify({ error: 'Invalid token' }), {
@@ -59,7 +59,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   // Rate limit
-  if (env.USAGE_KV) {
+  if (!env.USAGE_KV) {
+    return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
+      status: 503, headers: { ...cors, 'Content-Type': 'application/json' },
+    })
+  }
+  {
     const rateLimitKey = `push_rate:${userId}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
     const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
     if (currentCount >= RATE_LIMIT) {

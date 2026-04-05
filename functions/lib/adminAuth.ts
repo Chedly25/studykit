@@ -27,7 +27,7 @@ export async function verifyAdmin(
     throw new AdminError('Admin access not configured', 503)
   }
 
-  const { sub } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL)
+  const { sub } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
 
   // Verify user email via Clerk Backend API
   const userRes = await fetch(`https://api.clerk.com/v1/users/${sub}`, {
