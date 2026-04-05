@@ -94,6 +94,7 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
       let hintText = ''
       await streamChat({
         messages: [{
+          id: crypto.randomUUID(),
           role: 'user',
           content: `Give a progressive hint #${hintNumber} for this exercise without revealing the answer. Be concise (2-3 sentences). ${priorHintsText}\n\nExercise: ${currentExercise.text}`,
         }],

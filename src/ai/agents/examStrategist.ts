@@ -6,7 +6,7 @@
  * Runs after each practice exam. Output surfaces on exam results page.
  */
 import { db } from '../../db'
-import type { AgentDefinition } from './runner'
+import type { AgentDefinition, AgentContext } from './types'
 
 export interface ExamStrategy {
   sessionId: string
@@ -131,7 +131,7 @@ function analyzeExamStrategy(
     sessionId,
     timeDistribution: [...parts.entries()]
       .sort(([a], [b]) => a - b)
-      .map(([pi, data]) => ({ partIndex: pi, ...data })),
+      .map(([pi, data]) => ({ partIndex: pi, partName: data.name, timeSpent: data.time, questionCount: data.questions, pointsEarned: data.earned, pointsMax: data.max })),
     attemptEfficiency: {
       totalQuestions, attempted, correct, wrong, skipped,
       pointsEarned, pointsMax,
@@ -151,30 +151,33 @@ function analyzeExamStrategy(
 }
 
 export const examStrategistAgent: AgentDefinition = {
-  id: 'exam-strategist',
+  id: 'strategist',
   name: 'Exam Strategist',
+  description: 'Analyzes exam-taking strategy: time allocation, attempt efficiency, optimal question ordering',
+  model: 'fast',
   triggers: ['event'],
   cooldownMs: 0, // No cooldown — runs per exam
-  async execute(examProfileId: string) {
+  async execute(ctx: AgentContext) {
+    const examProfileId = ctx.examProfileId
     // Find the most recent graded exam
     const sessions = await db.practiceExamSessions
       .where('examProfileId').equals(examProfileId)
       .filter(s => s.phase === 'graded' && s.totalScore != null)
       .toArray()
 
-    if (sessions.length === 0) return { skipped: true }
+    if (sessions.length === 0) return { success: false, summary: 'No graded sessions', episodes: [] }
 
     const latest = sessions.sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))[0]
 
     // Check if we already analyzed this session
     const existingInsight = await db.agentInsights.get(`exam-strategist:${latest.id}`)
-    if (existingInsight) return { skipped: true, reason: 'Already analyzed' }
+    if (existingInsight) return { success: false, summary: 'Already analyzed', episodes: [] }
 
     const questions = await db.generatedQuestions
       .where('sessionId').equals(latest.id)
       .sortBy('questionIndex')
 
-    if (questions.length === 0) return { skipped: true }
+    if (questions.length === 0) return { success: false, summary: 'No questions found', episodes: [] }
 
     const strategy = analyzeExamStrategy(
       questions.map(q => ({
@@ -201,6 +204,6 @@ export const examStrategistAgent: AgentDefinition = {
       updatedAt: now,
     })
 
-    return { strategy }
+    return { success: true, summary: strategy.recommendations[0] ?? 'Exam strategy analyzed', data: strategy, episodes: [] }
   },
 }

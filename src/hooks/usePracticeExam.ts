@@ -6,7 +6,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { GeneratedQuestion, PracticeExamSession } from '../db/schema'
+import type { GeneratedQuestion, PracticeExamSession, ExamMode, JobType } from '../db/schema'
 import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
 import { useBackgroundJob } from './useBackgroundJob'
 import { createAdaptiveState, updateAdaptiveState, getNextQuestionIndex, type AdaptiveState } from '../lib/adaptiveDifficulty'
@@ -24,6 +24,9 @@ export interface SimulationSectionOption {
   questionFormat?: string
   samplePrompt?: string
   prepTimeMinutes?: number
+  instructions?: string
+  shuffleQuestions?: boolean
+  canGoBack?: boolean
 }
 
 export interface PracticeExamOptions {
@@ -39,7 +42,7 @@ export interface PracticeExamOptions {
   simulationMode?: boolean
   sections?: SimulationSectionOption[]
   // Document exam mode (Type B — CPGE concours)
-  examMode?: 'standard' | 'document'
+  examMode?: ExamMode
   documentSubject?: string   // 'maths-algebre' | 'maths-analyse' | 'physique' | 'informatique'
   documentConcours?: string  // 'polytechnique' | 'mines' | 'centrale' | 'ccinp'
 }
@@ -258,7 +261,7 @@ export function usePracticeExam(examProfileId: string | undefined) {
       totalSteps = 5
     }
 
-    const jobId = await enqueue(jobType, examProfileId, jobConfig, totalSteps)
+    const jobId = await enqueue(jobType as JobType, examProfileId, jobConfig, totalSteps)
     setGenJobId(jobId)
   }, [examProfileId, enqueue])
 

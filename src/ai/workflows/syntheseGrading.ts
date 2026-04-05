@@ -29,7 +29,7 @@ interface SynthesisGradeResult {
 
 async function llmMain(prompt: string, system: string, ctx: WorkflowContext, maxTokens = 16384): Promise<string> {
   const response = await streamChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
     system,
     tools: [],
     maxTokens,
@@ -155,11 +155,18 @@ Corrige selon le barème. Retourne UNIQUEMENT le JSON :
                 throw new Error('JSON parse failed')
               }
             }
-            const totalEarned = (parsed.criterionScores ?? []).reduce(
+            const criterionScores = (Array.isArray(parsed.criterionScores) ? parsed.criterionScores : []) as SynthesisGradeResult['criterionScores']
+            const totalEarned = criterionScores.reduce(
               (s: number, c: { earned: number }) => s + c.earned, 0
             )
             const totalMax = rubric.criteria.reduce((s, c) => s + c.points, 0)
-            gradeResult = { ...parsed, totalEarned, totalMax }
+            gradeResult = {
+              criterionScores,
+              documentsCited: (Array.isArray(parsed.documentsCited) ? parsed.documentsCited : []) as number[],
+              documentsMissed: (Array.isArray(parsed.documentsMissed) ? parsed.documentsMissed : []) as number[],
+              totalEarned,
+              totalMax,
+            }
           } catch {
             gradeResult = {
               criterionScores: rubric.criteria.map(c => ({

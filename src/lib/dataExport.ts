@@ -100,7 +100,7 @@ export async function exportProfileData(examProfileId: string): Promise<Blob> {
   const exportData: ExportData = {
     version: 1,
     exportedAt: new Date().toISOString(),
-    profile,
+    profile: profile as unknown as Record<string, unknown>,
     tables,
   }
 

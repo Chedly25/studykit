@@ -96,8 +96,6 @@ export function PracticeExamResults({
       proctorFlags = JSON.parse(session.proctorFlags)
     } catch { /* ignore */ }
   }
-  const hasProctorAlerts = proctorFlags && ((proctorFlags.tabSwitches ?? 0) > 0 || (proctorFlags.fullscreenExits ?? 0) > 0)
-
   // Compute per-question timing stats
   const questionTimings = questions.filter(q => q.timeSpentSeconds != null && q.timeSpentSeconds > 0)
   const hasTimingData = questionTimings.length > 0
@@ -397,7 +395,7 @@ export function PracticeExamResults({
                 context: {
                   score: `${percentage}%`,
                   weakTopics: weakAreas || 'none identified',
-                  topicName: session?.examName ?? '',
+                  topicName: session?.examSection ?? session?.focusSubject ?? '',
                 },
               },
             }))

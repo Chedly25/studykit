@@ -52,7 +52,7 @@ ${transcript}`
 
   try {
     const response = await streamChat({
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
       system: 'You are a learning analytics assistant. Analyze tutoring conversations and return structured JSON insights.',
       tools: [],
       authToken,

@@ -49,19 +49,20 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
     }
   }, [session])
 
-  if (!session) return null
-
-  const examMode = session.examMode ?? 'synthesis'
+  const examMode = session?.examMode ?? 'synthesis'
   const isGrandOral = examMode === 'grand-oral'
   const isSynthesis = examMode === 'synthesis'
-  const percentage = totalMax > 0 ? Math.round((totalEarned / totalMax) * 100) : 0
-  const passed = percentage >= 50
 
   // Parse Grand Oral model answer (stored as JSON, not text)
   const grandOralModel = useMemo<GrandOralModel | null>(() => {
-    if (!isGrandOral || !session.synthesisModelAnswer) return null
+    if (!isGrandOral || !session?.synthesisModelAnswer) return null
     try { return JSON.parse(session.synthesisModelAnswer) } catch { return null }
-  }, [isGrandOral, session.synthesisModelAnswer])
+  }, [isGrandOral, session?.synthesisModelAnswer])
+
+  if (!session) return null
+
+  const percentage = totalMax > 0 ? Math.round((totalEarned / totalMax) * 100) : 0
+  const passed = percentage >= 50
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">

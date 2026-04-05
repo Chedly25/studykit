@@ -118,7 +118,7 @@ export function useOnboarding() {
       const { default: i18n } = await import('../i18n')
       const lang = i18n.language ?? 'en'
       const primer = lang.startsWith('fr') ? 'Bonjour, je viens de m\'inscrire.' : 'Hi, I just signed up.'
-      const primerMsg: Message = { role: 'user', content: primer }
+      const primerMsg: Message = { id: crypto.randomUUID(), role: 'user', content: primer }
       stateRef.current = {
         ...stateRef.current,
         messages: [...stateRef.current.messages, primerMsg],
@@ -129,7 +129,7 @@ export function useOnboarding() {
 
     // 2. If user provided text, append user message (visible)
     if (userText) {
-      const userMsg: Message = { role: 'user', content: userText }
+      const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: userText }
       const userDisplay: DisplayMessage = {
         id: crypto.randomUUID(),
         role: 'user',
@@ -184,6 +184,7 @@ export function useOnboarding() {
 
         // d. Build assistant message and push to messages (preserve reasoning_content for Kimi thinking mode)
         const assistantMsg: Message = {
+          id: crypto.randomUUID(),
           role: 'assistant',
           content: contentBlocks,
           ...(response.reasoningContent ? { reasoning_content: response.reasoningContent } : {}),
@@ -285,7 +286,7 @@ export function useOnboarding() {
                 })
               }
 
-              const toolResultMsg: Message = { role: 'user', content: toolResults }
+              const toolResultMsg: Message = { id: crypto.randomUUID(), role: 'user', content: toolResults }
 
               stateRef.current = {
                 ...stateRef.current,
@@ -324,7 +325,7 @@ export function useOnboarding() {
                 })
               }
               if (remainingResults.length > 0) {
-                const deferMsg: Message = { role: 'user', content: remainingResults }
+                const deferMsg: Message = { id: crypto.randomUUID(), role: 'user', content: remainingResults }
                 stateRef.current = { ...stateRef.current, messages: [...stateRef.current.messages, deferMsg] }
               }
 
@@ -346,6 +347,7 @@ export function useOnboarding() {
             if (result.type === 'result') {
               // Push tool_result and continue loop
               const toolResultMsg: Message = {
+                id: crypto.randomUUID(),
                 role: 'user',
                 content: [{
                   type: 'tool_result',
@@ -427,6 +429,7 @@ export function useOnboarding() {
 
     // Push the real tool_result message (replacing the placeholder)
     const toolResultMsg: Message = {
+      id: crypto.randomUUID(),
       role: 'user',
       content: [{
         type: 'tool_result',

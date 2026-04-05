@@ -50,7 +50,7 @@ export function BackgroundJobsProvider({ children }: { children: React.ReactNode
     // Initialize swarm orchestrator — connects events to agent chains
     const cleanupSwarm = initSwarmOrchestrator(
       (type, examProfileId, config, totalSteps) => runnerRef.current!.enqueue(type as any, examProfileId, config, totalSteps),
-      (agentId, examProfileId) => agentRunnerRef.current!.runAgent(agentId as any, examProfileId),
+      (agentId, examProfileId) => agentRunnerRef.current!.run(agentId as any, examProfileId).then(() => {}),
     )
 
     return () => { cleanupSwarm() }

@@ -32,11 +32,13 @@ export function ChatMessageBubble({ message, messageIndex, conversationId, examP
   const isUser = message.role === 'user'
   const content = typeof message.content === 'string' ? message.content : ''
 
-  // Skip messages with only tool_use/tool_result blocks
-  if (!content && Array.isArray(message.content)) {
-    const hasText = message.content.some(b => 'type' in b && b.type === 'text' && 'text' in b && b.text)
-    if (!hasText) return null
-  }
+  // Check if message has visible text (computed before hooks to use as guard later)
+  const hasVisibleText = (() => {
+    if (!content && Array.isArray(message.content)) {
+      return message.content.some(b => 'type' in b && b.type === 'text' && 'text' in b && b.text)
+    }
+    return true
+  })()
 
   const text = typeof message.content === 'string'
     ? message.content
@@ -55,40 +57,6 @@ export function ChatMessageBubble({ message, messageIndex, conversationId, examP
     })
     return cleaned
   }, [text, citations])
-
-  if (!text) return null
-
-  if (isUser) {
-    // Parse context pill markers: <<CTX:label>>content<</CTX>>
-    const ctxRe = /<<CTX:(.+?)>>[\s\S]*?<<\/CTX>>\n?/g
-    const contextLabels: string[] = []
-    let userText = text
-    let match: RegExpExecArray | null
-    while ((match = ctxRe.exec(text)) !== null) {
-      contextLabels.push(match[1])
-    }
-    if (contextLabels.length > 0) {
-      userText = text.replace(/<<CTX:.+?>>[\s\S]*?<<\/CTX>>\n?/g, '').trim()
-    }
-
-    return (
-      <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-[var(--accent-bg)] border border-[var(--border-card)] text-[var(--text-body)]">
-          {contextLabels.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-2">
-              {contextLabels.map((label, i) => (
-                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-600 border border-blue-500/20">
-                  <FileText className="w-2.5 h-2.5" />
-                  {label}
-                </span>
-              ))}
-            </div>
-          )}
-          <p className="text-base whitespace-pre-wrap">{userText}</p>
-        </div>
-      </div>
-    )
-  }
 
   // Parse text into segments: text + rich markers (canvas, card, quiz)
   type Segment = { type: 'text'; content: string } | { type: 'canvas' } | { type: 'card'; id: string } | { type: 'quiz'; id: string } | { type: 'code'; id: string }
@@ -138,6 +106,41 @@ export function ChatMessageBubble({ message, messageIndex, conversationId, examP
   const showStreamingPlaceholder = isStreaming && PARTIAL_MARKER_RE.test(textWithoutCitations)
 
   const proseClass = `text-base prose prose-base max-w-none dark:prose-invert prose-p:my-2 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-3 prose-code:text-[var(--accent-text)] prose-code:bg-[var(--accent-bg)] prose-code:px-1 prose-code:py-0.5 prose-code:rounded ${isStreaming ? 'streaming-cursor' : ''}`
+
+  // Early returns — placed after all hooks to satisfy rules-of-hooks
+  if (!hasVisibleText) return null
+  if (!text) return null
+
+  if (isUser) {
+    const ctxRe = /<<CTX:(.+?)>>[\s\S]*?<<\/CTX>>\n?/g
+    const contextLabels: string[] = []
+    let userText = text
+    let match: RegExpExecArray | null
+    while ((match = ctxRe.exec(text)) !== null) {
+      contextLabels.push(match[1])
+    }
+    if (contextLabels.length > 0) {
+      userText = text.replace(/<<CTX:.+?>>[\s\S]*?<<\/CTX>>\n?/g, '').trim()
+    }
+
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-[var(--accent-bg)] border border-[var(--border-card)] text-[var(--text-body)]">
+          {contextLabels.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {contextLabels.map((label, i) => (
+                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                  <FileText className="w-2.5 h-2.5" />
+                  {label}
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="text-base whitespace-pre-wrap">{userText}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex gap-3 group">

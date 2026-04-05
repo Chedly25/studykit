@@ -209,7 +209,7 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId
 
         {streamingText && (
           <ChatMessageBubble
-            message={{ role: 'assistant', content: streamingText }}
+            message={{ id: crypto.randomUUID(), role: 'assistant', content: streamingText }}
             isStreaming
           />
         )}

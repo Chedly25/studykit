@@ -13,7 +13,7 @@ const mockLLM = vi.mocked(callFastModel)
 function makeMessages(count: number): Message[] {
   const msgs: Message[] = []
   for (let i = 0; i < count; i++) {
-    msgs.push({ role: i % 2 === 0 ? 'user' : 'assistant', content: `Message ${i}` })
+    msgs.push({ id: crypto.randomUUID(), role: i % 2 === 0 ? 'user' : 'assistant', content: `Message ${i}` })
   }
   return msgs
 }

@@ -47,7 +47,7 @@ Rules:
 - If the content is vague, infer reasonable structure from domain knowledge`
 
   const response = await streamChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
     system: 'You are a curriculum analysis expert. Extract a 3-level hierarchy: subjects > chapters > topics. IMPORTANT: Return only valid JSON with English key names (subjects, chapters, topics, name, weight) even if the content is in another language. Names can be in the original language.',
     tools: [],
     authToken,
@@ -142,7 +142,7 @@ Rules:
   const extractor = createStreamExtractor<ExtractedSubject>('subjects', { onItem: onSubject })
 
   const response = await streamChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
     system: 'You are a curriculum analysis expert. Extract a 3-level hierarchy: subjects > chapters > topics. IMPORTANT: Return only valid JSON with English key names (subjects, chapters, topics, name, weight) even if the content is in another language. Names can be in the original language.',
     tools: [],
     authToken,

@@ -264,7 +264,7 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
 
           {streamingText && (
             <ChatMessageBubble
-              message={{ role: 'assistant', content: streamingText }}
+              message={{ id: crypto.randomUUID(), role: 'assistant', content: streamingText }}
               isStreaming
             />
           )}

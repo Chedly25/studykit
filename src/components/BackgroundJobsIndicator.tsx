@@ -19,6 +19,15 @@ const JOB_LABELS: Record<JobType, string> = {
   'session-insight': 'Analyzing session',
   'exam-research': 'Researching exam format',
   'misconception-exercise': 'Generating targeted exercises',
+  'exam-simulation': 'Running exam simulation',
+  'document-exam-generation': 'Generating document exam',
+  'document-exam-grading': 'Grading document exam',
+  'synthesis-generation': 'Generating synthesis exam',
+  'synthesis-grading': 'Grading synthesis',
+  'cas-pratique-generation': 'Generating cas pratique',
+  'grand-oral-generation': 'Generating grand oral',
+  'fiche-generation': 'Generating revision fiche',
+  'exam-dna-analysis': 'Analyzing exam DNA',
 }
 
 export function BackgroundJobsIndicator() {

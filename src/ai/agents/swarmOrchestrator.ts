@@ -195,9 +195,9 @@ async function handleExamGraded(
 
   // 2. Run Exam Strategist
   try {
-    await runAgent('exam-strategist', examProfileId)
+    await runAgent('strategist', examProfileId)
     await logActivity(examProfileId, 'strategy-analyzed', 'Exam strategy ready — time allocation and efficiency analyzed')
-    swarmToast('📊 Exam strategy ready')
+    swarmToast('📊 Exam strategy ready', '')
   } catch { /* non-critical */ }
 
   // 3. Store remediation hints for the daily queue

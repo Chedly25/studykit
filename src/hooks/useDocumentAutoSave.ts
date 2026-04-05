@@ -11,7 +11,7 @@ export function useDocumentAutoSave(
 ): { isSaving: boolean; lastSaved: Date | null } {
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const answersRef = useRef(answers)
   answersRef.current = answers
 

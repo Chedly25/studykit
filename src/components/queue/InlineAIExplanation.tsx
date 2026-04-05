@@ -48,6 +48,7 @@ export function InlineAIExplanation({ content, topicName, onDismiss, onRetry, ex
         let accumulated = ''
         await streamChat({
           messages: [{
+            id: crypto.randomUUID(),
             role: 'user',
             content: `Explain this briefly and clearly (2-4 sentences). Topic: ${topicName}\n\nContent:\n${content}`,
           }],

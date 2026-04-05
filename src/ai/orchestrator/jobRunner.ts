@@ -526,7 +526,7 @@ export class JobRunner {
       } else if (job.type === 'session-insight') {
         const { generateSessionInsight } = await import('../insightGenerator')
         await generateSessionInsight(
-          config.messages as Array<{ role: 'user' | 'assistant'; content: string }>,
+          (config.messages as Array<{ role: 'user' | 'assistant'; content: string }>).map(m => ({ id: crypto.randomUUID(), ...m })),
           job.examProfileId,
           config.conversationId as string,
           authToken,

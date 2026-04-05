@@ -279,7 +279,7 @@ For "misconception": if incorrect, describe the specific misunderstanding in one
 
           const sectionSummary = Array.from(sectionMap.entries())
             .sort(([a], [b]) => a - b)
-            .map(([idx, d]) => `- ${d.name}: ${d.earned}/${d.max} points, ${d.correct}/${d.total} correct`)
+            .map(([_idx, d]) => `- ${d.name}: ${d.earned}/${d.max} points, ${d.correct}/${d.total} correct`)
             .join('\n')
 
           return `Generate performance feedback for a practice exam.
@@ -459,6 +459,7 @@ Return ONLY a JSON object:
 
       // Dispatch swarm event: exam graded
       try {
+        // @ts-expect-error Vite handles require() at build time
         const { dispatchSwarmEvent } = require('../agents/eventBus')
         dispatchSwarmEvent({
           type: 'exam-graded',

@@ -42,9 +42,6 @@ A revision sheet is a 1-2 page document that synthesizes EVERYTHING a student ne
 - Be concise but exhaustive — every line must be useful
 - No filler, no introduction, no conclusion — just content`
 
-  const masteredCards = config.conceptCards.filter(c => c.mastery >= 0.7)
-  const learningCards = config.conceptCards.filter(c => c.mastery < 0.7)
-
   const mistakesBlock = config.personalMistakes.length > 0
     ? `\n${isFr ? 'ERREURS PERSONNELLES (issues de vos examens blancs)' : 'PERSONAL MISTAKES (from your practice exams)'}:\n${config.personalMistakes.map(m => `- ${m}`).join('\n')}`
     : ''

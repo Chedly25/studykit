@@ -50,7 +50,7 @@ const SOURCE_CONTENT_BUDGET = 40_000 // chars — less than simulation since the
 
 async function llmMain(prompt: string, system: string, ctx: WorkflowContext, maxTokens = 16384): Promise<string> {
   const response = await streamChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
     system,
     tools: [],
     maxTokens,
@@ -72,7 +72,7 @@ export function createDocumentExamWorkflow(config: DocumentExamConfig): Workflow
     steps: [
       // ── Step 1: Gather context ────────────────────────────────
       dbQueryStep<GatherContextResult>('gatherContext', 'Gathering your study data', async (ctx) => {
-        const [profile, subjects, topics] = await Promise.all([
+        const [profile, _subjects, topics] = await Promise.all([
           db.examProfiles.get(ctx.examProfileId),
           db.subjects.where('examProfileId').equals(ctx.examProfileId).sortBy('order'),
           db.topics.where('examProfileId').equals(ctx.examProfileId).toArray(),
@@ -255,7 +255,7 @@ export function createDocumentExamWorkflow(config: DocumentExamConfig): Workflow
     ],
 
     // ── Aggregate: mark session ready ─────────────────────────────
-    async aggregate(ctx: WorkflowContext): Promise<void> {
+    async aggregate(_ctx: WorkflowContext): Promise<void> {
       // Verify document was generated
       const session = await db.practiceExamSessions.get(config.sessionId)
       if (!session?.documentContent) {

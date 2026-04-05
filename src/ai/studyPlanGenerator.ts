@@ -135,7 +135,7 @@ Rules:
 - For days close to the exam, increase practice exams`
 
   const response = await streamChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
     system: 'You are a study planning expert. Return only valid JSON, no markdown fences.',
     tools: [],
     authToken,
@@ -272,7 +272,7 @@ Rules:
   })
 
   const response = await streamChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
     system: 'You are a study planning expert. Return only valid JSON, no markdown fences.',
     tools: [],
     authToken,

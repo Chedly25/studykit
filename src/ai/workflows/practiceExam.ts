@@ -17,7 +17,7 @@ import { streamChat } from '../client'
 /** Call main model with high token limits for exam question generation */
 async function llmHighTokens(prompt: string, system: string, ctx: WorkflowContext): Promise<string> {
   const response = await streamChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
     system,
     tools: [],
     maxTokens: 16384,

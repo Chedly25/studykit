@@ -72,7 +72,7 @@ export class AgentRunner {
             )
         : async (prompt: string, system?: string) => {
             const response = await streamChat({
-              messages: [{ role: 'user' as const, content: prompt }],
+              messages: [{ id: crypto.randomUUID(), role: 'user' as const, content: prompt }],
               system: system ?? 'You are a helpful assistant.',
               tools: [],
               authToken,

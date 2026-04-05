@@ -9,20 +9,17 @@ import {
   ClipboardCheck, CalendarDays,
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
-import { LanguageToggle } from './LanguageToggle'
 import { ExamProfileSelector } from './knowledge/ExamProfileSelector'
 const ChatPanel = lazy(() => import('./chat/ChatPanel').then(m => ({ default: m.ChatPanel })))
 const SearchModal = lazy(() => import('./SearchModal').then(m => ({ default: m.SearchModal })))
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal'
 import { OnboardingTour } from './OnboardingTour'
 import { ProBadge } from './subscription/ProBadge'
-import { NotificationBell } from './NotificationBell'
 import { useSubscription } from '../hooks/useSubscription'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileMode } from '../hooks/useProfileMode'
 import { BackgroundJobsIndicator } from './BackgroundJobsIndicator'
 import { BottomNav } from './BottomNav'
-import { SyncIndicator } from './SyncIndicator'
 import { ErrorBoundary } from './ErrorBoundary'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { StreakAtRiskBanner } from './StreakAtRiskBanner'

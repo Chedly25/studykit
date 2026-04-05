@@ -4,7 +4,7 @@
  * The AI calls tools to render widgets and execute DB writes.
  */
 import type { ToolDefinition } from '../types'
-import type { ExamType, Subject, Chapter, Topic } from '../../db/schema'
+import type { ExamType, Subject, Chapter, Topic, TeachingStyle, ExplanationApproach, FeedbackTone } from '../../db/schema'
 import type { ExtractedSubject } from '../topicExtractor'
 import { db } from '../../db'
 import { getExamBlueprint } from '../../lib/examTopicMaps'
@@ -497,9 +497,9 @@ export async function executeOnboardingTool(
       await db.tutorPreferences.put({
         id: ctx.profileId,
         examProfileId: ctx.profileId,
-        teachingStyle: (input.teachingStyle as string) ?? 'detailed',
-        explanationApproach: (input.explanationApproach as string) ?? 'step-by-step',
-        feedbackTone: (input.feedbackTone as string) ?? 'encouraging',
+        teachingStyle: (input.teachingStyle as TeachingStyle) ?? 'detailed',
+        explanationApproach: (input.explanationApproach as ExplanationApproach) ?? 'step-by-step',
+        feedbackTone: (input.feedbackTone as FeedbackTone) ?? 'encouraging',
         languageLevel: 'beginner-friendly',
       })
       return { type: 'result', content: 'Tutor preferences saved.' }

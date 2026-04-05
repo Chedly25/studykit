@@ -36,7 +36,7 @@ export function usePlanCanvasAgent(draft: WizardDraft, dispatch: React.Dispatch<
     setStreamingText('')
 
     // Build messages for agent
-    agentMessagesRef.current.push({ role: 'user', content: text })
+    agentMessagesRef.current.push({ id: crypto.randomUUID(), role: 'user', content: text })
 
     try {
       const systemPrompt = buildCanvasSystemPrompt(draft)

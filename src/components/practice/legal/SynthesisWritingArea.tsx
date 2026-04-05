@@ -1,7 +1,7 @@
 /**
  * Writing area for the note de synthèse — large textarea with word count and timer.
  */
-import { useRef, useEffect, useCallback, useState } from 'react'
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Clock, Save, Check } from 'lucide-react'
 

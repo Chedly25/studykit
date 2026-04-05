@@ -51,7 +51,7 @@ export async function runWorkflow<T>(
       emitProgress({ isStreaming: true, streamedChars: 0 })
 
       const response = await streamChat({
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
         system: system ?? 'You are a helpful assistant. Respond with the requested format only.',
         tools: [],
         maxTokens: 8192,

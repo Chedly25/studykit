@@ -283,7 +283,7 @@ function DailyQueueContent() {
 
             let text = ''
             await streamChat({
-              messages: [{ role: 'user', content: prompt }],
+              messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
               system: 'You are a study coach giving a brief post-session debrief. Be warm, specific, and actionable. Use LaTeX $...$ for math if relevant. Never use emojis.',
               tools: [],
               maxTokens: 1024,
@@ -1118,8 +1118,7 @@ function ExerciseInline({
   }, [phase, exerciseAI.error, exerciseAI.isStreaming, exerciseAI.quotaExceeded])
 
   // Keyboard shortcuts for exercise self-rating (1/2/3) and continue (Enter)
-  const handleRateExRef = useRef(handleRate)
-  handleRateExRef.current = handleRate
+  const handleRateExRef = useRef<(score: number) => void>(() => {})
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
@@ -1191,6 +1190,7 @@ function ExerciseInline({
       setIsSubmitting(false)
     }
   }
+  handleRateExRef.current = handleRate
 
   const handleAnswerSubmit = (answer: string) => {
     if (isPro && answer.trim() && exercise) {

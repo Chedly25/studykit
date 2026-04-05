@@ -34,11 +34,6 @@ export default function ExamDNAPage() {
     [profileId],
   ) ?? []
 
-  // If DNA exists for this subject, only show docs that were used for it
-  const relevantDocIds = currentDNA
-    ? new Set(JSON.parse(currentDNA.sourceDocumentIds || '[]') as string[])
-    : null
-
   // DNA profiles for this profile
   const dnaProfiles = useLiveQuery(
     () => profileId
@@ -48,6 +43,7 @@ export default function ExamDNAPage() {
   ) ?? []
 
   const currentDNA = dnaProfiles.find(d => d.subject === subject)
+
   let parsedDNA: DNAProfile | null = null
   try { if (currentDNA?.dnaProfile) parsedDNA = JSON.parse(currentDNA.dnaProfile) } catch { /* ignore */ }
 

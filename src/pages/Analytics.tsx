@@ -498,7 +498,7 @@ function MockExamScoresCard({ examProfileId }: { examProfileId: string | undefin
     <div className="glass-card p-4 md:col-span-2">
       <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.mockExamScores')}</h2>
       <div className="h-32 flex items-end gap-2">
-        {exams.map((exam, i) => {
+        {exams.map((exam) => {
           const pct = Math.round((exam.totalScore! / exam.maxScore!) * 100)
           const passed = pct >= 60
           const dateLabel = new Date(exam.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })

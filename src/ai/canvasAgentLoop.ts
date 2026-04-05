@@ -103,7 +103,7 @@ export async function runCanvasAgentLoop(options: CanvasAgentOptions): Promise<C
         if (block.type === 'text') assistantContent.push({ type: 'text', text: block.text })
         else if (block.type === 'tool_use') assistantContent.push(block)
       }
-      const assistantMsg: Message = { role: 'assistant', content: assistantContent }
+      const assistantMsg: Message = { id: crypto.randomUUID(), role: 'assistant', content: assistantContent }
       if (response.reasoningContent) assistantMsg.reasoning_content = response.reasoningContent
       messages.push(assistantMsg)
 
@@ -132,14 +132,14 @@ export async function runCanvasAgentLoop(options: CanvasAgentOptions): Promise<C
           } as ToolResultBlock)
         }
       }
-      messages.push({ role: 'user', content: resultBlocks })
+      messages.push({ id: crypto.randomUUID(), role: 'user', content: resultBlocks })
       continue
     }
 
     // No tool calls — final text response
     const text = textBlocks.map(b => b.text).join('')
     finalText += text
-    messages.push({ role: 'assistant', content: text })
+    messages.push({ id: crypto.randomUUID(), role: 'assistant', content: text })
     break
   }
 

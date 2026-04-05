@@ -461,6 +461,7 @@ Respond ONLY with valid JSON (an array).`,
 
       // Dispatch swarm event: document processed
       try {
+        // @ts-expect-error Vite handles require() at build time
         const { dispatchSwarmEvent } = require('../agents/eventBus')
         const doc = ctx.results['gather-context']?.data as { documentId?: string; category?: string; mappedTopicIds?: string[] } | undefined
         if (doc?.documentId) {

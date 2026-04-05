@@ -563,8 +563,6 @@ function ManualSetupForm({ onReset, navigate, userId }: {
 
 function InlineWidget({
   widget,
-  extractedSubjects,
-  respondToWidget,
   completeOnboarding,
   navigate,
   disabled,

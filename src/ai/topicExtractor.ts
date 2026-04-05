@@ -98,7 +98,7 @@ Rules:
 - Use clear, concise topic names`
 
   const response = await streamChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
     system: 'You are a curriculum analysis expert. Analyze study materials and extract a 3-level hierarchy: subjects > chapters > topics. IMPORTANT: Return only valid JSON with English key names (subjects, chapters, topics, name, weight) even if the content is in another language. Subject, chapter, and topic names can be in the original language.',
     tools: [],
     authToken,
@@ -240,7 +240,7 @@ Rules:
   const extractor = createStreamExtractor<ExtractedSubject>('subjects', { onItem: onSubject })
 
   const response = await streamChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
     system: 'You are a curriculum analysis expert. Analyze study materials and extract a 3-level hierarchy: subjects > chapters > topics. IMPORTANT: Return only valid JSON with English key names (subjects, chapters, topics, name, weight) even if the content is in another language. Subject, chapter, and topic names can be in the original language.',
     tools: [],
     authToken,

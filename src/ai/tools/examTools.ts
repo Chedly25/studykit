@@ -55,7 +55,7 @@ Return ONLY valid JSON:
 
   try {
     const response = await streamChat({
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
       system: 'You are an expert exam grader. Grade fairly and provide constructive feedback. Return only valid JSON.',
       tools: [],
       authToken,

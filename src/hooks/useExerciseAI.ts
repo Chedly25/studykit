@@ -105,7 +105,7 @@ export function useExerciseAI(examProfileId: string | undefined) {
 
       let fullText = ''
       const response = await streamChat({
-        messages: [{ role: 'user', content: 'Grade my answer to this exercise.' }],
+        messages: [{ id: crypto.randomUUID(), role: 'user', content: 'Grade my answer to this exercise.' }],
         system: systemPrompt,
         tools: [],
         maxTokens: 2048,

@@ -16,7 +16,7 @@ export interface ExamDNAAnalysisConfig {
 
 async function llmMain(prompt: string, system: string, ctx: WorkflowContext, maxTokens = 8192): Promise<string> {
   const response = await streamChat({
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
     system,
     tools: [],
     maxTokens,
