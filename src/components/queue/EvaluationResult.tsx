@@ -73,10 +73,10 @@ export function EvaluationResult({ quality, feedback, onAccept, onOverride }: Pr
           onClick={onAccept}
           className="btn-primary text-sm px-4 py-2 flex items-center gap-1.5"
         >
-          {t('queue.acceptScore', 'Accept')}
+          {t('queue.acceptScore')}
           <span className="text-[10px] opacity-60 ml-1">Enter</span>
         </button>
-        <span className="text-xs text-[var(--text-faint)]">{t('queue.overrideLabel', 'Override:')}</span>
+        <span className="text-xs text-[var(--text-faint)]">{t('queue.overrideLabel')}</span>
         {OVERRIDE_BUTTONS.map((btn, i) => (
           <button
             key={btn.quality}
@@ -90,7 +90,7 @@ export function EvaluationResult({ quality, feedback, onAccept, onOverride }: Pr
       </div>
 
       <p className="text-[10px] text-[var(--text-faint)]">
-        {t('queue.enterToAccept', 'Enter to accept, 1-4 to override')}
+        {t('queue.enterToAccept')}
       </p>
     </div>
   )

@@ -187,7 +187,7 @@ function ProfileCard({
                   to="/study-plan"
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-[var(--text-muted)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-colors"
                 >
-                  <Calendar className="w-3.5 h-3.5" /> {t('ai.studyPlan', 'Plan')}
+                  <Calendar className="w-3.5 h-3.5" /> {t('ai.studyPlan')}
                 </Link>
               )}
               <Link

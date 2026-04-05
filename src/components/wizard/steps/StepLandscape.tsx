@@ -233,7 +233,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
     return (
       <div className="max-w-2xl mx-auto">
         <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">
-          {t('wizard.landscapeTitle', 'Define your research landscape')}
+          {t('wizard.landscapeTitle')}
         </h2>
         <p className="text-[var(--text-muted)] mb-6">
           {t('wizard.landscapeSubtitleResearch', 'Tell us about your research and we\'ll structure it for you')}
@@ -248,7 +248,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
               <textarea
                 value={freetextContent}
                 onChange={e => setFreetextContent(e.target.value)}
-                placeholder={t('wizard.researchQuestionPlaceholder', 'Describe your research focus, question, or thesis topic...')}
+                placeholder={t('wizard.researchQuestionPlaceholder')}
                 rows={4}
                 className="input-field w-full resize-none"
               />
@@ -256,7 +256,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
 
             <div>
               <label className="block text-sm font-medium text-[var(--text-body)] mb-1">
-                {t('wizard.researchStage', 'What stage are you at?')}
+                {t('wizard.researchStage')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {['Literature Review', 'Data Collection', 'Writing', 'Defending'].map(stage => (
@@ -281,7 +281,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
               disabled={!freetextContent.trim()}
               className="btn-primary w-full py-2.5 disabled:opacity-40"
             >
-              {t('wizard.analyzeResearch', 'Analyze & structure')}
+              {t('wizard.analyzeResearch')}
             </button>
           </div>
         )}
@@ -291,7 +291,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
             {processingState === 'streaming' && (
               <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[var(--accent-bg)] text-sm text-[var(--accent-text)]">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                {t('wizard.stillAnalyzing', `Found ${draft.subjects.length} subject${draft.subjects.length !== 1 ? 's' : ''} — still analyzing...`)}
+                {t('wizard.stillAnalyzing', 'Found {{count}} subject(s) — still analyzing...', { count: draft.subjects.length })}
               </div>
             )}
             <TopicMapEditor subjects={draft.subjects} dispatch={dispatch} />
@@ -331,7 +331,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
               }}
               className="text-sm text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
             >
-              {t('wizard.buildManually', 'Build manually instead')}
+              {t('wizard.buildManually')}
             </button>
           </div>
         )}
@@ -341,16 +341,16 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
 
   // Study mode: tabbed interface
   const tabs: { id: InputTab; label: string; icon: typeof Upload }[] = [
-    { id: 'upload', label: t('wizard.tabUpload', 'Upload'), icon: Upload },
-    { id: 'paste', label: t('wizard.tabPaste', 'Paste'), icon: FileText },
-    { id: 'freetext', label: t('wizard.tabDescribe', 'Describe'), icon: Type },
-    { id: 'manual', label: t('wizard.tabManual', 'Manual'), icon: PenTool },
+    { id: 'upload', label: t('wizard.tabUpload'), icon: Upload },
+    { id: 'paste', label: t('wizard.tabPaste'), icon: FileText },
+    { id: 'freetext', label: t('wizard.tabDescribe'), icon: Type },
+    { id: 'manual', label: t('wizard.tabManual'), icon: PenTool },
   ]
 
   return (
     <div className="max-w-2xl mx-auto">
       <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">
-        {t('wizard.landscapeTitle', 'Define the landscape')}
+        {t('wizard.landscapeTitle')}
       </h2>
       <p className="text-[var(--text-muted)] mb-6">
         {t('wizard.landscapeSubtitle', 'Tell us what you\'re studying — upload materials, describe it, or build from scratch')}
@@ -394,7 +394,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
                 {t('dashboard.onboarding.dropHere')}
               </p>
               <p className="text-sm text-[var(--text-muted)]">
-                {t('wizard.uploadHint', 'Upload your syllabus, outline, or course materials (PDF)')}
+                {t('wizard.uploadHint')}
               </p>
             </div>
           )}
@@ -405,7 +405,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
               <textarea
                 value={pasteContent}
                 onChange={e => setPasteContent(e.target.value)}
-                placeholder={t('wizard.pasteHint', 'Paste your syllabus, course description, or topic list here...')}
+                placeholder={t('wizard.pasteHint')}
                 rows={8}
                 className="input-field w-full resize-none"
               />
@@ -414,7 +414,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
                 disabled={!pasteContent.trim()}
                 className="btn-primary w-full py-2.5 disabled:opacity-40"
               >
-                {t('wizard.analyzeContent', 'Analyze content')}
+                {t('wizard.analyzeContent')}
               </button>
             </div>
           )}
@@ -434,7 +434,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
                 disabled={!freetextContent.trim()}
                 className="btn-primary w-full py-2.5 disabled:opacity-40"
               >
-                {t('wizard.analyzeContent', 'Analyze content')}
+                {t('wizard.analyzeContent')}
               </button>
             </div>
           )}
@@ -443,7 +443,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
           {activeTab === 'manual' && (
             <div>
               <p className="text-sm text-[var(--text-muted)] mb-4">
-                {t('wizard.manualHint', 'Build your own subject and topic structure from scratch')}
+                {t('wizard.manualHint')}
               </p>
               <button
                 onClick={() => {
@@ -461,7 +461,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
                 }}
                 className="btn-primary w-full py-2.5"
               >
-                {t('wizard.startManual', 'Start building')}
+                {t('wizard.startManual')}
               </button>
             </div>
           )}
@@ -519,7 +519,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
             }}
             className="text-sm text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors"
           >
-            {t('wizard.buildManually', 'Build manually instead')}
+            {t('wizard.buildManually')}
           </button>
         )}
       </div>

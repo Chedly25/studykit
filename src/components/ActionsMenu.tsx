@@ -57,32 +57,32 @@ export function ActionsMenu({ open, onClose, mode = 'dropdown' }: ActionsMenuPro
 
   const categories: ActionCategory[] = [
     {
-      title: t('nav.actionsStudy', 'Study'),
+      title: t('nav.actionsStudy'),
       items: [
         { icon: <Zap className="w-4 h-4" />, label: t('nav.todaySession', "Today's Session"), link: '/queue' },
-        { icon: <ClipboardCheck className="w-4 h-4" />, label: t('nav.practiceExam', 'Practice Exam'), link: '/practice-exam', pro: true },
-        { icon: <Timer className="w-4 h-4" />, label: t('nav.focusTimer', 'Focus Timer'), link: '/focus' },
+        { icon: <ClipboardCheck className="w-4 h-4" />, label: t('nav.practiceExam'), link: '/practice-exam', pro: true },
+        { icon: <Timer className="w-4 h-4" />, label: t('nav.focusTimer'), link: '/focus' },
       ],
     },
     {
-      title: t('nav.actionsPlan', 'Plan'),
+      title: t('nav.actionsPlan'),
       items: [
-        { icon: <CalendarDays className="w-4 h-4" />, label: t('nav.studyPlan', 'Study Plan'), link: '/study-plan' },
-        { icon: <UserCircle className="w-4 h-4" />, label: t('nav.examProfile', 'Exam Profile'), link: '/exam-profile' },
+        { icon: <CalendarDays className="w-4 h-4" />, label: t('nav.studyPlan'), link: '/study-plan' },
+        { icon: <UserCircle className="w-4 h-4" />, label: t('nav.examProfile'), link: '/exam-profile' },
       ],
     },
     {
-      title: t('nav.actionsMaterials', 'Materials'),
+      title: t('nav.actionsMaterials'),
       items: [
-        { icon: <FolderOpen className="w-4 h-4" />, label: t('nav.sources', 'Sources'), link: '/sources' },
-        { icon: <Dumbbell className="w-4 h-4" />, label: t('nav.exercises', 'Exercises'), link: '/exercises' },
+        { icon: <FolderOpen className="w-4 h-4" />, label: t('nav.sources'), link: '/sources' },
+        { icon: <Dumbbell className="w-4 h-4" />, label: t('nav.exercises'), link: '/exercises' },
       ],
     },
     {
-      title: t('nav.actionsInsights', 'Insights'),
+      title: t('nav.actionsInsights'),
       items: [
-        { icon: <BarChart3 className="w-4 h-4" />, label: t('nav.analytics', 'Analytics'), link: '/analytics' },
-        { icon: <FileText className="w-4 h-4" />, label: t('nav.report', 'Study Report'), link: '/report' },
+        { icon: <BarChart3 className="w-4 h-4" />, label: t('nav.analytics'), link: '/analytics' },
+        { icon: <FileText className="w-4 h-4" />, label: t('nav.report'), link: '/report' },
       ],
     },
   ]
@@ -128,7 +128,7 @@ export function ActionsMenu({ open, onClose, mode = 'dropdown' }: ActionsMenuPro
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--bg-card)] rounded-t-2xl border-t border-[var(--border-card)] pb-[env(safe-area-inset-bottom)] animate-slide-up">
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
             <span className="text-sm font-semibold text-[var(--text-heading)]">
-              {t('nav.actions', 'Actions')}
+              {t('nav.actions')}
             </span>
             <button onClick={onClose} className="p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-input)]">
               <X className="w-4 h-4" />

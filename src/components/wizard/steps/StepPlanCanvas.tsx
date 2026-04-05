@@ -203,11 +203,11 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-2xl font-bold text-[var(--text-heading)]">
-                {t('wizard.planTitle', 'Your study plan')}
+                {t('wizard.planTitle')}
               </h2>
               <p className="text-sm text-[var(--text-muted)]">
                 {generateError
-                  ? t('wizard.planEmptyHint', 'Add activities manually or use the chat to build your plan')
+                  ? t('wizard.planEmptyHint')
                   : t('wizard.planSubtitle', 'Here\'s a starting point based on what you told us. Edit directly or use the chat.')
                 }
               </p>
@@ -300,12 +300,12 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
               {isActivating ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  {t('wizard.activating', 'Setting up...')}
+                  {t('wizard.activating')}
                 </>
               ) : (
                 <>
                   <Rocket className="w-5 h-5" />
-                  {t('wizard.startLearning', 'Start learning')}
+                  {t('wizard.startLearning')}
                 </>
               )}
             </button>

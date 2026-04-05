@@ -27,11 +27,11 @@ export function DataLocalBanner({ isPro }: Props) {
       <ShieldAlert className="w-4 h-4 text-[var(--color-warning)] shrink-0" />
       <div className="flex-1 min-w-0">
         <span className="text-sm text-[var(--text-body)]">
-          {t('dashboard.dataLocalWarning', 'Your data is stored locally in this browser only. Export regularly or upgrade for cloud backup.')}
+          {t('dashboard.dataLocalWarning')}
         </span>
         <span className="flex gap-3 mt-1">
           <Link to="/settings" className="text-xs font-medium text-[var(--accent-text)] hover:underline">
-            {t('dashboard.exportData', 'Export')}
+            {t('dashboard.exportData')}
           </Link>
           <Link to="/pricing" className="text-xs font-medium text-[var(--color-warning)] hover:underline">
             {t('common.upgrade')}

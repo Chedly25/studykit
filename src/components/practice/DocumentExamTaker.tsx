@@ -149,13 +149,13 @@ export function DocumentExamTaker({
           <div className="flex items-center gap-3">
             <span className="text-xs text-[var(--text-faint)] flex items-center gap-1">
               {isSaving ? (
-                <><Save className="w-3 h-3 animate-pulse" /> {t('documentExam.saving', 'Saving...')}</>
+                <><Save className="w-3 h-3 animate-pulse" /> {t('documentExam.saving')}</>
               ) : lastSaved ? (
-                <><Check className="w-3 h-3 text-green-500" /> {t('documentExam.saved', 'Saved')}</>
+                <><Check className="w-3 h-3 text-green-500" /> {t('documentExam.saved')}</>
               ) : null}
             </span>
             <span className="text-xs text-[var(--text-muted)]">
-              {answeredSet.size}/{parsed.questionCount} {t('documentExam.answered', 'answered')}
+              {answeredSet.size}/{parsed.questionCount} {t('documentExam.answered')}
             </span>
           </div>
         </div>
@@ -211,7 +211,7 @@ export function DocumentExamTaker({
                 onClick={() => setShowSubmitConfirm(true)}
                 className="btn-primary px-8 py-3 text-sm font-medium"
               >
-                {t('documentExam.submitExam', 'Submit Exam')}
+                {t('documentExam.submitExam')}
               </button>
             </div>
           )}
@@ -225,7 +225,7 @@ export function DocumentExamTaker({
             <div className="flex items-center gap-2 text-amber-500">
               <AlertTriangle className="w-5 h-5" />
               <h3 className="font-semibold text-[var(--text-heading)]">
-                {t('practiceExam.confirmSubmit', 'Submit exam?')}
+                {t('practiceExam.confirmSubmit')}
               </h3>
             </div>
             {unansweredCount > 0 && (
@@ -235,10 +235,10 @@ export function DocumentExamTaker({
             )}
             <div className="flex gap-2">
               <button onClick={handleSubmit} className="flex-1 btn-primary py-2 text-sm">
-                {t('documentExam.submitExam', 'Submit')}
+                {t('documentExam.submitExam')}
               </button>
               <button onClick={() => setShowSubmitConfirm(false)} className="btn-secondary py-2 text-sm px-4">
-                {t('common.cancel', 'Cancel')}
+                {t('common.cancel')}
               </button>
             </div>
           </div>

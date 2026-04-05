@@ -81,7 +81,7 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
                 ? 'bg-green-500/10 text-green-600 border border-green-500/20'
                 : 'bg-red-500/10 text-red-500 border border-red-500/20'
             }`}>
-              {passed ? t('practiceExam.passed', 'Passed') : t('practiceExam.needsWork', 'Needs Work')}
+              {passed ? t('practiceExam.passed') : t('practiceExam.needsWork')}
             </span>
           </div>
           {session.overallFeedback && (
@@ -94,7 +94,7 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
       {grading && grading.criterionScores.length > 0 && (
         <div className="glass-card p-5 space-y-3">
           <h3 className="text-sm font-semibold text-[var(--text-heading)]">
-            {t('syntheseExam.criteriaBreakdown', 'Grading Breakdown')}
+            {t('syntheseExam.criteriaBreakdown')}
           </h3>
           <div className="space-y-2">
             {grading.criterionScores.map((c, i) => (
@@ -121,7 +121,7 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
       {isSynthesis && grading && (grading.documentsCited?.length > 0 || grading.documentsMissed?.length > 0) && (
         <div className="glass-card p-5 space-y-3">
           <h3 className="text-sm font-semibold text-[var(--text-heading)]">
-            {t('syntheseExam.documentCoverage', 'Document Coverage')}
+            {t('syntheseExam.documentCoverage')}
           </h3>
           <div className="flex flex-wrap gap-1.5">
             {[...new Set([...(grading.documentsCited ?? []), ...(grading.documentsMissed ?? [])])]
@@ -143,9 +143,9 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
               })}
           </div>
           <p className="text-xs text-[var(--text-muted)]">
-            {grading.documentsCited?.length ?? 0} {t('syntheseExam.cited', 'cited')} / {(grading.documentsCited?.length ?? 0) + (grading.documentsMissed?.length ?? 0)} total
+            {grading.documentsCited?.length ?? 0} {t('syntheseExam.cited')} / {(grading.documentsCited?.length ?? 0) + (grading.documentsMissed?.length ?? 0)} total
             {grading.documentsMissed && grading.documentsMissed.length > 0 && (
-              <> — {t('syntheseExam.missing', 'missing')}: {grading.documentsMissed.join(', ')}</>
+              <> — {t('syntheseExam.missing')}: {grading.documentsMissed.join(', ')}</>
             )}
           </p>
         </div>
@@ -156,8 +156,8 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
         <div className="glass-card p-5 space-y-3">
           <h3 className="text-sm font-semibold text-[var(--text-heading)]">
             {isGrandOral
-              ? t('grandOral.yourNotes', 'Your Preparation Notes')
-              : t('syntheseExam.yourSynthesis', 'Your Synthesis')}
+              ? t('grandOral.yourNotes')
+              : t('syntheseExam.yourSynthesis')}
           </h3>
           <div className="text-sm text-[var(--text-body)] whitespace-pre-wrap leading-relaxed">
             {session.synthesisAnswer}
@@ -173,14 +173,14 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
             className="flex items-center gap-2 text-sm font-semibold text-[var(--text-heading)] hover:text-[var(--accent-text)] transition-colors"
           >
             {showModel ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            {t('grandOral.modelPlan', 'Model Plan & Key Points')}
+            {t('grandOral.modelPlan')}
           </button>
           {showModel && (
             <div className="border-t border-[var(--border-card)] pt-3 space-y-4">
               {grandOralModel.expectedPlan && (
                 <div>
                   <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-                    {t('grandOral.expectedPlan', 'Expected Plan')}
+                    {t('grandOral.expectedPlan')}
                   </h4>
                   <div className="text-sm text-[var(--text-body)] space-y-1 pl-1">
                     <p className="font-semibold">I. {grandOralModel.expectedPlan.I}</p>
@@ -195,7 +195,7 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
               {grandOralModel.keyPoints && grandOralModel.keyPoints.length > 0 && (
                 <div>
                   <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-                    {t('grandOral.keyPoints', 'Key Points')}
+                    {t('grandOral.keyPoints')}
                   </h4>
                   <ul className="text-sm text-[var(--text-body)] space-y-1 list-disc pl-5">
                     {grandOralModel.keyPoints.map((pt, i) => <li key={i}>{pt}</li>)}
@@ -205,7 +205,7 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
               {grandOralModel.subsidiaryQuestions && grandOralModel.subsidiaryQuestions.length > 0 && (
                 <div>
                   <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-                    {t('grandOral.subsidiaryQuestions', 'Subsidiary Questions (Jury)')}
+                    {t('grandOral.subsidiaryQuestions')}
                   </h4>
                   <ol className="text-sm text-[var(--text-body)] space-y-1 list-decimal pl-5">
                     {grandOralModel.subsidiaryQuestions.map((q, i) => <li key={i}>{q}</li>)}
@@ -226,8 +226,8 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
           >
             {showModel ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             {isSynthesis
-              ? t('syntheseExam.modelSynthesis', 'Model Synthesis')
-              : t('casPratique.modelAnswer', 'Model Consultation')}
+              ? t('syntheseExam.modelSynthesis')
+              : t('casPratique.modelAnswer')}
           </button>
           {showModel && (
             <div className="border-t border-[var(--border-card)] pt-3">
@@ -241,7 +241,7 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
       <div className="flex justify-center gap-3 pb-8">
         <button onClick={onRetake} className="btn-secondary px-6 py-2.5 text-sm flex items-center gap-2">
           <RotateCcw className="w-4 h-4" />
-          {t('practiceExam.retake', 'Retake')}
+          {t('practiceExam.retake')}
         </button>
       </div>
     </div>

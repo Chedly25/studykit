@@ -42,7 +42,7 @@ export default function Pricing() {
           {t('subscription.pricing')}
         </h1>
         <p className="text-[var(--text-muted)] max-w-lg mx-auto">
-          {t('subscription.pricingSubtitle', 'Study for free with 25 AI messages/day and 2 practice exams/month. Go Pro for unlimited everything.')}
+          {t('subscription.pricingSubtitle')}
         </p>
 
         {/* Interval toggle */}

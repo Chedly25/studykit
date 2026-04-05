@@ -178,7 +178,7 @@ export function Layout() {
               <button
                 onClick={() => setSearchOpen(true)}
                 className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)] transition-colors"
-                title={`${t('search.title', 'Search')} (⌘K)`}
+                title={`${t('search.title')} (⌘K)`}
                 aria-label="Search"
               >
                 <Search size={18} />

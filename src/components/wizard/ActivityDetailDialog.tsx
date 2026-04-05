@@ -61,7 +61,7 @@ export function ActivityDetailDialog({
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-semibold text-[var(--text-heading)]">
-            {t('wizard.editActivity', 'Edit activity')}
+            {t('wizard.editActivity')}
           </h3>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-[var(--bg-input)] text-[var(--text-muted)]">
             <X className="w-4 h-4" />
@@ -70,7 +70,7 @@ export function ActivityDetailDialog({
 
         {/* Topic selector */}
         <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
-          {t('wizard.topic', 'Topic')}
+          {t('wizard.topic')}
         </label>
         <select
           value={editTopic}
@@ -84,7 +84,7 @@ export function ActivityDetailDialog({
 
         {/* Activity type pills */}
         <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
-          {t('wizard.activityType', 'Activity type')}
+          {t('wizard.activityType')}
         </label>
         <div className="flex flex-wrap gap-1.5 mb-4">
           {ACTIVITY_TYPES.map(type => {
@@ -109,7 +109,7 @@ export function ActivityDetailDialog({
 
         {/* Duration slider */}
         <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
-          {t('wizard.duration', 'Duration')}
+          {t('wizard.duration')}
         </label>
         <div className="flex items-center gap-3 mb-4">
           <Clock className="w-4 h-4 text-[var(--text-muted)]" />
@@ -127,7 +127,7 @@ export function ActivityDetailDialog({
 
         {/* Move to day */}
         <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
-          {t('wizard.moveToDay', 'Move to day')}
+          {t('wizard.moveToDay')}
         </label>
         <div className="flex gap-1.5 mb-6">
           {plan.days.map((day, i) => (
@@ -151,13 +151,13 @@ export function ActivityDetailDialog({
             onClick={handleDelete}
             className="px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors"
           >
-            {t('wizard.deleteActivity', 'Delete')}
+            {t('wizard.deleteActivity')}
           </button>
           <button
             onClick={onClose}
             className="px-4 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent-text)] text-white hover:opacity-90 transition-opacity"
           >
-            {t('common.done', 'Done')}
+            {t('common.done')}
           </button>
         </div>
       </div>

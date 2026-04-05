@@ -68,7 +68,7 @@ export function DocumentQuestionSidebar({
       {/* Desktop sidebar */}
       <div className="hidden lg:flex flex-col gap-3 sticky top-20 w-14 shrink-0">
         <div className="text-[10px] text-[var(--text-faint)] text-center font-medium">
-          {t('documentExam.sidebar', 'Questions')}
+          {t('documentExam.sidebar')}
         </div>
         <div className="flex flex-col items-center gap-1.5">
           {pills}
@@ -107,7 +107,7 @@ export function DocumentQuestionSidebar({
           <div className="absolute bottom-0 inset-x-0 bg-[var(--bg-card)] rounded-t-2xl p-5 space-y-3 animate-slide-up">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-[var(--text-heading)]">
-                {t('documentExam.sidebar', 'Questions')} ({answeredCount}/{questionCount})
+                {t('documentExam.sidebar')} ({answeredCount}/{questionCount})
               </span>
               <button onClick={() => setMobileOpen(false)} className="p-1 rounded-lg hover:bg-[var(--bg-input)]">
                 <X className="w-5 h-5 text-[var(--text-muted)]" />

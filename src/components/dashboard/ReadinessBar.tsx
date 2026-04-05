@@ -29,7 +29,7 @@ export function ReadinessBar({ percent }: ReadinessBarProps) {
       </div>
       <span key={clamped} className="text-sm font-semibold text-[var(--text-heading)] tabular-nums shrink-0 animate-count-up">
         {clamped === 0
-          ? t('dashboard.readinessJustStarted', 'Just getting started')
+          ? t('dashboard.readinessJustStarted')
           : t('dashboard.readiness', '{{percent}}% ready', { percent: clamped })
         }
       </span>

@@ -67,7 +67,7 @@ export function DocumentAnswerArea({
             {questionNumber}
           </span>
           <span className="text-xs text-[var(--text-muted)]">
-            {t('documentExam.yourAnswer', 'Your answer')}
+            {t('documentExam.yourAnswer')}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -79,7 +79,7 @@ export function DocumentAnswerArea({
           )}
           {!readOnly && (
             <span className="text-xs text-[var(--text-faint)]">
-              {wordCount} {t('documentExam.words', 'words')}
+              {wordCount} {t('documentExam.words')}
             </span>
           )}
         </div>
@@ -91,7 +91,7 @@ export function DocumentAnswerArea({
         value={value}
         onChange={e => onChange(e.target.value)}
         disabled={readOnly}
-        placeholder={readOnly ? '' : t('documentExam.answerPlaceholder', 'Write your answer here...')}
+        placeholder={readOnly ? '' : t('documentExam.answerPlaceholder')}
         className={`w-full px-4 py-3 bg-transparent text-sm text-[var(--text-body)] resize-none outline-none min-h-[120px] ${readOnly ? 'opacity-80 cursor-default' : ''}`}
       />
 
@@ -109,7 +109,7 @@ export function DocumentAnswerArea({
             onClick={() => setShowModel(!showModel)}
             className="w-full flex items-center justify-between px-4 py-2 text-xs text-[var(--text-muted)] hover:bg-[var(--bg-input)] transition-colors"
           >
-            <span>{t('documentExam.modelAnswer', 'Model answer')}</span>
+            <span>{t('documentExam.modelAnswer')}</span>
             {showModel ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
           {showModel && (

@@ -151,7 +151,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
         {/* Exam preset selector */}
         {formats.length === 0 ? (
           <div className="mb-4">
-            <p className="text-sm text-[var(--text-muted)] mb-3">{t('examFormat.usePreset', 'Use an exam preset or add sections manually:')}</p>
+            <p className="text-sm text-[var(--text-muted)] mb-3">{t('examFormat.usePreset')}</p>
             <div className="space-y-2 mb-4">
               {Object.entries(PRESET_CATEGORIES).map(([cat, label]) => {
                 const presets = EXAM_PRESETS.filter(p => p.category === cat)
@@ -174,7 +174,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                 )
               })}
             </div>
-            <p className="text-xs text-[var(--text-faint)] mb-2">{t('examFormat.orAddManually', 'Or add sections manually:')}</p>
+            <p className="text-xs text-[var(--text-faint)] mb-2">{t('examFormat.orAddManually')}</p>
             <div className="flex flex-wrap gap-2">
               {SECTION_PRESETS.map(p => (
                 <button
@@ -208,9 +208,9 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                     onChange={e => updateFormat(f.id, { sectionType: e.target.value as 'written' | 'oral' | 'practical' })}
                     className="text-[10px] bg-[var(--bg-input)] border border-[var(--border-card)] rounded px-1.5 py-1 text-[var(--text-body)]"
                   >
-                    <option value="written">{t('examFormat.written', 'Written')}</option>
-                    <option value="oral">{t('examFormat.oral', 'Oral')}</option>
-                    <option value="practical">{t('examFormat.practical', 'Practical')}</option>
+                    <option value="written">{t('examFormat.written')}</option>
+                    <option value="oral">{t('examFormat.oral')}</option>
+                    <option value="practical">{t('examFormat.practical')}</option>
                   </select>
                   <div className="flex gap-0.5 shrink-0">
                     <button onClick={() => moveFormat(idx, -1)} disabled={idx === 0} className="p-0.5 text-[var(--text-muted)] hover:text-[var(--text-body)] disabled:opacity-20">
@@ -228,7 +228,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                 {/* Row 2: Core fields */}
                 <div className="grid grid-cols-4 gap-2 mb-1">
                   <div>
-                    <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.time', 'Time (min)')}</label>
+                    <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.time')}</label>
                     <input
                       type="number"
                       value={f.timeAllocation}
@@ -237,7 +237,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.weight', 'Weight (%)')}</label>
+                    <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.weight')}</label>
                     <input
                       type="number"
                       value={f.pointWeight}
@@ -246,7 +246,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.questions', 'Questions')}</label>
+                    <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.questions')}</label>
                     <input
                       type="number"
                       value={f.questionCount ?? ''}
@@ -256,7 +256,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.questionFormat', 'Format')}</label>
+                    <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.questionFormat')}</label>
                     <select
                       value={f.questionFormat ?? ''}
                       onChange={e => updateFormat(f.id, { questionFormat: (e.target.value || undefined) as QuestionFormat | undefined })}
@@ -272,7 +272,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                 {/* Oral: Prep time */}
                 {isOral && (
                   <div className="mt-1 mb-1">
-                    <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.prepTime', 'Prep Time (min)')}</label>
+                    <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.prepTime')}</label>
                     <input
                       type="number"
                       value={f.prepTimeMinutes ?? ''}
@@ -289,7 +289,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                   className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--accent-text)] mt-1"
                 >
                   <Settings2 className="w-3 h-3" />
-                  {t('examFormat.advanced', 'Advanced')}
+                  {t('examFormat.advanced')}
                   {isAdvanced ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 </button>
 
@@ -297,28 +297,28 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                 {isAdvanced && (
                   <div className="mt-2 pt-2 border-t border-[var(--border-card)] space-y-2">
                     <div>
-                      <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.samplePrompt', 'Sample Prompt')}</label>
+                      <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.samplePrompt')}</label>
                       <textarea
                         value={f.samplePrompt ?? ''}
                         onChange={e => updateFormat(f.id, { samplePrompt: e.target.value || undefined })}
                         className="input-field w-full text-xs resize-none"
                         rows={2}
-                        placeholder={t('examFormat.samplePromptHint', 'Example question for the AI to follow')}
+                        placeholder={t('examFormat.samplePromptHint')}
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.instructions', 'Instructions')}</label>
+                      <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.instructions')}</label>
                       <textarea
                         value={f.instructions ?? ''}
                         onChange={e => updateFormat(f.id, { instructions: e.target.value || undefined })}
                         className="input-field w-full text-xs resize-none"
                         rows={2}
-                        placeholder={t('examFormat.instructionsHint', 'Shown to student before section starts')}
+                        placeholder={t('examFormat.instructionsHint')}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.passingScore', 'Passing Score (%)')}</label>
+                        <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.passingScore')}</label>
                         <input
                           type="number"
                           min={0}
@@ -331,7 +331,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                       </div>
                       {f.negativeMarking && (
                         <div>
-                          <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.penalty', 'Penalty')}</label>
+                          <label className="text-[10px] text-[var(--text-faint)]">{t('examFormat.penalty')}</label>
                           <input
                             type="number"
                             step={0.25}
@@ -351,7 +351,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                           onChange={e => updateFormat(f.id, { shuffleQuestions: e.target.checked })}
                           className="rounded border-[var(--border-card)]"
                         />
-                        {t('examFormat.shuffleQuestions', 'Shuffle questions')}
+                        {t('examFormat.shuffleQuestions')}
                       </label>
                       <label className="flex items-center gap-1.5 text-xs text-[var(--text-body)] cursor-pointer">
                         <input
@@ -360,7 +360,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                           onChange={e => updateFormat(f.id, { negativeMarking: e.target.checked })}
                           className="rounded border-[var(--border-card)]"
                         />
-                        {t('examFormat.negativeMarking', 'Negative marking')}
+                        {t('examFormat.negativeMarking')}
                       </label>
                       <label className="flex items-center gap-1.5 text-xs text-[var(--text-body)] cursor-pointer">
                         <input
@@ -369,7 +369,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                           onChange={e => updateFormat(f.id, { canGoBack: e.target.checked })}
                           className="rounded border-[var(--border-card)]"
                         />
-                        {t('examFormat.canGoBack', 'Can go back')}
+                        {t('examFormat.canGoBack')}
                       </label>
                     </div>
                   </div>
@@ -401,7 +401,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                   onChange={e => {
                     if (e.target.value) {
                       if (formats.length > 0 && !confirmPreset) {
-                        if (confirm(t('examFormat.replaceConfirm', 'This will replace your current sections. Continue?'))) {
+                        if (confirm(t('examFormat.replaceConfirm'))) {
                           applyExamPreset(e.target.value)
                         }
                       } else {
@@ -412,7 +412,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                   }}
                   className="text-[10px] bg-[var(--bg-input)] border border-[var(--border-card)] rounded px-2 py-1 text-[var(--text-muted)]"
                 >
-                  <option value="">{t('examFormat.usePreset', 'Use Exam Preset')}</option>
+                  <option value="">{t('examFormat.usePreset')}</option>
                   {Object.entries(PRESET_CATEGORIES).map(([cat, label]) => {
                     const presets = EXAM_PRESETS.filter(p => p.category === cat)
                     if (presets.length === 0) return null

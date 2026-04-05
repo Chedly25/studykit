@@ -103,7 +103,7 @@ export function OralExamSection({ questions, prepTimePerQuestion, onComplete, ex
   if (!currentQ) {
     return (
       <div className="text-center py-8">
-        <p className="text-sm text-[var(--text-muted)]">{t('practiceExam.oralComplete', 'Oral section complete')}</p>
+        <p className="text-sm text-[var(--text-muted)]">{t('practiceExam.oralComplete')}</p>
       </div>
     )
   }
@@ -113,7 +113,7 @@ export function OralExamSection({ questions, prepTimePerQuestion, onComplete, ex
       {/* Question counter */}
       <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
         <span>{t('practiceExam.questionOf', { current: currentIdx + 1, total: questions.length })}</span>
-        <span className="flex items-center gap-1"><Volume2 className="w-3 h-3" /> {t('practiceExam.oralExam', 'Oral Exam')}</span>
+        <span className="flex items-center gap-1"><Volume2 className="w-3 h-3" /> {t('practiceExam.oralExam')}</span>
       </div>
 
       {/* Question text */}
@@ -127,7 +127,7 @@ export function OralExamSection({ questions, prepTimePerQuestion, onComplete, ex
       {phase === 'presenting' && (
         <div className="text-center py-4">
           <Volume2 className="w-6 h-6 text-[var(--accent-text)] mx-auto mb-2 animate-pulse" />
-          <p className="text-sm text-[var(--text-muted)]">{t('practiceExam.readingQuestion', 'Reading question aloud...')}</p>
+          <p className="text-sm text-[var(--text-muted)]">{t('practiceExam.readingQuestion')}</p>
         </div>
       )}
 
@@ -136,9 +136,9 @@ export function OralExamSection({ questions, prepTimePerQuestion, onComplete, ex
           <div className="text-3xl font-mono font-bold text-[var(--text-heading)]">
             {Math.floor(prepRemaining / 60)}:{String(prepRemaining % 60).padStart(2, '0')}
           </div>
-          <p className="text-sm text-[var(--text-muted)]">{t('practiceExam.prepTime', 'Preparation time — think about your answer')}</p>
+          <p className="text-sm text-[var(--text-muted)]">{t('practiceExam.prepTime')}</p>
           <button onClick={handleSkipPrep} className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1 mx-auto">
-            <SkipForward className="w-3 h-3" /> {t('practiceExam.skipPrep', 'Skip prep')}
+            <SkipForward className="w-3 h-3" /> {t('practiceExam.skipPrep')}
           </button>
         </div>
       )}
@@ -148,9 +148,9 @@ export function OralExamSection({ questions, prepTimePerQuestion, onComplete, ex
           <div className="w-16 h-16 rounded-full bg-red-500/15 flex items-center justify-center mx-auto animate-pulse">
             <Mic className="w-8 h-8 text-red-500" />
           </div>
-          <p className="text-sm font-medium text-red-500">{t('practiceExam.recording', 'Recording your answer...')}</p>
+          <p className="text-sm font-medium text-red-500">{t('practiceExam.recording')}</p>
           <button onClick={handleStopRecording} className="btn-primary text-sm px-6 py-2 flex items-center gap-2 mx-auto">
-            <MicOff className="w-4 h-4" /> {t('practiceExam.stopRecording', 'Stop recording')}
+            <MicOff className="w-4 h-4" /> {t('practiceExam.stopRecording')}
           </button>
         </div>
       )}
@@ -158,7 +158,7 @@ export function OralExamSection({ questions, prepTimePerQuestion, onComplete, ex
       {phase === 'transcribing' && (
         <div className="text-center py-4">
           <Loader2 className="w-6 h-6 text-[var(--accent-text)] mx-auto mb-2 animate-spin" />
-          <p className="text-sm text-[var(--text-muted)]">{t('practiceExam.transcribing', 'Transcribing...')}</p>
+          <p className="text-sm text-[var(--text-muted)]">{t('practiceExam.transcribing')}</p>
         </div>
       )}
 
@@ -166,14 +166,14 @@ export function OralExamSection({ questions, prepTimePerQuestion, onComplete, ex
         <div className="space-y-3">
           {transcript ? (
             <div className="glass-card p-4">
-              <p className="text-xs font-medium text-[var(--text-muted)] mb-1">{t('practiceExam.yourAnswer', 'Your answer:')}</p>
+              <p className="text-xs font-medium text-[var(--text-muted)] mb-1">{t('practiceExam.yourAnswer')}</p>
               <p className="text-sm text-[var(--text-body)]">{transcript}</p>
             </div>
           ) : (
-            <p className="text-sm text-[var(--text-muted)] text-center">{t('practiceExam.noAnswer', 'No answer recorded')}</p>
+            <p className="text-sm text-[var(--text-muted)] text-center">{t('practiceExam.noAnswer')}</p>
           )}
           <button onClick={handleNext} className="btn-primary text-sm px-6 py-2 flex items-center gap-2 mx-auto">
-            {currentIdx + 1 >= questions.length ? t('practiceExam.finishSection', 'Finish section') : t('common.next', 'Next')}
+            {currentIdx + 1 >= questions.length ? t('practiceExam.finishSection') : t('common.next')}
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

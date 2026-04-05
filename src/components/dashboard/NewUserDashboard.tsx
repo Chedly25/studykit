@@ -66,22 +66,22 @@ export function NewUserDashboard({ profile, userName, documentCount, practiceExa
     {
       done: documentCount > 0,
       icon: Upload,
-      title: t('dashboard.step1Title', 'Upload your courses'),
-      hint: t('dashboard.step1Hint', 'Drop your PDFs, photos or notes so the AI can analyze your program'),
+      title: t('dashboard.step1Title'),
+      hint: t('dashboard.step1Hint'),
       link: '/sources',
     },
     {
       done: practiceExamCount > 0,
       icon: ClipboardCheck,
-      title: t('dashboard.step2Title', 'Take a practice exam'),
-      hint: t('dashboard.step2Hint', 'Test your level with an exam-style test'),
+      title: t('dashboard.step2Title'),
+      hint: t('dashboard.step2Hint'),
       link: '/practice-exam',
     },
     {
       done: sessionCount > 0,
       icon: BookOpen,
-      title: t('dashboard.step3Title', 'Start a study session'),
-      hint: t('dashboard.step3Hint', 'The AI guides you question by question'),
+      title: t('dashboard.step3Title'),
+      hint: t('dashboard.step3Hint'),
       link: '/queue',
     },
   ]
@@ -208,7 +208,7 @@ export function NewUserDashboard({ profile, userName, documentCount, practiceExa
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-[var(--text-faint)]">
-                    {step.done ? t('dashboard.stepDone', 'Done') : `${i + 1}`}
+                    {step.done ? t('dashboard.stepDone') : `${i + 1}`}
                   </span>
                   <h3 className="text-sm font-semibold text-[var(--text-heading)]">{step.title}</h3>
                 </div>

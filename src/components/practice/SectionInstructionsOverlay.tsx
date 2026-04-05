@@ -38,7 +38,7 @@ export function SectionInstructionsOverlay({
             <Clock className="w-4 h-4" /> {timeAllocation} min
           </span>
           <span className="flex items-center gap-1.5">
-            <FileText className="w-4 h-4" /> {questionCount} {t('examFormat.questions', 'questions')}
+            <FileText className="w-4 h-4" /> {questionCount} {t('examFormat.questions')}
           </span>
           <span className="capitalize">{sectionType}</span>
         </div>
@@ -46,7 +46,7 @@ export function SectionInstructionsOverlay({
         {instructions && (
           <div className="p-3 rounded-lg bg-[var(--bg-input)] border-l-2 border-[var(--accent-text)]">
             <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1">
-              {t('examFormat.instructions', 'Instructions')}
+              {t('examFormat.instructions')}
             </p>
             <p className="text-sm text-[var(--text-body)] leading-relaxed">{instructions}</p>
           </div>
@@ -56,7 +56,7 @@ export function SectionInstructionsOverlay({
           onClick={onBegin}
           className="btn-primary w-full py-3 text-sm font-semibold flex items-center justify-center gap-2"
         >
-          {t('practiceExam.beginSection', 'Begin Section')} <ArrowRight className="w-4 h-4" />
+          {t('practiceExam.beginSection')} <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </div>

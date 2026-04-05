@@ -127,7 +127,7 @@ export function ChatHistory({ examProfileId, activeConversationId, onSelect, onN
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-faint)]" />
             <input
               type="text"
-              placeholder={t('ai.searchConversations', 'Search...')}
+              placeholder={t('ai.searchConversations')}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full text-[10px] bg-[var(--bg-input)] border border-[var(--border-card)] rounded-md pl-6 pr-2 py-1 text-[var(--text-body)]"
@@ -178,7 +178,7 @@ export function ChatHistory({ examProfileId, activeConversationId, onSelect, onN
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-faint)]" />
           <input
             type="text"
-            placeholder={t('ai.searchConversations', 'Search conversations...')}
+            placeholder={t('ai.searchConversations')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full text-xs bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg pl-8 pr-3 py-1.5 text-[var(--text-body)]"

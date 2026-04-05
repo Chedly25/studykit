@@ -61,9 +61,9 @@ export function SynthesisWritingArea({
           {!readOnly && (
             <span className="text-xs text-[var(--text-faint)] flex items-center gap-1">
               {isSaving ? (
-                <><Save className="w-3 h-3 animate-pulse" /> {t('documentExam.saving', 'Saving...')}</>
+                <><Save className="w-3 h-3 animate-pulse" /> {t('documentExam.saving')}</>
               ) : lastSaved ? (
-                <><Check className="w-3 h-3 text-green-500" /> {t('documentExam.saved', 'Saved')}</>
+                <><Check className="w-3 h-3 text-green-500" /> {t('documentExam.saved')}</>
               ) : null}
             </span>
           )}
@@ -77,7 +77,7 @@ export function SynthesisWritingArea({
           value={value}
           onChange={e => onChange(e.target.value)}
           disabled={readOnly}
-          placeholder={readOnly ? '' : t('syntheseExam.placeholder', 'Rédigez votre note de synthèse ici...\n\nIntroduction\n\nI. ...\n  A. ...\n  B. ...\n\nII. ...\n  A. ...\n  B. ...')}
+          placeholder={readOnly ? '' : t('syntheseExam.placeholder')}
           className={`w-full h-full px-6 py-4 bg-transparent text-sm text-[var(--text-body)] resize-none outline-none leading-relaxed ${readOnly ? 'opacity-80 cursor-default' : ''}`}
           style={{ minHeight: '400px' }}
         />
@@ -87,7 +87,7 @@ export function SynthesisWritingArea({
       <div className="flex items-center justify-between px-4 py-2 border-t border-[var(--border-card)] shrink-0">
         <div className="flex items-center gap-3">
           <span className={`text-xs font-medium ${wordCountColor}`}>
-            {wordCount} / ~{targetWordCount} {t('documentExam.words', 'words')}
+            {wordCount} / ~{targetWordCount} {t('documentExam.words')}
           </span>
           {/* Progress bar */}
           <div className="w-24 h-1.5 bg-[var(--bg-input)] rounded-full overflow-hidden">
@@ -102,7 +102,7 @@ export function SynthesisWritingArea({
           </div>
         </div>
         <span className="text-[10px] text-[var(--text-faint)]">
-          ≈ {Math.max(1, Math.round(wordCount / 600))} {t('syntheseExam.pages', 'page(s)')}
+          ≈ {Math.max(1, Math.round(wordCount / 600))} {t('syntheseExam.pages')}
         </span>
       </div>
     </div>

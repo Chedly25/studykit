@@ -192,7 +192,7 @@ export default function PracticeExam() {
           <div className="max-w-3xl mx-auto px-4 pt-6">
             <div className="glass-card p-5 mb-4 border-l-4 border-[var(--accent-text)] flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-[var(--text-heading)] mb-1">{t('practiceExam.resumeExam', 'Resume Exam')}</h3>
+                <h3 className="font-semibold text-[var(--text-heading)] mb-1">{t('practiceExam.resumeExam')}</h3>
                 <p className="text-sm text-[var(--text-muted)]">
                   {t('practiceExam.unfinishedExam', 'You have an unfinished exam from {{time}}.', {
                     time: exam.inProgressSession.startedAt
@@ -203,10 +203,10 @@ export default function PracticeExam() {
               </div>
               <div className="flex gap-2 shrink-0 ml-4">
                 <button onClick={() => exam.resumeSession(exam.inProgressSession!.id)} className="btn-primary text-sm px-4 py-2">
-                  {t('practiceExam.resume', 'Resume')}
+                  {t('practiceExam.resume')}
                 </button>
                 <button onClick={() => exam.abandonSession(exam.inProgressSession!.id)} className="btn-secondary text-sm px-4 py-2">
-                  {t('practiceExam.startNew', 'Start New')}
+                  {t('practiceExam.startNew')}
                 </button>
               </div>
             </div>

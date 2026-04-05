@@ -714,11 +714,11 @@ function DailyQueueContent() {
                 <div className="flex flex-col gap-2 max-w-xs mx-auto">
                   {topics.some(tp => tp.mastery < 0.3) && isPro && (
                     <button onClick={() => navigate('/practice-exam')} className="btn-primary w-full py-2 text-sm">
-                      {t('queue.takePracticeExam', 'Take a practice exam')}
+                      {t('queue.takePracticeExam')}
                     </button>
                   )}
                   <button onClick={() => navigate('/analytics')} className="btn-secondary w-full py-2 text-sm">
-                    {t('queue.viewProgress', 'View your progress')}
+                    {t('queue.viewProgress')}
                   </button>
                 </div>
               </>
@@ -967,7 +967,7 @@ function FlashcardReviewInline({
             />
             <div className="flex items-center justify-center gap-2 mt-2 text-sm text-[var(--text-muted)]">
               <Loader2 className="w-4 h-4 animate-spin" />
-              {t('queue.evaluating', 'Evaluating your answer...')}
+              {t('queue.evaluating')}
             </div>
           </div>
         )}
@@ -1308,7 +1308,7 @@ function ExerciseInline({
       {/* Phase: answering — show AnswerInput */}
       {phase === 'answering' && !explanationCtx && (
         <AnswerInput
-          placeholder={t('queue.writeSolution', 'Write your solution...')}
+          placeholder={t('queue.writeSolution')}
           onSubmit={handleAnswerSubmit}
           onSkip={handleAnswerSkip}
           {...voiceProps}
@@ -1326,7 +1326,7 @@ function ExerciseInline({
           {exerciseAI.isStreaming && (
             <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
               <Loader2 className="w-4 h-4 animate-spin" />
-              {t('queue.gradingAnswer', 'Grading your answer...')}
+              {t('queue.gradingAnswer')}
             </div>
           )}
         </div>
@@ -1584,7 +1584,7 @@ function ConceptQuizInline({
       {/* Phase: answering — show AnswerInput */}
       {phase === 'answering' && !revealed && (
         <AnswerInput
-          placeholder={t('queue.explainInOwnWords', 'Explain in your own words...')}
+          placeholder={t('queue.explainInOwnWords')}
           onSubmit={handleAnswerSubmit}
           onSkip={handleAnswerSkip}
           {...voiceProps}
@@ -1602,7 +1602,7 @@ function ConceptQuizInline({
           />
           <div className="flex items-center justify-center gap-2 text-sm text-[var(--text-muted)]">
             <Loader2 className="w-4 h-4 animate-spin" />
-            {t('queue.evaluating', 'Evaluating your answer...')}
+            {t('queue.evaluating')}
           </div>
         </div>
       )}

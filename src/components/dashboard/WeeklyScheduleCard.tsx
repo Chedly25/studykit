@@ -26,7 +26,7 @@ export function WeeklyScheduleCard({ examProfileId }: Props) {
     <div className="glass-card p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5" /> {t('dashboard.thisWeek', 'This Week')}
+          <Calendar className="w-3.5 h-3.5" /> {t('dashboard.thisWeek')}
         </h3>
         <span className="text-xs text-[var(--text-faint)]">
           {t('dashboard.itemsDue', { count: totalWeek })}
@@ -77,9 +77,9 @@ export function WeeklyScheduleCard({ examProfileId }: Props) {
       {hoveredDay && hoveredDay.total > 0 && (
         <div className="mt-2 pt-2 border-t border-[var(--border-card)] text-xs text-[var(--text-muted)] flex gap-3 animate-fade-in">
           <span>{hoveredDay.dayLabel}</span>
-          {hoveredDay.flashcards > 0 && <span className="text-purple-500">{hoveredDay.flashcards} {t('dashboard.scheduleFlashcards', 'flashcards')}</span>}
-          {hoveredDay.exercises > 0 && <span className="text-orange-500">{hoveredDay.exercises} {t('dashboard.scheduleExercises', 'exercises')}</span>}
-          {hoveredDay.concepts > 0 && <span className="text-blue-500">{hoveredDay.concepts} {t('dashboard.scheduleConcepts', 'concepts')}</span>}
+          {hoveredDay.flashcards > 0 && <span className="text-purple-500">{hoveredDay.flashcards} {t('dashboard.scheduleFlashcards')}</span>}
+          {hoveredDay.exercises > 0 && <span className="text-orange-500">{hoveredDay.exercises} {t('dashboard.scheduleExercises')}</span>}
+          {hoveredDay.concepts > 0 && <span className="text-blue-500">{hoveredDay.concepts} {t('dashboard.scheduleConcepts')}</span>}
         </div>
       )}
     </div>

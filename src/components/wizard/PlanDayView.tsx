@@ -164,7 +164,7 @@ export function PlanDayView({
         {/* Empty state */}
         {day.activities.length === 0 && (
           <div className="text-center py-8 text-sm text-[var(--text-muted)]">
-            {t('wizard.noDayActivities', 'No activities for this day. Add one below or use the chat.')}
+            {t('wizard.noDayActivities')}
           </div>
         )}
 
@@ -176,7 +176,7 @@ export function PlanDayView({
               onChange={e => setNewTopic(e.target.value)}
               className="w-full text-sm bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-3 py-2 text-[var(--text-body)]"
             >
-              <option value="">{t('wizard.selectTopic', 'Select topic...')}</option>
+              <option value="">{t('wizard.selectTopic')}</option>
               {allTopics.map(name => (
                 <option key={name} value={name}>{name}</option>
               ))}
@@ -208,13 +208,13 @@ export function PlanDayView({
                 disabled={!newTopic}
                 className="flex-1 text-sm py-2 rounded-lg bg-[var(--accent-text)] text-white disabled:opacity-40"
               >
-                {t('wizard.add', 'Add')}
+                {t('wizard.add')}
               </button>
               <button
                 onClick={() => { setIsAdding(false); setNewTopic(''); setNewType('read'); setNewDuration(30) }}
                 className="text-sm py-2 px-4 rounded-lg text-[var(--text-muted)]"
               >
-                {t('common.cancel', 'Cancel')}
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -226,7 +226,7 @@ export function PlanDayView({
             }}
             className="w-full py-3 rounded-lg border border-dashed border-[var(--border-card)] text-sm text-[var(--text-muted)] hover:border-[var(--accent-text)]/50 hover:text-[var(--accent-text)] transition-colors flex items-center justify-center gap-1.5"
           >
-            <Plus className="w-4 h-4" /> {t('wizard.addActivity', 'Add activity')}
+            <Plus className="w-4 h-4" /> {t('wizard.addActivity')}
           </button>
         )}
       </div>

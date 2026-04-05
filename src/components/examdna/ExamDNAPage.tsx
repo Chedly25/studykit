@@ -76,7 +76,7 @@ export default function ExamDNAPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
       <Link to="/practice-exam" className="flex items-center gap-1 text-sm text-[var(--text-muted)] hover:text-[var(--accent-text)] mb-4 w-fit">
-        <ArrowLeft className="w-4 h-4" /> {t('common.back', 'Back')}
+        <ArrowLeft className="w-4 h-4" /> {t('common.back')}
       </Link>
 
       {/* Header */}
@@ -85,15 +85,15 @@ export default function ExamDNAPage() {
           <Dna className="w-5 h-5 text-[var(--accent-text)]" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-[var(--text-heading)]">{t('examDNA.title', 'Exam DNA')}</h1>
-          <p className="text-xs text-[var(--text-muted)]">{t('examDNA.subtitle', 'Analyze real past papers to generate exams with the same style')}</p>
+          <h1 className="text-xl font-bold text-[var(--text-heading)]">{t('examDNA.title')}</h1>
+          <p className="text-xs text-[var(--text-muted)]">{t('examDNA.subtitle')}</p>
         </div>
       </div>
 
       {/* Subject selector */}
       <div className="mb-4">
         <label className="block text-xs font-medium text-[var(--text-body)] mb-1">
-          {t('examDNA.subject', 'Subject')}
+          {t('examDNA.subject')}
         </label>
         <select
           value={subject}
@@ -114,8 +114,8 @@ export default function ExamDNAPage() {
         onDrop={e => { e.preventDefault(); e.stopPropagation(); handleFileUpload(e.dataTransfer.files) }}
       >
         <Upload className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-2" />
-        <p className="text-sm text-[var(--text-body)]">{t('examDNA.dropHere', 'Drop past exam PDFs here')}</p>
-        <p className="text-xs text-[var(--text-faint)] mt-1">{t('examDNA.dropHint', '3-5 papers recommended for accurate DNA')}</p>
+        <p className="text-sm text-[var(--text-body)]">{t('examDNA.dropHere')}</p>
+        <p className="text-xs text-[var(--text-faint)] mt-1">{t('examDNA.dropHint')}</p>
         <input
           ref={fileInputRef}
           type="file"
@@ -130,7 +130,7 @@ export default function ExamDNAPage() {
       {examDocs.length > 0 && (
         <div className="glass-card p-4 mb-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-2">
-            {t('examDNA.uploadedPapers', 'Uploaded papers')} ({examDocs.length})
+            {t('examDNA.uploadedPapers')} ({examDocs.length})
           </p>
           <div className="space-y-1.5">
             {examDocs.map(doc => (
@@ -154,7 +154,7 @@ export default function ExamDNAPage() {
             className="btn-primary w-full py-2.5 text-sm mt-2 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isAnalyzing ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> {t('examDNA.analyzing', 'Analyzing...')}</>
+              <><Loader2 className="w-4 h-4 animate-spin" /> {t('examDNA.analyzing')}</>
             ) : (
               <><Dna className="w-4 h-4" /> {t('examDNA.analyze', 'Analyze DNA from {{count}} papers', { count: examDocs.length })}</>
             )}
@@ -168,7 +168,7 @@ export default function ExamDNAPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-[var(--text-heading)] flex items-center gap-2">
               <Dna className="w-4 h-4 text-[var(--accent-text)]" />
-              {t('examDNA.profileTitle', 'DNA Profile')}
+              {t('examDNA.profileTitle')}
             </h2>
             <span className="text-xs text-[var(--text-faint)]">
               {t('examDNA.fromPapers', 'From {{count}} papers', { count: currentDNA.paperCount })}
@@ -177,16 +177,16 @@ export default function ExamDNAPage() {
 
           {/* Structure */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-1">{t('examDNA.structure', 'Structure')}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-1">{t('examDNA.structure')}</p>
             <p className="text-sm text-[var(--text-body)]">
-              {parsedDNA.structure.partCount} {t('examDNA.parts', 'parts')} · {parsedDNA.structure.totalQuestions} {t('examDNA.questions', 'questions')}
-              {parsedDNA.structure.hasTheoremTarget && ` · ${t('examDNA.theoremTarget', 'theorem target')}`}
+              {parsedDNA.structure.partCount} {t('examDNA.parts')} · {parsedDNA.structure.totalQuestions} {t('examDNA.questions')}
+              {parsedDNA.structure.hasTheoremTarget && ` · ${t('examDNA.theoremTarget')}`}
             </p>
           </div>
 
           {/* Question types */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-1.5">{t('examDNA.questionTypes', 'Question types')}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-1.5">{t('examDNA.questionTypes')}</p>
             <div className="space-y-1">
               {Object.entries(parsedDNA.questionTypes)
                 .filter(([, v]) => v > 0.03)
@@ -205,31 +205,31 @@ export default function ExamDNAPage() {
 
           {/* Difficulty */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-1">{t('examDNA.difficulty', 'Difficulty')}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-1">{t('examDNA.difficulty')}</p>
             <p className="text-sm text-[var(--text-body)]">
-              {parsedDNA.difficulty.curveShape} · {parsedDNA.difficulty.scaffoldingLevel} {t('examDNA.scaffolding', 'scaffolding')}
+              {parsedDNA.difficulty.curveShape} · {parsedDNA.difficulty.scaffoldingLevel} {t('examDNA.scaffolding')}
             </p>
             <p className="text-xs text-[var(--text-muted)]">
-              {parsedDNA.difficulty.hintsCount} {t('examDNA.hints', 'hints')} · {parsedDNA.difficulty.questionsWithoutHints} {t('examDNA.unguided', 'unguided')}
+              {parsedDNA.difficulty.hintsCount} {t('examDNA.hints')} · {parsedDNA.difficulty.questionsWithoutHints} {t('examDNA.unguided')}
             </p>
           </div>
 
           {/* Domains */}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-1">{t('examDNA.domains', 'Domains')}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-1">{t('examDNA.domains')}</p>
             <p className="text-sm text-[var(--text-body)]">
               {parsedDNA.content.primaryDomain}
               {parsedDNA.content.secondaryDomains.length > 0 && ` + ${parsedDNA.content.secondaryDomains.join(', ')}`}
             </p>
             <p className="text-xs text-[var(--text-muted)]">
-              {t('examDNA.theoremLevel', 'Theorem level')}: {parsedDNA.content.theoremLevel}
+              {t('examDNA.theoremLevel')}: {parsedDNA.content.theoremLevel}
             </p>
           </div>
 
           {/* Sample patterns */}
           {parsedDNA.style.samplePatterns.length > 0 && (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-1">{t('examDNA.patterns', 'Style patterns')}</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)] mb-1">{t('examDNA.patterns')}</p>
               <div className="space-y-1">
                 {parsedDNA.style.samplePatterns.slice(0, 3).map((p, i) => (
                   <p key={i} className="text-xs text-[var(--text-muted)] italic">"{p}"</p>
@@ -243,7 +243,7 @@ export default function ExamDNAPage() {
             to="/practice-exam"
             className="btn-primary w-full py-2.5 text-sm flex items-center justify-center gap-2"
           >
-            <FileText className="w-4 h-4" /> {t('examDNA.generateFromDNA', 'Generate exam from this DNA')}
+            <FileText className="w-4 h-4" /> {t('examDNA.generateFromDNA')}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

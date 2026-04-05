@@ -230,9 +230,9 @@ export default function Sources() {
       {/* Category filter tabs */}
       <div className="flex gap-1 mb-4">
         {([
-          { key: '' as const, label: t('sources.all', 'All') },
-          { key: 'course' as const, label: t('sources.courses', 'Courses') },
-          { key: 'exam' as const, label: t('sources.exams', 'Exams') },
+          { key: '' as const, label: t('sources.all') },
+          { key: 'course' as const, label: t('sources.courses') },
+          { key: 'exam' as const, label: t('sources.exams') },
         ]).map(({ key, label }) => (
           <button
             key={key}
@@ -316,7 +316,7 @@ export default function Sources() {
           {([
             { icon: ClipboardCheck, label: t('sources.discovery.practiceExam'), desc: t('sources.discovery.practiceExamDesc'), to: '/practice-exam' },
             { icon: BookOpen, label: t('sources.discovery.flashcards'), desc: t('sources.discovery.flashcardsDesc'), to: '/flashcard-maker' },
-            { icon: ListChecks, label: t('exercises.title', 'Exercises'), desc: t('sources.discovery.chatDesc'), to: '/exercises' },
+            { icon: ListChecks, label: t('exercises.title'), desc: t('sources.discovery.chatDesc'), to: '/exercises' },
           ] as const).map(({ icon: Icon, label, desc, to }) => (
             <Link key={to} to={to} className="glass-card glass-card-hover p-3 flex items-start gap-3 group">
               <div className="w-9 h-9 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center flex-shrink-0">

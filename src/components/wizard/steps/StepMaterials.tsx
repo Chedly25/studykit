@@ -83,10 +83,10 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
   return (
     <div className="max-w-3xl mx-auto">
       <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">
-        {t('wizard.materialsTitle', 'Upload your materials')}
+        {t('wizard.materialsTitle')}
       </h2>
       <p className="text-[var(--text-muted)] mb-6">
-        {t('wizard.materialsSubtitleV2', 'Add your course materials and past exams separately — the AI handles them differently.')}
+        {t('wizard.materialsSubtitleV2')}
       </p>
 
       {/* Processing indicator */}
@@ -94,8 +94,8 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
         <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[var(--accent-bg)] text-sm text-[var(--accent-text)]">
           <Sparkles className="w-4 h-4 animate-pulse" />
           {isCourseProcessing
-            ? t('wizard.processingCourses', 'Processing course materials — extracting topics and concept cards...')
-            : t('wizard.processingExams', 'Parsing exam exercises — tagging by topic...')}
+            ? t('wizard.processingCourses')
+            : t('wizard.processingExams')}
         </div>
       )}
 
@@ -129,11 +129,11 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
             <div className="flex items-center gap-2 mb-3">
               <BookOpen className="w-5 h-5 text-[var(--accent-text)]" />
               <h3 className="text-sm font-semibold text-[var(--text-heading)]">
-                {t('wizard.courseMaterials', 'Course Materials')}
+                {t('wizard.courseMaterials')}
               </h3>
             </div>
             <p className="text-xs text-[var(--text-muted)] mb-3">
-              {t('wizard.courseDesc', 'Textbooks, lecture notes, slides — the theory you need to learn.')}
+              {t('wizard.courseDesc')}
             </p>
 
             {/* Existing course docs */}
@@ -172,11 +172,11 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
             <div className="flex items-center gap-2 mb-3">
               <FileText className="w-5 h-5 text-amber-500" />
               <h3 className="text-sm font-semibold text-[var(--text-heading)]">
-                {t('wizard.examMaterials', 'Exams & Exercises')}
+                {t('wizard.examMaterials')}
               </h3>
             </div>
             <p className="text-xs text-[var(--text-muted)] mb-3">
-              {t('wizard.examDesc', 'Past exams, exercise sheets, problem sets — the AI will parse individual exercises.')}
+              {t('wizard.examDesc')}
             </p>
 
             {/* Existing exam docs */}
@@ -222,7 +222,7 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
               onClick={onNext}
               className="text-sm text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors"
             >
-              {t('common.skip', 'Skip')}
+              {t('common.skip')}
             </button>
           )}
           <button

@@ -30,9 +30,9 @@ interface MilestoneProps {
 function MilestoneIndicator({ profileId, topicsSeeded, weeklyHoursSet }: MilestoneProps) {
   const { t } = useTranslation()
   const milestones = [
-    { label: t('onboarding.exam', 'Profile'), done: profileId !== null },
-    { label: t('onboarding.subjects', 'Topics'), done: topicsSeeded },
-    { label: t('onboarding.weeklyTarget', 'Plan'), done: weeklyHoursSet },
+    { label: t('onboarding.exam'), done: profileId !== null },
+    { label: t('onboarding.subjects'), done: topicsSeeded },
+    { label: t('onboarding.weeklyTarget'), done: weeklyHoursSet },
   ]
 
   return (
@@ -223,10 +223,10 @@ function FileUploadWidget({ onSubmit, disabled }: { onSubmit: (result: string) =
         <Upload className="w-8 h-8 mx-auto text-[var(--text-muted)] mb-2" />
         <p className="text-sm text-[var(--text-muted)]">
           {isParsing
-            ? t('onboarding.parsingFile', 'Reading your document...')
+            ? t('onboarding.parsingFile')
             : files.length > 0
               ? `${files.length} file${files.length > 1 ? 's' : ''} selected`
-              : t('onboarding.uploadPrompt', 'Click to upload PDFs, syllabi, or course materials')}
+              : t('onboarding.uploadPrompt')}
         </p>
         <input
           ref={inputRef}
@@ -242,10 +242,10 @@ function FileUploadWidget({ onSubmit, disabled }: { onSubmit: (result: string) =
           {isParsing ? (
             <span className="flex items-center gap-2">
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              {t('onboarding.parsingFile', 'Reading your document...')}
+              {t('onboarding.parsingFile')}
             </span>
           ) : (
-            <>{t('common.continue', 'Continue')} <ArrowRight className="w-4 h-4" /></>
+            <>{t('common.continue')} <ArrowRight className="w-4 h-4" /></>
           )}
         </button>
       )}
@@ -303,7 +303,7 @@ function SliderWidget({ min, max, step, unit, defaultValue, onSubmit, disabled }
         <span>{max} {unit}</span>
       </div>
       <button onClick={() => onSubmit(value)} disabled={disabled} className="btn-primary w-full py-2.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
-        {t('common.continue', 'Continue')} <ArrowRight className="w-4 h-4" />
+        {t('common.continue')} <ArrowRight className="w-4 h-4" />
       </button>
     </div>
   )

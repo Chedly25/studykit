@@ -326,7 +326,6 @@ export function useExamProfile() {
         db.examFormats, db.mockExams, db.practiceExamSessions, db.generatedQuestions,
         db.chunkEmbeddings, db.topicEmbeddings, db.pdfHighlights,
         db.achievements, db.misconceptions,
-        db.agentRuns, db.agentInsights, db.contentEffectiveness,
         db.reviewProjects, db.reviewArticles, db.backgroundJobs,
         db.revisionFiches, db.examDNA, db.macroRoadmaps,
         db.chatFeedback,
@@ -334,6 +333,17 @@ export function useExamProfile() {
       for (const table of simple) {
         await table.where('examProfileId').equals(profileId).delete()
       }
+
+      // Tables with compound [examProfileId+X] index only (no standalone examProfileId index)
+      await db.agentRuns.where('[examProfileId+agentId]').between(
+        [profileId, ''], [profileId, '\uffff']
+      ).delete()
+      await db.agentInsights.where('[examProfileId+agentId]').between(
+        [profileId, ''], [profileId, '\uffff']
+      ).delete()
+      await db.contentEffectiveness.where('[examProfileId+contentType]').between(
+        [profileId, ''], [profileId, '\uffff']
+      ).delete()
 
       // Flashcards (FK via deckId)
       const decks = await db.flashcardDecks.where('examProfileId').equals(profileId).toArray()

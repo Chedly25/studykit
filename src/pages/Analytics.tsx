@@ -176,7 +176,7 @@ export default function Analytics() {
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-2xl font-bold text-[var(--text-heading)]">{t('analytics.title')}</h1>
         <Link to="/report" className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5">
-          <FileText className="w-3.5 h-3.5" /> {t('report.generateReport', 'Export Report')}
+          <FileText className="w-3.5 h-3.5" /> {t('report.generateReport')}
         </Link>
       </div>
       <p className="text-sm text-[var(--text-muted)] mb-2">{t('analytics.subtitle')}</p>
@@ -184,9 +184,9 @@ export default function Analytics() {
       {/* Section navigation */}
       <nav className="flex gap-3 mb-6 text-sm overflow-x-auto pb-1">
         <a href="#study-hours" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.studyTime')}</a>
-        <a href="#insights" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.insights', 'Insights')}</a>
-        <a href="#knowledge" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.knowledgeMap', 'Knowledge Map')}</a>
-        <a href="#exams" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.exams', 'Exams')}</a>
+        <a href="#insights" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.insights')}</a>
+        <a href="#knowledge" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.knowledgeMap')}</a>
+        <a href="#exams" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.exams')}</a>
       </nav>
 
       {/* ─── Study Hours ─── */}
@@ -335,7 +335,7 @@ export default function Analytics() {
 
       {/* ─── Insights ─── */}
       <h2 id="insights" className="text-lg font-bold text-[var(--text-heading)] mt-8 mb-4">
-        {t('analytics.insights', 'Insights')}
+        {t('analytics.insights')}
       </h2>
 
       <StudyStreakCard
@@ -387,7 +387,7 @@ export default function Analytics() {
 
       {/* ─── Knowledge Map ─── */}
       <h2 id="knowledge" className="text-lg font-bold text-[var(--text-heading)] mt-8 mb-4">
-        {t('analytics.knowledgeMap', 'Knowledge Map')}
+        {t('analytics.knowledgeMap')}
       </h2>
 
       {isResearch ? (
@@ -496,7 +496,7 @@ function MockExamScoresCard({ examProfileId }: { examProfileId: string | undefin
   const maxPct = 100
   return (
     <div className="glass-card p-4 md:col-span-2">
-      <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.mockExamScores', 'Mock Exam Scores')}</h2>
+      <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.mockExamScores')}</h2>
       <div className="h-32 flex items-end gap-2">
         {exams.map((exam, i) => {
           const pct = Math.round((exam.totalScore! / exam.maxScore!) * 100)
@@ -547,7 +547,7 @@ function SimulationExamScoresCard({ examProfileId, passingThreshold }: { examPro
   return (
     <div className="glass-card p-4 md:col-span-2">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold text-[var(--text-heading)]">{t('analytics.simulationScores', 'Simulation Exam Scores')}</h2>
+        <h2 className="font-semibold text-[var(--text-heading)]">{t('analytics.simulationScores')}</h2>
         {predicted != null && (
           <span className={`text-xs font-bold ${predicted >= threshold ? 'text-emerald-500' : 'text-amber-500'}`}>
             {t('dashboard.predicted', 'Predicted: {{score}}%', { score: predicted })}

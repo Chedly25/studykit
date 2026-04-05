@@ -117,7 +117,7 @@ export function SyntheseTaker({
           onClick={() => setShowSubmitConfirm(true)}
           className="btn-primary px-5 py-2.5 text-sm shadow-lg"
         >
-          {t('syntheseExam.submit', 'Rendre la copie')}
+          {t('syntheseExam.submit')}
         </button>
       </div>
 
@@ -128,7 +128,7 @@ export function SyntheseTaker({
             <div className="flex items-center gap-2 text-amber-500">
               <AlertTriangle className="w-5 h-5" />
               <h3 className="font-semibold text-[var(--text-heading)]">
-                {t('syntheseExam.confirmSubmit', 'Rendre la copie ?')}
+                {t('syntheseExam.confirmSubmit')}
               </h3>
             </div>
             <p className="text-sm text-[var(--text-body)]">
@@ -139,15 +139,15 @@ export function SyntheseTaker({
             </p>
             {wordCount < 1200 && (
               <p className="text-xs text-amber-600">
-                {t('syntheseExam.shortWarning', 'Attention : votre synthèse semble courte pour 4 pages.')}
+                {t('syntheseExam.shortWarning')}
               </p>
             )}
             <div className="flex gap-2">
               <button onClick={handleSubmit} className="flex-1 btn-primary py-2 text-sm">
-                {t('syntheseExam.submit', 'Rendre la copie')}
+                {t('syntheseExam.submit')}
               </button>
               <button onClick={() => setShowSubmitConfirm(false)} className="btn-secondary py-2 text-sm px-4">
-                {t('common.cancel', 'Cancel')}
+                {t('common.cancel')}
               </button>
             </div>
           </div>

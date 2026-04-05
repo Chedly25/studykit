@@ -210,7 +210,7 @@ export default function Settings() {
 
       {/* Storage */}
       <div className="glass-card p-5 space-y-4 mt-4">
-        <h2 className="text-lg font-semibold text-[var(--text-heading)]">{t('settings.storage', 'Storage')}</h2>
+        <h2 className="text-lg font-semibold text-[var(--text-heading)]">{t('settings.storage')}</h2>
         {storageInfo && storageInfo.quota > 0 && (
           <>
             <div>
@@ -238,7 +238,7 @@ export default function Settings() {
             )}
             {storageInfo.usage / storageInfo.quota > 0.8 && (
               <p className="text-xs text-amber-600">
-                {t('settings.storageFull', 'Storage is getting full. Consider removing unused documents.')}
+                {t('settings.storageFull')}
               </p>
             )}
           </>
@@ -255,8 +255,8 @@ export default function Settings() {
               <Shield className="w-5 h-5 text-emerald-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.protectData', 'Protect your data')}</p>
-              <p className="text-xs text-[var(--text-muted)]">{t('settings.protectDataDesc', 'Ask the browser not to clear your study data when storage is low')}</p>
+              <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.protectData')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('settings.protectDataDesc')}</p>
             </div>
           </button>
         )}
@@ -269,14 +269,14 @@ export default function Settings() {
 
       {/* Language */}
       <div className="glass-card p-5 space-y-4 mt-4">
-        <h2 className="text-lg font-semibold text-[var(--text-heading)]">{t('settings.language', 'Language')}</h2>
+        <h2 className="text-lg font-semibold text-[var(--text-heading)]">{t('settings.language')}</h2>
         <div className="flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)]">
           <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
             <Globe className="w-5 h-5 text-indigo-500" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.displayLanguage', 'Display Language')}</p>
-            <p className="text-xs text-[var(--text-muted)]">{t('settings.languageDesc', 'Choose the language for the interface')}</p>
+            <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.displayLanguage')}</p>
+            <p className="text-xs text-[var(--text-muted)]">{t('settings.languageDesc')}</p>
           </div>
           <select
             value={i18n.language?.startsWith('fr') ? 'fr' : 'en'}

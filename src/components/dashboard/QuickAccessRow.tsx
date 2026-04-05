@@ -12,16 +12,16 @@ export function QuickAccessRow({ isResearch, dueFlashcardCount }: QuickAccessRow
 
   const items = isResearch
     ? [
-        { icon: BookOpen, label: t('research.literature', 'Sources'), to: '/sources' },
-        { icon: PenTool, label: t('research.writingSession', 'Writing'), to: '/writing' },
-        { icon: StickyNote, label: t('research.notes', 'Notes'), to: '/notes' },
-        { icon: Focus, label: t('focus.title', 'Focus'), to: '/focus' },
+        { icon: BookOpen, label: t('research.literature'), to: '/sources' },
+        { icon: PenTool, label: t('research.writingSession'), to: '/writing' },
+        { icon: StickyNote, label: t('research.notes'), to: '/notes' },
+        { icon: Focus, label: t('focus.title'), to: '/focus' },
       ]
     : [
-        { icon: ListChecks, label: t('exercises.title', 'Exercises'), to: '/exercises' },
-        { icon: ClipboardCheck, label: t('ai.practiceSession', 'Practice'), to: '/practice-exam' },
-        { icon: Layers, label: t('dashboard.quickAccess.flashcards', 'Flashcards'), to: '/flashcard-maker', badge: dueFlashcardCount > 0 ? dueFlashcardCount : undefined },
-        { icon: Focus, label: t('focus.title', 'Focus'), to: '/focus' },
+        { icon: ListChecks, label: t('exercises.title'), to: '/exercises' },
+        { icon: ClipboardCheck, label: t('ai.practiceSession'), to: '/practice-exam' },
+        { icon: Layers, label: t('dashboard.quickAccess.flashcards'), to: '/flashcard-maker', badge: dueFlashcardCount > 0 ? dueFlashcardCount : undefined },
+        { icon: Focus, label: t('focus.title'), to: '/focus' },
       ]
 
   return (

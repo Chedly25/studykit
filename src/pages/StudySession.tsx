@@ -240,7 +240,7 @@ export default function StudySession() {
     return (
       <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-[var(--text-muted)] mb-4">{t('session.noTopics', 'No topics found. Set up your subjects first.')}</p>
+          <p className="text-[var(--text-muted)] mb-4">{t('session.noTopics')}</p>
           <button onClick={() => navigate('/exam-profile')} className="btn-primary px-6 py-2">
             {t('nav.projects')}
           </button>
@@ -369,7 +369,7 @@ export default function StudySession() {
               <ChatInput
                 onSend={handleSend}
                 disabled={isLoading || quotaExceeded}
-                placeholder={t('session.placeholder', `Ask about ${topic.name}...`)}
+                placeholder={t('session.placeholder', 'Ask about {{topic}}...', { topic: topic.name })}
                 attachments={attachments}
                 onAddFiles={addFiles}
                 onRemoveAttachment={removeAttachment}

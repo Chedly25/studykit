@@ -40,7 +40,7 @@ export function DocumentExamResults({ session, onRetake }: DocumentExamResultsPr
   if (!session?.documentContent) {
     return (
       <div className="text-center py-12 text-[var(--text-muted)]">
-        {t('documentExam.noContent', 'No exam document found.')}
+        {t('documentExam.noContent')}
       </div>
     )
   }
@@ -69,7 +69,7 @@ export function DocumentExamResults({ session, onRetake }: DocumentExamResultsPr
                     ? 'bg-green-500/10 text-green-600 border border-green-500/20'
                     : 'bg-red-500/10 text-red-500 border border-red-500/20'
                 }`}>
-                  {passed ? t('practiceExam.passed', 'Passed') : t('practiceExam.needsWork', 'Needs Work')}
+                  {passed ? t('practiceExam.passed') : t('practiceExam.needsWork')}
                 </span>
               </div>
               {session.overallFeedback && (
@@ -95,7 +95,7 @@ export function DocumentExamResults({ session, onRetake }: DocumentExamResultsPr
       <div className="max-w-5xl mx-auto px-4 pb-12 flex justify-center gap-3">
         <button onClick={onRetake} className="btn-secondary px-6 py-2.5 text-sm flex items-center gap-2">
           <RotateCcw className="w-4 h-4" />
-          {t('practiceExam.retake', 'Retake')}
+          {t('practiceExam.retake')}
         </button>
       </div>
     </div>

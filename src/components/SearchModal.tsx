@@ -161,7 +161,7 @@ export function SearchModal({ open, onClose }: Props) {
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={t('search.placeholder', 'Search documents, topics, exercises...')}
+            placeholder={t('search.placeholder')}
             className="flex-1 bg-transparent text-[var(--text-body)] placeholder:text-[var(--text-muted)]/50 outline-none text-sm"
           />
           <kbd className="hidden sm:inline-flex text-[10px] text-[var(--text-faint)] border border-[var(--border-card)] rounded px-1.5 py-0.5">
@@ -200,7 +200,7 @@ export function SearchModal({ open, onClose }: Props) {
 
           {query.trim() && results.length === 0 && matchingActions.length === 0 && !isSearching && (
             <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
-              {t('search.noResults', 'No results found')}
+              {t('search.noResults')}
             </div>
           )}
 

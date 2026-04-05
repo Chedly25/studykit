@@ -83,7 +83,7 @@ export function TopicMapEditor({ subjects, dispatch }: TopicMapEditorProps) {
                   tempId: subject.tempId,
                   updates: { name: e.target.value },
                 })}
-                placeholder={t('profile.subjectName', 'Subject name')}
+                placeholder={t('profile.subjectName')}
                 className="flex-1 bg-transparent text-sm font-semibold text-[var(--text-heading)] placeholder:text-[var(--text-muted)]/50 focus:outline-none"
               />
 
@@ -133,7 +133,7 @@ export function TopicMapEditor({ subjects, dispatch }: TopicMapEditorProps) {
                         topicTempId: topic.tempId,
                         name: e.target.value,
                       })}
-                      placeholder={t('profile.topicName', 'Topic name')}
+                      placeholder={t('profile.topicName')}
                       className="flex-1 bg-transparent text-sm text-[var(--text-body)] placeholder:text-[var(--text-muted)]/50 focus:outline-none"
                     />
                     <button
@@ -153,7 +153,7 @@ export function TopicMapEditor({ subjects, dispatch }: TopicMapEditorProps) {
                   onClick={() => addTopic(subject.tempId)}
                   className="w-full px-4 py-2 text-xs text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors flex items-center gap-1.5"
                 >
-                  <Plus className="w-3 h-3" /> {t('profile.addTopic', 'Add topic')}
+                  <Plus className="w-3 h-3" /> {t('profile.addTopic')}
                 </button>
               </div>
             )}
@@ -166,13 +166,13 @@ export function TopicMapEditor({ subjects, dispatch }: TopicMapEditorProps) {
         onClick={addSubject}
         className="w-full glass-card p-3 text-sm font-medium text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors flex items-center justify-center gap-2"
       >
-        <Plus className="w-4 h-4" /> {t('profile.addSubject', 'Add subject')}
+        <Plus className="w-4 h-4" /> {t('profile.addSubject')}
       </button>
 
       {/* Weight indicator */}
       {subjects.length > 0 && totalWeight !== 100 && (
         <p className="text-xs text-[var(--text-muted)] text-center">
-          {t('wizard.weightsNote', 'Weights will auto-normalize to 100% on save')}
+          {t('wizard.weightsNote')}
         </p>
       )}
     </div>

@@ -38,9 +38,9 @@ export function PlanChatLane({
   }
 
   const quickActions = [
-    t('wizard.chatHint1', 'No Wednesdays'),
-    t('wizard.chatHint2', 'More practice exams'),
-    t('wizard.chatHint3', 'Focus on weakest topics'),
+    t('wizard.chatHint1'),
+    t('wizard.chatHint2'),
+    t('wizard.chatHint3'),
   ]
 
   return (
@@ -132,7 +132,7 @@ export function PlanChatLane({
           type="text"
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder={t('wizard.chatPlaceholder', 'Tell me how to adjust your plan...')}
+          placeholder={t('wizard.chatPlaceholder')}
           disabled={isLoading}
           className="flex-1 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-3 py-2 text-sm text-[var(--text-body)] placeholder:text-[var(--text-muted)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--accent-text)] disabled:opacity-50"
         />

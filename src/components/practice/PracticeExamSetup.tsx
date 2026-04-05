@@ -276,8 +276,8 @@ export function PracticeExamSetup({
           >
             <Settings2 className="w-5 h-5 text-[var(--accent-text)] shrink-0" />
             <div>
-              <p className="text-sm font-medium text-[var(--text-heading)]">{t('practiceExam.configureExamFormat', 'Configure Exam Format')}</p>
-              <p className="text-xs text-[var(--text-muted)]">{t('practiceExam.configureExamFormatHint', 'Define sections to unlock full exam simulation with per-section timers and instructions')}</p>
+              <p className="text-sm font-medium text-[var(--text-heading)]">{t('practiceExam.configureExamFormat')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('practiceExam.configureExamFormatHint')}</p>
             </div>
           </button>
         )}
@@ -394,7 +394,7 @@ export function PracticeExamSetup({
               }}
               className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2 border-2 border-[var(--accent-text)]/30"
             >
-              <Shield className="w-4 h-4" /> {t('practiceExam.startSimulation', 'Start Full Exam Simulation')}
+              <Shield className="w-4 h-4" /> {t('practiceExam.startSimulation')}
             </button>
           )}
 
@@ -405,13 +405,13 @@ export function PracticeExamSetup({
                 onClick={() => setShowDocumentExam(!showDocumentExam)}
                 className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2"
               >
-                <FileText className="w-4 h-4" /> {t('documentExam.startDocument', 'Document Exam (CPGE)')}
+                <FileText className="w-4 h-4" /> {t('documentExam.startDocument')}
               </button>
               <Link
                 to="/exam-dna"
                 className="btn-ghost px-6 py-2 w-full flex items-center justify-center gap-2 text-sm"
               >
-                {t('examDNA.setupDNA', 'Exam DNA — match real paper style')}
+                {t('examDNA.setupDNA')}
               </Link>
             </>
           )}
@@ -434,21 +434,21 @@ export function PracticeExamSetup({
               }}
               className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2"
             >
-              <Scale className="w-4 h-4" /> {t('syntheseExam.startSynthese', 'Note de Synthèse')}
+              <Scale className="w-4 h-4" /> {t('syntheseExam.startSynthese')}
             </button>
 
             <button
               onClick={() => setShowCasPratique(!showCasPratique)}
               className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2"
             >
-              <Scale className="w-4 h-4" /> {t('casPratique.start', 'Cas Pratique / Consultation')}
+              <Scale className="w-4 h-4" /> {t('casPratique.start')}
             </button>
 
             {showCasPratique && (
               <div className="space-y-3 p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-input)]">
                 <div>
                   <label className="block text-xs font-medium text-[var(--text-body)] mb-1">
-                    {t('casPratique.specialty', 'Specialty')}
+                    {t('casPratique.specialty')}
                   </label>
                   <select
                     value={cpSpecialty}
@@ -488,7 +488,7 @@ export function PracticeExamSetup({
                   }}
                   className="btn-primary px-6 py-2.5 w-full flex items-center justify-center gap-2"
                 >
-                  <Play className="w-4 h-4" /> {t('casPratique.generate', 'Generate')}
+                  <Play className="w-4 h-4" /> {t('casPratique.generate')}
                 </button>
               </div>
             )}
@@ -504,7 +504,7 @@ export function PracticeExamSetup({
               }}
               className="btn-secondary px-6 py-2.5 w-full flex items-center justify-center gap-2"
             >
-              <Scale className="w-4 h-4" /> {t('grandOral.start', 'Grand Oral')}
+              <Scale className="w-4 h-4" /> {t('grandOral.start')}
             </button>
           </div>
         )}
@@ -513,16 +513,16 @@ export function PracticeExamSetup({
         {showDocumentExam && (examCategory === 'cpge' || examCategory === 'general') && (
           <div className="space-y-3 p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-input)]">
             <h3 className="text-sm font-semibold text-[var(--text-heading)]">
-              {t('documentExam.configTitle', 'Document Exam Configuration')}
+              {t('documentExam.configTitle')}
             </h3>
             <p className="text-xs text-[var(--text-muted)]">
-              {t('documentExam.configHint', 'Generates a full concours-style problem document with LaTeX — one continuous exam, not individual questions.')}
+              {t('documentExam.configHint')}
             </p>
 
             {/* Concours selector */}
             <div>
               <label className="block text-xs font-medium text-[var(--text-body)] mb-1">
-                {t('documentExam.concours', 'Concours')}
+                {t('documentExam.concours')}
               </label>
               <select
                 value={docConcours}
@@ -538,7 +538,7 @@ export function PracticeExamSetup({
             {/* Subject selector */}
             <div>
               <label className="block text-xs font-medium text-[var(--text-body)] mb-1">
-                {t('documentExam.subject', 'Subject')}
+                {t('documentExam.subject')}
               </label>
               <select
                 value={docSubject}
@@ -572,7 +572,7 @@ export function PracticeExamSetup({
               }}
               className="btn-primary px-6 py-2.5 w-full flex items-center justify-center gap-2"
             >
-              <Play className="w-4 h-4" /> {t('documentExam.generate', 'Generate Document Exam')}
+              <Play className="w-4 h-4" /> {t('documentExam.generate')}
             </button>
           </div>
         )}

@@ -87,7 +87,7 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
       >
         <div className="flex items-center gap-2">
           <Brain className="w-4 h-4 text-[var(--accent-text)]" />
-          <span className="text-sm text-[var(--text-body)]">{t('dashboard.briefTitle', 'Intelligence Brief')}</span>
+          <span className="text-sm text-[var(--text-body)]">{t('dashboard.briefTitle')}</span>
           {readiness && (
             <span className="text-xs font-bold text-[var(--accent-text)]">{Math.round(readiness.score * 100)}%</span>
           )}
@@ -103,7 +103,7 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Brain className="w-4 h-4 text-[var(--accent-text)]" />
-          <span className="text-sm font-semibold text-[var(--text-heading)]">{t('dashboard.briefTitle', 'Intelligence Brief')}</span>
+          <span className="text-sm font-semibold text-[var(--text-heading)]">{t('dashboard.briefTitle')}</span>
         </div>
         <button onClick={handleCollapse} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-body)]">
           <ChevronUp className="w-4 h-4" />
@@ -115,12 +115,12 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
         <div className="flex items-center gap-3 mb-3 px-3 py-2 rounded-lg bg-[var(--bg-input)]">
           <div>
             <span className="text-2xl font-bold text-[var(--text-heading)]">{Math.round(readiness.score * 100)}%</span>
-            <span className="text-xs text-[var(--text-muted)] ml-1">{t('dashboard.briefReadiness', 'Readiness')}</span>
+            <span className="text-xs text-[var(--text-muted)] ml-1">{t('dashboard.briefReadiness')}</span>
           </div>
           <div className="flex items-center gap-1 text-xs">
-            {readiness.trend === 'improving' && <><TrendingUp className="w-3.5 h-3.5 text-[var(--color-success)]" /><span className="text-[var(--color-success)]">{t('dashboard.briefTrendImproving', 'Improving')}</span></>}
-            {readiness.trend === 'stable' && <><Minus className="w-3.5 h-3.5 text-[var(--text-muted)]" /><span className="text-[var(--text-muted)]">{t('dashboard.briefTrendStable', 'Stable')}</span></>}
-            {readiness.trend === 'declining' && <><TrendingDown className="w-3.5 h-3.5 text-[var(--color-error)]" /><span className="text-[var(--color-error)]">{t('dashboard.briefTrendDeclining', 'Declining')}</span></>}
+            {readiness.trend === 'improving' && <><TrendingUp className="w-3.5 h-3.5 text-[var(--color-success)]" /><span className="text-[var(--color-success)]">{t('dashboard.briefTrendImproving')}</span></>}
+            {readiness.trend === 'stable' && <><Minus className="w-3.5 h-3.5 text-[var(--text-muted)]" /><span className="text-[var(--text-muted)]">{t('dashboard.briefTrendStable')}</span></>}
+            {readiness.trend === 'declining' && <><TrendingDown className="w-3.5 h-3.5 text-[var(--color-error)]" /><span className="text-[var(--color-error)]">{t('dashboard.briefTrendDeclining')}</span></>}
           </div>
         </div>
       )}
@@ -169,7 +169,7 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
         to="/queue"
         className="w-full btn-primary py-2 text-sm font-medium flex items-center justify-center gap-2"
       >
-        {t('dashboard.briefViewQueue', 'Start session')}
+        {t('dashboard.briefViewQueue')}
         <ArrowRight className="w-3.5 h-3.5" />
       </Link>
     </div>

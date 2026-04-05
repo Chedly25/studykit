@@ -76,8 +76,8 @@ export function ExamProfileWizard() {
       {/* Step 0: Mode Selection */}
       {step === 'mode' && (
         <div>
-          <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">{t('research.modeTitle', 'How will you use StudiesKit?')}</h2>
-          <p className="text-[var(--text-muted)] mb-6">{t('research.modeSubtitle', 'Choose the mode that fits your work')}</p>
+          <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">{t('research.modeTitle')}</h2>
+          <p className="text-[var(--text-muted)] mb-6">{t('research.modeSubtitle')}</p>
 
           <div className="grid gap-3">
             <button
@@ -92,8 +92,8 @@ export function ExamProfileWizard() {
               <div className="flex items-center gap-3">
                 <BookMarked className="w-6 h-6 text-[var(--accent-text)]" />
                 <div className="flex-1">
-                  <div className="font-semibold text-[var(--text-heading)]">{t('research.modeStudy', 'Exam Preparation')}</div>
-                  <div className="text-sm text-[var(--text-muted)]">{t('research.modeStudyDesc', 'Study for exams with AI tutoring, practice tests, and mastery tracking')}</div>
+                  <div className="font-semibold text-[var(--text-heading)]">{t('research.modeStudy')}</div>
+                  <div className="text-sm text-[var(--text-muted)]">{t('research.modeStudyDesc')}</div>
                 </div>
                 {profileMode === 'study' && <Check className="w-5 h-5 text-[var(--accent-text)]" />}
               </div>
@@ -114,8 +114,8 @@ export function ExamProfileWizard() {
               <div className="flex items-center gap-3">
                 <Microscope className="w-6 h-6 text-[var(--accent-text)]" />
                 <div className="flex-1">
-                  <div className="font-semibold text-[var(--text-heading)]">{t('research.modeResearch', 'Research & Knowledge Work')}</div>
-                  <div className="text-sm text-[var(--text-muted)]">{t('research.modeResearchDesc', 'Literature synthesis, writing support, milestone tracking, and advisor prep')}</div>
+                  <div className="font-semibold text-[var(--text-heading)]">{t('research.modeResearch')}</div>
+                  <div className="text-sm text-[var(--text-muted)]">{t('research.modeResearchDesc')}</div>
                 </div>
                 {profileMode === 'research' && <Check className="w-5 h-5 text-[var(--accent-text)]" />}
               </div>
@@ -222,7 +222,7 @@ export function ExamProfileWizard() {
                     }}
                     className="accent-[var(--accent-text)]"
                   />
-                  <span className="text-sm text-[var(--text-muted)]">{t('research.noDeadline', 'No fixed deadline')}</span>
+                  <span className="text-sm text-[var(--text-muted)]">{t('research.noDeadline')}</span>
                 </label>
               )}
               {!noDeadline && (
@@ -276,9 +276,9 @@ export function ExamProfileWizard() {
 
           <div className="glass-card p-4 space-y-3 mb-4">
             <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">{t('research.modeLabel', 'Mode')}</span>
+              <span className="text-[var(--text-muted)]">{t('research.modeLabel')}</span>
               <span className="font-medium text-[var(--text-heading)]">
-                {isResearch ? t('research.modeResearch', 'Research & Knowledge Work') : t('research.modeStudy', 'Exam Preparation')}
+                {isResearch ? t('research.modeResearch') : t('research.modeStudy')}
               </span>
             </div>
             <div className="flex justify-between">
@@ -288,7 +288,7 @@ export function ExamProfileWizard() {
             <div className="flex justify-between">
               <span className="text-[var(--text-muted)]">{t('profile.targetDate')}</span>
               <span className="font-medium text-[var(--text-heading)]">
-                {noDeadline ? t('research.noDeadline', 'No fixed deadline') : examDate}
+                {noDeadline ? t('research.noDeadline') : examDate}
               </span>
             </div>
             <div className="flex justify-between">

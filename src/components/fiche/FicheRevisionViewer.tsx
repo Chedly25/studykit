@@ -92,15 +92,15 @@ export default function FicheRevisionPage() {
     return (
       <div className="max-w-3xl mx-auto px-4 py-6">
         <Link to={topicId ? `/topic/${topicId}` : '/dashboard'} className="flex items-center gap-1 text-sm text-[var(--text-muted)] hover:text-[var(--accent-text)] mb-4 w-fit">
-          <ArrowLeft className="w-4 h-4" /> {t('common.back', 'Back')}
+          <ArrowLeft className="w-4 h-4" /> {t('common.back')}
         </Link>
         <div className="text-center py-12">
           <p className="text-sm text-[var(--text-muted)] mb-4">
-            {t('fiche.notFound', 'No revision fiche for this topic yet.')}
+            {t('fiche.notFound')}
           </p>
           {profileId && topicId && topic && subject && (
             <button onClick={handleRegenerate} className="btn-primary px-6 py-2.5 text-sm">
-              {t('fiche.generate', 'Generate fiche')}
+              {t('fiche.generate')}
             </button>
           )}
         </div>
@@ -111,8 +111,8 @@ export default function FicheRevisionPage() {
   const updatedAgo = (() => {
     const ms = Date.now() - new Date(fiche.updatedAt).getTime()
     const days = Math.floor(ms / 86400000)
-    if (days === 0) return t('fiche.today', 'today')
-    if (days === 1) return t('fiche.yesterday', 'yesterday')
+    if (days === 0) return t('fiche.today')
+    if (days === 1) return t('fiche.yesterday')
     return t('fiche.daysAgo', '{{count}} days ago', { count: days })
   })()
 
@@ -121,7 +121,7 @@ export default function FicheRevisionPage() {
       {/* Header — hidden on print */}
       <div className="print:hidden">
         <Link to={topicId ? `/topic/${topicId}` : '/dashboard'} className="flex items-center gap-1 text-sm text-[var(--text-muted)] hover:text-[var(--accent-text)] mb-4 w-fit">
-          <ArrowLeft className="w-4 h-4" /> {subject?.name ?? t('common.back', 'Back')}
+          <ArrowLeft className="w-4 h-4" /> {subject?.name ?? t('common.back')}
         </Link>
 
         <div className="flex items-center justify-between mb-6">
@@ -138,14 +138,14 @@ export default function FicheRevisionPage() {
               onClick={handleRegenerate}
               disabled={!topic || !subject}
               className="btn-ghost px-3 py-2 text-xs flex items-center gap-1.5 disabled:opacity-40"
-              title={t('fiche.regenerate', 'Regenerate')}
+              title={t('fiche.regenerate')}
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => window.print()}
               className="btn-ghost px-3 py-2 text-xs flex items-center gap-1.5"
-              title={t('fiche.print', 'Print / Export PDF')}
+              title={t('fiche.print')}
             >
               <Printer className="w-3.5 h-3.5" />
             </button>

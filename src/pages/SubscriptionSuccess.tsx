@@ -109,10 +109,10 @@ export default function SubscriptionSuccess() {
   const processingJobs = activeJobs.filter(j => j.status === 'running' || j.status === 'queued')
 
   const stepLabels: Record<string, string> = {
-    documents: t('subscription.activatingDocuments', 'Processing your documents'),
-    roadmap: t('subscription.activatingRoadmap', 'Building your study roadmap'),
-    plan: t('subscription.activatingPlan', 'Generating your study plan'),
-    content: t('subscription.activatingContent', 'Preparing exercises for weak areas'),
+    documents: t('subscription.activatingDocuments'),
+    roadmap: t('subscription.activatingRoadmap'),
+    plan: t('subscription.activatingPlan'),
+    content: t('subscription.activatingContent'),
   }
 
   // No profile yet — simplified success page
@@ -127,7 +127,7 @@ export default function SubscriptionSuccess() {
           {t('subscription.successSubtitle')}
         </p>
         <Link to="/welcome" className="btn-primary inline-flex items-center gap-2 px-8 py-2.5">
-          {t('subscription.getStarted', 'Get started')} <ArrowRight className="w-4 h-4" />
+          {t('subscription.getStarted')} <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     )
@@ -142,8 +142,8 @@ export default function SubscriptionSuccess() {
         </h1>
         <p className="text-sm text-[var(--text-muted)]">
           {allDone
-            ? t('subscription.activatingDone', 'Your study space is ready.')
-            : t('subscription.activatingInProgress', 'Setting up your study space...')}
+            ? t('subscription.activatingDone')
+            : t('subscription.activatingInProgress')}
         </p>
       </div>
 
@@ -185,7 +185,7 @@ export default function SubscriptionSuccess() {
           className="btn-primary inline-flex items-center gap-2 px-8 py-3 text-sm font-semibold"
         >
           {allDone
-            ? t('subscription.startFirstSession', 'Start your first session')
+            ? t('subscription.startFirstSession')
             : t('subscription.goToDashboard')}
           <ArrowRight className="w-4 h-4" />
         </Link>

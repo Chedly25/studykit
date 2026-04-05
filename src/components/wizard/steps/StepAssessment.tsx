@@ -39,22 +39,22 @@ export function StepAssessment({ draft, dispatch, onNext, onBack }: StepAssessme
 
   const researchStages: FamiliarityLevel[] = ['new', 'some', 'confident']
   const researchLabels: Record<FamiliarityLevel, string> = {
-    new: isResearch ? t('wizard.researchExplored', 'Unexplored') : t('dashboard.onboarding.familiarityNew'),
-    some: isResearch ? t('wizard.researchInProgress', 'In progress') : t('dashboard.onboarding.familiaritySome'),
-    confident: isResearch ? t('wizard.researchDeep', 'Deep knowledge') : t('dashboard.onboarding.familiarityConfident'),
+    new: isResearch ? t('wizard.researchExplored') : t('dashboard.onboarding.familiarityNew'),
+    some: isResearch ? t('wizard.researchInProgress') : t('dashboard.onboarding.familiaritySome'),
+    confident: isResearch ? t('wizard.researchDeep') : t('dashboard.onboarding.familiarityConfident'),
   }
 
   return (
     <div className="max-w-2xl mx-auto">
       <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-1">
         {isResearch
-          ? t('wizard.assessTitleResearch', 'Where are you in your research?')
-          : t('dashboard.onboarding.assessTitle', 'Review your study topics')
+          ? t('wizard.assessTitleResearch')
+          : t('dashboard.onboarding.assessTitle')
         }
       </h2>
       <p className="text-sm text-[var(--text-muted)] mb-1">
         {isResearch
-          ? t('wizard.assessSubtitleResearch', 'Rate your familiarity with each area')
+          ? t('wizard.assessSubtitleResearch')
           : t('dashboard.onboarding.assessSubtitle')
         }
       </p>
@@ -62,7 +62,7 @@ export function StepAssessment({ draft, dispatch, onNext, onBack }: StepAssessme
         {t('dashboard.onboarding.assessHint')}
         {totalTopics > 0 && (
           <span className="ml-2 text-[var(--accent-text)]">
-            ({assessedTopics}/{totalTopics} {t('wizard.assessed', 'rated')})
+            ({assessedTopics}/{totalTopics} {t('wizard.assessed')})
           </span>
         )}
       </p>

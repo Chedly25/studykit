@@ -112,14 +112,14 @@ export function CasPratiqueTaker({
           </div>
         ) : prepEnded ? (
           <span className="text-sm font-medium text-amber-500">
-            {t('grandOral.prepOver', 'Preparation time over')}
+            {t('grandOral.prepOver')}
           </span>
         ) : <div />}
         <span className="text-xs text-[var(--text-faint)] flex items-center gap-1">
           {isSaving ? (
-            <><Save className="w-3 h-3 animate-pulse" /> {t('documentExam.saving', 'Saving...')}</>
+            <><Save className="w-3 h-3 animate-pulse" /> {t('documentExam.saving')}</>
           ) : lastSaved ? (
-            <><Check className="w-3 h-3 text-green-500" /> {t('documentExam.saved', 'Saved')}</>
+            <><Check className="w-3 h-3 text-green-500" /> {t('documentExam.saved')}</>
           ) : null}
         </span>
       </div>
@@ -131,7 +131,7 @@ export function CasPratiqueTaker({
         {mode === 'grand-oral' ? (
           <div>
             <p className="text-xs text-[var(--text-muted)] mb-3 uppercase tracking-wider">
-              {t('grandOral.subject', 'Subject')}
+              {t('grandOral.subject')}
             </p>
             <h2 className="text-lg font-semibold text-[var(--text-heading)] leading-relaxed">
               {scenarioContent}
@@ -147,19 +147,19 @@ export function CasPratiqueTaker({
         <div className="px-4 py-2 border-b border-[var(--border-card)] flex items-center justify-between">
           <span className="text-xs font-medium text-[var(--text-muted)]">
             {mode === 'grand-oral'
-              ? t('grandOral.prepNotes', 'Your preparation notes')
-              : t('casPratique.yourConsultation', 'Your consultation')}
+              ? t('grandOral.prepNotes')
+              : t('casPratique.yourConsultation')}
           </span>
           <span className="text-xs text-[var(--text-faint)]">
-            {wordCount} {t('documentExam.words', 'words')}
+            {wordCount} {t('documentExam.words')}
           </span>
         </div>
         <textarea
           value={answer}
           onChange={e => setAnswer(e.target.value)}
           placeholder={mode === 'grand-oral'
-            ? t('grandOral.notesPlaceholder', 'Plan your exposé here...\n\nIntroduction:\n\nI.\n  A.\n  B.\n\nII.\n  A.\n  B.')
-            : t('casPratique.placeholder', 'Write your consultation here...')}
+            ? t('grandOral.notesPlaceholder')
+            : t('casPratique.placeholder')}
           className="flex-1 w-full px-5 py-4 bg-transparent text-sm text-[var(--text-body)] resize-none outline-none leading-relaxed"
           style={{ minHeight: '300px' }}
         />
@@ -172,8 +172,8 @@ export function CasPratiqueTaker({
           className="btn-primary px-6 py-2.5 text-sm"
         >
           {mode === 'grand-oral'
-            ? t('grandOral.finish', 'End preparation')
-            : t('syntheseExam.submit', 'Rendre la copie')}
+            ? t('grandOral.finish')
+            : t('syntheseExam.submit')}
         </button>
       </div>
 
@@ -185,21 +185,21 @@ export function CasPratiqueTaker({
               <AlertTriangle className="w-5 h-5" />
               <h3 className="font-semibold text-[var(--text-heading)]">
                 {mode === 'grand-oral'
-                  ? t('grandOral.confirmEnd', 'End preparation?')
-                  : t('syntheseExam.confirmSubmit', 'Rendre la copie ?')}
+                  ? t('grandOral.confirmEnd')
+                  : t('syntheseExam.confirmSubmit')}
               </h3>
             </div>
             {mode === 'cas-pratique' && wordCount < 800 && (
               <p className="text-xs text-amber-600">
-                {t('casPratique.shortWarning', 'Your consultation seems short.')}
+                {t('casPratique.shortWarning')}
               </p>
             )}
             <div className="flex gap-2">
               <button onClick={handleSubmit} className="flex-1 btn-primary py-2 text-sm">
-                {t('common.confirm', 'Confirm')}
+                {t('common.confirm')}
               </button>
               <button onClick={() => setShowSubmitConfirm(false)} className="btn-secondary py-2 text-sm px-4">
-                {t('common.cancel', 'Cancel')}
+                {t('common.cancel')}
               </button>
             </div>
           </div>

@@ -24,7 +24,7 @@ export function UpNextList({ recommendations, queueTopicIds }: UpNextListProps) 
   return (
     <div className="glass-card p-4 mb-4">
       <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
-        {t('dashboard.upNext', 'Up next')}
+        {t('dashboard.upNext')}
       </p>
       <div className="space-y-1">
         {recommendations.slice(0, 3).map(rec => {

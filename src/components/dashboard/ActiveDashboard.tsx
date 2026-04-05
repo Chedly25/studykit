@@ -96,7 +96,7 @@ export function ActiveDashboard({
               className="btn-primary w-full py-3 text-sm font-medium flex items-center justify-center gap-2"
             >
               {queueInProgress
-                ? t('dashboard.continueSession', 'Continue session')
+                ? t('dashboard.continueSession')
                 : t('dashboard.startSessionCta', "Start today's session — {{count}} items, ~{{minutes}} min", {
                     count: dailyQueue.length,
                     minutes: dailyQueue.reduce((s, q) => s + q.estimatedMinutes, 0),
@@ -107,7 +107,7 @@ export function ActiveDashboard({
           ) : (
             <div className="flex gap-2">
               <Link to="/practice-exam" className="btn-primary flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-2">
-                {t('dashboard.startFirstExam', 'Take a practice exam')}
+                {t('dashboard.startFirstExam')}
               </Link>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel', { detail: {} }))}
@@ -126,7 +126,7 @@ export function ActiveDashboard({
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[var(--accent-text)] animate-gentle-pulse" />
             <span className="text-xs font-semibold text-[var(--text-heading)]">
-              {t('dashboard.workingForYou', 'Working for you')}
+              {t('dashboard.workingForYou')}
             </span>
           </div>
           <p className="text-xs text-[var(--text-muted)] mt-1.5 leading-relaxed">
@@ -152,10 +152,10 @@ export function ActiveDashboard({
         <div className="glass-card p-4 mb-4 animate-fade-in-up stagger-3">
           <div className="mb-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)]">
-              {t('dashboard.focusTitle', 'Focus on')}
+              {t('dashboard.focusTitle')}
             </p>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">
-              {t('dashboard.focusSubtitle', 'Weakest topics weighted by exam importance')}
+              {t('dashboard.focusSubtitle')}
             </p>
           </div>
           <div className="space-y-2">
@@ -198,10 +198,10 @@ export function ActiveDashboard({
         <div className="animate-fade-in-up stagger-4">
           <div className="mb-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-faint)]">
-              {t('dashboard.yourTutors', 'Your Subjects')}
+              {t('dashboard.yourTutors')}
             </p>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">
-              {t('dashboard.subjectsSubtitle', 'Tap a subject to see topics and study')}
+              {t('dashboard.subjectsSubtitle')}
             </p>
           </div>
           <TutorDirectory subjects={subjects} topics={topics} />

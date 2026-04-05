@@ -19,7 +19,7 @@ export function MaterialsPanel({ documents, isOpen, onClose, onSelectDocument }:
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-card)]">
         <h3 className="text-sm font-semibold text-[var(--text-heading)]">
-          {t('session.materials', 'Materials')}
+          {t('session.materials')}
         </h3>
         <button
           onClick={onClose}
@@ -33,7 +33,7 @@ export function MaterialsPanel({ documents, isOpen, onClose, onSelectDocument }:
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {documents.length === 0 ? (
           <p className="text-xs text-[var(--text-muted)] text-center py-8">
-            {t('session.noMaterials', 'No documents uploaded yet. Upload materials from the Sources page.')}
+            {t('session.noMaterials')}
           </p>
         ) : (
           documents.map(doc => (

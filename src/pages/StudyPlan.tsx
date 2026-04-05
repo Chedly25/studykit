@@ -205,7 +205,7 @@ export default function StudyPlan() {
               onClick={catchUp}
               className="btn-primary text-xs px-3 py-1.5"
             >
-              {t('studyPlan.catchUp', 'Catch up')}
+              {t('studyPlan.catchUp')}
             </button>
             <button
               onClick={async () => {
@@ -233,7 +233,7 @@ export default function StudyPlan() {
               onClick={catchUp}
               className="btn-secondary text-xs px-3 py-1.5"
             >
-              {t('studyPlan.catchUp', 'Catch up')}
+              {t('studyPlan.catchUp')}
             </button>
             <button
               onClick={async () => {
@@ -274,7 +274,7 @@ export default function StudyPlan() {
             view === 'list' ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]' : 'bg-[var(--bg-input)] text-[var(--text-muted)]'
           }`}
         >
-          {t('studyPlan.listView', 'List')}
+          {t('studyPlan.listView')}
         </button>
         <button
           onClick={() => { setView('week'); setWeekOffset(0) }}
@@ -282,7 +282,7 @@ export default function StudyPlan() {
             view === 'week' ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]' : 'bg-[var(--bg-input)] text-[var(--text-muted)]'
           }`}
         >
-          {t('studyPlan.weekView', 'Week')}
+          {t('studyPlan.weekView')}
         </button>
       </div>
 
@@ -489,7 +489,7 @@ function WeeklyCalendar({ weekOffset, onPrev, onNext, planDayMap, today, onResch
                   onClick={() => onReschedule(date)}
                   className="mt-1.5 text-[10px] font-medium text-amber-600 hover:underline flex items-center gap-0.5"
                 >
-                  <ArrowRight className="w-2.5 h-2.5" /> {t('studyPlan.moveToToday', 'Move to today')}
+                  <ArrowRight className="w-2.5 h-2.5" /> {t('studyPlan.moveToToday')}
                 </button>
               )}
             </div>

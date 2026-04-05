@@ -33,7 +33,7 @@ export function PracticeExamHistory({ sessions, onReview, onRetake }: Props) {
   return (
     <div className="glass-card p-4 mt-6">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-[var(--text-heading)]">{t('practiceExam.history', 'Past Exams')}</h3>
+        <h3 className="font-semibold text-[var(--text-heading)]">{t('practiceExam.history')}</h3>
         {trendData.length >= 3 && (
           <div className="flex items-center gap-2">
             <TrendingUp className="w-3.5 h-3.5 text-[var(--text-muted)]" />

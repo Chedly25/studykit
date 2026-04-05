@@ -62,14 +62,14 @@ export function AnswerInput({ placeholder, onSubmit, onSkip, disabled, submitLab
         value={value}
         onChange={e => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={isRecording ? t('queue.listening', 'Listening...') : (placeholder ?? t('queue.typeYourAnswer', 'Type your answer...'))}
+        placeholder={isRecording ? t('queue.listening') : (placeholder ?? t('queue.typeYourAnswer'))}
         disabled={disabled || isVoiceBusy}
         className="w-full min-h-[80px] max-h-[200px] rounded-lg border border-[var(--border-card)] bg-[var(--bg-input)] px-3 py-2.5 text-sm text-[var(--text-body)] placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-text)] resize-y disabled:opacity-50"
         rows={3}
       />
       <div className="flex items-center justify-between">
         <span className="text-[10px] text-[var(--text-faint)]">
-          {t('queue.ctrlEnterHint', 'Ctrl+Enter to submit')}
+          {t('queue.ctrlEnterHint')}
         </span>
         <div className="flex items-center gap-2">
           {/* Voice mic button */}
@@ -106,7 +106,7 @@ export function AnswerInput({ placeholder, onSubmit, onSkip, disabled, submitLab
               onClick={onSkip}
               className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors"
             >
-              {t('queue.skipToSelfRate', 'Skip — rate yourself')}
+              {t('queue.skipToSelfRate')}
             </button>
           )}
           <button
@@ -115,7 +115,7 @@ export function AnswerInput({ placeholder, onSubmit, onSkip, disabled, submitLab
             className="btn-primary text-sm px-4 py-1.5 flex items-center gap-1.5 disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
-            {submitLabel ?? t('queue.submitAnswer', 'Check my answer')}
+            {submitLabel ?? t('queue.submitAnswer')}
           </button>
         </div>
       </div>

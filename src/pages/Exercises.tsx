@@ -167,7 +167,7 @@ export default function Exercises() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
         <ListChecks className="w-12 h-12 text-[var(--accent-text)] mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('exercises.title', 'Exercise Bank')}</h1>
+        <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('exercises.title')}</h1>
         <p className="text-[var(--text-muted)]">{t('ai.createProfileFirst')}</p>
         <Link to="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</Link>
       </div>
@@ -179,7 +179,7 @@ export default function Exercises() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-heading)] flex items-center gap-2">
-            <ListChecks className="w-6 h-6 text-[var(--accent-text)]" /> {t('exercises.title', 'Exercise Bank')}
+            <ListChecks className="w-6 h-6 text-[var(--accent-text)]" /> {t('exercises.title')}
           </h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
             {exercises.length} exercises from {examSources.length} exam{examSources.length !== 1 ? 's' : ''}
@@ -197,7 +197,7 @@ export default function Exercises() {
       <div className="glass-card p-4 mb-4">
         <div className="flex items-center gap-2 mb-3">
           <Filter className="w-4 h-4 text-[var(--text-muted)]" />
-          <span className="text-xs font-semibold text-[var(--text-muted)] uppercase">{t('exercises.filters', 'Filters')}</span>
+          <span className="text-xs font-semibold text-[var(--text-muted)] uppercase">{t('exercises.filters')}</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <select
@@ -262,7 +262,7 @@ export default function Exercises() {
               onClick={handleBack}
               className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)]"
             >
-              {t('common.back', 'Back')}
+              {t('common.back')}
             </button>
           </div>
 
@@ -272,12 +272,12 @@ export default function Exercises() {
 
           <div className="border-t border-[var(--border-card)] pt-4">
             <label className="block text-xs font-medium text-[var(--text-muted)] mb-2">
-              {t('exercises.yourWork', 'Your approach / answer')}
+              {t('exercises.yourWork')}
             </label>
             <textarea
               value={userAnswer}
               onChange={e => setUserAnswer(e.target.value)}
-              placeholder={t('exercises.answerPlaceholder', 'Describe your approach or write your answer here...')}
+              placeholder={t('exercises.answerPlaceholder')}
               className="w-full bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-3 py-2 text-sm text-[var(--text-body)] placeholder:text-[var(--text-muted)]/50 min-h-[120px] focus:outline-none focus:ring-1 focus:ring-[var(--accent-text)]"
               disabled={exerciseAI.isStreaming}
             />
@@ -289,7 +289,7 @@ export default function Exercises() {
                 disabled={!userAnswer.trim() || exerciseAI.isStreaming}
                 className="mt-3 btn-primary px-4 py-2 text-sm flex items-center gap-2 disabled:opacity-40"
               >
-                <Send className="w-4 h-4" /> {t('exercises.checkWithAI', 'Check with AI')}
+                <Send className="w-4 h-4" /> {t('exercises.checkWithAI')}
               </button>
             )}
           </div>
@@ -339,7 +339,7 @@ export default function Exercises() {
           {selectedExercise.solutionText && (
             <details className="mt-4 border-t border-[var(--border-card)] pt-4">
               <summary className="text-xs font-medium text-[var(--text-muted)] cursor-pointer hover:text-[var(--text-body)]">
-                {t('exercises.showSolution', 'Show solution')}
+                {t('exercises.showSolution')}
               </summary>
               <div className="mt-2 prose prose-sm max-w-none text-[var(--text-body)]">
                 <p className="whitespace-pre-wrap">{selectedExercise.solutionText}</p>
@@ -355,7 +355,7 @@ export default function Exercises() {
               <p className="text-sm text-[var(--text-muted)]">
                 {exercises.length === 0
                   ? <>No exercises yet. Upload past exams from the <Link to="/sources" className="text-[var(--accent-text)] hover:underline">Sources page</Link> to build your exercise bank.</>
-                  : t('exercises.noMatch', 'No exercises match your filters.')}
+                  : t('exercises.noMatch')}
               </p>
             </div>
           ) : (

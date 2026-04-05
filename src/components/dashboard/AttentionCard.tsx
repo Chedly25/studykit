@@ -37,7 +37,7 @@ export function AttentionCard({ signals }: Props) {
   return (
     <div className="glass-card p-4 mb-4">
       <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
-        {t('dashboard.attention', 'Needs attention')}
+        {t('dashboard.attention')}
       </p>
 
       <div className="space-y-2">

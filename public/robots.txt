@@ -26,5 +26,8 @@ Disallow: /study-time-tracker
 Disallow: /flashcard-maker
 Disallow: /assignment-tracker
 Disallow: /ambient-sound-generator
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /subscription
 
 Sitemap: https://studieskit.com/sitemap.xml

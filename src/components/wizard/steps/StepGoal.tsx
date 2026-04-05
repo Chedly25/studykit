@@ -83,10 +83,10 @@ export function StepGoal({ draft, dispatch, onNext }: StepGoalProps) {
       {subStep === 'mode' && (
         <div>
           <h2 className="text-2xl font-bold text-[var(--text-heading)] mb-2">
-            {t('research.modeTitle', 'How will you use StudiesKit?')}
+            {t('research.modeTitle')}
           </h2>
           <p className="text-[var(--text-muted)] mb-6">
-            {t('research.modeSubtitle', 'Choose the mode that fits your work')}
+            {t('research.modeSubtitle')}
           </p>
 
           <div className="grid gap-3">
@@ -103,7 +103,7 @@ export function StepGoal({ draft, dispatch, onNext }: StepGoalProps) {
                 <BookMarked className="w-6 h-6 text-[var(--accent-text)]" />
                 <div className="flex-1">
                   <div className="font-semibold text-[var(--text-heading)]">
-                    {t('research.modeStudy', 'Exam Preparation')}
+                    {t('research.modeStudy')}
                   </div>
                   <div className="text-sm text-[var(--text-muted)]">
                     {t('research.modeStudyDesc')}
@@ -129,7 +129,7 @@ export function StepGoal({ draft, dispatch, onNext }: StepGoalProps) {
                 <Microscope className="w-6 h-6 text-[var(--accent-text)]" />
                 <div className="flex-1">
                   <div className="font-semibold text-[var(--text-heading)]">
-                    {t('research.modeResearch', 'Research & Knowledge Work')}
+                    {t('research.modeResearch')}
                   </div>
                   <div className="text-sm text-[var(--text-muted)]">
                     {t('research.modeResearchDesc')}
@@ -238,7 +238,7 @@ export function StepGoal({ draft, dispatch, onNext }: StepGoalProps) {
                     className="accent-[var(--accent-text)]"
                   />
                   <span className="text-sm text-[var(--text-muted)]">
-                    {t('research.noDeadline', 'No fixed deadline')}
+                    {t('research.noDeadline')}
                   </span>
                 </label>
               )}

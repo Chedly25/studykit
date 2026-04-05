@@ -118,7 +118,7 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
         <div className="text-center max-w-sm">
           <ListChecks className="w-10 h-10 text-[var(--text-muted)] mx-auto mb-3" />
           <p className="text-sm text-[var(--text-muted)] mb-4">
-            {t('exercises.noExercisesForTopic', 'No exercises for this topic yet. Upload past exams to build your exercise bank.')}
+            {t('exercises.noExercisesForTopic')}
           </p>
           <Link
             to="/sources"
@@ -190,7 +190,7 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
               <textarea
                 value={userAnswer}
                 onChange={e => setUserAnswer(e.target.value)}
-                placeholder={t('exercises.answerPlaceholder', 'Describe your approach or write your answer here...')}
+                placeholder={t('exercises.answerPlaceholder')}
                 className="w-full bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-3 py-2 text-sm text-[var(--text-body)] placeholder:text-[var(--text-muted)]/50 min-h-[100px] focus:outline-none focus:ring-1 focus:ring-[var(--accent-text)]"
                 disabled={exerciseAI.isStreaming}
               />

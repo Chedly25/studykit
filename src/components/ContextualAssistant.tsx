@@ -64,7 +64,7 @@ export function ContextualAssistant({ chatOpen, subjectName }: Props) {
     }
   } else if (path === '/queue') {
     config = {
-      label: t('assistant.askAboutThis', 'Ask about this'),
+      label: t('assistant.askAboutThis'),
       directAction: () => {
         try {
           const raw = sessionStorage.getItem('queue-current-item')
@@ -81,34 +81,34 @@ export function ContextualAssistant({ chatOpen, subjectName }: Props) {
     }
   } else if (path === '/sources') {
     config = {
-      label: t('assistant.sourceActions', 'Quick actions'),
+      label: t('assistant.sourceActions'),
       actions: [
-        { label: t('assistant.processDocuments', 'Process documents'), icon: <Sparkles className="w-4 h-4" />, action: () => openChat(t('assistant.processDocumentsPrompt', 'Process my uploaded documents')) },
-        { label: t('assistant.generateFlashcards', 'Generate flashcards'), icon: <ClipboardCheck className="w-4 h-4" />, action: () => openChat(t('assistant.generateFlashcardsPrompt', 'Generate flashcards from my sources')) },
+        { label: t('assistant.processDocuments'), icon: <Sparkles className="w-4 h-4" />, action: () => openChat(t('assistant.processDocumentsPrompt')) },
+        { label: t('assistant.generateFlashcards'), icon: <ClipboardCheck className="w-4 h-4" />, action: () => openChat(t('assistant.generateFlashcardsPrompt')) },
       ],
     }
   } else if (path === '/analytics') {
     config = {
-      label: t('assistant.whatToFocus', 'What should I focus on?'),
-      directAction: () => openChat(t('assistant.focusPrompt', 'Based on my progress, what should I focus on next?')),
+      label: t('assistant.whatToFocus'),
+      directAction: () => openChat(t('assistant.focusPrompt')),
     }
   } else if (path === '/study-plan') {
     config = {
-      label: t('assistant.adjustPlan', 'Adjust my plan'),
-      directAction: () => openChat(t('assistant.adjustPlanPrompt', 'Help me adjust my study plan')),
+      label: t('assistant.adjustPlan'),
+      directAction: () => openChat(t('assistant.adjustPlanPrompt')),
     }
   } else if (path === '/dashboard' || path === '/') {
     config = {
-      label: t('assistant.quickActions', 'Quick actions'),
+      label: t('assistant.quickActions'),
       actions: [
-        { label: t('assistant.uploadMaterials', 'Upload materials'), icon: <Upload className="w-4 h-4" />, action: () => { window.location.href = '/sources' } },
-        { label: t('assistant.practiceExam', 'Practice exam'), icon: <ClipboardCheck className="w-4 h-4" />, action: () => { window.location.href = '/practice-exam' } },
-        { label: t('assistant.askTutor', 'Ask tutor'), icon: <MessageCircle className="w-4 h-4" />, action: () => openChat() },
+        { label: t('assistant.uploadMaterials'), icon: <Upload className="w-4 h-4" />, action: () => { window.location.href = '/sources' } },
+        { label: t('assistant.practiceExam'), icon: <ClipboardCheck className="w-4 h-4" />, action: () => { window.location.href = '/practice-exam' } },
+        { label: t('assistant.askTutor'), icon: <MessageCircle className="w-4 h-4" />, action: () => openChat() },
       ],
     }
   } else {
     config = {
-      label: t('assistant.askTutor', 'Ask tutor'),
+      label: t('assistant.askTutor'),
       directAction: () => openChat(),
     }
   }

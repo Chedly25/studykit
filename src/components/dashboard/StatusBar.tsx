@@ -53,7 +53,7 @@ export function StatusBar({
     chips.push({
       icon: <Calendar size={16} className="text-[var(--accent-text)]" />,
       value: `${milestoneProgress.done}/${milestoneProgress.total}`,
-      label: t('research.milestones', 'milestones'),
+      label: t('research.milestones'),
     })
   }
 

@@ -94,17 +94,17 @@ export function StepPriorities({ draft, dispatch, onBack }: StepPrioritiesProps)
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-[var(--text-heading)]">
-          {t('wizard.prioritiesTitle', 'Set your priorities')}
+          {t('wizard.prioritiesTitle')}
         </h2>
         <p className="text-sm text-[var(--text-muted)] mt-1">
-          {t('wizard.prioritiesSubtitle', 'Drag topics to reorder by importance. The app will focus on your top priorities first.')}
+          {t('wizard.prioritiesSubtitle')}
         </p>
       </div>
 
       {/* Weekly hours reminder */}
       <div className="glass-card p-4 mb-4 flex items-center justify-between">
         <span className="text-sm text-[var(--text-body)]">
-          {t('wizard.weeklyTarget', 'Weekly study target')}
+          {t('wizard.weeklyTarget')}
         </span>
         <span className="text-sm font-semibold text-[var(--accent-text)]">
           {draft.weeklyTargetHours}h / week
@@ -181,12 +181,12 @@ export function StepPriorities({ draft, dispatch, onBack }: StepPrioritiesProps)
           {isActivating ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              {t('wizard.activating', 'Setting up...')}
+              {t('wizard.activating')}
             </>
           ) : (
             <>
               <Rocket className="w-5 h-5" />
-              {t('wizard.startLearning', 'Start learning')}
+              {t('wizard.startLearning')}
             </>
           )}
         </button>

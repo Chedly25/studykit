@@ -163,7 +163,7 @@ export function PracticeExamResults({
                           to={`/practice-exam?topic=${topicId}`}
                           className="text-[10px] font-semibold text-[var(--accent-text)] bg-[var(--accent-bg)] px-1.5 py-0.5 rounded hover:underline shrink-0"
                         >
-                          {t('practiceExam.practiceThis', 'Practice')}
+                          {t('practiceExam.practiceThis')}
                         </Link>
                       )}
                     </div>
@@ -190,7 +190,7 @@ export function PracticeExamResults({
         <div className="glass-card p-6">
           <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-4 flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
-            {t('practiceExam.sectionBreakdown', 'Section Breakdown')}
+            {t('practiceExam.sectionBreakdown')}
           </h3>
           <div className="space-y-3">
             {sectionBreakdown.map((sec, i) => {
@@ -340,7 +340,7 @@ export function PracticeExamResults({
                           if (!scheme.criteria?.length) return null
                           return (
                             <div className="mt-3 p-3 rounded-lg bg-[var(--bg-input)] text-xs space-y-2">
-                              <p className="font-medium text-[var(--text-muted)]">{t('practiceExam.markingCriteria', 'Marking Criteria')}</p>
+                              <p className="font-medium text-[var(--text-muted)]">{t('practiceExam.markingCriteria')}</p>
                               {scheme.criteria.map((c, ci) => (
                                 <div key={ci} className="flex justify-between text-[var(--text-body)]">
                                   <span>{c.criterion}</span>
@@ -349,7 +349,7 @@ export function PracticeExamResults({
                               ))}
                               {scheme.commonErrors && scheme.commonErrors.length > 0 && (
                                 <>
-                                  <p className="font-medium text-[var(--color-error)] pt-1">{t('practiceExam.commonErrors', 'Common Errors')}</p>
+                                  <p className="font-medium text-[var(--color-error)] pt-1">{t('practiceExam.commonErrors')}</p>
                                   {scheme.commonErrors.map((e, ei) => (
                                     <div key={ei} className="flex justify-between text-[var(--color-error)]">
                                       <span>{e.error}</span>
@@ -405,7 +405,7 @@ export function PracticeExamResults({
           className="btn-secondary px-6 py-2.5 flex items-center gap-2"
         >
           <MessageCircle className="w-4 h-4" />
-          {t('practiceExam.discussResults', 'Discuss with AI')}
+          {t('practiceExam.discussResults')}
         </button>
         <a href="/dashboard" className="btn-secondary px-6 py-2.5">
           {t('dashboard.title')}
@@ -436,26 +436,26 @@ function ExamStrategySection({ sessionId }: { sessionId: string }) {
     <div className="glass-card p-6">
       <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-4 flex items-center gap-2">
         <BarChart3 className="w-5 h-5" />
-        {t('practiceExam.strategy', 'Exam Strategy')}
+        {t('practiceExam.strategy')}
       </h3>
 
       {/* Attempt efficiency */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <div className="text-center p-2 rounded-lg bg-[var(--bg-input)]">
           <div className="text-lg font-bold text-[var(--text-heading)]">{ae.attempted}/{ae.totalQuestions}</div>
-          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.attempted', 'Attempted')}</div>
+          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.attempted')}</div>
         </div>
         <div className="text-center p-2 rounded-lg bg-[var(--bg-input)]">
           <div className="text-lg font-bold text-[var(--color-success)]">{ae.correct}</div>
-          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.correct', 'Correct')}</div>
+          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.correct')}</div>
         </div>
         <div className="text-center p-2 rounded-lg bg-[var(--bg-input)]">
           <div className="text-lg font-bold text-[var(--color-error)]">{ae.wrong}</div>
-          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.wrong', 'Wrong')}</div>
+          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.wrong')}</div>
         </div>
         <div className="text-center p-2 rounded-lg bg-[var(--bg-input)]">
           <div className="text-lg font-bold text-[var(--text-muted)]">{ae.skipped}</div>
-          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.skipped', 'Skipped')}</div>
+          <div className="text-[10px] text-[var(--text-muted)]">{t('practiceExam.skipped')}</div>
         </div>
       </div>
 

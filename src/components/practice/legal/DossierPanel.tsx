@@ -49,7 +49,7 @@ export function DossierPanel({ documents }: DossierPanelProps) {
   if (documents.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
-        {t('syntheseExam.noDossier', 'No dossier documents.')}
+        {t('syntheseExam.noDossier')}
       </div>
     )
   }

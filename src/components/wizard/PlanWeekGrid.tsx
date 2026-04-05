@@ -78,7 +78,7 @@ export function PlanWeekGrid({ plan, subjects, dispatch, onSelectActivity }: Pla
                     onChange={e => setNewTopic(e.target.value)}
                     className="w-full text-[10px] bg-[var(--bg-input)] border border-[var(--border-card)] rounded px-1.5 py-1 text-[var(--text-body)]"
                   >
-                    <option value="">{t('wizard.selectTopic', 'Select topic...')}</option>
+                    <option value="">{t('wizard.selectTopic')}</option>
                     {allTopics.map(name => (
                       <option key={name} value={name}>{name}</option>
                     ))}
@@ -110,7 +110,7 @@ export function PlanWeekGrid({ plan, subjects, dispatch, onSelectActivity }: Pla
                       disabled={!newTopic}
                       className="flex-1 text-[10px] py-1 rounded bg-[var(--accent-text)] text-white disabled:opacity-40"
                     >
-                      {t('wizard.add', 'Add')}
+                      {t('wizard.add')}
                     </button>
                     <button
                       onClick={() => { setAddingDay(null); setNewTopic(''); setNewType('read'); setNewDuration(30) }}

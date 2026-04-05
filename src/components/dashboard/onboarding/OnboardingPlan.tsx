@@ -83,7 +83,7 @@ export function OnboardingPlan({ examProfileId, onComplete }: OnboardingPlanProp
             {t('dashboard.onboarding.retry')}
           </button>
           <button onClick={onComplete} className="btn-secondary px-6 py-2">
-            {t('common.skip', 'Skip')}
+            {t('common.skip')}
           </button>
         </div>
       </div>

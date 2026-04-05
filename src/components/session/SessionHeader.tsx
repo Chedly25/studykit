@@ -52,7 +52,7 @@ export function SessionHeader({ topic, subject, chapterName, onToggleMaterials, 
             ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
             : 'hover:bg-[var(--bg-input)] text-[var(--text-muted)]'
         }`}
-        title={t('session.materials', 'Materials')}
+        title={t('session.materials')}
       >
         <FolderOpen className="w-4 h-4" />
       </button>

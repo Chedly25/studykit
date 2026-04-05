@@ -155,14 +155,14 @@ export default function TopicPage() {
       <div className="glass-card p-4 mb-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2">
-            <FileText className="w-4 h-4 text-[var(--accent-text)]" /> {t('fiche.title', 'Revision Fiche')}
+            <FileText className="w-4 h-4 text-[var(--accent-text)]" /> {t('fiche.title')}
           </h3>
           {fiche && (
             <div className="flex items-center gap-2">
               <Link to={`/fiche/${topicId}`} className="text-xs text-[var(--accent-text)] hover:underline">
-                {t('fiche.view', 'View')}
+                {t('fiche.view')}
               </Link>
-              <button onClick={handleGenerateFiche} className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors" title={t('fiche.regenerate', 'Regenerate')}>
+              <button onClick={handleGenerateFiche} className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors" title={t('fiche.regenerate')}>
                 <RefreshCw className="w-3 h-3" />
               </button>
             </div>
@@ -174,8 +174,8 @@ export default function TopicPage() {
             {t('fiche.lastUpdated', 'Updated {{when}}', {
               when: (() => {
                 const days = Math.floor((Date.now() - new Date(fiche.updatedAt).getTime()) / 86400000)
-                if (days === 0) return t('fiche.today', 'today')
-                if (days === 1) return t('fiche.yesterday', 'yesterday')
+                if (days === 0) return t('fiche.today')
+                if (days === 1) return t('fiche.yesterday')
                 return t('fiche.daysAgo', '{{count}} days ago', { count: days })
               })()
             })}
@@ -183,7 +183,7 @@ export default function TopicPage() {
           </p>
         ) : (
           <button onClick={handleGenerateFiche} className="btn-secondary text-xs px-3 py-1.5 mt-2">
-            {t('fiche.generate', 'Generate fiche')}
+            {t('fiche.generate')}
           </button>
         )}
       </div>

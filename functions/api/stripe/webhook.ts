@@ -90,6 +90,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   // Idempotency: skip already-processed events (Stripe retries on timeout)
+  // Write the key immediately to prevent TOCTOU race on concurrent retries
   if (env.USAGE_KV && event.id) {
     const already = await env.USAGE_KV.get(`webhook:${event.id}`)
     if (already) {
@@ -97,6 +98,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         status: 200, headers: { 'Content-Type': 'application/json' },
       })
     }
+    await env.USAGE_KV.put(`webhook:${event.id}`, '1', { expirationTtl: 86400 })
   }
 
   try {
@@ -187,11 +189,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         })
         break
       }
-    }
-
-    // Mark event as processed (24h TTL — Stripe stops retrying after ~3 days)
-    if (env.USAGE_KV && event.id) {
-      await env.USAGE_KV.put(`webhook:${event.id}`, '1', { expirationTtl: 86400 })
     }
 
     return new Response(JSON.stringify({ received: true }), {
