@@ -208,7 +208,7 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
               <p className="text-sm text-[var(--text-muted)]">
                 {generateError
                   ? t('wizard.planEmptyHint')
-                  : t('wizard.planSubtitle', 'Here\'s a starting point based on what you told us. Edit directly or use the chat.')
+                  : t('wizard.planSubtitle')
                 }
               </p>
             </div>

@@ -236,14 +236,14 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
           {t('wizard.landscapeTitle')}
         </h2>
         <p className="text-[var(--text-muted)] mb-6">
-          {t('wizard.landscapeSubtitleResearch', 'Tell us about your research and we\'ll structure it for you')}
+          {t('wizard.landscapeSubtitleResearch')}
         </p>
 
         {!hasSubjects && (
           <div className="space-y-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-[var(--text-body)] mb-1">
-                {t('wizard.researchQuestion', 'What\'s your research question?')}
+                {t('wizard.researchQuestion')}
               </label>
               <textarea
                 value={freetextContent}
@@ -353,7 +353,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
         {t('wizard.landscapeTitle')}
       </h2>
       <p className="text-[var(--text-muted)] mb-6">
-        {t('wizard.landscapeSubtitle', 'Tell us what you\'re studying — upload materials, describe it, or build from scratch')}
+        {t('wizard.landscapeSubtitle')}
       </p>
 
       {/* Show tabs only when no subjects extracted yet */}
@@ -425,7 +425,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
               <textarea
                 value={freetextContent}
                 onChange={e => setFreetextContent(e.target.value)}
-                placeholder={t('wizard.freetextHint', 'Describe what you\'re studying in your own words. For example: "Constitutional law course covering separation of powers, federalism, individual rights..."')}
+                placeholder={t('wizard.freetextHint')}
                 rows={6}
                 className="input-field w-full resize-none"
               />

@@ -59,7 +59,7 @@ export function ActionsMenu({ open, onClose, mode = 'dropdown' }: ActionsMenuPro
     {
       title: t('nav.actionsStudy'),
       items: [
-        { icon: <Zap className="w-4 h-4" />, label: t('nav.todaySession', "Today's Session"), link: '/queue' },
+        { icon: <Zap className="w-4 h-4" />, label: t('nav.todaySession'), link: '/queue' },
         { icon: <ClipboardCheck className="w-4 h-4" />, label: t('nav.practiceExam'), link: '/practice-exam', pro: true },
         { icon: <Timer className="w-4 h-4" />, label: t('nav.focusTimer'), link: '/focus' },
       ],

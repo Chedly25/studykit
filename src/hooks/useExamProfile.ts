@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { useLiveQuery } from 'dexie-react-hooks'
+import Dexie from 'dexie'
 import { db } from '../db'
 import type { ExamProfile, ExamType, Subject, Topic, Subtopic, ProfileMode } from '../db/schema'
 import { getExamBlueprint } from '../lib/examTopicMaps'
@@ -336,13 +337,13 @@ export function useExamProfile() {
 
       // Tables with compound [examProfileId+X] index only (no standalone examProfileId index)
       await db.agentRuns.where('[examProfileId+agentId]').between(
-        [profileId, ''], [profileId, '\uffff']
+        [profileId, Dexie.minKey], [profileId, Dexie.maxKey]
       ).delete()
       await db.agentInsights.where('[examProfileId+agentId]').between(
-        [profileId, ''], [profileId, '\uffff']
+        [profileId, Dexie.minKey], [profileId, Dexie.maxKey]
       ).delete()
       await db.contentEffectiveness.where('[examProfileId+contentType]').between(
-        [profileId, ''], [profileId, '\uffff']
+        [profileId, Dexie.minKey], [profileId, Dexie.maxKey]
       ).delete()
 
       // Flashcards (FK via deckId)

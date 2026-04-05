@@ -262,7 +262,7 @@ export default function Settings() {
         )}
         {isPersisted && (
           <div className="flex items-center gap-2 text-xs text-emerald-600">
-            <Shield className="w-3.5 h-3.5" /> {t('settings.storageProtected', 'Storage is protected — browser won\'t clear your data')}
+            <Shield className="w-3.5 h-3.5" /> {t('settings.storageProtected')}
           </div>
         )}
       </div>

@@ -197,6 +197,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     })
   } catch (err) {
     console.error('Webhook processing error:', err)
+    // Clear dedup key so Stripe can retry after transient failures
+    if (env.USAGE_KV && event.id) {
+      await env.USAGE_KV.delete(`webhook:${event.id}`)
+    }
     return new Response(
       JSON.stringify({ error: 'Webhook processing failed' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

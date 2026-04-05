@@ -128,7 +128,7 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
       {/* Advisor narrative */}
       {report?.narrative && (
         <div className="mb-3 px-3 py-2.5 rounded-lg bg-[var(--bg-input)] border-l-2 border-[var(--accent-text)]">
-          <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1">{t('dashboard.advisorNote', "Advisor's Note")}</p>
+          <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1">{t('dashboard.advisorNote')}</p>
           <p className="text-sm text-[var(--text-body)] leading-relaxed">{report.narrative}</p>
         </div>
       )}
@@ -136,7 +136,7 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
       {/* Priorities */}
       {priorities.length > 0 ? (
         <div className="mb-3">
-          <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-2">{t('dashboard.briefPriorities', "Today's priorities")}</p>
+          <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-2">{t('dashboard.briefPriorities')}</p>
           <ul className="space-y-1.5">
             {priorities.map((p, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
@@ -152,7 +152,7 @@ export function DashboardIntelligenceBrief({ examProfileId }: Props) {
           </ul>
         </div>
       ) : (
-        <p className="text-sm text-[var(--text-muted)] mb-3">{t('dashboard.briefNoPriorities', "No urgent items — you're on track")}</p>
+        <p className="text-sm text-[var(--text-muted)] mb-3">{t('dashboard.briefNoPriorities')}</p>
       )}
 
       {/* Urgent progress insight — only show title (message may be in wrong language) */}
