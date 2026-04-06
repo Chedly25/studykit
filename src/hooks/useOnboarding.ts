@@ -5,6 +5,7 @@
  */
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useAuth } from '@clerk/clerk-react'
+import * as Sentry from '@sentry/react'
 import { streamChat } from '../ai/client'
 import { db } from '../db'
 import type { Message, ContentBlock, ToolUseBlock } from '../ai/types'
@@ -379,7 +380,7 @@ export function useOnboarding() {
       // Success — reset retry counter
       retryCountRef.current = 0
     } catch (err) {
-      console.error('Onboarding agent error:', err)
+      Sentry.captureException(err instanceof Error ? err : new Error('Onboarding agent error: ' + String(err)))
       retryCountRef.current += 1
 
       const errorMsg = err instanceof Error ? err.message : 'Something went wrong.'

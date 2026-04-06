@@ -2,6 +2,7 @@
  * Hook wrapping exam exercise processing via the background job queue.
  */
 import { useState, useCallback, useEffect } from 'react'
+import * as Sentry from '@sentry/react'
 import { toast } from 'sonner'
 import { useSubscription } from './useSubscription'
 import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
@@ -15,7 +16,7 @@ export function useExamProcessing(examProfileId: string | undefined) {
 
   useEffect(() => {
     if (isFailed && error) {
-      console.error('[useExamProcessing] Processing failed:', error)
+      Sentry.captureException(new Error('[useExamProcessing] Processing failed: ' + String(error)))
       toast.error(`Exam processing failed: ${error}`)
     }
   }, [isFailed, error])

@@ -8,7 +8,8 @@ interface ToolSEOProps {
 }
 
 export function ToolSEO({ title, description, slug, keywords }: ToolSEOProps) {
-  const url = `https://studieskit.com/${slug}`
+  const BASE_URL = import.meta.env.VITE_PUBLIC_URL || 'https://studieskit.com'
+  const url = `${BASE_URL}/${slug}`
 
   return (
     <Helmet>
@@ -22,11 +23,11 @@ export function ToolSEO({ title, description, slug, keywords }: ToolSEOProps) {
       <meta property="og:description" content={description} />
       <meta property="og:url" content={url} />
       <meta property="og:type" content="website" />
-      <meta property="og:image" content="https://studieskit.com/og-image.png" />
+      <meta property="og:image" content={`${BASE_URL}/og-image.png`} />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content="https://studieskit.com/twitter-card.png" />
+      <meta name="twitter:image" content={`${BASE_URL}/twitter-card.png`} />
       <script type="application/ld+json">
         {JSON.stringify({
           '@context': 'https://schema.org',

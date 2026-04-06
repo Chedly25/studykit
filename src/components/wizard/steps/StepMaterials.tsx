@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import * as Sentry from '@sentry/react'
 import { useTranslation } from 'react-i18next'
 import { Upload, CheckCircle, Loader2, AlertCircle, ChevronRight, ChevronLeft, Sparkles, BookOpen, FileText } from 'lucide-react'
 import { useSources } from '../../../hooks/useSources'
@@ -58,7 +59,7 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
     try {
       await uploadMultiplePdfs(pdfFiles, 'course')
     } catch (err) {
-      console.error('Upload failed:', err)
+      Sentry.captureException(err instanceof Error ? err : new Error('Upload failed: ' + String(err)))
     } finally {
       setIsUploading(false)
     }
@@ -72,7 +73,7 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
     try {
       await uploadMultiplePdfs(pdfFiles, 'exam')
     } catch (err) {
-      console.error('Upload failed:', err)
+      Sentry.captureException(err instanceof Error ? err : new Error('Upload failed: ' + String(err)))
     } finally {
       setIsUploading(false)
     }

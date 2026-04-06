@@ -3,6 +3,7 @@
  * Processing survives navigation — progress is read from IndexedDB.
  */
 import { useState, useCallback, useEffect } from 'react'
+import * as Sentry from '@sentry/react'
 import { toast } from 'sonner'
 import { useSubscription } from './useSubscription'
 import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
@@ -20,7 +21,7 @@ export function useSourceProcessing(examProfileId: string | undefined) {
   // Show toast on job failure
   useEffect(() => {
     if (isFailed && error) {
-      console.error('[useSourceProcessing] Processing failed:', error)
+      Sentry.captureException(new Error('[useSourceProcessing] Processing failed: ' + String(error)))
       toast.error(`Processing failed: ${error}`)
     }
   }, [isFailed, error])

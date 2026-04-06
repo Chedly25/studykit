@@ -4,6 +4,7 @@
  * Topic name embeddings are cached in DB to avoid re-embedding.
  * Falls back to fast LLM classification when embeddings are unavailable.
  */
+import * as Sentry from '@sentry/react'
 import { db } from '../db'
 import { callFastModel } from '../ai/fastClient'
 import { base64ToFloat32Array, cosineSimilarity, generateEmbeddings } from './embeddings'
@@ -219,7 +220,7 @@ ${chunkSummaries}`
         }
       }
     } catch (err) {
-      console.warn('[topicClassifier] Batch classification failed:', err)
+      Sentry.captureException(err instanceof Error ? err : new Error('[topicClassifier] Batch classification failed: ' + String(err)))
     }
 
     completed += batch.length

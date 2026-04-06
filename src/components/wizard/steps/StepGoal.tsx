@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import * as Sentry from '@sentry/react'
 import { useTranslation } from 'react-i18next'
 import {
   GraduationCap, Briefcase, FlaskConical, Languages, Wrench,
@@ -70,7 +71,7 @@ export function StepGoal({ draft, dispatch, onNext }: StepGoalProps) {
 
       onNext()
     } catch (err) {
-      console.error('Failed to create profile:', err)
+      Sentry.captureException(err instanceof Error ? err : new Error('Failed to create profile: ' + String(err)))
       setCreateError(err instanceof Error ? err.message : 'Failed to create profile')
     } finally {
       setIsCreating(false)

@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react'
+import * as Sentry from '@sentry/react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { Notification } from '../db/schema'
@@ -21,7 +22,7 @@ export function useNotifications(examProfileId: string | undefined) {
   // Generate notifications on mount
   useEffect(() => {
     if (examProfileId) {
-      generateNotifications(examProfileId).catch(console.warn)
+      generateNotifications(examProfileId).catch(err => Sentry.captureException(err))
     }
   }, [examProfileId])
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import * as Sentry from '@sentry/react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { GraduationCap, Briefcase, FlaskConical, Languages, Wrench, Calendar, Target, ChevronRight, ChevronLeft, BookOpen, Check, BookMarked, Microscope } from 'lucide-react'
@@ -46,7 +47,7 @@ export function ExamProfileWizard() {
       }
       navigate('/dashboard')
     } catch (err) {
-      console.error('Failed to create profile:', err)
+      Sentry.captureException(err instanceof Error ? err : new Error('Failed to create profile: ' + String(err)))
     } finally {
       setIsCreating(false)
     }

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { SignIn, SignUp } from '@clerk/clerk-react'
+import * as Sentry from '@sentry/react'
 import { Layout } from './components/Layout'
 import { BrandedLoader } from './components/BrandedLoader'
 import { AuthLayout } from './components/AuthLayout'
@@ -9,10 +10,10 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { runMigration } from './db/migrations'
 
 // Run IndexedDB migration on app load
-runMigration().catch(console.warn)
+runMigration().catch(err => Sentry.captureException(err))
 
 // Auto-reload on stale chunk errors (happens after deploy with new hashes)
-function lazyWithRetry(importFn: () => Promise<any>) {
+function lazyWithRetry(importFn: () => Promise<{ default: React.ComponentType }>) {
   return lazy(() =>
     importFn().catch(() => {
       // Chunk failed to load — likely a stale deploy. Reload once.

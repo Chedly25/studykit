@@ -258,8 +258,8 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
             </div>
           )}
 
-          {messages.map((msg, i) => (
-            <ChatMessageBubble key={i} message={msg} />
+          {messages.map((msg) => (
+            <ChatMessageBubble key={msg.id} message={msg} />
           ))}
 
           {streamingText && (

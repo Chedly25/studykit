@@ -7,6 +7,7 @@
  * - Refreshes auth tokens before each step
  * - Processes batch jobs with bounded concurrency
  */
+import * as Sentry from '@sentry/react'
 import { db } from '../../db'
 import type { BackgroundJob, JobType, JobStatus } from '../../db/schema'
 import type { WorkflowContext, WorkflowDefinition, StepResult } from './types'
@@ -142,7 +143,7 @@ export class JobRunner {
           }
         } catch (err) {
           const error = err instanceof Error ? err.message : String(err)
-          console.error(`[JobRunner] Job ${job.type} (${job.id}) failed:`, error)
+          Sentry.captureException(new Error(`[JobRunner] Job ${job.type} (${job.id}) failed: ${error}`))
           await db.backgroundJobs.update(job.id, {
             status: 'failed' as JobStatus,
             error,
@@ -319,7 +320,7 @@ export class JobRunner {
               : Math.min(2000 * Math.pow(2, attempt), 30000) // 2s, 4s, 8s, 16s, capped at 30s
             const jitter = Math.random() * 1000 // 0-1s random jitter
             const delay = baseDelay + jitter
-            console.warn(`[JobRunner] Step "${step.name}" rate limited, retry ${attempt + 1}/${MAX_RETRIES - 1} in ${(delay / 1000).toFixed(1)}s:`, error)
+            Sentry.captureMessage(`[JobRunner] Step "${step.name}" rate limited, retry ${attempt + 1}/${MAX_RETRIES - 1} in ${(delay / 1000).toFixed(1)}s: ${error}`, 'warning')
             await db.backgroundJobs.update(job.id, {
               currentStepName: `${step.name} (retry ${attempt + 1}...)`,
               updatedAt: new Date().toISOString(),
@@ -328,7 +329,7 @@ export class JobRunner {
             continue
           }
 
-          console.error(`[JobRunner] Step "${step.name}" failed:`, error)
+          Sentry.captureException(new Error(`[JobRunner] Step "${step.name}" failed: ${error}`))
           results[step.id] = { status: 'failed', error, durationMs: Date.now() - stepStart }
 
           if (!step.optional) {
@@ -582,7 +583,7 @@ export class JobRunner {
       })
     } catch (err) {
       // Checkpoint failure is non-fatal — step data is still in memory
-      console.warn('[JobRunner] Checkpoint write failed:', err)
+      Sentry.captureException(err instanceof Error ? err : new Error('[JobRunner] Checkpoint write failed: ' + String(err)))
     }
   }
 

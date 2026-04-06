@@ -574,7 +574,7 @@ function DailyQueueContent() {
       <div role="progressbar" aria-valuenow={Math.round(progressPct)} aria-valuemin={0} aria-valuemax={100} aria-label="Session progress" className="w-full h-2 rounded-full bg-[var(--bg-input)] mb-6 overflow-hidden flex">
         {completedSegments.length > 0 ? (
           completedSegments.map((seg, i) => (
-            <div key={i} className={`h-full transition-all duration-500 ${seg.color}`} style={{ width: `${seg.pct}%` }} />
+            <div key={`seg-${i}`} className={`h-full transition-all duration-500 ${seg.color}`} style={{ width: `${seg.pct}%` }} />
           ))
         ) : (
           <div
@@ -1612,7 +1612,7 @@ function ConceptQuizInline({
         <>
           <div className="glass-card p-4 space-y-1 mb-4">
             {keyPoints.map((point, i) => (
-              <p key={i} className="text-sm text-[var(--text-body)]">• <MathText>{point}</MathText></p>
+              <p key={`point-${i}`} className="text-sm text-[var(--text-body)]">• <MathText>{point}</MathText></p>
             ))}
             {card.example && (
               <p className="text-sm text-[var(--text-muted)] mt-2 pt-2 border-t border-[var(--border-card)]">
@@ -1640,7 +1640,7 @@ function ConceptQuizInline({
             <>
               <div className="glass-card p-4 space-y-1 mb-4">
                 {keyPoints.map((point, i) => (
-                  <p key={i} className="text-sm text-[var(--text-body)]">• <MathText>{point}</MathText></p>
+                  <p key={`point-${i}`} className="text-sm text-[var(--text-body)]">• <MathText>{point}</MathText></p>
                 ))}
                 {card.example && (
                   <p className="text-sm text-[var(--text-muted)] mt-2 pt-2 border-t border-[var(--border-card)]">

@@ -3,6 +3,7 @@
  * Parses step results for source-processing to show specific counts.
  */
 import { useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { toast } from 'sonner'
 import { db } from '../db'
@@ -94,6 +95,7 @@ const JOB_TOAST_CONFIG: Record<string, ToastConfig> = {
 
 export function useJobCompletionToasts() {
   const { activeProfile } = useExamProfile()
+  const navigate = useNavigate()
   const seenIds = useRef(new Set<string>())
 
   // Load recently completed jobs (last 60 seconds) using compound index
@@ -122,7 +124,7 @@ export function useJobCompletionToasts() {
         action: {
           label: config.cta,
           onClick: () => {
-            window.location.href = link
+            navigate(link)
           },
         },
       })

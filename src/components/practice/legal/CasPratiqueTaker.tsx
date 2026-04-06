@@ -34,6 +34,7 @@ export function CasPratiqueTaker({
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const onSubmitRef = useRef(onSubmit)
   onSubmitRef.current = onSubmit
+  const timerStarted = useRef(false)
 
   // Sync savedAnswer on async load
   const initializedRef = useRef(false)
@@ -66,7 +67,9 @@ export function CasPratiqueTaker({
 
   // Timer
   useEffect(() => {
-    if (!timeLimitSeconds || timeRemaining <= 0) return
+    if (!timeLimitSeconds || timerStarted.current) return
+    timerStarted.current = true
+    setTimeRemaining(timeLimitSeconds)
     const interval = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev <= 1) { clearInterval(interval); return 0 }
@@ -74,7 +77,7 @@ export function CasPratiqueTaker({
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [timeLimitSeconds, timeRemaining > 0]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [timeLimitSeconds])
 
   // Auto-submit on timer expiry (cas pratique only — grand oral just ends prep)
   useEffect(() => {

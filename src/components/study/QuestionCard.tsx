@@ -66,7 +66,7 @@ export function QuestionCard({ question, onAnswer, showTimer }: Props) {
 
             return (
               <button
-                key={i}
+                key={`opt-${i}`}
                 onClick={() => !submitted && setSelected(opt)}
                 disabled={submitted}
                 className={`w-full text-left px-4 py-2.5 rounded-lg border text-sm transition-all ${

@@ -128,8 +128,8 @@ export function ChatMessageBubble({ message, messageIndex, conversationId, examP
         <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-[var(--accent-bg)] border border-[var(--border-card)] text-[var(--text-body)]">
           {contextLabels.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
-              {contextLabels.map((label, i) => (
-                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-600 border border-blue-500/20">
+              {contextLabels.map((label) => (
+                <span key={label} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-600 border border-blue-500/20">
                   <FileText className="w-2.5 h-2.5" />
                   {label}
                 </span>
@@ -152,15 +152,15 @@ export function ChatMessageBubble({ message, messageIndex, conversationId, examP
           {segments.map((seg, i) => {
             if (seg.type === 'text' && seg.content.trim()) {
               return (
-                <div key={i} className={proseClass}>
+                <div key={`${seg.type}-${i}`} className={proseClass}>
                   <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{seg.content}</ReactMarkdown>
                 </div>
               )
             }
-            if (seg.type === 'canvas') return <StudyPlanCanvas key={i} />
-            if (seg.type === 'card') return <ConceptCardBlock key={i} cardId={seg.id} />
-            if (seg.type === 'quiz') return <InlineQuiz key={i} quizId={seg.id} />
-            if (seg.type === 'code') return <CodePlaygroundBlock key={i} codeId={seg.id} />
+            if (seg.type === 'canvas') return <StudyPlanCanvas key={`${seg.type}-${i}`} />
+            if (seg.type === 'card') return <ConceptCardBlock key={`${seg.type}-${i}`} cardId={seg.id} />
+            if (seg.type === 'quiz') return <InlineQuiz key={`${seg.type}-${i}`} quizId={seg.id} />
+            if (seg.type === 'code') return <CodePlaygroundBlock key={`${seg.type}-${i}`} codeId={seg.id} />
             return null
           })}
           {showStreamingPlaceholder && (
@@ -174,7 +174,7 @@ export function ChatMessageBubble({ message, messageIndex, conversationId, examP
           <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-[var(--border-card)]">
             {citations.map((citation, i) => (
               <CitationBadge
-                key={i}
+                key={`cite-${i}`}
                 citation={citation}
                 index={i}
                 onClick={() => onCitationClick?.(citation)}

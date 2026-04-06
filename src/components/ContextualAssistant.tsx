@@ -3,7 +3,7 @@
  * Changes behavior based on current route — always one tap to AI help.
  */
 import { useState, useEffect, useRef } from 'react'
-import { useLocation, useParams } from 'react-router-dom'
+import { useLocation, useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { MessageCircle, Upload, ClipboardCheck, Sparkles, X } from 'lucide-react'
 
@@ -22,6 +22,7 @@ export function ContextualAssistant({ chatOpen, subjectName }: Props) {
   const { t } = useTranslation()
   const location = useLocation()
   const params = useParams()
+  const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -101,8 +102,8 @@ export function ContextualAssistant({ chatOpen, subjectName }: Props) {
     config = {
       label: t('assistant.quickActions'),
       actions: [
-        { label: t('assistant.uploadMaterials'), icon: <Upload className="w-4 h-4" />, action: () => { window.location.href = '/sources' } },
-        { label: t('assistant.practiceExam'), icon: <ClipboardCheck className="w-4 h-4" />, action: () => { window.location.href = '/practice-exam' } },
+        { label: t('assistant.uploadMaterials'), icon: <Upload className="w-4 h-4" />, action: () => { navigate('/sources') } },
+        { label: t('assistant.practiceExam'), icon: <ClipboardCheck className="w-4 h-4" />, action: () => { navigate('/practice-exam') } },
         { label: t('assistant.askTutor'), icon: <MessageCircle className="w-4 h-4" />, action: () => openChat() },
       ],
     }

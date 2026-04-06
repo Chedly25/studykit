@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import * as Sentry from '@sentry/react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Loader2, ChevronLeft, Rocket, GripVertical, ArrowUp, ArrowDown } from 'lucide-react'
@@ -84,7 +85,7 @@ export function StepPriorities({ draft, dispatch, onBack }: StepPrioritiesProps)
       clearWizardDraft()
       navigate('/dashboard')
     } catch (err) {
-      console.error('Failed to activate:', err)
+      Sentry.captureException(err instanceof Error ? err : new Error('Failed to activate: ' + String(err)))
     } finally {
       setIsActivating(false)
     }

@@ -123,6 +123,10 @@ export async function importProfileData(file: File): Promise<{ success: boolean;
 
     // Import profile
     if (data.profile) {
+      const p = data.profile as Record<string, unknown>
+      if (!p || typeof p.id !== 'string' || typeof p.name !== 'string') {
+        return { success: false, error: 'Invalid profile data' }
+      }
       await db.examProfiles.put(data.profile as any)
     }
 
@@ -134,6 +138,7 @@ export async function importProfileData(file: File): Promise<{ success: boolean;
       if (tableName === 'documentFiles') {
         // Decode base64 back to Blob
         for (const record of records as any[]) {
+          if (!record || typeof record !== 'object' || typeof record.id !== 'string') continue
           if (record._isBase64 && record.file) {
             try {
               record.file = base64ToBlob(record.file)
@@ -148,7 +153,10 @@ export async function importProfileData(file: File): Promise<{ success: boolean;
       } else {
         const table = (db as any)[tableName]
         if (table) {
-          await table.bulkPut(records)
+          const validRecords = (records as Array<Record<string, unknown>>).filter(
+            r => r && typeof r === 'object' && typeof r.id === 'string'
+          )
+          await table.bulkPut(validRecords)
         }
       }
     }

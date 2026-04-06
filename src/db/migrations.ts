@@ -3,6 +3,7 @@
  * Sets 'studieskit-migrated' flag when complete.
  * Safe to run multiple times — skips if already migrated.
  */
+import * as Sentry from '@sentry/react'
 import { db } from './index'
 import type {
   FlashcardDeck,
@@ -56,7 +57,7 @@ export async function runMigration(): Promise<void> {
 
     localStorage.setItem(MIGRATION_FLAG, 'true')
   } catch (err) {
-    console.warn('[StudiesKit] Migration failed, will retry next load:', err)
+    Sentry.captureException(err instanceof Error ? err : new Error('[StudiesKit] Migration failed, will retry next load: ' + String(err)))
   }
 }
 

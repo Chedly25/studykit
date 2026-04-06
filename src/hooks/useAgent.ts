@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
+import * as Sentry from '@sentry/react'
 import { runAgentLoop } from '../ai/agentLoop'
 import { buildSessionPrompt, buildSourceSection } from '../ai/systemPrompt'
 import type { SessionContext } from '../ai/systemPrompt'
@@ -16,9 +17,6 @@ import type { Message } from '../ai/types'
 import type { ExamProfile, Subject, Topic, DailyStudyLog, Assignment, TutorPreferences, SessionInsight, StudentModel, ConversationSummary, ExamFormat } from '../db/schema'
 import { db } from '../db'
 import { hybridSearch } from '../lib/hybridSearch'
-
-// IMPORTANT: This limit must match FREE_TIER_DAILY_LIMIT in functions/api/chat.ts
-const FREE_DAILY_LIMIT = 25
 
 function getUsageKey(): string {
   return `studieskit_ai_usage_${new Date().toISOString().slice(0, 10)}`
@@ -112,13 +110,6 @@ export function useAgent(options: UseAgentOptions) {
     const currentConversationSummaries = conversationSummariesRef.current
 
     if (!currentProfile || isLoading) return []
-
-    // Client-side quota pre-check for free users
-    if (!isPro && messagesUsedToday >= FREE_DAILY_LIMIT) {
-      setQuotaExceeded(true)
-      setError(`You've used all ${FREE_DAILY_LIMIT} free AI messages for today. Upgrade to Pro for unlimited access.`)
-      return []
-    }
 
     setError(null)
     setQuotaExceeded(false)
@@ -345,7 +336,7 @@ export function useAgent(options: UseAgentOptions) {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, getToken, isPro, messagesUsedToday, sourcesEnabled, customSystemPrompt, subjectId, subjectName, i18n.language])
+  }, [isLoading, getToken, isPro, sourcesEnabled, customSystemPrompt, subjectId, subjectName, i18n.language])
 
   // Generate insight on page unload to prevent lost sessions
   useEffect(() => {
@@ -371,7 +362,7 @@ export function useAgent(options: UseAgentOptions) {
     if (userMsgCount >= 4 && conversationId && profile) {
       const token = await getToken()
       if (token) {
-        generateSessionInsight(messages, profile.id, conversationId, token).catch(console.warn)
+        generateSessionInsight(messages, profile.id, conversationId, token).catch(err => Sentry.captureException(err))
       }
     }
     const msgs = await loadMessages(convId)
@@ -385,7 +376,7 @@ export function useAgent(options: UseAgentOptions) {
     if (userMsgCount >= 4 && conversationId && profile) {
       const token = await getToken()
       if (token) {
-        generateSessionInsight(messages, profile.id, conversationId, token).catch(console.warn)
+        generateSessionInsight(messages, profile.id, conversationId, token).catch(err => Sentry.captureException(err))
       }
     }
     setMessages([])

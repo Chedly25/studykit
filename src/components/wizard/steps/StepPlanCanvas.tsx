@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import * as Sentry from '@sentry/react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
@@ -108,7 +109,7 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
         )
         setStreamingDayCount(7)
       } catch (err) {
-        console.error('Failed to generate plan:', err)
+        Sentry.captureException(err instanceof Error ? err : new Error('Failed to generate plan: ' + String(err)))
         setGenerateError(err instanceof Error ? err.message : 'Failed to generate plan')
         setStreamingDayCount(7) // Clear streaming indicator
       }
@@ -155,7 +156,7 @@ export function StepPlanCanvas({ draft, dispatch, onBack }: StepPlanCanvasProps)
       clearWizardDraft()
       navigate('/dashboard')
     } catch (err) {
-      console.error('Failed to activate:', err)
+      Sentry.captureException(err instanceof Error ? err : new Error('Failed to activate: ' + String(err)))
     } finally {
       setIsActivating(false)
     }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import * as Sentry from '@sentry/react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useAuth } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
@@ -28,7 +29,7 @@ export function RoadmapTimeline({ examProfileId }: Props) {
       const token = await getToken()
       if (token) await generateMacroRoadmap(examProfileId, token)
     } catch (err) {
-      console.error('Roadmap generation failed:', err)
+      Sentry.captureException(err instanceof Error ? err : new Error('Roadmap generation failed: ' + String(err)))
     } finally {
       setIsGenerating(false)
     }

@@ -2,14 +2,16 @@
  * Renders a single PDF page: canvas + text layer + highlight overlay + context menu.
  */
 import { useEffect, useRef, useState, useCallback } from 'react'
+import * as Sentry from '@sentry/react'
 import { Loader2, RefreshCw } from 'lucide-react'
+import type { PDFDocumentProxy } from 'pdfjs-dist'
 import { useFlashcardGenerator } from '../../hooks/useFlashcardGenerator'
 import type { PdfHighlight } from '../../db/schema'
 import { HighlightLayer } from '../sources/HighlightLayer'
 import { PdfContextMenu } from './PdfContextMenu'
 
 interface Props {
-  pdfDoc: any
+  pdfDoc: PDFDocumentProxy
   pageNumber: number
   scale: number
   width: number
@@ -73,7 +75,7 @@ export function PdfPageRenderer({
           try { renderTaskRef.current.cancel() } catch { /* ignore */ }
         }
 
-        const renderTask = page.render({ canvasContext: ctx, viewport })
+        const renderTask = page.render({ canvas: null, canvasContext: ctx, viewport })
         renderTaskRef.current = renderTask
         await renderTask.promise
 
@@ -119,7 +121,7 @@ export function PdfPageRenderer({
         }
       } catch (err) {
         if (!cancelled && !(err instanceof Error && err.message.includes('cancelled'))) {
-          console.warn(`Page ${pageNumber} render error:`, err)
+          Sentry.captureException(err instanceof Error ? err : new Error(`Page ${pageNumber} render error: ` + String(err)))
         }
       }
     }

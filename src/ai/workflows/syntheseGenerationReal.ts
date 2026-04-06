@@ -11,6 +11,7 @@
  * Output stored on PracticeExamSession: dossierBlueprint, dossierContent,
  * synthesisModelAnswer, synthesisRubric.
  */
+import * as Sentry from '@sentry/react'
 import { db } from '../../db'
 import { dbQueryStep } from '../orchestrator/steps'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
@@ -109,8 +110,8 @@ function cleanDissertationTone(text: string): string {
 
 function pipelineLog(level: 'info' | 'warn' | 'error', msg: string) {
   const prefix = '[synthese-real]'
-  if (level === 'error') console.error(prefix, msg)
-  else if (level === 'warn') console.warn(prefix, msg)
+  if (level === 'error') Sentry.captureException(new Error(`${prefix} ${msg}`))
+  else if (level === 'warn') Sentry.captureMessage(String(`${prefix} ${msg}`), 'warning')
   else { /* info-level logs suppressed in production */ }
 }
 

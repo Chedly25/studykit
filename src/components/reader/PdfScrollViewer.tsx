@@ -4,11 +4,12 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Loader2 } from 'lucide-react'
+import type { PDFDocumentProxy } from 'pdfjs-dist'
 import { usePdfHighlights } from '../../hooks/usePdfHighlights'
 import { PdfPageRenderer } from './PdfPageRenderer'
 
 interface Props {
-  pdfDoc: any
+  pdfDoc: PDFDocumentProxy
   scale: number
   onPageChange: (page: number) => void
   onAskAI: (text: string, pageNumber: number) => void

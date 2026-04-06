@@ -4,6 +4,7 @@
  */
 import { useState, useCallback, useRef } from 'react'
 import { useAuth } from '@clerk/clerk-react'
+import * as Sentry from '@sentry/react'
 import { runCanvasAgentLoop, type CanvasAgentResult } from '../ai/canvasAgentLoop'
 import { buildCanvasSystemPrompt } from '../ai/canvasSystemPrompt'
 import type { Message } from '../ai/types'
@@ -69,7 +70,7 @@ export function usePlanCanvasAgent(draft: WizardDraft, dispatch: React.Dispatch<
         setSuggestions(prev => [...prev, ...result.suggestions])
       }
     } catch (err) {
-      console.error('Canvas agent error:', err)
+      Sentry.captureException(err instanceof Error ? err : new Error('Canvas agent error: ' + String(err)))
       setChatMessages(prev => [...prev, {
         role: 'assistant',
         content: 'Sorry, I had trouble processing that. Please try again.',

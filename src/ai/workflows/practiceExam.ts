@@ -6,6 +6,7 @@
  * 4. Generate questions (LLM)
  * 5. Validate questions (LLM, optional)
  */
+import * as Sentry from '@sentry/react'
 import { db } from '../../db'
 import type { GeneratedQuestion } from '../../db/schema'
 import { dbQueryStep, webSearchStep, llmJsonStep } from '../orchestrator/steps'
@@ -191,7 +192,7 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
               hybridSearch(ctx.examProfileId, query, ctx.authToken, { topN: 15, rerank: true })
                 .then(chunks => chunks.map(c => ({ ...c, query })))
                 .catch((err): SearchChunk[] => {
-                  console.warn(`[practiceExam] semantic search failed for "${query}":`, err)
+                  Sentry.captureException(err instanceof Error ? err : new Error(`[practiceExam] semantic search failed for "${query}": ` + String(err)))
                   return []
                 })
             )

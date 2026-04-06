@@ -34,6 +34,7 @@ export function SyntheseTaker({
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const onSubmitRef = useRef(onSubmit)
   onSubmitRef.current = onSubmit
+  const timerStarted = useRef(false)
 
   // Fix #11: Sync savedAnswer when it arrives from async live query
   const initializedRef = useRef(false)
@@ -67,18 +68,17 @@ export function SyntheseTaker({
 
   // Timer (fix #4: use ref for onSubmit; fix #6: no side effect in updater)
   useEffect(() => {
-    if (!timeLimitSeconds || timeRemaining <= 0) return
+    if (!timeLimitSeconds || timerStarted.current) return
+    timerStarted.current = true
+    setTimeRemaining(timeLimitSeconds)
     const interval = setInterval(() => {
       setTimeRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          return 0
-        }
+        if (prev <= 1) { clearInterval(interval); return 0 }
         return prev - 1
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [timeLimitSeconds, timeRemaining > 0]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [timeLimitSeconds])
 
   // Auto-submit when timer hits 0 (separate from the timer effect)
   useEffect(() => {
