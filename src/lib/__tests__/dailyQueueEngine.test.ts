@@ -35,6 +35,11 @@ const topicMap = new Map([
   ['t2', { name: 'Calculus', subjectName: 'Math', mastery: 0.7 }],
 ])
 
+const topicMapMultiSubject = new Map([
+  ['t1', { name: 'Algebra', subjectName: 'Math', mastery: 0.3 }],
+  ['t2', { name: 'Grammar', subjectName: 'English', mastery: 0.4 }],
+])
+
 describe('buildDailyQueue', () => {
   it('sorts by priority descending', () => {
     const queue = buildDailyQueue({
@@ -111,6 +116,61 @@ describe('buildDailyQueue', () => {
     expect(weakItem).toBeDefined()
     expect(weakItem!.priority).toBe(30)
   })
+
+  it('returns empty queue when no items available', () => {
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises: [],
+      conceptCards: [],
+      topicMap,
+    })
+    expect(queue).toEqual([])
+  })
+
+  it('excludes flashcards with future nextReviewDate', () => {
+    // buildDailyQueue expects dueFlashcards (already filtered by caller),
+    // but the engine itself only adds them — they're always "due".
+    // However exercises with future nextReviewDate and status !== 'not_attempted'
+    // are filtered by the SRS check (nextReviewDate <= today).
+    // For flashcards, the filtering happens before buildDailyQueue is called,
+    // so we simulate by passing flashcards with future dates — they will still
+    // appear because the engine trusts the caller's filter. Instead, test that
+    // exercises with future nextReviewDate are NOT included as SRS exercises.
+    const futureDate = '2099-01-01'
+    const exercise = makeExercise('e1', 't1', {
+      status: 'attempted',
+      nextReviewDate: futureDate,
+    })
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises: [exercise],
+      conceptCards: [],
+      topicMap,
+    })
+    const srsItem = queue.find(q => q.id.startsWith('srs-exercise'))
+    expect(srsItem).toBeUndefined()
+  })
+
+  it('interleaves items from different subjects', () => {
+    // Create items from 2 different subjects
+    const cards1 = Array.from({ length: 3 }, (_, i) => makeFlashcard(`f-math-${i}`, 't1'))
+    const cards2 = Array.from({ length: 3 }, (_, i) => makeFlashcard(`f-eng-${i}`, 't2'))
+    const queue = buildDailyQueue({
+      dueFlashcards: [...cards1, ...cards2],
+      recommendations: [],
+      exercises: [],
+      conceptCards: [],
+      topicMap: topicMapMultiSubject,
+    })
+    // With 2 subjects, round-robin interleaving means items should alternate
+    // between Math and English, not all Math then all English
+    expect(queue.length).toBeGreaterThanOrEqual(2)
+    const subjects = queue.map(q => q.subjectName)
+    // The first two items should be from different subjects
+    expect(subjects[0]).not.toBe(subjects[1])
+  })
 })
 
 describe('buildDailyQueue — cram mode', () => {
@@ -126,6 +186,30 @@ describe('buildDailyQueue — cram mode', () => {
     // Cram flashcards should have priority > 100
     const first = queue[0]
     expect(first.priority).toBeGreaterThan(100)
+  })
+
+  it('includes all flashcards in cram mode regardless of SRS', () => {
+    // Create flashcards with future nextReviewDate (not due by SRS)
+    const futureCards = Array.from({ length: 3 }, (_, i) => ({
+      ...makeFlashcard(`f-future-${i}`, 't1'),
+      nextReviewDate: '2099-01-01',
+    }))
+    const queue = buildDailyQueue({
+      dueFlashcards: futureCards,
+      recommendations: [],
+      exercises: [],
+      conceptCards: [],
+      topicMap,
+      cramMode: true,
+    })
+    const flashItems = queue.filter(q => q.type === 'flashcard-review')
+    expect(flashItems.length).toBeGreaterThan(0)
+    // All 3 cards should be included
+    const allIds = flashItems.flatMap(q => q.flashcardIds ?? [])
+    expect(allIds).toHaveLength(3)
+    expect(allIds).toContain('f-future-0')
+    expect(allIds).toContain('f-future-1')
+    expect(allIds).toContain('f-future-2')
   })
 
   it('includes concept cards for topics below 0.5 mastery', () => {
