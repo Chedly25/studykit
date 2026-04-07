@@ -95,7 +95,13 @@ Rules:
       const jsonMatch = raw.match(/\[[\s\S]*\]/)
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]) as ScoutResource[]
-        resources = parsed.filter(r => r.title && r.url && r.type)
+        resources = parsed.filter(r => {
+          if (!r.title || !r.url || !r.type) return false
+          try {
+            const u = new URL(r.url)
+            return u.protocol === 'https:' || u.protocol === 'http:'
+          } catch { return false }
+        })
       }
     } catch { /* parse failed */ }
 

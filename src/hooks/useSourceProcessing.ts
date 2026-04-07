@@ -9,8 +9,7 @@ import { useSubscription } from './useSubscription'
 import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
 import { useBackgroundJob } from './useBackgroundJob'
 import { db } from '../db'
-
-const FREE_PROCESSING_LIMIT = 3
+import { FREE_PROCESSING_LIMIT } from '../lib/featureLimits'
 
 export function useSourceProcessing(examProfileId: string | undefined) {
   const { isPro } = useSubscription()

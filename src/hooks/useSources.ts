@@ -2,7 +2,7 @@
  * Reactive hook for the Sources library.
  * Provides live-query documents, upload/paste/delete, and search.
  */
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useAuth } from '@clerk/clerk-react'
@@ -30,6 +30,8 @@ interface UseSourcesOptions {
 export function useSources(examProfileId: string | undefined, options?: UseSourcesOptions) {
   const { getToken } = useAuth()
   const { t } = useTranslation()
+  const onDocumentReadyRef = useRef(options?.onDocumentReady)
+  onDocumentReadyRef.current = options?.onDocumentReady
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingStatus, setProcessingStatus] = useState('')
   const [batchProgress, setBatchProgress] = useState<BatchUploadProgressState | null>(null)
@@ -84,7 +86,7 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
       track('document_uploaded', { type: 'pdf', pageCount })
       toast.success(`"${title}" uploaded`)
       // Auto-trigger processing if callback provided
-      try { options?.onDocumentReady?.(doc.id) } catch { /* non-blocking */ }
+      try { onDocumentReadyRef.current?.(doc.id) } catch { /* non-blocking */ }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Upload failed')
       throw err
@@ -92,7 +94,7 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
       setIsProcessing(false)
       setProcessingStatus('')
     }
-  }, [examProfileId, options?.onDocumentReady])
+  }, [examProfileId])
 
   const uploadMultiplePdfs = useCallback(async (files: File[], category?: 'course' | 'exam' | 'other') => {
     if (!examProfileId || files.length === 0) return
@@ -131,7 +133,7 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
         } catch { /* non-blocking */ }
         progress.results.push({ fileName: file.name, status: 'done' })
         // Auto-trigger processing per file
-        try { options?.onDocumentReady?.(doc.id) } catch { /* non-blocking */ }
+        try { onDocumentReadyRef.current?.(doc.id) } catch { /* non-blocking */ }
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Upload failed'
         progress.results.push({ fileName: file.name, status: 'error', error: errorMsg })
@@ -155,7 +157,7 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
 
     // Clear batch progress after a delay
     setTimeout(() => setBatchProgress(null), 3000)
-  }, [examProfileId, t, options?.onDocumentReady])
+  }, [examProfileId, t])
 
   const pasteText = useCallback(async (title: string, text: string) => {
     if (!examProfileId || !text.trim()) return

@@ -67,7 +67,7 @@ export function useVoiceInput(maxDurationMs: number = DEFAULT_MAX_DURATION_MS) {
         setError('Failed to start recording')
       }
     }
-  }, [cleanup])
+  }, [cleanup, maxDurationMs])
 
   const stopRecording = useCallback(async (): Promise<string> => {
     return new Promise((resolve) => {

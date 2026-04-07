@@ -127,8 +127,10 @@ ${transcript}`
       for (const [topicName, change] of Object.entries(masteryChanges)) {
         const matchedTopic = allTopics.find(t => t.name.toLowerCase() === topicName.toLowerCase())
         if (!matchedTopic) continue
-        const delta = parseFloat(String(change).replace(/[+%]/g, '')) / 100
-        if (isNaN(delta)) continue
+        const rawDelta = parseFloat(String(change).replace(/[+%]/g, '')) / 100
+        if (isNaN(rawDelta)) continue
+        // Clamp delta to ±15% per observation to prevent LLM hallucination from spiking mastery
+        const delta = Math.max(-0.15, Math.min(0.15, rawDelta))
         // Nudge confidence (the self-reported 15%-weighted factor) based on AI observation
         const newConfidence = Math.max(0, Math.min(1, matchedTopic.confidence + delta))
         await db.topics.update(matchedTopic.id, { confidence: newConfidence })

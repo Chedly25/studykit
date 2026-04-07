@@ -61,9 +61,10 @@ export async function getAchievementStats(examProfileId: string): Promise<Achiev
   const topics = await db.topics.where('examProfileId').equals(examProfileId).toArray()
 
   const decks = await db.flashcardDecks.where('examProfileId').equals(examProfileId).toArray()
-  const deckIds = new Set(decks.map(d => d.id))
-  const allCards = await db.flashcards.toArray()
-  const profileCards = allCards.filter(c => deckIds.has(c.deckId))
+  const deckIds = decks.map(d => d.id)
+  const profileCards = deckIds.length > 0
+    ? await db.flashcards.where('deckId').anyOf(deckIds).toArray()
+    : []
   const totalFlashcardReviews = profileCards.reduce((sum, c) => sum + c.repetitions, 0)
 
   const logs = await db.dailyStudyLogs.where('examProfileId').equals(examProfileId).toArray()

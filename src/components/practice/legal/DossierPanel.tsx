@@ -91,7 +91,7 @@ export function DossierPanel({ documents }: DossierPanelProps) {
           <h3 className="text-sm font-semibold text-[var(--text-heading)] leading-snug">
             {doc.title}
           </h3>
-          {doc.sourceUrl && (
+          {doc.sourceUrl && (() => { try { const u = new URL(doc.sourceUrl!); return u.protocol === 'https:' || u.protocol === 'http:' } catch { return false } })() && (
             <a
               href={doc.sourceUrl}
               target="_blank"

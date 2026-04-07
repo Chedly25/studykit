@@ -6,7 +6,7 @@
  */
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
-import { NetworkFirst, StaleWhileRevalidate } from 'workbox-strategies'
+import { StaleWhileRevalidate } from 'workbox-strategies'
 import { CacheableResponsePlugin } from 'workbox-cacheable-response'
 import { ExpirationPlugin } from 'workbox-expiration'
 
@@ -41,17 +41,9 @@ registerRoute(
   }),
 )
 
-// ─── API calls: network-first (data in IndexedDB, cache as fallback) ──
-registerRoute(
-  ({ url }) => url.pathname.startsWith('/api/'),
-  new NetworkFirst({
-    cacheName: 'api',
-    networkTimeoutSeconds: 10,
-    plugins: [
-      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 5 * 60 }),
-    ],
-  }),
-)
+// API calls: always go to network (no caching).
+// Previously used NetworkFirst with 5-min cache, but this leaks user data
+// on shared devices — User B could see User A's cached API responses.
 
 // ─── URL validation helper ───────────────────────────────────────
 function safeUrl(u: string): string {

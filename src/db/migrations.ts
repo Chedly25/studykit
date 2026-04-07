@@ -110,9 +110,7 @@ async function migrateAssignments(): Promise<void> {
   const legacy = loadFromStorage<LegacyAssignment[]>('studieskit-assignments', [])
   if (legacy.length === 0) return
 
-  const existing = await db.assignments.count()
-  if (existing > 0) return
-
+  // Use bulkPut (upsert) instead of checking global count — handles per-ID dedup
   const assignments: Assignment[] = legacy.map(la => ({
     id: la.id,
     title: la.title,

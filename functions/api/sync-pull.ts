@@ -5,6 +5,7 @@
 import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
+import { checkRateLimit } from '../lib/rateLimiter'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const SYNC_RATE_LIMIT = 30
@@ -19,6 +20,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const cors = corsHeaders(env)
 
   try {
+    if (!env.CLERK_ISSUER_URL) {
+      return new Response(JSON.stringify({ error: 'Auth not configured' }), {
+        status: 500, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
     const authHeader = context.request.headers.get('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -40,19 +47,23 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       })
     }
     {
-      const rateLimitKey = `sync_rate:pull:${jwt.sub}:${Math.floor(Date.now() / (SYNC_RATE_WINDOW_SECONDS * 1000))}`
-      const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
-      if (currentCount >= SYNC_RATE_LIMIT) {
+      const rl = await checkRateLimit(env.USAGE_KV, 'sync-pull', jwt.sub, SYNC_RATE_LIMIT, SYNC_RATE_WINDOW_SECONDS)
+      if (!rl.allowed) {
         return new Response(JSON.stringify({ error: 'Sync rate limit exceeded. Try again later.' }), {
           status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
         })
       }
-      await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: SYNC_RATE_WINDOW_SECONDS })
     }
 
     const url = new URL(context.request.url)
     const profileId = url.searchParams.get('profileId')
-    const since = url.searchParams.get('since') ?? '1970-01-01T00:00:00Z'
+    const sinceRaw = url.searchParams.get('since') ?? '1970-01-01T00:00:00Z'
+    const sinceMs = new Date(sinceRaw).getTime()
+    if (isNaN(sinceMs)) {
+      return new Response(JSON.stringify({ error: 'Invalid since parameter — must be ISO 8601 date' }), {
+        status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
 
     if (!profileId || !UUID_RE.test(profileId)) {
       return new Response(JSON.stringify({ error: 'Invalid or missing profileId' }), {
@@ -81,7 +92,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
         // Extract timestamp from key: changelog:userId:profileId:TIMESTAMP
         const keyTimestamp = key.name.slice(prefix.length)
-        if (keyTimestamp <= since) continue // Skip entries older than since
+        const keyMs = new Date(keyTimestamp).getTime()
+        if (isNaN(keyMs) || keyMs <= sinceMs) continue // Skip invalid or older entries
 
         keysToFetch.push(key.name)
       }

@@ -14,6 +14,10 @@ export class AdminError extends Error {
   }
 }
 
+// Per-isolate cache for admin verification (helps with burst requests within same isolate)
+let adminCache: { sub: string; isAdmin: boolean; fetchedAt: number } | null = null
+const ADMIN_CACHE_TTL = 60_000 // 1 minute
+
 export async function verifyAdmin(
   request: Request,
   env: Env
@@ -29,9 +33,16 @@ export async function verifyAdmin(
 
   const { sub } = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
 
-  // Verify user email via Clerk Backend API
+  // Check in-memory cache
+  if (adminCache && adminCache.sub === sub && Date.now() - adminCache.fetchedAt < ADMIN_CACHE_TTL) {
+    if (!adminCache.isAdmin) throw new AdminError('Forbidden', 403)
+    return { userId: sub }
+  }
+
+  // Verify user email via Clerk Backend API (with 5s timeout)
   const userRes = await fetch(`https://api.clerk.com/v1/users/${sub}`, {
     headers: { Authorization: `Bearer ${env.CLERK_SECRET_KEY}` },
+    signal: AbortSignal.timeout(5000),
   })
 
   if (!userRes.ok) {
@@ -45,6 +56,8 @@ export async function verifyAdmin(
   const isAdmin = user.email_addresses.some(
     (e) => e.email_address === env.ADMIN_EMAIL
   )
+
+  adminCache = { sub, isAdmin, fetchedAt: Date.now() }
 
   if (!isAdmin) {
     throw new AdminError('Forbidden', 403)

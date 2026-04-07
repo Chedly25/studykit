@@ -27,7 +27,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   const url = new URL(request.url)
-  const period = parseInt(url.searchParams.get('period') || '30', 10)
+  const period = parseInt(url.searchParams.get('period') || '30', 10) || 30
   const since = Math.floor((Date.now() - period * 86400_000) / 1000)
 
   if (!env.STRIPE_SECRET_KEY) {
@@ -40,27 +40,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   try {
     const stripeAuth = { Authorization: `Basic ${btoa(env.STRIPE_SECRET_KEY + ':')}` }
 
-    const [subsRes, chargesRes] = await Promise.all([
-      fetch(
-        'https://api.stripe.com/v1/subscriptions?status=active&limit=100&expand[]=data.customer',
-        { headers: stripeAuth }
-      ),
-      fetch(
-        `https://api.stripe.com/v1/charges?limit=25&created[gte]=${since}`,
-        { headers: stripeAuth }
-      ),
-    ])
-
-    const subsData = (await subsRes.json()) as {
-      data: Array<{
-        id: string
-        status: string
-        current_period_end: number
-        customer: { id: string; email: string; name: string | null } | string
-        items: { data: Array<{ price: { unit_amount: number; recurring: { interval: string } } }> }
-      }>
-    }
-
+    // Fetch charges
+    const chargesRes = await fetch(
+      `https://api.stripe.com/v1/charges?limit=25&created[gte]=${since}`,
+      { headers: stripeAuth }
+    )
+    if (!chargesRes.ok) throw new Error(`Stripe charges API error: ${chargesRes.status}`)
     const chargesData = (await chargesRes.json()) as {
       data: Array<{
         id: string
@@ -72,8 +57,32 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       }>
     }
 
+    // Fetch all subscriptions with pagination
+    type SubEntry = {
+      id: string
+      status: string
+      current_period_end: number
+      customer: { id: string; email: string; name: string | null } | string
+      items: { data: Array<{ price: { unit_amount: number; recurring: { interval: string } } }> }
+    }
+    const allSubs: SubEntry[] = []
+    let startingAfter: string | undefined
+    while (true) {
+      const params = new URLSearchParams({ status: 'active', limit: '100', 'expand[]': 'data.customer' })
+      if (startingAfter) params.set('starting_after', startingAfter)
+      const subsRes = await fetch(
+        `https://api.stripe.com/v1/subscriptions?${params}`,
+        { headers: stripeAuth }
+      )
+      if (!subsRes.ok) throw new Error(`Stripe subscriptions API error: ${subsRes.status}`)
+      const page = (await subsRes.json()) as { data: SubEntry[]; has_more: boolean }
+      allSubs.push(...page.data)
+      if (!page.has_more || page.data.length === 0) break
+      startingAfter = page.data[page.data.length - 1]?.id
+    }
+
     let mrr = 0
-    const activeSubscriptions = subsData.data.map((sub) => {
+    const activeSubscriptions = allSubs.map((sub) => {
       let subMrr = 0
       for (const item of sub.items.data) {
         const amount = item.price.unit_amount / 100

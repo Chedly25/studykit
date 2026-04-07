@@ -32,12 +32,12 @@ export default function AdminUsers() {
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const load = useCallback(
-    async (query: string, page: number) => {
+    async (query: string, offset: number) => {
       setLoading(true)
       setError('')
       try {
         const data = await fetchAdmin<UsersResponse>(
-          `/api/admin/users?search=${encodeURIComponent(query)}&limit=${PAGE_SIZE}&offset=${page}`
+          `/api/admin/users?search=${encodeURIComponent(query)}&limit=${PAGE_SIZE}&offset=${offset}`
         )
         setUsers(data.users)
         setTotalCount(data.totalCount)

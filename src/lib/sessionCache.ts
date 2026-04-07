@@ -10,7 +10,7 @@ function hashKey(parts: string[]): string {
   const str = parts.join('|')
   for (let i = 0; i < str.length; i++) {
     hash = ((hash << 5) + hash) + str.charCodeAt(i)
-    hash = hash & hash
+    hash = hash | 0
   }
   return PREFIX + Math.abs(hash).toString(36)
 }

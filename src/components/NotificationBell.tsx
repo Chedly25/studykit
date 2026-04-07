@@ -20,8 +20,15 @@ export function NotificationBell({ examProfileId }: Props) {
         setOpen(false)
       }
     }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
   }, [])
 
   return (
@@ -68,9 +75,10 @@ export function NotificationBell({ examProfileId }: Props) {
           ) : (
             <div className="divide-y divide-[var(--border-card)]">
               {notifications.slice(0, 10).map(n => (
-                <div
+                <button
                   key={n.id}
-                  className={`px-4 py-3 hover:bg-[var(--bg-input)] transition-colors ${!n.isRead ? 'bg-[var(--accent-bg)]/30' : ''}`}
+                  type="button"
+                  className={`w-full text-left px-4 py-3 hover:bg-[var(--bg-input)] transition-colors ${!n.isRead ? 'bg-[var(--accent-bg)]/30' : ''}`}
                   onClick={() => markAsRead(n.id)}
                 >
                   {n.actionUrl && n.actionUrl.startsWith('/') ? (
@@ -84,7 +92,7 @@ export function NotificationBell({ examProfileId }: Props) {
                       <p className="text-xs text-[var(--text-muted)] mt-0.5">{n.message}</p>
                     </>
                   )}
-                </div>
+                </button>
               ))}
             </div>
           )}

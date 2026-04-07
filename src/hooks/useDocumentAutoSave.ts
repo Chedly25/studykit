@@ -34,10 +34,11 @@ export function useDocumentAutoSave(
     return () => clearTimeout(timerRef.current)
   }, [answers, sessionId, debounceMs, flush])
 
-  // Flush on unmount
+  // Flush on unmount — use ref to always call latest flush
+  const flushRef = useRef(flush)
+  flushRef.current = flush
   useEffect(() => {
-    return () => { flush() }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { flushRef.current() }
   }, [])
 
   return { isSaving, lastSaved }

@@ -31,7 +31,7 @@ export function useFlashcards(examProfileId: string | undefined) {
     () => deckIds.length > 0
       ? db.flashcards.where('deckId').anyOf(deckIds).toArray()
       : Promise.resolve([] as Flashcard[]),
-    [deckIds.join(',')]
+    [[...deckIds].sort().join(',')]
   )
   const cards = cardsRaw ?? []
 

@@ -459,8 +459,7 @@ Return ONLY a JSON object:
 
       // Dispatch swarm event: exam graded
       try {
-        // @ts-expect-error Vite handles require() at build time
-        const { dispatchSwarmEvent } = require('../agents/eventBus')
+        const { dispatchSwarmEvent } = await import('../agents/eventBus')
         dispatchSwarmEvent({
           type: 'exam-graded',
           sessionId: config.sessionId,

@@ -7,6 +7,22 @@ import { setSyncing } from '../db/syncTracking'
 
 const SYNC_API_BASE = '/api'
 
+// Whitelist of tables that may be written to during sync pull
+const SYNCABLE_TABLES = new Set([
+  'subjects', 'chapters', 'topics', 'subtopics', 'studySessions',
+  'questionResults', 'documents', 'documentChunks', 'dailyStudyLogs',
+  'notifications', 'conceptCards', 'exercises', 'exerciseAttempts',
+  'examSources', 'masterySnapshots', 'pdfHighlights', 'flashcardDecks',
+  'flashcards', 'tutorPreferences', 'studentModels', 'assignments',
+  'notificationPreferences', 'conversations', 'chatMessages', 'chatFeedback',
+  'conversationSummaries', 'studyPlans', 'studyPlanDays',
+  'practiceExamSessions', 'generatedQuestions', 'examFormats',
+  'revisionFiches', 'examDNA', 'misconceptions', 'agentInsights',
+  'agentRuns', 'achievements', 'macroRoadmaps',
+  'habitGoals', 'habitLogs', 'reviewProjects', 'reviewArticles',
+  'annotations', 'contentEffectiveness', 'tutoringEpisodes',
+])
+
 interface PushResult {
   success: boolean
   changesStored: number
@@ -65,16 +81,16 @@ export async function pushDelta(profileId: string, authToken: string): Promise<P
       return { success: false, changesStored: 0, error: (err as { error: string }).error }
     }
 
-    // Clear processed queue entries
+    // Atomically clear queue entries and update metadata (prevents data loss on crash)
     const processedIds = queue.map(e => e.id!).filter(Boolean)
-    await db._syncQueue.bulkDelete(processedIds)
-
-    // Update sync metadata
-    await db._syncMeta.put({
-      id: profileId,
-      lastPushedAt: clientTimestamp,
-      lastPulledAt: (await db._syncMeta.get(profileId))?.lastPulledAt ?? '',
-      lastSnapshotAt: (await db._syncMeta.get(profileId))?.lastSnapshotAt ?? '',
+    await db.transaction('rw', db._syncQueue, db._syncMeta, async () => {
+      await db._syncQueue.bulkDelete(processedIds)
+      await db._syncMeta.put({
+        id: profileId,
+        lastPushedAt: clientTimestamp,
+        lastPulledAt: (await db._syncMeta.get(profileId))?.lastPulledAt ?? '',
+        lastSnapshotAt: (await db._syncMeta.get(profileId))?.lastSnapshotAt ?? '',
+      })
     })
 
     return { success: true, changesStored: changes.length }
@@ -123,11 +139,17 @@ export async function pullDelta(profileId: string, authToken: string): Promise<P
     let applied = 0
     try {
       for (const change of result.changes) {
+        // Only allow writes to whitelisted tables
+        if (!SYNCABLE_TABLES.has(change.table)) continue
+
         const table = (db as unknown as Record<string, { put: (d: unknown) => Promise<unknown>; delete: (id: string) => Promise<void> }>)[change.table]
         if (!table) continue
 
         try {
           if (change.operation === 'put' && change.data) {
+            // Validate profile ownership when the field exists
+            const data = change.data as Record<string, unknown>
+            if ('examProfileId' in data && data.examProfileId !== profileId) continue
             await table.put(change.data)
             applied++
           } else if (change.operation === 'delete') {

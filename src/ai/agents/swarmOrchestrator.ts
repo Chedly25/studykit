@@ -15,15 +15,20 @@ import { db } from '../../db'
 type EnqueueFn = (type: string, examProfileId: string, config: Record<string, unknown>, totalSteps: number) => Promise<string>
 type RunAgentFn = (agentId: string, examProfileId: string) => Promise<void>
 
-let initialized = false
+let currentProfileId: string | null = null
+let cleanupFn: (() => void) | null = null
 
 /**
  * Initialize the swarm orchestrator. Call once on app mount.
  * Subscribes to the event bus and triggers appropriate chains.
+ * Re-initializes if examProfileId changes (e.g., profile switch).
  */
-export function initSwarmOrchestrator(enqueue: EnqueueFn, runAgent: RunAgentFn): () => void {
-  if (initialized) return () => {}
-  initialized = true
+export function initSwarmOrchestrator(enqueue: EnqueueFn, runAgent: RunAgentFn, examProfileId?: string): () => void {
+  // If already initialized for this profile, return existing cleanup
+  if (currentProfileId && currentProfileId === examProfileId && cleanupFn) return cleanupFn
+
+  // Clean up previous subscription if profile changed
+  if (cleanupFn) cleanupFn()
 
   const unsubscribe = subscribeSwarmEvents(async (event) => {
     try {
@@ -47,7 +52,12 @@ export function initSwarmOrchestrator(enqueue: EnqueueFn, runAgent: RunAgentFn):
     }
   })
 
-  return () => { unsubscribe(); initialized = false }
+  currentProfileId = examProfileId ?? null
+  // Each init gets its own unsubscribe — the returned cleanup is tied to THIS subscription
+  const thisUnsubscribe = unsubscribe
+  cleanupFn = () => { thisUnsubscribe(); currentProfileId = null; cleanupFn = null }
+  const localCleanup = cleanupFn
+  return () => { if (cleanupFn === localCleanup) localCleanup() }
 }
 
 // ─── Activity Logging ─────────────────────────────────────────────
@@ -120,16 +130,21 @@ async function handleDocumentProcessed(
 
     const enqueuedNames: string[] = []
 
-    for (const topicId of topicIds) {
-      if (ficheTopicIds.has(topicId)) continue // Already has a fiche
-      if (pendingTopicIds.has(topicId)) continue // Already pending
+    // Batch fetch all topics and subjects to avoid N+1 queries
+    const candidateTopicIds = topicIds.filter(id => !ficheTopicIds.has(id) && !pendingTopicIds.has(id))
+    const allTopics = await db.topics.bulkGet(candidateTopicIds)
+    const uniqueSubjectIds = [...new Set(allTopics.filter(Boolean).map(t => t!.subjectId).filter(Boolean))]
+    const allSubjects = await db.subjects.bulkGet(uniqueSubjectIds as string[])
+    const subjectMap = new Map(allSubjects.filter(Boolean).map(s => [s!.id, s!]))
 
-      const topic = await db.topics.get(topicId)
-      const subject = topic?.subjectId ? await db.subjects.get(topic.subjectId) : null
-      if (!topic || !subject) continue
+    for (let i = 0; i < candidateTopicIds.length; i++) {
+      const topic = allTopics[i]
+      if (!topic) continue
+      const subject = topic.subjectId ? subjectMap.get(topic.subjectId) : null
+      if (!subject) continue
 
       await enqueue('fiche-generation', examProfileId, {
-        topicId,
+        topicId: topic.id,
         topicName: topic.name,
         subjectId: subject.id,
         subjectName: subject.name,

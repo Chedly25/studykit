@@ -42,6 +42,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       `https://api.clerk.com/v1/users?limit=${limit}&offset=${offset}`,
       { headers: clerkHeaders }
     )
+    if (!res.ok) throw new Error(`Clerk API error: ${res.status}`)
     const users = (await res.json()) as Array<{ public_metadata?: { plan?: string } }>
     count += users.filter(u => u.public_metadata?.plan === 'pro').length
     hasMore = users.length === limit

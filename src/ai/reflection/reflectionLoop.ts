@@ -31,6 +31,7 @@ export async function reflect<T>(
   let wasImproved = false
   let currentIssues = initialResult.issues
   let currentSuggestions = initialResult.suggestions
+  let totalAttempts = 1 // Count the initial validation
 
   for (let attempt = 0; attempt < validator.maxAttempts; attempt++) {
     const fixPrompt = validator.buildFixPrompt(
@@ -47,6 +48,7 @@ export async function reflect<T>(
     const fixedContent = validator.parseFixed(fixedRaw, bestContent)
 
     // Re-validate
+    totalAttempts++ // Count each fix+validate cycle
     const revalidation = await validator.validate(fixedContent, llm)
 
     // Accept if improved (never regress)
@@ -64,7 +66,7 @@ export async function reflect<T>(
         content: bestContent,
         score: bestScore,
         wasFixed: true,
-        attempts: attempt + 2, // +1 initial, +1 for this attempt (0-indexed)
+        attempts: totalAttempts,
       }
     }
   }
@@ -74,6 +76,6 @@ export async function reflect<T>(
     content: bestContent,
     score: bestScore,
     wasFixed: wasImproved,
-    attempts: validator.maxAttempts + 1,
+    attempts: totalAttempts,
   }
 }

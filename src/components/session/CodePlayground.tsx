@@ -63,15 +63,32 @@ export function CodePlayground({ initialCode = '', language = 'python', instruct
     setHasRun(true)
 
     if (language.toLowerCase() === 'javascript' || language.toLowerCase() === 'js') {
-      try {
-        const logs: string[] = []
-        const mockConsole = { log: (...args: unknown[]) => logs.push(args.map(String).join(' ')) }
-        const fn = new Function('console', code)
-        fn(mockConsole)
-        setOutput(logs.join('\n') || '(no output)')
-      } catch (err) {
-        setOutput(`Error: ${err instanceof Error ? err.message : String(err)}`)
+      // Execute in a sandboxed iframe to prevent access to parent page context
+      const html = `<!DOCTYPE html><html><body><script>
+        const logs = [];
+        const _console = { log: (...a) => logs.push(a.map(String).join(' ')), error: (...a) => logs.push('ERROR: ' + a.map(String).join(' ')), warn: (...a) => logs.push('WARN: ' + a.map(String).join(' ')) };
+        try { (function(console){ ${code.replace(/<\/script>/gi, '<\\/script>')} })(_console); }
+        catch(e) { logs.push('Error: ' + e.message); }
+        parent.postMessage({ type: 'sandbox-output', output: logs.join('\\n') || '(no output)' }, '*');
+      <\/script></body></html>`
+
+      const handler = (e: MessageEvent) => {
+        if (e.data?.type === 'sandbox-output' && (e.origin === 'null' || e.origin === window.location.origin)) {
+          setOutput(e.data.output)
+          window.removeEventListener('message', handler)
+        }
       }
+      window.addEventListener('message', handler)
+      // Timeout fallback
+      setTimeout(() => { window.removeEventListener('message', handler) }, 5000)
+
+      // Create sandboxed iframe — allow-scripts but no access to parent origin
+      const iframe = document.createElement('iframe')
+      iframe.sandbox.add('allow-scripts')
+      iframe.style.display = 'none'
+      iframe.srcdoc = html
+      document.body.appendChild(iframe)
+      setTimeout(() => iframe.remove(), 5000)
     } else {
       setOutput('Python execution requires a server-side runtime.\nYour code looks correct — check the logic manually or ask the AI to review it.')
     }

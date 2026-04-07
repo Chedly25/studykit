@@ -310,6 +310,7 @@ export function useExamProfile() {
       db.agentRuns, db.agentInsights, db.contentEffectiveness,
       db.reviewProjects, db.reviewArticles, db.backgroundJobs,
       db.revisionFiches, db.examDNA, db.macroRoadmaps,
+      db.tutoringEpisodes,
     ]
 
     await db.transaction('rw', allTables, async () => {
@@ -373,6 +374,9 @@ export function useExamProfile() {
         await db.habitLogs.where('goalId').equals(goal.id).delete()
       }
       await db.habitGoals.where('examProfileId').equals(profileId).delete()
+
+      // Tutoring episodes (examProfileId is optional, filter by value)
+      await db.tutoringEpisodes.filter(e => e.examProfileId === profileId).delete()
 
       // Finally, delete the profile itself
       await db.examProfiles.delete(profileId)

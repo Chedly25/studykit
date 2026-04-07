@@ -97,6 +97,9 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
       {/* Tooltip */}
       <div
         ref={tooltipRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Onboarding tour step"
         className="absolute z-[91] pointer-events-auto glass-card shadow-xl rounded-xl p-4 w-72 animate-fade-in"
         style={{ top: pos.top, left: pos.left }}
       >

@@ -50,7 +50,18 @@ export default function FlashcardMaker() {
   } = useFlashcards(activeProfile?.id)
 
   const [mode, setMode] = useState<Mode>('manage')
-  useEffect(() => { window.scrollTo(0, 0) }, [mode])
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    // Reset study state when returning to manage mode
+    if (mode === 'manage') {
+      setStudyDeckId(null)
+      setStudyCards([])
+      setCurrentIndex(0)
+      setFlipped(false)
+      setStudyComplete(false)
+      setSessionReviewed(0)
+    }
+  }, [mode])
   const [expandedDeckId, setExpandedDeckId] = useState<string | null>(null)
   const [newDeckName, setNewDeckName] = useState('')
   const [newCardFront, setNewCardFront] = useState('')

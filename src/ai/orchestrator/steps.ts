@@ -31,7 +31,7 @@ function parseJsonWithRepair<T>(text: string): T {
   const jsonStart = cleaned.indexOf('{')
   if (jsonStart === -1) throw new Error('No JSON found in response')
 
-  let candidate = cleaned.slice(jsonStart)
+  const candidate = cleaned.slice(jsonStart)
 
   // Remove trailing incomplete strings (cut at last complete property)
   // Strategy: progressively trim from the end and try to close brackets

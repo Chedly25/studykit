@@ -92,7 +92,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           { status: 400, headers: jsonHeaders },
         )
       }
-      const res = await fetch(`${JUDILIBRE_BASE}/decision?id=${body.id}`, {
+      const res = await fetch(`${JUDILIBRE_BASE}/decision?id=${encodeURIComponent(body.id)}`, {
         headers: { KeyId: env.JUDILIBRE_API_KEY },
       })
       if (!res.ok) throw new Error(`Judilibre decision: ${res.status}`)

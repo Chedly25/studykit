@@ -6,6 +6,7 @@ import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 import { checkCostLimits } from '../lib/costProtection'
+import { checkRateLimit } from '../lib/rateLimiter'
 
 const RATE_LIMIT = 30
 const RATE_WINDOW_SECONDS = 3600
@@ -60,14 +61,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
     {
-      const rateLimitKey = `vision_rate:${jwt.sub}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
-      const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
-      if (currentCount >= RATE_LIMIT) {
+      const rl = await checkRateLimit(env.USAGE_KV, 'vision', jwt.sub, RATE_LIMIT, RATE_WINDOW_SECONDS)
+      if (!rl.allowed) {
         return new Response(JSON.stringify({ error: 'Vision rate limit exceeded' }), {
           status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
         })
       }
-      await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
     }
 
     // Cost protection
@@ -95,13 +94,32 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     const prompt = DEFAULT_PROMPT
 
-    // Convert to base64
+    // Convert to base64 using chunked encoding (avoids call stack overflow on large files)
     const imageBuffer = await imageFile.arrayBuffer()
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)))
+    const bytes = new Uint8Array(imageBuffer)
+    let base64 = ''
+    const CHUNK = 8192
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      base64 += String.fromCharCode(...bytes.subarray(i, i + CHUNK))
+    }
+    base64 = btoa(base64)
 
-    // Detect media type
-    const mediaType = imageFile.type || 'image/jpeg'
-    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mediaType)) {
+    // Detect media type via magic bytes (don't trust client-provided type)
+    const MAGIC: Array<[string, number[]]> = [
+      ['image/jpeg', [0xFF, 0xD8, 0xFF]],
+      ['image/png',  [0x89, 0x50, 0x4E, 0x47]],
+      ['image/gif',  [0x47, 0x49, 0x46]],
+      ['image/webp', [0x52, 0x49, 0x46, 0x46]], // RIFF header; full check includes WEBP at offset 8
+    ]
+    let mediaType: string | null = null
+    for (const [mime, sig] of MAGIC) {
+      if (sig.every((b, i) => bytes[i] === b)) {
+        if (mime === 'image/webp' && !(bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50)) continue
+        mediaType = mime
+        break
+      }
+    }
+    if (!mediaType) {
       return new Response(JSON.stringify({ error: 'Unsupported image format. Use JPEG, PNG, GIF, or WebP.' }), {
         status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
       })

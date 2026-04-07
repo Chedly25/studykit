@@ -8,47 +8,15 @@ import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 import { checkCostLimits } from '../lib/costProtection'
-
-const ALLOWED_TOOL_NAMES = new Set([
-  'getKnowledgeGraph', 'getWeakTopics', 'getReadinessScore', 'getStudyStats',
-  'getDueFlashcards', 'getUpcomingDeadlines', 'getFlashcardPerformance',
-  'getErrorPatterns', 'getCalibrationData', 'logQuestionResult',
-  'updateTopicConfidence', 'createFlashcardDeck', 'addAssignment',
-  'getStudyRecommendation', 'searchSources', 'getDocumentContent',
-  'listSources', 'searchWeb', 'generateStudyPlan', 'getStudyPlan',
-  'adjustStudyPlan', 'getStudentModel', 'updateStudentModel',
-  'getConversationHistory', 'getRecentSessions', 'getTopicDependencies',
-  'setTopicPrerequisites', 'autoMapSourceToTopics', 'startQuickReview',
-  'rateFlashcard', 'renderConceptCard', 'renderQuiz', 'renderCodePlayground',
-  'executeSequence', 'synthesizeLiterature', 'getMilestones', 'searchNotes',
-])
+import { SERVER_TOOLS } from '../lib/toolDefinitions'
+import { checkRateLimit } from '../lib/rateLimiter'
 
 const DEFAULT_MODEL = 'kimi-k2.5'
 const DEFAULT_API_URL = 'https://api.moonshot.ai/v1/chat/completions'
 const MAX_RETRIES = 1
 
-// ─── KV-based rate limiter (persistent across isolates) ─────────
 const RATE_LIMIT = 60
 const RATE_WINDOW_SECONDS = 3600
-
-async function checkRateLimitKV(
-  kv: KVNamespace,
-  userId: string
-): Promise<{ allowed: boolean; remaining: number }> {
-  const windowKey = `ratelimit:chat:${userId}:${Math.floor(Date.now() / 1000 / RATE_WINDOW_SECONDS)}`
-  const currentStr = await kv.get(windowKey)
-  const current = currentStr ? parseInt(currentStr, 10) : 0
-
-  // Soft cap at 80% absorbs concurrent over-count from non-atomic KV reads
-  const softLimit = Math.floor(RATE_LIMIT * 0.8)
-  if (current >= softLimit) {
-    return { allowed: false, remaining: 0 }
-  }
-
-  const newCount = current + 1
-  await kv.put(windowKey, String(newCount), { expirationTtl: RATE_WINDOW_SECONDS })
-  return { allowed: true, remaining: softLimit - newCount }
-}
 
 // ─── Handler ─────────────────────────────────────────────────────
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
@@ -99,7 +67,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       { status: 503, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
   }
-  const rl = await checkRateLimitKV(env.USAGE_KV, userId)
+  const rl = await checkRateLimit(env.USAGE_KV, 'chat', userId, RATE_LIMIT, RATE_WINDOW_SECONDS)
   if (!rl.allowed) {
     return new Response(
       JSON.stringify({ error: 'Rate limit exceeded. Try again later.' }),
@@ -120,14 +88,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
     }
-  }
-
-  // Global usage counter for admin dashboard
-  if (env.USAGE_KV) {
-    const today = new Date().toISOString().slice(0, 10)
-    const chatKey = `usage:chat:${today}`
-    const chatCount = await env.USAGE_KV.get(chatKey)
-    await env.USAGE_KV.put(chatKey, String((chatCount ? parseInt(chatCount, 10) : 0) + 1), { expirationTtl: 86400 * 90 })
   }
 
   // Body size check — read actual body, don't trust Content-Length
@@ -185,6 +145,22 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     body.messages = messages
 
     const apiUrl = env.LLM_API_URL || DEFAULT_API_URL
+    if (apiUrl !== DEFAULT_API_URL) {
+      try {
+        const u = new URL(apiUrl)
+        if (u.protocol !== 'https:') {
+          return new Response(
+            JSON.stringify({ error: 'Server misconfigured: LLM API URL must use HTTPS' }),
+            { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
+          )
+        }
+      } catch {
+        return new Response(
+          JSON.stringify({ error: 'Server misconfigured: invalid LLM API URL' }),
+          { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
     const model = (env.LLM_MODEL || DEFAULT_MODEL) as string
     const apiKey = env.LLM_API_KEY
 
@@ -209,13 +185,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       stream: shouldStream,
     }
 
-    // Add tools if provided — filter against allowlist to prevent injection
+    // Add tools — client sends tool names, server looks up canonical definitions
     if (body.tools && Array.isArray(body.tools) && body.tools.length > 0) {
-      const filtered = body.tools.filter(
-        (t: Record<string, unknown>) =>
-          t?.function && typeof (t.function as Record<string, unknown>).name === 'string' &&
-          ALLOWED_TOOL_NAMES.has((t.function as Record<string, unknown>).name as string)
-      ).slice(0, 40)
+      const filtered = (body.tools as Array<Record<string, unknown>>)
+        .map(t => {
+          const name = (t?.function as Record<string, unknown>)?.name as string | undefined
+          return name ? SERVER_TOOLS.get(name) : undefined
+        })
+        .filter((t): t is NonNullable<typeof t> => t !== undefined)
+        .slice(0, 40)
       if (filtered.length > 0) llmBody.tools = filtered
     }
 
@@ -247,8 +225,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       console.error('[chat] LLM upstream error:', lastError.slice(0, 500))
       return new Response(
         JSON.stringify({ error: 'AI service temporarily unavailable. Please try again.', detail: lastError.slice(0, 300) }),
-        { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
+        { status: 502, headers: { ...cors, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Global usage counter — only after successful LLM response
+    if (env.USAGE_KV) {
+      const today = new Date().toISOString().slice(0, 10)
+      const chatKey = `usage:chat:${today}`
+      const chatCount = await env.USAGE_KV.get(chatKey)
+      await env.USAGE_KV.put(chatKey, String((chatCount ? parseInt(chatCount, 10) : 0) + 1), { expirationTtl: 86400 * 90 })
     }
 
     if (shouldStream) {
@@ -278,7 +264,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     console.error('AI inference error:', err)
     return new Response(
       JSON.stringify({ error: 'An error occurred processing your request.' }),
-      { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } }
     )
   }
 }

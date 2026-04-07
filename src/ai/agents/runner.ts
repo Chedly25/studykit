@@ -131,7 +131,7 @@ export class AgentRunner {
       return result
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err)
-      const status: AgentRun['status'] = abortController.signal.aborted ? 'error' : 'error'
+      const status: AgentRun['status'] = abortController.signal.aborted ? 'timeout' : 'error'
       await this.logRun(agentId, examProfileId, 'manual', status, `Error: ${error}`, Date.now() - startTime, 0)
       return null
     } finally {

@@ -34,6 +34,7 @@ async function fullCountProUsers(clerkHeaders: Record<string, string>): Promise<
       `https://api.clerk.com/v1/users?limit=${limit}&offset=${offset}`,
       { headers: clerkHeaders }
     )
+    if (!res.ok) throw new Error(`Clerk API error: ${res.status}`)
     const users = (await res.json()) as Array<{ public_metadata?: { plan?: string } }>
     count += users.filter(u => u.public_metadata?.plan === 'pro').length
     hasMore = users.length === limit
@@ -55,6 +56,7 @@ async function calculateMRR(stripeKey: string): Promise<number> {
       `https://api.stripe.com/v1/subscriptions?${params}`,
       { headers: { Authorization: `Basic ${btoa(stripeKey + ':')}` } }
     )
+    if (!res.ok) throw new Error(`Stripe API error: ${res.status}`)
     const data = (await res.json()) as {
       data: Array<{ id: string; items: { data: Array<{ price: { unit_amount: number; recurring: { interval: string } } }> } }>
       has_more: boolean

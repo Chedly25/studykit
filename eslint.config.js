@@ -36,7 +36,7 @@ export default defineConfig([
       'no-empty': 'warn',
       'no-useless-escape': 'warn',
       'no-misleading-character-class': 'warn',
-      'prefer-const': 'warn',
+      'prefer-const': 'error',
       'react-refresh/only-export-components': 'warn',
     },
   },

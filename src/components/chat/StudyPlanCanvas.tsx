@@ -254,7 +254,7 @@ function ResultMode({
               </div>
               <div className="space-y-0.5">
                 {day.activities.map((act, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-[var(--text-body)]">
+                  <div key={`${day.date}-${act.topicName}-${i}`} className="flex items-center gap-2 text-xs text-[var(--text-body)]">
                     <span className="flex-1 truncate">{act.topicName}</span>
                     <span className="px-1.5 py-0.5 rounded-full bg-[var(--accent-bg)] text-[var(--accent-text)] whitespace-nowrap">
                       {ACTIVITY_LABELS[act.activityType] ?? act.activityType}

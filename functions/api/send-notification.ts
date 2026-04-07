@@ -42,24 +42,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     })
   }
 
-  // Rate limit (10 emails/hour per user)
   if (!env.USAGE_KV) {
     return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
       status: 503, headers: { ...cors, 'Content-Type': 'application/json' },
     })
   }
-  {
-    const rateLimitKey = `email_rate:${userId}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
-    const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
-    if (currentCount >= RATE_LIMIT) {
-      return new Response(JSON.stringify({ error: 'Email rate limit exceeded' }), {
-        status: 429, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-    await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
-  }
 
-  // Fetch the user's own email from Clerk (never trust client-supplied "to")
+  // Fetch the user's own email from Clerk BEFORE consuming rate limit (never trust client-supplied "to")
   let userEmail: string
   try {
     const userRes = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
@@ -75,6 +64,19 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return new Response(JSON.stringify({ error: 'Could not resolve user email' }), {
       status: 500, headers: { ...cors, 'Content-Type': 'application/json' },
     })
+  }
+
+  // Rate limit (10 emails/hour per user) — checked after Clerk fetch so failures don't consume quota
+  {
+    const softLimit = Math.floor(RATE_LIMIT * 0.8)
+    const rateLimitKey = `email_rate:${userId}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
+    const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
+    if (currentCount >= softLimit) {
+      return new Response(JSON.stringify({ error: 'Email rate limit exceeded' }), {
+        status: 429, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+    await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
   }
 
   const apiKey = env.RESEND_API_KEY
@@ -101,7 +103,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     })
   }
 
-  const rendered = renderTemplate(body.template, body.data)
+  const baseUrl = env.ALLOWED_ORIGIN || 'https://studieskit.com'
+  const rendered = renderTemplate(body.template, body.data, baseUrl)
   if (!rendered) {
     return new Response(JSON.stringify({
       error: `Unknown template: ${body.template}. Valid templates: ${VALID_TEMPLATES.join(', ')}`,

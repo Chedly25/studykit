@@ -20,6 +20,7 @@ export class JobRunner {
   private getToken: () => Promise<string | null>
   private abortControllers = new Map<string, AbortController>()
   private activeJobs = 0
+  private processingQueue = false
   private readonly maxConcurrency = 2
 
   constructor(getToken: () => Promise<string | null>) {
@@ -114,6 +115,9 @@ export class JobRunner {
   // ─── Queue Processing ─────────────────────────────────────────
 
   private async processQueue(): Promise<void> {
+    if (this.processingQueue) return
+    this.processingQueue = true
+    try {
     while (this.activeJobs < this.maxConcurrency) {
       // Pick oldest queued job
       const job = await db.backgroundJobs
@@ -144,18 +148,26 @@ export class JobRunner {
         } catch (err) {
           const error = err instanceof Error ? err.message : String(err)
           Sentry.captureException(new Error(`[JobRunner] Job ${job.type} (${job.id}) failed: ${error}`))
-          await db.backgroundJobs.update(job.id, {
-            status: 'failed' as JobStatus,
-            error,
-            updatedAt: new Date().toISOString(),
-          })
+          try {
+            await db.backgroundJobs.update(job.id, {
+              status: 'failed' as JobStatus,
+              error,
+              updatedAt: new Date().toISOString(),
+            })
+          } catch (dbErr) {
+            // AI19: If DB write fails, job is stuck — log but don't crash
+            Sentry.captureException(dbErr instanceof Error ? dbErr : new Error('[JobRunner] Failed to update job status: ' + String(dbErr)))
+          }
         } finally {
           this.abortControllers.delete(job.id)
           this.activeJobs--
-          // Check for more queued jobs now that a slot opened
-          this.processQueue()
+          // Defer to next microtask so the guard is cleared before re-entering
+          queueMicrotask(() => this.processQueue())
         }
       })()
+    }
+    } finally {
+      this.processingQueue = false
     }
   }
 
@@ -325,7 +337,13 @@ export class JobRunner {
               currentStepName: `${step.name} (retry ${attempt + 1}...)`,
               updatedAt: new Date().toISOString(),
             })
-            await new Promise(r => setTimeout(r, delay))
+            await new Promise<void>((resolve, reject) => {
+              const timer = setTimeout(resolve, delay)
+              const onAbort = () => { clearTimeout(timer); reject(new Error('Cancelled')) }
+              if (controller.signal.aborted) { clearTimeout(timer); reject(new Error('Cancelled')); return }
+              controller.signal.addEventListener('abort', onAbort, { once: true })
+            }).catch(() => { /* cancelled during sleep */ })
+            if (controller.signal.aborted) break
             continue
           }
 
@@ -333,11 +351,15 @@ export class JobRunner {
           results[step.id] = { status: 'failed', error, durationMs: Date.now() - stepStart }
 
           if (!step.optional) {
-            await db.backgroundJobs.update(job.id, {
-              status: 'failed' as JobStatus,
-              error: `Step "${step.name}" failed: ${error}`,
-              updatedAt: new Date().toISOString(),
-            })
+            try {
+              await db.backgroundJobs.update(job.id, {
+                status: 'failed' as JobStatus,
+                error: `Step "${step.name}" failed: ${error}`,
+                updatedAt: new Date().toISOString(),
+              })
+            } catch (dbErr) {
+              Sentry.captureException(dbErr instanceof Error ? dbErr : new Error('[JobRunner] Failed to mark job as failed: ' + String(dbErr)))
+            }
             return
           }
           // Optional step failed — continue
@@ -404,7 +426,10 @@ export class JobRunner {
 
           // Create a mini-job context for this item (no checkpointing per step within items)
           let authToken = await this.getToken()
-          if (!authToken) return
+          if (!authToken) {
+            failedIds.add(itemId)
+            continue // Auth expired — mark item failed but keep processing others
+          }
 
           const results: Record<string, StepResult> = {}
           const ctx: WorkflowContext = {
@@ -442,7 +467,7 @@ export class JobRunner {
 
             // Refresh token
             authToken = await this.getToken()
-            if (!authToken) return
+            if (!authToken) throw new Error('Auth token expired mid-item')
             ctx.authToken = authToken
 
             const stepStart = Date.now()
@@ -510,6 +535,9 @@ export class JobRunner {
   // ─── Standalone (non-workflow) Jobs ────────────────────────────
 
   private async executeStandaloneJob(job: BackgroundJob, config: Record<string, unknown>): Promise<void> {
+    const controller = new AbortController()
+    this.abortControllers.set(job.id, controller)
+
     const authToken = await this.getToken()
     if (!authToken) {
       await this.pauseJob(job.id, 'Auth token unavailable')
@@ -517,6 +545,7 @@ export class JobRunner {
     }
 
     try {
+      if (controller.signal.aborted) return
       if (job.type === 'study-plan') {
         const { generateStudyPlan } = await import('../studyPlanGenerator')
         await generateStudyPlan(

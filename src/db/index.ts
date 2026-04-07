@@ -59,6 +59,8 @@ import type {
   SyncMeta,
   RevisionFiche,
   ExamDNA,
+  ChatFeedback,
+  MacroRoadmap,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -75,7 +77,7 @@ export class StudiesKitDB extends Dexie {
   assignments!: Table<Assignment>
   conversations!: Table<Conversation>
   chatMessages!: Table<ChatMessage>
-  chatFeedback!: Table<import('./schema').ChatFeedback>
+  chatFeedback!: Table<ChatFeedback>
   userPreferences!: Table<UserPreferences>
   dailyStudyLogs!: Table<DailyStudyLog>
   tutorPreferences!: Table<TutorPreferences>
@@ -118,7 +120,7 @@ export class StudiesKitDB extends Dexie {
   agentInsights!: Table<AgentInsight>
   contentEffectiveness!: Table<ContentEffectiveness>
   strategyEffectiveness!: Table<StrategyEffectiveness>
-  macroRoadmaps!: Table<import('./schema').MacroRoadmap>
+  macroRoadmaps!: Table<MacroRoadmap>
   revisionFiches!: Table<RevisionFiche>
   examDNA!: Table<ExamDNA>
   _syncQueue!: Table<SyncQueueEntry>
@@ -247,6 +249,7 @@ export class StudiesKitDB extends Dexie {
       exercises: 'id, examSourceId, examProfileId, status, difficulty',
       exerciseAttempts: 'id, exerciseId, examProfileId',
     }).upgrade(async tx => {
+      // Note: This entire upgrade callback runs in a single IDB transaction (Dexie guarantees atomicity).
       // Set default category on existing documents
       await tx.table('documents').toCollection().modify(doc => {
         if (doc.category === undefined) doc.category = 'course'
@@ -283,6 +286,7 @@ export class StudiesKitDB extends Dexie {
       achievements: 'id, examProfileId, achievementId, [examProfileId+achievementId]',
     })
 
+    // v20: Placeholder for schema version continuity (no schema changes)
     this.version(20).stores({})
 
     this.version(21).stores({
@@ -374,6 +378,10 @@ export class StudiesKitDB extends Dexie {
     // v34: Chat feedback (thumbs up/down on AI responses)
     this.version(34).stores({
       chatFeedback: 'id, conversationId, examProfileId, rating',
+    })
+    // v35: Add standalone examProfileId index on agentInsights for efficient profile-scoped queries
+    this.version(35).stores({
+      agentInsights: 'id, examProfileId, [examProfileId+agentId]',
     })
   }
 }

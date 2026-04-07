@@ -17,7 +17,7 @@ interface DailySummaryData {
   topWeakTopics: string[]
 }
 
-function dailySummaryTemplate(data: DailySummaryData): { subject: string; html: string } {
+function dailySummaryTemplate(data: DailySummaryData, baseUrl: string): { subject: string; html: string } {
   const weakHtml = data.topWeakTopics?.length
     ? `<p><strong>Focus areas:</strong></p><ul>${data.topWeakTopics.map(t => `<li>${esc(t)}</li>`).join('')}</ul>`
     : ''
@@ -35,7 +35,7 @@ function dailySummaryTemplate(data: DailySummaryData): { subject: string; html: 
     <li>Flashcards due: ${esc(data.dueFlashcards)}</li>
   </ul>
   ${weakHtml}
-  <p><a href="https://studieskit.com/dashboard">Open StudiesKit</a></p>
+  <p><a href="${baseUrl}/dashboard">Open StudiesKit</a></p>
 </div>`,
   }
 }
@@ -53,7 +53,7 @@ interface WeeklyDigestData {
   masteryChanges: Array<{ name: string; delta: number }>
 }
 
-function weeklyDigestTemplate(data: WeeklyDigestData): { subject: string; html: string } {
+function weeklyDigestTemplate(data: WeeklyDigestData, baseUrl: string): { subject: string; html: string } {
   const hoursDiff = data.studyHours - data.prevWeekHours
   const hoursTrend = hoursDiff > 0 ? `+${hoursDiff}h vs last week` : hoursDiff < 0 ? `${hoursDiff}h vs last week` : 'same as last week'
 
@@ -72,7 +72,7 @@ function weeklyDigestTemplate(data: WeeklyDigestData): { subject: string; html: 
     html: `
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:500px;margin:0 auto;padding:24px;color:#1a1a2e">
   <div style="text-align:center;margin-bottom:24px">
-    <img src="https://studieskit.com/favicon-48x48.png" width="32" height="32" style="border-radius:8px" />
+    <img src="${baseUrl}/favicon-48x48.png" width="32" height="32" style="border-radius:8px" />
     <h2 style="margin:8px 0 0;font-size:18px">Weekly Study Report</h2>
     <p style="color:#666;font-size:13px;margin:4px 0">${esc(data.profileName)}</p>
   </div>
@@ -101,28 +101,29 @@ function weeklyDigestTemplate(data: WeeklyDigestData): { subject: string; html: 
   </div>` : ''}
 
   <div style="text-align:center;margin-top:24px">
-    <a href="https://studieskit.com/queue" style="display:inline-block;background:#10b981;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">Open StudiesKit</a>
+    <a href="${baseUrl}/queue" style="display:inline-block;background:#10b981;color:white;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">Open StudiesKit</a>
   </div>
 
   <p style="text-align:center;font-size:11px;color:#999;margin-top:24px">
-    <a href="https://studieskit.com/settings?unsubscribe=weekly" style="color:#999">Unsubscribe from weekly digest</a>
+    <a href="${baseUrl}/settings?unsubscribe=weekly" style="color:#999">Unsubscribe from weekly digest</a>
   </p>
 </div>`,
   }
 }
 
-const TEMPLATES: Record<string, (data: Record<string, unknown>) => { subject: string; html: string }> = {
-  'daily-summary': (data) => dailySummaryTemplate(data as unknown as DailySummaryData),
-  'weekly-digest': (data) => weeklyDigestTemplate(data as unknown as WeeklyDigestData),
+const TEMPLATES: Record<string, (data: Record<string, unknown>, baseUrl: string) => { subject: string; html: string }> = {
+  'daily-summary': (data, baseUrl) => dailySummaryTemplate(data as unknown as DailySummaryData, baseUrl),
+  'weekly-digest': (data, baseUrl) => weeklyDigestTemplate(data as unknown as WeeklyDigestData, baseUrl),
 }
 
 export function renderTemplate(
   name: string,
   data: Record<string, unknown>,
+  baseUrl = 'https://studieskit.com',
 ): { subject: string; html: string } | null {
   const fn = TEMPLATES[name]
   if (!fn) return null
-  return fn(data)
+  return fn(data, baseUrl)
 }
 
 export const VALID_TEMPLATES = Object.keys(TEMPLATES)

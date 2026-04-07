@@ -101,7 +101,7 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
         <div className="flex flex-wrap gap-1.5 px-4 pt-3">
           {attachments.map((att, i) => (
             <AttachmentChip
-              key={i}
+              key={`${att.name}-${i}`}
               name={att.name}
               status={att.status}
               onRemove={() => onRemoveAttachment?.(i)}
@@ -155,6 +155,7 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
               disabled={disabled}
               className="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)] transition-colors disabled:opacity-40"
               title={t('ai.attachFile')}
+              aria-label={t('ai.attachFile')}
             >
               <Paperclip className="w-5 h-5" />
             </button>
@@ -198,6 +199,7 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
             disabled={disabled || photo.isExtracting}
             className="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)] transition-colors disabled:opacity-40"
             title="Scan photo"
+            aria-label="Scan photo"
           >
             {photo.isExtracting ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -227,6 +229,7 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
             onClick={handleSend}
             disabled={disabled || isParsing || !text.trim() || text.trim().length > MAX_LENGTH}
             className="p-2.5 rounded-xl bg-[var(--accent-text)] text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
+            aria-label={t('ai.send')}
           >
             <Send className="w-5 h-5" />
           </button>

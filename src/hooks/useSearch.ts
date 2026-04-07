@@ -110,10 +110,11 @@ export function useSearch(examProfileId: string | undefined) {
         // 5. Flashcards (keyword search, scoped to profile decks)
         (async (): Promise<SearchResult[]> => {
           const profileDecks = await db.flashcardDecks.where('examProfileId').equals(examProfileId).toArray()
-          const profileDeckIds = new Set(profileDecks.map(d => d.id))
-          const flashcards = await db.flashcards.toArray()
+          const profileDeckIds = profileDecks.map(d => d.id)
+          if (profileDeckIds.length === 0) return []
+          const flashcards = await db.flashcards.where('deckId').anyOf(profileDeckIds).toArray()
           return flashcards
-            .filter(f => profileDeckIds.has(f.deckId) && (f.front.toLowerCase().includes(queryLower) || f.back.toLowerCase().includes(queryLower)))
+            .filter(f => f.front.toLowerCase().includes(queryLower) || f.back.toLowerCase().includes(queryLower))
             .slice(0, 5)
             .map(f => ({
               type: 'flashcard' as const,

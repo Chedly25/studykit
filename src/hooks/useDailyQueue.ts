@@ -65,9 +65,9 @@ export function useDailyQueue(examProfileId: string | undefined, timeAvailableMi
     if (cramMode) {
       // In cram mode, get ALL flashcards for this profile
       const decks = await db.flashcardDecks.where('examProfileId').equals(examProfileId).toArray()
-      const deckIds = new Set(decks.map(d => d.id))
-      const all = await db.flashcards.toArray()
-      return all.filter(c => deckIds.has(c.deckId))
+      const deckIds = decks.map(d => d.id)
+      if (deckIds.length === 0) return [] as Flashcard[]
+      return db.flashcards.where('deckId').anyOf(deckIds).toArray()
     }
     const profileDecks = await db.flashcardDecks.where('examProfileId').equals(examProfileId).toArray()
     const deckIds = new Set(profileDecks.map(d => d.id))

@@ -8,28 +8,12 @@ import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 import { checkCostLimits } from '../lib/costProtection'
+import { checkRateLimit } from '../lib/rateLimiter'
 
 const RATE_LIMIT = 120
 const RATE_WINDOW_SECONDS = 3600
 const MAX_TEXTS = 100
 const MAX_TEXT_LENGTH = 8192
-
-async function checkRateLimitKV(
-  kv: KVNamespace,
-  userId: string
-): Promise<{ allowed: boolean; remaining: number }> {
-  const windowKey = `ratelimit:embed:${userId}:${Math.floor(Date.now() / 1000 / RATE_WINDOW_SECONDS)}`
-  const currentStr = await kv.get(windowKey)
-  const current = currentStr ? parseInt(currentStr, 10) : 0
-
-  if (current >= RATE_LIMIT) {
-    return { allowed: false, remaining: 0 }
-  }
-
-  const newCount = current + 1
-  await kv.put(windowKey, String(newCount), { expirationTtl: RATE_WINDOW_SECONDS })
-  return { allowed: true, remaining: RATE_LIMIT - newCount }
-}
 
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
   return new Response(null, { status: 204, headers: corsHeaders(context.env) })
@@ -75,7 +59,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     )
   }
   {
-    const rl = await checkRateLimitKV(env.USAGE_KV, userId)
+    const rl = await checkRateLimit(env.USAGE_KV, 'embed', userId, RATE_LIMIT, RATE_WINDOW_SECONDS)
     if (!rl.allowed) {
       return new Response(
         JSON.stringify({ error: 'Embedding rate limit exceeded. Try again later.' }),

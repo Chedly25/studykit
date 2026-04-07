@@ -83,6 +83,8 @@ export function computeTopicMastery(input: TopicMasteryInput): number {
  */
 export function decayedMastery(topic: Topic): number {
   if (topic.mastery === 0) return 0
+  // No SRS decay for topics that haven't been reviewed yet (interval=0)
+  if (topic.interval === 0) return topic.mastery
 
   // Stability: higher interval + higher ease = slower decay
   const S = Math.max(1, topic.interval * Math.sqrt(topic.easeFactor / 2.5))
@@ -223,8 +225,11 @@ export function computeStreak(logs: DailyStudyLog[]): { streak: number; freezeUs
   if (logs.length === 0) return { streak: 0, freezeUsed: false }
 
   const sorted = [...logs].sort((a, b) => b.date.localeCompare(a.date))
-  const today = new Date().toISOString().slice(0, 10)
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+  // Use local date for "today" comparison (matches how dates are stored)
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  const yd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+  const yesterday = `${yd.getFullYear()}-${String(yd.getMonth() + 1).padStart(2, '0')}-${String(yd.getDate()).padStart(2, '0')}`
 
   // Must have studied today or yesterday to have an active streak
   if (sorted[0].date !== today && sorted[0].date !== yesterday) return { streak: 0, freezeUsed: false }
@@ -232,8 +237,9 @@ export function computeStreak(logs: DailyStudyLog[]): { streak: number; freezeUs
   let streak = 1
   let freezeUsed = false
   for (let i = 1; i < sorted.length; i++) {
-    const prev = new Date(sorted[i - 1].date)
-    const curr = new Date(sorted[i].date)
+    // Parse as UTC to avoid DST issues in date arithmetic
+    const prev = new Date(sorted[i - 1].date + 'T00:00:00Z')
+    const curr = new Date(sorted[i].date + 'T00:00:00Z')
     const diffDays = (prev.getTime() - curr.getTime()) / 86400000
 
     if (Math.abs(diffDays - 1) < 0.01) {

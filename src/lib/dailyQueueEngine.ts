@@ -8,6 +8,10 @@ import type { FeedbackAction } from './feedbackLoopEngine'
 
 export type QueueItemType = 'flashcard-review' | 'exercise' | 'concept-quiz'
 
+function safeParseIds(s: string | undefined): string[] {
+  try { return JSON.parse(s || '[]') } catch { return [] }
+}
+
 export interface QueueItem {
   id: string
   type: QueueItemType
@@ -84,7 +88,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
     !e.hidden && e.nextReviewDate && e.nextReviewDate <= today && e.status !== 'not_attempted'
   )
   for (const exercise of dueExercises) {
-    const topicIds: string[] = JSON.parse(exercise.topicIds || '[]')
+    const topicIds: string[] = safeParseIds(exercise.topicIds)
     const tid = topicIds[0] ?? ''
     const info = input.topicMap.get(tid)
     queue.push({
@@ -148,7 +152,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
       }
       if (action.type === 'queue-exercises') {
         const exercise = input.exercises.find(e => {
-          const topicIds: string[] = JSON.parse(e.topicIds || '[]')
+          const topicIds: string[] = safeParseIds(e.topicIds)
           return topicIds.includes(action.topicId) && e.status === 'not_attempted'
         })
         if (exercise) {
@@ -172,7 +176,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
   for (const rec of input.recommendations) {
     if (rec.action === 'practice') {
       const exercise = input.exercises.find(e => {
-        const topicIds: string[] = JSON.parse(e.topicIds || '[]')
+        const topicIds: string[] = safeParseIds(e.topicIds)
         return topicIds.includes(rec.topicId) && e.status !== 'completed'
       })
       if (exercise && !queue.some(q => q.exerciseId === exercise.id)) {
@@ -211,7 +215,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
   const weakExercises = input.exercises
     .filter(e => {
       if (e.status !== 'not_attempted') return false
-      const topicIds: string[] = JSON.parse(e.topicIds || '[]')
+      const topicIds: string[] = safeParseIds(e.topicIds)
       return topicIds.some(tid => {
         const info = input.topicMap.get(tid)
         return info && info.mastery < 0.5
@@ -221,7 +225,7 @@ export function buildDailyQueue(input: BuildQueueInput): QueueItem[] {
 
   for (const exercise of weakExercises) {
     if (queue.some(q => q.exerciseId === exercise.id)) continue
-    const topicIds: string[] = JSON.parse(exercise.topicIds || '[]')
+    const topicIds: string[] = safeParseIds(exercise.topicIds)
     const tid = topicIds[0] ?? ''
     const info = input.topicMap.get(tid)
     queue.push({
@@ -297,7 +301,7 @@ function buildCramQueue(input: BuildQueueInput): QueueItem[] {
   for (const [topicId, info] of sortedTopics) {
     if (info.mastery >= 0.6) continue
     const topicExercises = input.exercises.filter(e => {
-      const tids: string[] = JSON.parse(e.topicIds || '[]')
+      const tids: string[] = safeParseIds(e.topicIds)
       return tids.includes(topicId) && e.status !== 'completed' && !e.hidden
     }).slice(0, 3)
 

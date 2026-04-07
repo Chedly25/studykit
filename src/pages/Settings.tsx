@@ -78,9 +78,9 @@ export default function Settings() {
       const blob = await exportProfileData(profileId)
       const name = activeProfile?.name?.replace(/\s+/g, '-').toLowerCase() ?? 'profile'
       downloadBlob(blob, `studieskit-${name}-${new Date().toISOString().slice(0, 10)}.json`)
-      setMessage({ type: 'success', text: 'Data exported successfully!' })
+      setMessage({ type: 'success', text: t('settings.exportSuccess') })
     } catch (err) {
-      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Export failed' })
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : t('settings.exportFailed') })
     } finally {
       setExporting(false)
     }
@@ -94,12 +94,12 @@ export default function Settings() {
     try {
       const result = await importProfileData(file)
       if (result.success) {
-        setMessage({ type: 'success', text: 'Data imported successfully! Refresh to see changes.' })
+        setMessage({ type: 'success', text: t('settings.importSuccess') })
       } else {
-        setMessage({ type: 'error', text: result.error ?? 'Import failed' })
+        setMessage({ type: 'error', text: result.error ?? t('settings.importFailed') })
       }
     } catch (err) {
-      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Import failed' })
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : t('settings.importFailed') })
     } finally {
       setImporting(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -114,9 +114,9 @@ export default function Settings() {
       const blob = await generateProgressReport(profileId)
       const name = activeProfile?.name?.replace(/\s+/g, '-').toLowerCase() ?? 'profile'
       downloadBlob(blob, `progress-report-${name}-${new Date().toISOString().slice(0, 10)}.md`)
-      setMessage({ type: 'success', text: 'Progress report downloaded!' })
+      setMessage({ type: 'success', text: t('settings.reportSuccess') })
     } catch (err) {
-      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Report generation failed' })
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : t('settings.reportFailed') })
     } finally {
       setGeneratingReport(false)
     }
@@ -125,22 +125,22 @@ export default function Settings() {
   if (!activeProfile) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">Settings</h1>
-        <p className="text-[var(--text-muted)]">Create a profile to access settings.</p>
-        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">Create Profile</Link>
+        <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('settings.title')}</h1>
+        <p className="text-[var(--text-muted)]">{t('settings.createProfilePrompt')}</p>
+        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 mt-4 inline-block">{t('settings.createProfile')}</Link>
       </div>
     )
   }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-6">Settings</h1>
+      <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-6">{t('settings.title')}</h1>
 
       {/* Data Management */}
       <div className="glass-card p-5 space-y-4">
-        <h2 className="text-lg font-semibold text-[var(--text-heading)]">Data Management</h2>
+        <h2 className="text-lg font-semibold text-[var(--text-heading)]">{t('settings.dataManagement')}</h2>
         <p className="text-sm text-[var(--text-muted)]">
-          Export your study data for backup, import from a previous export, or download a progress report.
+          {t('settings.dataManagementDesc')}
         </p>
 
         {/* Status message */}
@@ -164,8 +164,8 @@ export default function Settings() {
               {exporting ? <Loader2 className="w-5 h-5 text-blue-500 animate-spin" /> : <Download className="w-5 h-5 text-blue-500" />}
             </div>
             <div>
-              <p className="text-sm font-medium text-[var(--text-heading)]">Export All Data</p>
-              <p className="text-xs text-[var(--text-muted)]">Download your complete profile data as JSON</p>
+              <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.exportAllData')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('settings.exportAllDataDesc')}</p>
             </div>
           </button>
 
@@ -179,8 +179,8 @@ export default function Settings() {
               {importing ? <Loader2 className="w-5 h-5 text-purple-500 animate-spin" /> : <Upload className="w-5 h-5 text-purple-500" />}
             </div>
             <div>
-              <p className="text-sm font-medium text-[var(--text-heading)]">Import Data</p>
-              <p className="text-xs text-[var(--text-muted)]">Restore from a previous export file</p>
+              <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.importData')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('settings.importDataDesc')}</p>
             </div>
           </button>
           <input
@@ -201,8 +201,8 @@ export default function Settings() {
               {generatingReport ? <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" /> : <FileText className="w-5 h-5 text-emerald-500" />}
             </div>
             <div>
-              <p className="text-sm font-medium text-[var(--text-heading)]">Download Progress Report</p>
-              <p className="text-xs text-[var(--text-muted)]">Get a markdown summary of your study progress</p>
+              <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.downloadReport')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('settings.downloadReportDesc')}</p>
             </div>
           </button>
         </div>
@@ -291,9 +291,9 @@ export default function Settings() {
 
       {/* Notifications */}
       <div className="glass-card p-5 space-y-4 mt-4">
-        <h2 className="text-lg font-semibold text-[var(--text-heading)]">Notifications</h2>
+        <h2 className="text-lg font-semibold text-[var(--text-heading)]">{t('settings.notifications')}</h2>
         <p className="text-sm text-[var(--text-muted)]">
-          Get browser notifications for study reminders and queue updates.
+          {t('settings.notificationsDesc')}
         </p>
 
         <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-card)]">
@@ -302,9 +302,9 @@ export default function Settings() {
               <Bell className="w-5 h-5 text-amber-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-[var(--text-heading)]">Browser Notifications</p>
+              <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.browserNotifications')}</p>
               <p className="text-xs text-[var(--text-muted)]">
-                Status: {notifStatus === 'granted' ? 'Enabled' : notifStatus === 'denied' ? 'Blocked' : notifStatus === 'unsupported' ? 'Not supported' : 'Not requested'}
+                {t('settings.status')}: {notifStatus === 'granted' ? t('settings.enabled') : notifStatus === 'denied' ? t('settings.blocked') : notifStatus === 'unsupported' ? t('settings.notSupported') : t('settings.notRequested')}
               </p>
             </div>
           </div>
@@ -317,14 +317,14 @@ export default function Settings() {
               }}
               className="btn-primary px-4 py-1.5 text-sm"
             >
-              Enable
+              {t('settings.enable')}
             </button>
           )}
           {notifStatus === 'denied' && (
-            <span className="text-xs text-red-500">Blocked in browser settings</span>
+            <span className="text-xs text-red-500">{t('settings.blockedInBrowser')}</span>
           )}
           {notifStatus === 'granted' && (
-            <span className="text-xs text-emerald-500 font-medium">Active</span>
+            <span className="text-xs text-emerald-500 font-medium">{t('settings.active')}</span>
           )}
         </div>
 
@@ -335,8 +335,8 @@ export default function Settings() {
               <Mail className="w-5 h-5 text-blue-500" />
             </div>
             <div>
-              <p className="text-sm font-medium text-[var(--text-heading)]">Weekly Email Digest</p>
-              <p className="text-xs text-[var(--text-muted)]">Receive a summary of your study progress every week</p>
+              <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.weeklyDigest')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{t('settings.weeklyDigestDesc')}</p>
             </div>
           </div>
           <button
@@ -366,16 +366,16 @@ export default function Settings() {
                 : 'bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--text-body)]'
             }`}
           >
-            {digestEnabled ? 'Enabled' : 'Disabled'}
+            {digestEnabled ? t('settings.enabled') : t('settings.disabled')}
           </button>
         </div>
       </div>
 
       {/* Cloud Sync */}
       <div className="glass-card p-5 space-y-4 mt-4">
-        <h2 className="text-lg font-semibold text-[var(--text-heading)]">Cloud Sync</h2>
+        <h2 className="text-lg font-semibold text-[var(--text-heading)]">{t('settings.cloudSync')}</h2>
         <p className="text-sm text-[var(--text-muted)]">
-          Sync your study data to the cloud for backup and multi-device access.
+          {t('settings.cloudSyncDesc')}
         </p>
 
         {!cloudSync.isPro ? (
@@ -385,10 +385,10 @@ export default function Settings() {
                 <Cloud className="w-5 h-5 text-[var(--text-muted)]" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-[var(--text-muted)]">Cloud Sync</p>
-                <p className="text-xs text-[var(--text-faint)]">Upgrade to Pro to enable cloud sync</p>
+                <p className="text-sm font-medium text-[var(--text-muted)]">{t('settings.cloudSync')}</p>
+                <p className="text-xs text-[var(--text-faint)]">{t('settings.upgradeToPro')}</p>
               </div>
-              <Link to="/pricing" className="btn-primary px-4 py-1.5 text-sm">Upgrade</Link>
+              <Link to="/pricing" className="btn-primary px-4 py-1.5 text-sm">{t('settings.upgrade')}</Link>
             </div>
           </div>
         ) : (
@@ -400,13 +400,13 @@ export default function Settings() {
                   <Cloud className="w-5 h-5 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[var(--text-heading)]">Auto Sync</p>
+                  <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.autoSync')}</p>
                   <p className="text-xs text-[var(--text-muted)]">
                     {cloudSync.isEnabled
                       ? cloudSync.lastSyncedAt
-                        ? `Last synced: ${new Date(cloudSync.lastSyncedAt).toLocaleString()}`
-                        : 'Enabled — syncing...'
-                      : 'Sync every 5 minutes when active'}
+                        ? t('settings.lastSynced', { date: new Date(cloudSync.lastSyncedAt).toLocaleString() })
+                        : t('settings.enabledSyncing')
+                      : t('settings.syncInterval')}
                   </p>
                 </div>
               </div>
@@ -418,7 +418,7 @@ export default function Settings() {
                     : 'btn-primary'
                 }`}
               >
-                {cloudSync.isEnabled ? 'Enabled' : 'Enable'}
+                {cloudSync.isEnabled ? t('settings.enabled') : t('settings.enable')}
               </button>
             </div>
 
@@ -436,8 +436,8 @@ export default function Settings() {
                   }
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[var(--text-heading)]">Sync Now</p>
-                  <p className="text-xs text-[var(--text-muted)]">Push your latest data to the cloud</p>
+                  <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.syncNow')}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{t('settings.syncNowDesc')}</p>
                 </div>
               </button>
             )}
@@ -458,22 +458,22 @@ export default function Settings() {
                     onClick={() => setConfirmDelete(true)}
                     className="flex items-center gap-2 text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5" /> Delete cloud data
+                    <Trash2 className="w-3.5 h-3.5" /> {t('settings.deleteCloudData')}
                   </button>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-red-500">Delete all cloud data?</span>
+                    <span className="text-xs text-red-500">{t('settings.confirmDeleteCloud')}</span>
                     <button
                       onClick={async () => { await cloudSync.deleteCloud(); setConfirmDelete(false) }}
                       className="text-xs font-medium text-red-500 hover:underline"
                     >
-                      Confirm
+                      {t('settings.confirm')}
                     </button>
                     <button
                       onClick={() => setConfirmDelete(false)}
                       className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)]"
                     >
-                      Cancel
+                      {t('settings.cancel')}
                     </button>
                   </div>
                 )}

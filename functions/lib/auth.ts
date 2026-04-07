@@ -3,6 +3,8 @@
  * Returns user ID and any metadata embedded in the JWT.
  */
 
+// Note: This cache is per-isolate on Cloudflare Workers, so it's not shared
+// across requests in production. It still helps within a single isolate's lifetime.
 let cachedJwks: { keys: JsonWebKey[]; fetchedAt: number } | null = null
 
 async function fetchJwks(issuerUrl: string): Promise<JsonWebKey[]> {
@@ -81,7 +83,12 @@ export async function verifyClerkJWT(
   if (!payload.exp || payload.exp + GRACE_SECONDS < now) throw new Error('JWT expired')
   if (payload.nbf && payload.nbf > now + GRACE_SECONDS) throw new Error('JWT not yet valid')
   if (!payload.iss || payload.iss !== issuerUrl) throw new Error('JWT issuer mismatch')
-  if (expectedAudience && payload.aud !== expectedAudience) throw new Error('JWT audience mismatch')
+  if (expectedAudience) {
+    const audMatch = Array.isArray(payload.aud)
+      ? payload.aud.includes(expectedAudience)
+      : payload.aud === expectedAudience
+    if (!audMatch) throw new Error('JWT audience mismatch')
+  }
   if (!payload.sub) throw new Error('JWT missing sub')
 
   return {

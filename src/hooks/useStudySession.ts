@@ -5,6 +5,7 @@ import type { SessionType, DailyStudyLog } from '../db/schema'
 export function useStudySession(examProfileId: string | undefined) {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const startTimeRef = useRef<number>(0)
+  const endingRef = useRef(false)
 
   const startSession = useCallback(async (
     type: SessionType,
@@ -32,7 +33,8 @@ export function useStudySession(examProfileId: string | undefined) {
   }, [examProfileId])
 
   const endSession = useCallback(async (): Promise<void> => {
-    if (!activeSessionId || !examProfileId) return
+    if (!activeSessionId || !examProfileId || endingRef.current) return
+    endingRef.current = true
 
     const now = new Date()
     const durationSeconds = Math.round((Date.now() - startTimeRef.current) / 1000)
@@ -79,6 +81,7 @@ export function useStudySession(examProfileId: string | undefined) {
 
     setActiveSessionId(null)
     startTimeRef.current = 0
+    endingRef.current = false
   }, [activeSessionId, examProfileId])
 
   return {

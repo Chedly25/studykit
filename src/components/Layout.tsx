@@ -244,7 +244,7 @@ export function Layout() {
               <SidebarLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} collapsed={collapsed} />
             </div>
 
-            {/* Sidebar footer — admin only */}
+            {/* Sidebar footer — admin only (UI convenience; server-side auth uses ADMIN_EMAIL env var via adminAuth.ts) */}
             {(user?.publicMetadata as any)?.role === 'admin' && (
               <div className={`px-2 py-3 border-t border-[var(--border-card)] ${collapsed ? 'flex justify-center' : ''}`}>
                 <Link

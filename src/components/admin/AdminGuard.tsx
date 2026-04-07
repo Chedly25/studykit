@@ -11,11 +11,13 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
 
     // Check sessionStorage cache keyed by userId (avoids re-fetching on every navigation,
     // but invalidates if a different user signs in within the same tab)
-    const cached = sessionStorage.getItem('adminVerified')
-    if (cached === userId) {
-      setStatus('admin')
-      return
-    }
+    try {
+      const cached = JSON.parse(sessionStorage.getItem('adminVerified') ?? '{}')
+      if (cached.userId === userId && Date.now() - cached.ts < 5 * 60 * 1000) {
+        setStatus('admin')
+        return
+      }
+    } catch { /* malformed cache — proceed to verify */ }
 
     let cancelled = false
     ;(async () => {
@@ -27,7 +29,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
         const data = await res.json() as { admin: boolean }
         if (cancelled) return
         if (data.admin) {
-          sessionStorage.setItem('adminVerified', userId)
+          sessionStorage.setItem('adminVerified', JSON.stringify({ userId, ts: Date.now() }))
           setStatus('admin')
         } else {
           sessionStorage.removeItem('adminVerified')

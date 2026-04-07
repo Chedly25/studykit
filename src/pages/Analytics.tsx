@@ -128,7 +128,8 @@ export default function Analytics() {
       prerequisiteGraph: prerequisiteGraph.size > 0 ? prerequisiteGraph : undefined,
       topicMasteryMap,
     })
-  }, [activeProfile, kgTopics, kgSubjects, dueFlashcardsByTopic, studentModel])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProfile, kgTopics, kgSubjects, JSON.stringify([...dueFlashcardsByTopic]), studentModel])
 
   if (!activeProfile) {
     return (

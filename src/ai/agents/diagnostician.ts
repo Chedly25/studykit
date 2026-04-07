@@ -115,7 +115,7 @@ export const diagnosticianAgent: AgentDefinition = {
         description: cal.isOverconfident
           ? `Overconfident on ${cal.topicName}: ${Math.round(cal.confidence * 100)}% confidence vs ${Math.round(cal.mastery * 100)}% actual`
           : `Underconfident on ${cal.topicName}: ${Math.round(cal.confidence * 100)}% confidence vs ${Math.round(cal.mastery * 100)}% actual`,
-        topicIds: [topics.find(t => t.name === cal.topicName)?.id ?? ''],
+        topicIds: [topics.find(t => t.name === cal.topicName)?.id].filter(Boolean) as string[],
       })
     }
 

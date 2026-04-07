@@ -60,8 +60,8 @@ export function computeReadinessScore(opts: {
   let recency = 0
   if (dailyLogs.length > 0) {
     const sorted = [...dailyLogs].sort((a, b) => b.date.localeCompare(a.date))
-    const daysSinceStudy = (Date.now() - new Date(sorted[0].date).getTime()) / 86400000
-    recency = Math.max(0, 1 - daysSinceStudy / 7) // decays over a week
+    const daysSinceStudy = (Date.now() - new Date(sorted[0].date + 'T00:00:00Z').getTime()) / 86400000
+    recency = Math.max(0, Math.min(1, 1 - daysSinceStudy / 7)) // decays over a week, clamped to [0,1]
   }
 
   // Overall

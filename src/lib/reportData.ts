@@ -190,12 +190,11 @@ export async function computeReportData(
   const { streak } = computeStreak(dailyLogs)
 
   // ── Readiness ────────────────────────────────────────────────
-  const flashcards = await db.flashcards.toArray()
-  const profileFlashcards = flashcards.filter((f) => {
-    // Flashcards don't have examProfileId directly; filter by topic membership
-    if (!f.topicId) return false
-    return topics.some((t) => t.id === f.topicId)
-  })
+  const profileDecks = await db.flashcardDecks.where('examProfileId').equals(examProfileId).toArray()
+  const profileDeckIds = profileDecks.map(d => d.id)
+  const profileFlashcards = profileDeckIds.length > 0
+    ? await db.flashcards.where('deckId').anyOf(profileDeckIds).toArray()
+    : []
 
   const readiness = computeReadinessScore({
     subjects,

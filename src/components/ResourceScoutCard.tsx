@@ -3,6 +3,13 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { BookOpen, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { db } from '../db'
+
+function isSafeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+  } catch { return false }
+}
 import type { ScoutResult, ScoutResource } from '../ai/agents/resourceScout'
 
 interface Props {
@@ -69,7 +76,7 @@ export function ResourceScoutCard({ examProfileId }: Props) {
                 {TYPE_LABELS[type]} ({grouped.get(type)!.length})
               </p>
               <div className="space-y-1.5">
-                {grouped.get(type)!.map((r, i) => (
+                {grouped.get(type)!.filter(r => isSafeUrl(r.url)).map((r, i) => (
                   <a
                     key={i}
                     href={r.url}

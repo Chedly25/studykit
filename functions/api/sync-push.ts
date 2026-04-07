@@ -5,6 +5,7 @@
 import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
+import { checkRateLimit } from '../lib/rateLimiter'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const SYNC_RATE_LIMIT = 30
@@ -19,6 +20,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const cors = corsHeaders(env)
 
   try {
+    if (!env.CLERK_ISSUER_URL) {
+      return new Response(JSON.stringify({ error: 'Auth not configured' }), {
+        status: 500, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+
     const authHeader = context.request.headers.get('Authorization')
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -40,14 +47,20 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
     {
-      const rateLimitKey = `sync_rate:push:${jwt.sub}:${Math.floor(Date.now() / (SYNC_RATE_WINDOW_SECONDS * 1000))}`
-      const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
-      if (currentCount >= SYNC_RATE_LIMIT) {
+      const rl = await checkRateLimit(env.USAGE_KV, 'sync-push', jwt.sub, SYNC_RATE_LIMIT, SYNC_RATE_WINDOW_SECONDS)
+      if (!rl.allowed) {
         return new Response(JSON.stringify({ error: 'Sync rate limit exceeded. Try again later.' }), {
           status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
         })
       }
-      await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: SYNC_RATE_WINDOW_SECONDS })
+    }
+
+    // Pre-check Content-Length (client-supplied, may be absent/spoofed — post-parse check below is authoritative)
+    const contentLength = parseInt(context.request.headers.get('Content-Length') ?? '0', 10)
+    if (contentLength > 5_000_000) {
+      return new Response(JSON.stringify({ error: 'Delta too large (max 5MB per push)' }), {
+        status: 413, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
     }
 
     const body = await context.request.json() as {
@@ -85,10 +98,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
 
-    const key = `changelog:${jwt.sub}:${body.profileId}:${body.clientTimestamp}`
+    const canonicalTimestamp = ts.toISOString()
+    const key = `changelog:${jwt.sub}:${body.profileId}:${canonicalTimestamp}`
     await env.SYNC_KV.put(key, payload, {
       expirationTtl: 90 * 24 * 60 * 60, // 90 days
-      metadata: { timestamp: body.clientTimestamp, changeCount: body.changes.length },
+      metadata: { timestamp: canonicalTimestamp, changeCount: body.changes.length },
     })
 
     return new Response(JSON.stringify({

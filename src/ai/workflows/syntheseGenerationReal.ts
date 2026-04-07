@@ -66,7 +66,7 @@ function extractJson<T>(raw: string): T {
   const isArray = cleaned[start] === '['
   const end = isArray ? cleaned.lastIndexOf(']') : cleaned.lastIndexOf('}')
   if (end < start) throw new Error('No JSON end found')
-  let jsonStr = cleaned.slice(start, end + 1)
+  const jsonStr = cleaned.slice(start, end + 1)
   try { return JSON.parse(jsonStr) }
   catch {
     // Only attempt repair for objects (not arrays — truncation corrupts nested structures)

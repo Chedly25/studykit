@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -39,6 +39,8 @@ function ProfileCard({
   const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(deleteTimerRef.current), [])
   const [editState, setEditState] = useState<EditState>({
     name: profile.name,
     examDate: profile.examDate,
@@ -72,7 +74,8 @@ function ProfileCard({
       setDeleteConfirm(false)
     } else {
       setDeleteConfirm(true)
-      setTimeout(() => setDeleteConfirm(false), 4000)
+      clearTimeout(deleteTimerRef.current)
+      deleteTimerRef.current = setTimeout(() => setDeleteConfirm(false), 4000)
     }
   }
 

@@ -82,9 +82,18 @@ export default function Sources() {
   const [isBatchProcessing, setIsBatchProcessing] = useState(false)
   const handleProcessAll = async () => {
     setIsBatchProcessing(true)
+    let errorCount = 0
     try {
       for (const doc of unprocessedDocs) {
-        await processDocument(doc.id)
+        try {
+          await processDocument(doc.id)
+        } catch {
+          errorCount++
+        }
+      }
+      if (errorCount > 0) {
+        const { toast } = await import('sonner')
+        toast.error(`${errorCount} document(s) failed to process`)
       }
     } finally {
       setIsBatchProcessing(false)

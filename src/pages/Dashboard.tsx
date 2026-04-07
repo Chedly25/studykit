@@ -83,6 +83,7 @@ export default function Dashboard() {
   // Level-up banner when transitioning from new → active
   const [showLevelUp, setShowLevelUp] = useState(false)
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
     if (!isNewUser && profileId) {
       const wasNew = localStorage.getItem(`wasNewUser_${profileId}`)
       const alreadyShown = localStorage.getItem(`levelUpShown_${profileId}`)
@@ -90,9 +91,10 @@ export default function Dashboard() {
         setShowLevelUp(true)
         localStorage.setItem(`levelUpShown_${profileId}`, 'true')
         import('../lib/confetti').then(({ fireConfetti }) => fireConfetti('subtle')).catch(() => {})
-        setTimeout(() => setShowLevelUp(false), 5000)
+        timer = setTimeout(() => setShowLevelUp(false), 5000)
       }
     }
+    return () => clearTimeout(timer)
   }, [isNewUser, profileId])
 
   // No profile → create one

@@ -45,7 +45,8 @@ export function useHabitGoals(examProfileId: string | undefined) {
   const logProgress = useCallback(async (goalId: string, value: number) => {
     if (!examProfileId) return
     const today = new Date().toISOString().slice(0, 10)
-    const existing = logs.find(l => l.goalId === goalId && l.date === today)
+    // Query DB directly to avoid stale closure — concurrent calls both see fresh state
+    const existing = await db.habitLogs.where('goalId').equals(goalId).filter(l => l.date === today).first()
 
     if (existing) {
       await db.habitLogs.update(existing.id, { value })

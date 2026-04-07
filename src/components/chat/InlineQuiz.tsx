@@ -119,7 +119,7 @@ export function InlineQuiz({ quizId }: InlineQuizProps) {
 
             return (
               <button
-                key={i}
+                key={`q${currentIndex}-opt${i}`}
                 onClick={() => handleSelect(i)}
                 disabled={answered}
                 className={`w-full text-left px-3 py-2.5 rounded-lg text-sm border transition-colors flex items-center gap-2 ${optionClass}`}

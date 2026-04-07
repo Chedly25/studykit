@@ -70,6 +70,7 @@ export function useAgent(options: UseAgentOptions) {
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [quotaExceeded, setQuotaExceeded] = useState(false)
   const [messagesUsedToday, setMessagesUsedToday] = useState(getMessagesUsedToday)
+  const isLoadingRef = useRef(false)
   const abortRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -109,11 +110,12 @@ export function useAgent(options: UseAgentOptions) {
     const currentStudentModel = studentModelRef.current
     const currentConversationSummaries = conversationSummariesRef.current
 
-    if (!currentProfile || isLoading) return []
+    if (!currentProfile || isLoadingRef.current) return []
 
     setError(null)
     setQuotaExceeded(false)
     setIsLoading(true)
+    isLoadingRef.current = true
     setStreamingText('')
     setCurrentToolCall(null)
     abortRef.current = false
@@ -335,8 +337,9 @@ export function useAgent(options: UseAgentOptions) {
       return []
     } finally {
       setIsLoading(false)
+      isLoadingRef.current = false
     }
-  }, [isLoading, getToken, isPro, sourcesEnabled, customSystemPrompt, subjectId, subjectName, i18n.language])
+  }, [getToken, isPro, sourcesEnabled, customSystemPrompt, subjectId, subjectName, i18n.language])
 
   // Generate insight on page unload to prevent lost sessions
   useEffect(() => {

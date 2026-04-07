@@ -21,23 +21,27 @@ export function createStreamExtractor<T>(
 ) {
   let buffer = ''
   let items: T[] = []
+  let extractionOffset = 0 // Track how far we've successfully extracted
 
   function cleanBuffer(): string {
     return buffer.replace(/```json\s*/g, '').replace(/```\s*/g, '')
   }
 
+  let cachedArrayStart = -1
+
   function extractItems() {
     const clean = cleanBuffer()
 
-    // Find the array start: "arrayKey": [
-    const pattern = new RegExp(`"${arrayKey}"\\s*:\\s*\\[`)
-    const match = pattern.exec(clean)
-    if (!match || match.index === undefined) return
+    // Find the array start once and cache it
+    if (cachedArrayStart < 0) {
+      const pattern = new RegExp(`"${arrayKey}"\\s*:\\s*\\[`)
+      const match = pattern.exec(clean)
+      if (!match || match.index === undefined) return
+      cachedArrayStart = match.index + match[0].length
+    }
 
-    const arrayStart = match.index + match[0].length
-
-    // Scan for complete objects within the array
-    let i = arrayStart
+    // Resume scanning from where we left off (after last extracted item)
+    let i = Math.max(cachedArrayStart, extractionOffset)
     let depth = 0
     let inString = false
     let escape = false
@@ -94,6 +98,9 @@ export function createStreamExtractor<T>(
     // Emit only newly discovered items
     for (let j = items.length; j < foundItems.length; j++) {
       callbacks.onItem(foundItems[j], j)
+    }
+    if (foundItems.length > items.length) {
+      extractionOffset = i // Resume from current scan position next time
     }
     items = foundItems
   }

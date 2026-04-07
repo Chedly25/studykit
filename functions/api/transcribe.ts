@@ -6,6 +6,7 @@ import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 import { checkCostLimits } from '../lib/costProtection'
+import { checkRateLimit } from '../lib/rateLimiter'
 
 const RATE_LIMIT = 30
 const RATE_WINDOW_SECONDS = 3600
@@ -50,14 +51,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
     {
-      const rateLimitKey = `transcribe_rate:${jwt.sub}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
-      const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
-      if (currentCount >= RATE_LIMIT) {
+      const rl = await checkRateLimit(env.USAGE_KV, 'transcribe', jwt.sub, RATE_LIMIT, RATE_WINDOW_SECONDS)
+      if (!rl.allowed) {
         return new Response(JSON.stringify({ error: 'Transcription rate limit exceeded' }), {
           status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
         })
       }
-      await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
     }
 
     // Cost protection

@@ -30,8 +30,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   const url = new URL(request.url)
   const search = url.searchParams.get('search') || ''
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100)
-  const offset = parseInt(url.searchParams.get('offset') || '0', 10)
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10) || 20, 100)
+  const offset = parseInt(url.searchParams.get('offset') || '0', 10) || 0
 
   try {
     const clerkHeaders = {

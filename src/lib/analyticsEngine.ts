@@ -204,8 +204,13 @@ export function predictTrajectory(
   const lastX = points[points.length - 1].x
   const daysToFull = (1.0 - (slope * lastX + intercept)) / slope
 
-  const targetDate = new Date(new Date(recent[recent.length - 1].date).getTime() + daysToFull * 86400000)
-    .toISOString().slice(0, 10)
+  // Clamp to 10 years to prevent Invalid Date from overflow
+  if (!Number.isFinite(daysToFull) || daysToFull > 3650 || daysToFull < 0) {
+    return { targetDate: '', currentSlope: slope }
+  }
 
-  return { targetDate, currentSlope: slope }
+  const targetDate = new Date(new Date(recent[recent.length - 1].date).getTime() + daysToFull * 86400000)
+  if (isNaN(targetDate.getTime())) return { targetDate: '', currentSlope: slope }
+
+  return { targetDate: targetDate.toISOString().slice(0, 10), currentSlope: slope }
 }

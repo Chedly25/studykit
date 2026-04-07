@@ -18,7 +18,8 @@ async function checkSyncRateLimit(
 ): Promise<Response | null> {
   const rateLimitKey = `sync_rate:${action}:${userId}:${Math.floor(Date.now() / (SYNC_RATE_WINDOW_SECONDS * 1000))}`
   const currentCount = parseInt((await kv.get(rateLimitKey)) ?? '0', 10)
-  if (currentCount >= SYNC_RATE_LIMIT) {
+  const softLimit = Math.floor(SYNC_RATE_LIMIT * 0.8)
+  if (currentCount >= softLimit) {
     return new Response(JSON.stringify({ error: 'Sync rate limit exceeded. Try again later.' }), {
       status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
     })

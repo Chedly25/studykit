@@ -47,6 +47,10 @@ async function llmMain(prompt: string, system: string, ctx: WorkflowContext, max
 }
 
 function extractJson<T>(raw: string): T {
+  // Try direct parse first (handles clean responses without preamble)
+  try { return JSON.parse(raw) } catch { /* needs extraction */ }
+
+  // Try to find the outermost JSON structure
   const objIdx = raw.indexOf('{')
   const arrIdx = raw.indexOf('[')
   // Pick whichever comes first; prefer array if both at same position
@@ -166,7 +170,8 @@ export function createSyntheseGenerationWorkflow(config: SyntheseGenerationConfi
                     content: content.trim(),
                   }
                 } catch {
-                  // Retry once on failure
+                  // Retry once on failure — but not if cancelled
+                  if (ctx.signal?.aborted) throw new Error('Cancelled')
                   try {
                     const content = await llmMain(user, system, ctx, docMaxTokens)
                     return {

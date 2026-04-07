@@ -127,6 +127,8 @@ function DailyQueueContent() {
   // Keep a ref to latest endSession to avoid stale closure in unmount cleanup
   const endSessionRef = useRef(endSession)
   endSessionRef.current = endSession
+  const getTokenRef = useRef(getToken)
+  getTokenRef.current = getToken
 
   // Block C: AI debrief
   const [aiDebrief, setAiDebrief] = useState('')
@@ -243,7 +245,7 @@ function DailyQueueContent() {
         debriefAbortRef.current = controller
         ;(async () => {
           try {
-            const token = await getToken()
+            const token = await getTokenRef.current()
             if (!token || controller.signal.aborted) return
             const results = sessionResults.current
             const struggled = results.filter(r => r.rating === 'struggled').map(r => r.topicName)
@@ -302,7 +304,7 @@ function DailyQueueContent() {
     return () => {
       debriefAbortRef.current?.abort()
     }
-  }, [isQueueEmpty, completedCount, profileId, endSession, getToken])
+  }, [isQueueEmpty, completedCount, profileId])
 
   // Block E: Auto-dismiss nudge after 5 seconds
   useEffect(() => {
@@ -408,6 +410,7 @@ function DailyQueueContent() {
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   // Compute colored progress segments from session results
+  // Note: reads sessionResults.current (ref) — recomputes via completedCount dep which changes in sync with ref
   const completedSegments = useMemo(() => {
     if (totalCount === 0) return []
     const typeCounts = new Map<string, number>()

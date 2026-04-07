@@ -90,7 +90,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   // Idempotency: skip already-processed events (Stripe retries on timeout)
-  // Write the key immediately to prevent TOCTOU race on concurrent retries
+  // Note: KV get+put is not atomic — concurrent retries can both pass the check.
+  // The downstream updateUserMetadata calls are idempotent, so duplicates are safe.
   if (env.USAGE_KV && event.id) {
     const already = await env.USAGE_KV.get(`webhook:${event.id}`)
     if (already) {
@@ -105,12 +106,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object
-        const clerkUserId = (session.client_reference_id ||
-          (session.subscription_data as Record<string, unknown>)?.metadata?.clerkUserId) as string
+        const clerkUserId = session.client_reference_id as string
         const customerId = session.customer as string
         const subscriptionId = session.subscription as string
 
-        if (clerkUserId) {
+        if (!clerkUserId) {
+          console.error('[webhook] checkout.session.completed missing client_reference_id, event:', event.id)
+          break
+        }
+        {
           await updateUserMetadata(env.CLERK_SECRET_KEY, clerkUserId, {
             plan: 'pro',
             stripeCustomerId: customerId,

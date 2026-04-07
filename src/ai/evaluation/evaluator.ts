@@ -58,13 +58,21 @@ Only JSON.`,
       evaluations?: Array<{ index?: number; score?: number; redundancyScore?: number; action?: string; issues?: string[] }>
     }
 
-    return (parsed.evaluations ?? []).map((e, fallbackIndex) => ({
-      index: e.index ?? fallbackIndex,
+    const evals = (parsed.evaluations ?? []).map((e, fallbackIndex) => ({
+      index: typeof e.index === 'number' && e.index >= 0 && e.index < cards.length ? e.index : fallbackIndex,
       score: clamp(e.score ?? 0.5),
       redundancyScore: clamp(e.redundancyScore ?? 0),
       action: validateAction(e.action),
       issues: e.issues ?? [],
     }))
+    // If LLM returned fewer evaluations than cards, fill remaining with defaults
+    if (evals.length < cards.length) {
+      const covered = new Set(evals.map(e => e.index))
+      for (let i = 0; i < cards.length; i++) {
+        if (!covered.has(i)) evals.push(defaultEvaluation(i))
+      }
+    }
+    return evals
   } catch {
     return cards.map((_, i) => defaultEvaluation(i))
   }

@@ -99,6 +99,7 @@ export async function fetchWithGate(
     if (opts?.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
 
     await gate.acquire()
+    if (opts?.signal?.aborted) { gate.release(); throw new DOMException('Aborted', 'AbortError') }
     let response: Response
     try {
       response = await doFetch()
@@ -118,7 +119,14 @@ export async function fetchWithGate(
       const retryAfterHeader = response.headers.get('Retry-After')
       let delay: number
       if (retryAfterHeader) {
-        delay = parseInt(retryAfterHeader, 10) * 1000
+        const seconds = parseInt(retryAfterHeader, 10)
+        if (!isNaN(seconds)) {
+          delay = seconds * 1000
+        } else {
+          // Try HTTP-date format (RFC 7231): e.g. "Wed, 09 Apr 2025 07:28:00 GMT"
+          const retryDate = new Date(retryAfterHeader).getTime()
+          delay = !isNaN(retryDate) ? Math.max(0, retryDate - Date.now()) : Math.min(1500 * Math.pow(2, attempt), 15000)
+        }
       } else {
         // Try to read the error body for "retry after N seconds"
         try {

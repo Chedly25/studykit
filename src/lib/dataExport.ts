@@ -18,6 +18,18 @@ const IMPORTABLE_TABLES = new Set([
   'examSources', 'masterySnapshots', 'pdfHighlights', 'flashcardDecks',
   'flashcards', 'tutorPreferences', 'studentModels',
   'notificationPreferences', 'documentFiles',
+  // Previously missing profile-scoped tables
+  'conversations', 'chatMessages', 'chatFeedback', 'conversationSummaries',
+  'studyPlans', 'studyPlanDays',
+  'practiceExamSessions', 'generatedQuestions', 'examFormats',
+  'revisionFiches', 'examDNA', 'misconceptions',
+  'agentInsights', 'agentRuns',
+  'achievements',
+  'macroRoadmaps',
+  'habitGoals', 'habitLogs',
+  'reviewProjects', 'reviewArticles',
+  'annotations', 'contentEffectiveness',
+  'tutoringEpisodes',
 ])
 
 function validateExportData(data: unknown): data is ExportData {
@@ -83,6 +95,55 @@ export async function exportProfileData(examProfileId: string): Promise<Blob> {
   tables.tutorPreferences = await db.tutorPreferences.where('examProfileId').equals(examProfileId).toArray()
   tables.studentModels = await db.studentModels.where('examProfileId').equals(examProfileId).toArray()
   tables.notificationPreferences = await db.notificationPreferences.where('examProfileId').equals(examProfileId).toArray()
+
+  // Chat & conversations
+  tables.conversations = await db.conversations.where('examProfileId').equals(examProfileId).toArray()
+  const convIds = tables.conversations.map((c: Record<string, unknown>) => c.id as string)
+  tables.chatMessages = convIds.length > 0
+    ? await db.chatMessages.where('conversationId').anyOf(convIds).toArray()
+    : []
+  tables.chatFeedback = await db.chatFeedback.where('examProfileId').equals(examProfileId).toArray()
+  tables.conversationSummaries = await db.conversationSummaries.where('examProfileId').equals(examProfileId).toArray()
+
+  // Study plans
+  tables.studyPlans = await db.studyPlans.where('examProfileId').equals(examProfileId).toArray()
+  const planIds = tables.studyPlans.map((p: Record<string, unknown>) => p.id as string)
+  tables.studyPlanDays = planIds.length > 0
+    ? await db.studyPlanDays.where('studyPlanId').anyOf(planIds).toArray()
+    : []
+
+  // Exams
+  tables.practiceExamSessions = await db.practiceExamSessions.where('examProfileId').equals(examProfileId).toArray()
+  const sessionIds = tables.practiceExamSessions.map((s: Record<string, unknown>) => s.id as string)
+  tables.generatedQuestions = sessionIds.length > 0
+    ? await db.generatedQuestions.where('sessionId').anyOf(sessionIds).toArray()
+    : []
+  tables.examFormats = await db.examFormats.where('examProfileId').equals(examProfileId).toArray()
+
+  // Knowledge artifacts
+  tables.revisionFiches = await db.revisionFiches.where('examProfileId').equals(examProfileId).toArray()
+  tables.examDNA = await db.examDNA.where('examProfileId').equals(examProfileId).toArray()
+  tables.misconceptions = await db.misconceptions.where('examProfileId').equals(examProfileId).toArray()
+
+  // Agent data
+  tables.agentInsights = await db.agentInsights.where('examProfileId').equals(examProfileId).toArray()
+  tables.agentRuns = await db.agentRuns.where('[examProfileId+agentId]').between([examProfileId, ''], [examProfileId, '\uffff']).toArray()
+
+  // Achievements
+  tables.achievements = await db.achievements.where('examProfileId').equals(examProfileId).toArray()
+
+  // Other profile-scoped tables
+  tables.macroRoadmaps = await db.macroRoadmaps.where('examProfileId').equals(examProfileId).toArray()
+  tables.habitGoals = await db.habitGoals.where('examProfileId').equals(examProfileId).toArray()
+  tables.habitLogs = await db.habitLogs.where('examProfileId').equals(examProfileId).toArray()
+  tables.reviewProjects = await db.reviewProjects.where('examProfileId').equals(examProfileId).toArray()
+  const rpIds = tables.reviewProjects.map((r: Record<string, unknown>) => r.id as string)
+  tables.reviewArticles = rpIds.length > 0
+    ? await db.reviewArticles.where('projectId').anyOf(rpIds).toArray()
+    : []
+  tables.annotations = await db.annotations.where('examProfileId').equals(examProfileId).toArray()
+  tables.contentEffectiveness = await db.contentEffectiveness.where('[examProfileId+contentType]').between([examProfileId, ''], [examProfileId, '\uffff']).toArray()
+  tables.tutoringEpisodes = await db.tutoringEpisodes.filter(e => e.examProfileId === examProfileId).toArray()
 
   // DocumentFiles — convert Blob to base64
   const docFiles = await db.documentFiles.where('examProfileId').equals(examProfileId).toArray()

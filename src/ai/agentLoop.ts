@@ -278,14 +278,14 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
           onToolCall?.(toolUse.name)
           try {
             let result = await executeToolLocally(toolUse.name, toolUse.input, examProfileId, authToken, signal)
-            if (result.length > MAX_TOOL_RESULT_CHARS) {
-              result = result.slice(0, MAX_TOOL_RESULT_CHARS) + '\n...[truncated]'
-            }
-            // Extract marker from tool result for auto-injection
+            // Extract marker BEFORE truncation so markers in large results aren't lost
             try {
               const parsed = JSON.parse(result)
               if (parsed.marker) pendingMarkers.push(parsed.marker)
             } catch { /* not JSON or no marker — fine */ }
+            if (result.length > MAX_TOOL_RESULT_CHARS) {
+              result = result.slice(0, MAX_TOOL_RESULT_CHARS) + '\n...[truncated]'
+            }
             return {
               type: 'tool_result',
               tool_use_id: toolUse.id,

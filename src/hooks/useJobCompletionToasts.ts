@@ -129,7 +129,7 @@ export function useJobCompletionToasts() {
         },
       })
     }
-  }, [recentJobs])
+  }, [recentJobs, navigate])
 
   // Cleanup old seen IDs periodically
   useEffect(() => {

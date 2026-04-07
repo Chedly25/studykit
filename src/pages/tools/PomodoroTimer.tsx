@@ -114,6 +114,9 @@ export default function PomodoroTimer() {
     setIsRunning(false)
   }, [mode, sessionsCompleted, settings])
 
+  const advancePhaseRef = useRef(advancePhase)
+  advancePhaseRef.current = advancePhase
+
   useEffect(() => {
     if (!isRunning) {
       if (intervalRef.current) {
@@ -125,7 +128,7 @@ export default function PomodoroTimer() {
     intervalRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          advancePhase()
+          advancePhaseRef.current()
           return 0
         }
         return prev - 1
@@ -137,7 +140,7 @@ export default function PomodoroTimer() {
         intervalRef.current = null
       }
     }
-  }, [isRunning, advancePhase])
+  }, [isRunning])
 
   const handleStartPause = () => setIsRunning(prev => !prev)
 

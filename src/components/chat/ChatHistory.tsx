@@ -55,7 +55,7 @@ export function ChatHistory({ examProfileId, activeConversationId, onSelect, onN
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    getConversations(examProfileId).then(setConversations)
+    getConversations(examProfileId).then(setConversations).catch(() => {})
   }, [examProfileId, activeConversationId])
 
   // Debounced full-text message search

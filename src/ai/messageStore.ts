@@ -37,14 +37,11 @@ export async function loadMessages(conversationId: string): Promise<Message[]> {
   return chatMessages.map(cm => ({
     id: cm.id || crypto.randomUUID(),
     role: cm.role as 'user' | 'assistant',
-    content: cm.toolCalls ? JSON.parse(cm.toolCalls) : cm.content,
+    content: cm.toolCalls ? (() => { try { return JSON.parse(cm.toolCalls) } catch { return cm.content } })() : cm.content,
   }))
 }
 
 export async function saveMessages(conversationId: string, messages: Message[]): Promise<void> {
-  // Clear existing and re-save all
-  await db.chatMessages.where('conversationId').equals(conversationId).delete()
-
   const chatMessages: ChatMessage[] = messages.map((m, i) => ({
     id: m.id || `${conversationId}-${i}`,
     conversationId,
@@ -54,8 +51,12 @@ export async function saveMessages(conversationId: string, messages: Message[]):
     timestamp: new Date(Date.now() + i).toISOString(), // preserve order
   }))
 
-  await db.chatMessages.bulkPut(chatMessages)
-  await db.conversations.update(conversationId, { updatedAt: new Date().toISOString() })
+  // Atomic: delete + re-insert in a single transaction to prevent data loss on crash
+  await db.transaction('rw', db.chatMessages, db.conversations, async () => {
+    await db.chatMessages.where('conversationId').equals(conversationId).delete()
+    await db.chatMessages.bulkPut(chatMessages)
+    await db.conversations.update(conversationId, { updatedAt: new Date().toISOString() })
+  })
 }
 
 export async function updateConversationTitle(conversationId: string, title: string): Promise<void> {

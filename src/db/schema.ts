@@ -785,7 +785,7 @@ export interface AgentRun {
   agentId: string
   examProfileId: string
   trigger: string             // JSON — AgentTrigger that caused this run
-  status: 'success' | 'error' | 'skipped'
+  status: 'success' | 'error' | 'timeout' | 'skipped'
   summary: string
   durationMs: number
   episodesRecorded: number

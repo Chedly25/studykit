@@ -24,6 +24,7 @@ import { PracticeExamHistory } from '../components/practice/PracticeExamHistory'
 import { SessionCompletionOverlay, type SessionCompletionData } from '../components/SessionCompletionOverlay'
 import { decayedMastery } from '../lib/knowledgeGraph'
 import { db } from '../db'
+import { FREE_MONTHLY_EXAM_LIMIT } from '../lib/featureLimits'
 
 export default function PracticeExam() {
   const { t } = useTranslation()
@@ -60,9 +61,10 @@ export default function PracticeExam() {
   const [isDebriefStreaming, setIsDebriefStreaming] = useState(false)
   const debriefAbortRef = useRef<AbortController | null>(null)
   const { getToken } = useAuth()
+  const getTokenRef = useRef(getToken)
+  getTokenRef.current = getToken
 
-  // Monthly exam count for free users (2/month limit)
-  const FREE_MONTHLY_EXAM_LIMIT = 2
+  // Monthly exam count for free users
   const monthlyExamCount = useLiveQuery(async () => {
     if (isPro || !profileId) return 0
     const monthStart = new Date()
@@ -133,7 +135,7 @@ export default function PracticeExam() {
         const controller = new AbortController()
         debriefAbortRef.current = controller
         try {
-          const token = await getToken()
+          const token = await getTokenRef.current()
           if (token && !controller.signal.aborted) {
             const deltaSummary = deltas.map(d => `${d.topicName}: ${Math.round(d.before * 100)}% → ${Math.round(d.after * 100)}%`).join('; ')
             const prompt = `Student just completed a practice exam.\n` +
@@ -157,7 +159,7 @@ export default function PracticeExam() {
       }
       buildCompletion()
     }
-  }, [exam.phase, exam.session, completionData, activeProfile?.weeklyTargetHours, getToken])
+  }, [exam.phase, exam.session, completionData, activeProfile?.weeklyTargetHours])
 
   if (!activeProfile) {
     return (

@@ -9,28 +9,10 @@ import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 import { checkCostLimits } from '../lib/costProtection'
+import { checkRateLimit } from '../lib/rateLimiter'
 
 const RATE_LIMIT = 60
 const RATE_WINDOW_SECONDS = 3600
-
-async function checkRateLimitKV(
-  kv: KVNamespace,
-  userId: string,
-): Promise<{ allowed: boolean; remaining: number }> {
-  const windowKey = `ratelimit:search:${userId}:${Math.floor(Date.now() / 1000 / RATE_WINDOW_SECONDS)}`
-  const currentStr = await kv.get(windowKey)
-  const current = currentStr ? parseInt(currentStr, 10) : 0
-
-  // Soft cap at 80% absorbs concurrent over-count from non-atomic KV reads
-  const softLimit = Math.floor(RATE_LIMIT * 0.8)
-  if (current >= softLimit) {
-    return { allowed: false, remaining: 0 }
-  }
-
-  const newCount = current + 1
-  await kv.put(windowKey, String(newCount), { expirationTtl: RATE_WINDOW_SECONDS })
-  return { allowed: true, remaining: softLimit - newCount }
-}
 
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
   return new Response(null, { status: 204, headers: corsHeaders(context.env) })
@@ -78,7 +60,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     )
   }
   {
-    const rl = await checkRateLimitKV(env.USAGE_KV, userId)
+    const rl = await checkRateLimit(env.USAGE_KV, 'search', userId, RATE_LIMIT, RATE_WINDOW_SECONDS)
     if (!rl.allowed) {
       return new Response(
         JSON.stringify({ error: 'Rate limit exceeded. Try again later.' }),
@@ -127,7 +109,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   // ── Extract action: fetch full page content from URLs ──
   if (body.action === 'extract') {
-    const urls = (body.urls ?? []).slice(0, 5)
+    const urls = (body.urls ?? []).slice(0, 5).filter((u: string) => {
+      try {
+        const parsed = new URL(u)
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false
+        const host = parsed.hostname.toLowerCase()
+        if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') return false
+        if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.)/.test(host)) return false
+        return true
+      } catch { return false }
+    })
     if (urls.length === 0) {
       return new Response(
         JSON.stringify({ error: 'Missing urls array' }),

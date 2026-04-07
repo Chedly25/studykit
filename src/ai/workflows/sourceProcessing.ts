@@ -456,21 +456,23 @@ Respond ONLY with valid JSON (an array).`,
       },
     ],
 
-    aggregate(ctx) {
+    async aggregate(ctx) {
       const result = ctx.results['save-results']?.data as SourceProcessingResult | undefined
 
       // Dispatch swarm event: document processed
       try {
-        // @ts-expect-error Vite handles require() at build time
-        const { dispatchSwarmEvent } = require('../agents/eventBus')
-        const doc = ctx.results['gather-context']?.data as { documentId?: string; category?: string; mappedTopicIds?: string[] } | undefined
-        if (doc?.documentId) {
+        const { dispatchSwarmEvent } = await import('../agents/eventBus')
+        const gatherData = ctx.results['gather-context']?.data as {
+          doc: { id: string; category?: string }
+          topics: Array<{ id: string }>
+        } | undefined
+        if (gatherData?.doc?.id) {
           dispatchSwarmEvent({
             type: 'document-processed',
-            documentId: doc.documentId,
+            documentId: gatherData.doc.id,
             examProfileId: ctx.examProfileId,
-            category: doc.category,
-            topicIds: doc.mappedTopicIds,
+            category: gatherData.doc.category,
+            topicIds: gatherData.topics?.map(t => t.id),
           })
         }
       } catch { /* swarm dispatch is non-critical */ }

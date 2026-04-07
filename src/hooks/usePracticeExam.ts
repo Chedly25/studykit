@@ -96,13 +96,12 @@ export function usePracticeExam(examProfileId: string | undefined) {
     [examProfileId],
   ) ?? []
 
-  // Timer effect
+  // Timer effect — only clean up in the effect cleanup, not inside the state updater
   useEffect(() => {
     if (!timerActive || timeRemaining === null || timeRemaining <= 0) return
     timerRef.current = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev === null || prev <= 1) {
-          clearInterval(timerRef.current!)
           setTimerActive(false)
           return 0
         }
@@ -110,9 +109,12 @@ export function usePracticeExam(examProfileId: string | undefined) {
       })
     }, 1000)
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+      }
     }
-  }, [timerActive])
+  }, [timerActive, timeRemaining])
 
   const submitExamRef = useRef<() => void>(() => {})
 

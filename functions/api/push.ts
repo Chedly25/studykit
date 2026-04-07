@@ -5,6 +5,7 @@
 import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
+import { checkRateLimit } from '../lib/rateLimiter'
 
 const RATE_LIMIT = 30
 const RATE_WINDOW_SECONDS = 3600
@@ -65,14 +66,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     })
   }
   {
-    const rateLimitKey = `push_rate:${userId}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
-    const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
-    if (currentCount >= RATE_LIMIT) {
+    const rl = await checkRateLimit(env.USAGE_KV, 'push', userId, RATE_LIMIT, RATE_WINDOW_SECONDS)
+    if (!rl.allowed) {
       return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
         status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
       })
     }
-    await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
   }
 
   const kv = env.PUSH_SUBSCRIPTIONS
@@ -89,6 +88,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   if (body.action === 'subscribe' && body.subscription?.endpoint) {
+    // Validate required push subscription keys
+    if (!body.subscription.keys?.p256dh || !body.subscription.keys?.auth ||
+        typeof body.subscription.keys.p256dh !== 'string' || typeof body.subscription.keys.auth !== 'string') {
+      return new Response(JSON.stringify({ error: 'Invalid subscription: missing or invalid keys.p256dh or keys.auth' }), {
+        status: 400, headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
     // Key subscriptions by userId so users can only manage their own
     const key = `${userId}:${encodeURIComponent(body.subscription.endpoint)}`
     await kv.put(key, JSON.stringify(body.subscription), { expirationTtl: 60 * 60 * 24 * 90 })

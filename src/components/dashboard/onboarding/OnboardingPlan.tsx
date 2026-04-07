@@ -54,7 +54,7 @@ export function OnboardingPlan({ examProfileId, onComplete }: OnboardingPlanProp
 
   useEffect(() => {
     doGenerate()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [doGenerate])
 
   if (state === 'generating') {
     return (

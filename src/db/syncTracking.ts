@@ -15,6 +15,8 @@ const EXCLUDED_TABLES = new Set([
   '_syncMeta',            // meta table
   'backgroundJobs',       // ephemeral, device-specific
   'userPreferences',      // global singleton
+  'strategyEffectiveness', // global table (no examProfileId), not per-profile
+  'tutoringEpisodes',     // per-user (userId-keyed), not per-profile
 ])
 
 // Module flag: disable tracking during pull to prevent infinite loop
@@ -27,7 +29,7 @@ export function setSyncing(value: boolean) {
 }
 
 // In-memory buffer for pending changes
-let pendingChanges: SyncQueueEntry[] = []
+const pendingChanges: SyncQueueEntry[] = []
 let flushInterval: ReturnType<typeof setInterval> | null = null
 
 function queueChange(table: string, recordId: string, operation: 'put' | 'delete', data?: unknown) {

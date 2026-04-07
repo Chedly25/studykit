@@ -278,7 +278,13 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
     try {
       input = JSON.parse(tc.args)
     } catch {
-      // Incomplete JSON
+      // Attempt JSON repair: find last valid closing brace
+      try {
+        const lastBrace = tc.args.lastIndexOf('}')
+        if (lastBrace > 0) input = JSON.parse(tc.args.slice(0, lastBrace + 1))
+      } catch {
+        console.warn(`[ai/client] Failed to parse tool args for ${tc.name}:`, tc.args.slice(0, 200))
+      }
     }
     content.push({
       type: 'tool_use',

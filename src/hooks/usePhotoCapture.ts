@@ -14,7 +14,9 @@ const MAX_IMAGE_DIMENSION = 2048
 async function resizeImage(blob: Blob): Promise<Blob> {
   return new Promise((resolve) => {
     const img = new Image()
+    const objectUrl = URL.createObjectURL(blob)
     img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
       let { width, height } = img
       if (width <= MAX_IMAGE_DIMENSION && height <= MAX_IMAGE_DIMENSION) {
         // Already small enough — convert to JPEG
@@ -35,8 +37,8 @@ async function resizeImage(blob: Blob): Promise<Blob> {
       canvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
       canvas.toBlob(b => resolve(b || blob), 'image/jpeg', 0.85)
     }
-    img.onerror = () => resolve(blob)
-    img.src = URL.createObjectURL(blob)
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(blob) }
+    img.src = objectUrl
   })
 }
 

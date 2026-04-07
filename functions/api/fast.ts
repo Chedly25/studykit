@@ -7,6 +7,7 @@ import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
 import { checkCostLimits } from '../lib/costProtection'
+import { checkRateLimit } from '../lib/rateLimiter'
 
 const MODEL = 'claude-haiku-4-5-20251001'
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
@@ -60,14 +61,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
     {
-      const rateLimitKey = `fast_rate:${jwt.sub}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
-      const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
-      if (currentCount >= RATE_LIMIT) {
+      const rl = await checkRateLimit(env.USAGE_KV, 'fast', jwt.sub, RATE_LIMIT, RATE_WINDOW_SECONDS)
+      if (!rl.allowed) {
         return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later' }), {
           status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '30' },
         })
       }
-      await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
     }
 
     // Daily cap + global kill switch
@@ -122,7 +121,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       console.error('[fast] Anthropic error:', llmResponse.status, errText.slice(0, 500))
       return new Response(
         JSON.stringify({ error: 'AI service temporarily unavailable. Please try again.' }),
-        { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } },
+        { status: 502, headers: { ...cors, 'Content-Type': 'application/json' } },
       )
     }
 
