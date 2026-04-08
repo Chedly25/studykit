@@ -22,6 +22,14 @@ interface MockEnv {
 // Import after mocks are set up
 import { checkDailyCap, checkGlobalCap, checkCostLimits } from '../costProtection'
 
+// Current cap values (keep in sync with costProtection.ts)
+const CHAT_FREE_CAP = 15
+const CHAT_PRO_CAP = 65
+const CHAT_FREE_SOFT = Math.floor(CHAT_FREE_CAP * 0.8) // 12
+const CHAT_PRO_SOFT = Math.floor(CHAT_PRO_CAP * 0.8)   // 52
+const CHAT_GLOBAL_CAP = 5000
+const CHAT_GLOBAL_SOFT = Math.floor(CHAT_GLOBAL_CAP * 0.8) // 4000
+
 describe('checkDailyCap', () => {
   let kv: KVNamespace
 
@@ -33,33 +41,33 @@ describe('checkDailyCap', () => {
     const result = await checkDailyCap(kv, 'user1', 'chat', 'pro')
     expect(result.allowed).toBe(true)
     expect(result.remaining).toBeGreaterThan(0)
-    expect(result.limit).toBe(500)
+    expect(result.limit).toBe(CHAT_PRO_CAP)
   })
 
   it('allows free request under the cap', async () => {
     const result = await checkDailyCap(kv, 'user1', 'chat')
     expect(result.allowed).toBe(true)
-    expect(result.limit).toBe(25)
+    expect(result.limit).toBe(CHAT_FREE_CAP)
   })
 
   it('blocks pro request when cap is reached', async () => {
     const today = new Date().toISOString().slice(0, 10)
     const key = `daily:chat:user1:${today}`
-    await kv.put(key, '500', { expirationTtl: 172800 } as any)
+    await kv.put(key, String(CHAT_PRO_CAP), { expirationTtl: 172800 } as any)
 
     const result = await checkDailyCap(kv, 'user1', 'chat', 'pro')
     expect(result.allowed).toBe(false)
     expect(result.remaining).toBe(0)
   })
 
-  it('blocks free request at soft cap (80% of 25)', async () => {
+  it('blocks free request at soft cap', async () => {
     const today = new Date().toISOString().slice(0, 10)
     const key = `daily:chat:user1:${today}`
-    await kv.put(key, '20', { expirationTtl: 172800 } as any)
+    await kv.put(key, String(CHAT_FREE_SOFT), { expirationTtl: 172800 } as any)
 
     const result = await checkDailyCap(kv, 'user1', 'chat')
     expect(result.allowed).toBe(false)
-    expect(result.limit).toBe(25)
+    expect(result.limit).toBe(CHAT_FREE_CAP)
   })
 
   it('allows unknown endpoints', async () => {
@@ -72,10 +80,9 @@ describe('checkDailyCap', () => {
     await checkDailyCap(kv, 'user1', 'chat', 'pro')
     await checkDailyCap(kv, 'user1', 'chat', 'pro')
 
-    // Third call should show remaining decreased (soft cap = 400)
     const result = await checkDailyCap(kv, 'user1', 'chat', 'pro')
     expect(result.allowed).toBe(true)
-    expect(result.remaining).toBe(397)
+    expect(result.remaining).toBe(CHAT_PRO_SOFT - 3)
   })
 
   it('blocks free users on pro-only endpoints', async () => {
@@ -85,28 +92,25 @@ describe('checkDailyCap', () => {
   })
 
   it('blocks at exact soft cap boundary', async () => {
-    // chat free: hardCap=25, softCap=Math.floor(25*0.8)=20
-    // Set counter to 19 (one below soft cap)
     const today = new Date().toISOString().slice(0, 10)
     const key = `daily:chat:user1:${today}`
-    await kv.put(key, '19', { expirationTtl: 172800 } as any)
+    await kv.put(key, String(CHAT_FREE_SOFT - 1), { expirationTtl: 172800 } as any)
 
-    // Call at counter=19 → allowed (returns remaining=0)
+    // Call at counter=softCap-1 → allowed (returns remaining=0)
     const result1 = await checkDailyCap(kv, 'user1', 'chat')
     expect(result1.allowed).toBe(true)
     expect(result1.remaining).toBe(0)
 
-    // Counter is now 20, which equals softCap → blocked
+    // Counter is now softCap → blocked
     const result2 = await checkDailyCap(kv, 'user1', 'chat')
     expect(result2.allowed).toBe(false)
     expect(result2.remaining).toBe(0)
   })
 
   it('sequential calls eventually block', async () => {
-    // chat free: softCap = Math.floor(25 * 0.8) = 20
     let blocked = false
     let callCount = 0
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < CHAT_FREE_CAP + 5; i++) {
       const result = await checkDailyCap(kv, 'user1', 'chat')
       callCount++
       if (!result.allowed) {
@@ -115,8 +119,8 @@ describe('checkDailyCap', () => {
       }
     }
     expect(blocked).toBe(true)
-    // Should block on the 21st call (after 20 allowed calls fill the soft cap)
-    expect(callCount).toBe(21)
+    // Should block after softCap+1 calls (softCap allowed, then blocked)
+    expect(callCount).toBe(CHAT_FREE_SOFT + 1)
   })
 })
 
@@ -135,7 +139,7 @@ describe('checkGlobalCap', () => {
   it('blocks when global cap is exceeded', async () => {
     const today = new Date().toISOString().slice(0, 10)
     const key = `global:chat:${today}`
-    await kv.put(key, '10000', { expirationTtl: 172800 } as any)
+    await kv.put(key, String(CHAT_GLOBAL_CAP), { expirationTtl: 172800 } as any)
 
     const result = await checkGlobalCap(kv, 'chat')
     expect(result.allowed).toBe(false)
@@ -147,16 +151,15 @@ describe('checkGlobalCap', () => {
   })
 
   it('blocks at exact global soft cap boundary', async () => {
-    // chat: globalCap=10000, softCap=Math.floor(10000*0.8)=8000
     const today = new Date().toISOString().slice(0, 10)
     const key = `global:chat:${today}`
 
-    // Set to 7999 (one below soft cap)
-    await kv.put(key, '7999', { expirationTtl: 172800 } as any)
+    // Set to softCap-1 (one below soft cap)
+    await kv.put(key, String(CHAT_GLOBAL_SOFT - 1), { expirationTtl: 172800 } as any)
     const result1 = await checkGlobalCap(kv, 'chat')
     expect(result1.allowed).toBe(true)
 
-    // Counter is now 8000, which equals softCap → blocked
+    // Counter is now softCap → blocked
     const result2 = await checkGlobalCap(kv, 'chat')
     expect(result2.allowed).toBe(false)
   })
@@ -176,7 +179,7 @@ describe('checkCostLimits', () => {
 
   it('returns reason when global cap exceeded', async () => {
     const today = new Date().toISOString().slice(0, 10)
-    await env.USAGE_KV.put(`global:chat:${today}`, '10000', { expirationTtl: 172800 } as any)
+    await env.USAGE_KV.put(`global:chat:${today}`, String(CHAT_GLOBAL_CAP), { expirationTtl: 172800 } as any)
 
     const result = await checkCostLimits(env as any, 'user1', 'chat', 'pro')
     expect(result.allowed).toBe(false)
@@ -185,7 +188,7 @@ describe('checkCostLimits', () => {
 
   it('returns reason when pro daily cap exceeded', async () => {
     const today = new Date().toISOString().slice(0, 10)
-    await env.USAGE_KV.put(`daily:chat:user1:${today}`, '500', { expirationTtl: 172800 } as any)
+    await env.USAGE_KV.put(`daily:chat:user1:${today}`, String(CHAT_PRO_CAP), { expirationTtl: 172800 } as any)
 
     const result = await checkCostLimits(env as any, 'user1', 'chat', 'pro')
     expect(result.allowed).toBe(false)
@@ -194,7 +197,7 @@ describe('checkCostLimits', () => {
 
   it('blocks free user at lower cap with upgrade hint', async () => {
     const today = new Date().toISOString().slice(0, 10)
-    await env.USAGE_KV.put(`daily:chat:user1:${today}`, '25', { expirationTtl: 172800 } as any)
+    await env.USAGE_KV.put(`daily:chat:user1:${today}`, String(CHAT_FREE_CAP), { expirationTtl: 172800 } as any)
 
     const result = await checkCostLimits(env as any, 'user1', 'chat')
     expect(result.allowed).toBe(false)
@@ -209,7 +212,7 @@ describe('checkCostLimits', () => {
 
   it('blocks when global cap exceeded even for pro user', async () => {
     const today = new Date().toISOString().slice(0, 10)
-    await env.USAGE_KV.put(`global:chat:${today}`, '10000', { expirationTtl: 172800 } as any)
+    await env.USAGE_KV.put(`global:chat:${today}`, String(CHAT_GLOBAL_CAP), { expirationTtl: 172800 } as any)
 
     const result = await checkCostLimits(env as any, 'user1', 'chat', 'pro')
     expect(result.allowed).toBe(false)

@@ -99,6 +99,12 @@ export default function Analytics() {
     return map
   }) ?? new Map()
 
+  // Stable string key for the Map to use as a useMemo dependency
+  const dueFlashcardsByTopicKey = useMemo(
+    () => [...dueFlashcardsByTopic].map(([k, v]) => `${k}:${v}`).join(','),
+    [dueFlashcardsByTopic],
+  )
+
   const recommendations = useMemo(() => {
     if (!activeProfile || kgTopics.length === 0) return []
     const daysUntilExam = activeProfile.examDate
@@ -128,8 +134,7 @@ export default function Analytics() {
       prerequisiteGraph: prerequisiteGraph.size > 0 ? prerequisiteGraph : undefined,
       topicMasteryMap,
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeProfile, kgTopics, kgSubjects, JSON.stringify([...dueFlashcardsByTopic]), studentModel])
+  }, [activeProfile, kgTopics, kgSubjects, dueFlashcardsByTopicKey, studentModel])
 
   if (!activeProfile) {
     return (
@@ -500,7 +505,7 @@ function MockExamScoresCard({ examProfileId }: { examProfileId: string | undefin
       <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.mockExamScores')}</h2>
       <div className="h-32 flex items-end gap-2">
         {exams.map((exam) => {
-          const pct = Math.round((exam.totalScore! / exam.maxScore!) * 100)
+          const pct = Math.round(((exam.totalScore ?? 0) / (exam.maxScore ?? 1)) * 100)
           const passed = pct >= 60
           const dateLabel = new Date(exam.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
           return (
@@ -529,7 +534,7 @@ function SimulationExamScoresCard({ examProfileId, passingThreshold }: { examPro
     if (!examProfileId) return []
     const all = await db.practiceExamSessions
       .where('examProfileId').equals(examProfileId)
-      .filter(s => !!s.simulationMode && s.phase === 'graded' && s.totalScore != null && s.maxScore != null && s.maxScore! > 0)
+      .filter(s => !!s.simulationMode && s.phase === 'graded' && s.totalScore != null && s.maxScore != null && s.maxScore > 0)
       .toArray()
     return all.sort((a, b) => (a.completedAt ?? '').localeCompare(b.completedAt ?? ''))
   }, [examProfileId]) ?? []
@@ -541,7 +546,7 @@ function SimulationExamScoresCard({ examProfileId, passingThreshold }: { examPro
   if (exams.length >= 2) {
     const recent = exams.slice(-5)
     let ws = 0, wt = 0
-    recent.forEach((s, i) => { const w = i + 1; ws += (s.totalScore! / s.maxScore!) * 100 * w; wt += w })
+    recent.forEach((s, i) => { const w = i + 1; ws += ((s.totalScore ?? 0) / (s.maxScore ?? 1)) * 100 * w; wt += w })
     predicted = Math.round(ws / wt)
   }
 
@@ -573,7 +578,7 @@ function SimulationExamScoresCard({ examProfileId, passingThreshold }: { examPro
         {/* Bars */}
         <div className="h-full flex items-end gap-2">
           {exams.map(exam => {
-            const pct = Math.round((exam.totalScore! / exam.maxScore!) * 100)
+            const pct = Math.round(((exam.totalScore ?? 0) / (exam.maxScore ?? 1)) * 100)
             const passed = pct >= threshold
             const dateLabel = new Date(exam.completedAt ?? exam.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
             return (

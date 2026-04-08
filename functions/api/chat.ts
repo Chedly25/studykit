@@ -75,7 +75,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     )
   }
 
-  // Daily quota + global kill switch (plan-aware: free=25, pro=500)
+  // Daily quota + global kill switch (plan-aware caps in costProtection.ts)
   {
     const costCheck = await checkCostLimits(env, userId, 'chat', userPlan)
     if (!costCheck.allowed) {

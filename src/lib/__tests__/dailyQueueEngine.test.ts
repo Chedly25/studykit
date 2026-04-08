@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { buildDailyQueue } from '../dailyQueueEngine'
 import type { Flashcard, Exercise, ConceptCard } from '../../db/schema'
+import type { FeedbackAction } from '../feedbackLoopEngine'
+import type { StudyRecommendation } from '../studyRecommender'
 
 function makeFlashcard(id: string, topicId: string): Flashcard {
   return {
@@ -225,5 +227,327 @@ describe('buildDailyQueue — cram mode', () => {
     // t1 mastery=0.3 < 0.5 → included, t2 mastery=0.7 >= 0.5 → excluded
     expect(concepts).toHaveLength(1)
     expect(concepts[0].topicId).toBe('t1')
+  })
+})
+
+// ─── Additional coverage ─────────────────────────────────────────────
+
+describe('buildDailyQueue — exercises only (no flashcards)', () => {
+  it('produces exercise items when only exercises are provided', () => {
+    const exercise = makeExercise('e1', 't1')
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises: [exercise],
+      conceptCards: [],
+      topicMap,
+    })
+    expect(queue.length).toBeGreaterThan(0)
+    expect(queue.every(q => q.type === 'exercise')).toBe(true)
+  })
+})
+
+describe('buildDailyQueue — concept cards only', () => {
+  it('produces concept quiz items via recommendations when only concept cards are provided', () => {
+    const rec: StudyRecommendation = {
+      topicId: 't1',
+      topicName: 'Algebra',
+      subjectName: 'Math',
+      action: 'review',
+      score: 5,
+      reason: 'Needs review',
+      decayedMastery: 0.3,
+      linkTo: '',
+    }
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [rec],
+      exercises: [],
+      conceptCards: [makeConceptCard('c1', 't1')],
+      topicMap,
+    })
+    const conceptItems = queue.filter(q => q.type === 'concept-quiz')
+    expect(conceptItems.length).toBeGreaterThan(0)
+    expect(conceptItems[0].conceptCardId).toBe('c1')
+  })
+
+  it('produces SRS concept quiz items when concept cards have due nextReviewDate', () => {
+    const today = new Date().toISOString().slice(0, 10)
+    const card = { ...makeConceptCard('c1', 't1'), nextReviewDate: today }
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises: [],
+      conceptCards: [card],
+      topicMap,
+    })
+    const srsItem = queue.find(q => q.id.startsWith('srs-concept'))
+    expect(srsItem).toBeDefined()
+    expect(srsItem!.type).toBe('concept-quiz')
+    expect(srsItem!.priority).toBe(85)
+  })
+})
+
+describe('buildDailyQueue — feedback actions', () => {
+  it('maps queue-concept-review feedback to concept-quiz item', () => {
+    const action: FeedbackAction = {
+      type: 'queue-concept-review',
+      topicId: 't1',
+      topicName: 'Algebra',
+      reason: 'Struggling with basics',
+      priority: 3,
+    }
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises: [],
+      conceptCards: [makeConceptCard('c1', 't1')],
+      feedbackActions: [action],
+      topicMap,
+    })
+    const feedbackItem = queue.find(q => q.id.startsWith('feedback-concept'))
+    expect(feedbackItem).toBeDefined()
+    expect(feedbackItem!.type).toBe('concept-quiz')
+    expect(feedbackItem!.reason).toBe('Struggling with basics')
+  })
+
+  it('maps queue-exercises feedback to exercise item', () => {
+    const action: FeedbackAction = {
+      type: 'queue-exercises',
+      topicId: 't1',
+      topicName: 'Algebra',
+      reason: 'Needs more practice',
+      priority: 4,
+    }
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises: [makeExercise('e1', 't1')],
+      conceptCards: [],
+      feedbackActions: [action],
+      topicMap,
+    })
+    const feedbackItem = queue.find(q => q.id.startsWith('feedback-exercise'))
+    expect(feedbackItem).toBeDefined()
+    expect(feedbackItem!.type).toBe('exercise')
+    expect(feedbackItem!.reason).toBe('Needs more practice')
+  })
+
+  it('skips queue-flashcards feedback (covered by due flashcards)', () => {
+    const action: FeedbackAction = {
+      type: 'queue-flashcards',
+      topicId: 't1',
+      topicName: 'Algebra',
+      reason: 'Review flashcards',
+      priority: 3,
+    }
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises: [],
+      conceptCards: [],
+      feedbackActions: [action],
+      topicMap,
+    })
+    const feedbackItems = queue.filter(q => q.id.startsWith('feedback-'))
+    expect(feedbackItems).toHaveLength(0)
+  })
+})
+
+describe('buildDailyQueue — time truncation', () => {
+  it('stops adding items when time budget is exceeded', () => {
+    // Each exercise is ~5 min, so with 8 min budget we should get at most 1
+    const exercises = Array.from({ length: 5 }, (_, i) => makeExercise(`e${i}`, 't1'))
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises,
+      conceptCards: [],
+      topicMap,
+      timeAvailableMinutes: 8,
+    })
+    const totalMin = queue.reduce((s, q) => s + q.estimatedMinutes, 0)
+    expect(totalMin).toBeLessThanOrEqual(8)
+    expect(queue.length).toBeLessThan(5)
+  })
+
+  it('returns all items when no time limit is set', () => {
+    const exercises = Array.from({ length: 3 }, (_, i) => makeExercise(`e${i}`, 't1'))
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises,
+      conceptCards: [],
+      topicMap,
+    })
+    expect(queue.length).toBeGreaterThan(0)
+  })
+})
+
+describe('buildDailyQueue — deduplication', () => {
+  it('does not add the same exercise ID twice', () => {
+    // An exercise that qualifies both via recommendation and weak-topic
+    const exercise = makeExercise('e1', 't1') // t1 mastery=0.3 < 0.5 → weak
+    const rec: StudyRecommendation = {
+      topicId: 't1',
+      topicName: 'Algebra',
+      subjectName: 'Math',
+      action: 'practice',
+      score: 5,
+      reason: 'Practice needed',
+      decayedMastery: 0.3,
+      linkTo: '',
+    }
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [rec],
+      exercises: [exercise],
+      conceptCards: [],
+      topicMap,
+    })
+    const exerciseIds = queue.filter(q => q.type === 'exercise').map(q => q.exerciseId)
+    const uniqueIds = new Set(exerciseIds)
+    expect(uniqueIds.size).toBe(exerciseIds.length)
+  })
+
+  it('does not add the same concept card ID twice', () => {
+    const rec: StudyRecommendation = {
+      topicId: 't1',
+      topicName: 'Algebra',
+      subjectName: 'Math',
+      action: 'review',
+      score: 5,
+      reason: 'Review needed',
+      decayedMastery: 0.3,
+      linkTo: '',
+    }
+    const today = new Date().toISOString().slice(0, 10)
+    const card = { ...makeConceptCard('c1', 't1'), nextReviewDate: today }
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [rec],
+      exercises: [],
+      conceptCards: [card],
+      topicMap,
+    })
+    const conceptIds = queue.filter(q => q.type === 'concept-quiz').map(q => q.conceptCardId)
+    const uniqueIds = new Set(conceptIds)
+    expect(uniqueIds.size).toBe(conceptIds.length)
+  })
+})
+
+describe('buildDailyQueue — multiple subjects interleaving', () => {
+  it('interleaves items from different subjects via round-robin', () => {
+    const topicMapThreeSubjects = new Map([
+      ['t1', { name: 'Algebra', subjectName: 'Math', mastery: 0.3 }],
+      ['t2', { name: 'Grammar', subjectName: 'English', mastery: 0.3 }],
+      ['t3', { name: 'Atoms', subjectName: 'Physics', mastery: 0.3 }],
+    ])
+    const cards = [
+      ...Array.from({ length: 3 }, (_, i) => makeFlashcard(`f-math-${i}`, 't1')),
+      ...Array.from({ length: 3 }, (_, i) => makeFlashcard(`f-eng-${i}`, 't2')),
+      ...Array.from({ length: 3 }, (_, i) => makeFlashcard(`f-phys-${i}`, 't3')),
+    ]
+    const queue = buildDailyQueue({
+      dueFlashcards: cards,
+      recommendations: [],
+      exercises: [],
+      conceptCards: [],
+      topicMap: topicMapThreeSubjects,
+    })
+    // With 3 subjects, the first 3 items should each be from a different subject
+    expect(queue.length).toBeGreaterThanOrEqual(3)
+    const firstThreeSubjects = queue.slice(0, 3).map(q => q.subjectName)
+    const uniqueSubjects = new Set(firstThreeSubjects)
+    expect(uniqueSubjects.size).toBe(3)
+  })
+})
+
+describe('buildCramQueue — additional coverage', () => {
+  it('returns all flashcards sorted by mastery (weakest topic first)', () => {
+    const queue = buildDailyQueue({
+      dueFlashcards: [makeFlashcard('f1', 't1'), makeFlashcard('f2', 't2')],
+      recommendations: [],
+      exercises: [],
+      conceptCards: [],
+      topicMap,
+      cramMode: true,
+    })
+    const flashItems = queue.filter(q => q.type === 'flashcard-review')
+    expect(flashItems.length).toBe(2)
+    // t1 mastery=0.3 is weaker than t2 mastery=0.7, so t1 should have higher priority
+    const t1Item = flashItems.find(q => q.topicId === 't1')!
+    const t2Item = flashItems.find(q => q.topicId === 't2')!
+    expect(t1Item.priority).toBeGreaterThan(t2Item.priority)
+  })
+
+  it('includes exercises for weak topics (mastery < 0.6) in cram mode', () => {
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises: [makeExercise('e1', 't1')], // t1 mastery=0.3 < 0.6
+      conceptCards: [],
+      topicMap,
+      cramMode: true,
+    })
+    const exerciseItems = queue.filter(q => q.type === 'exercise')
+    expect(exerciseItems.length).toBeGreaterThan(0)
+    expect(exerciseItems[0].reason).toContain('exam prep')
+  })
+
+  it('excludes exercises for strong topics (mastery >= 0.6) in cram mode', () => {
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises: [makeExercise('e1', 't2')], // t2 mastery=0.7 >= 0.6
+      conceptCards: [],
+      topicMap,
+      cramMode: true,
+    })
+    const exerciseItems = queue.filter(q => q.type === 'exercise')
+    expect(exerciseItems).toHaveLength(0)
+  })
+
+  it('returns empty queue when no items available in cram mode', () => {
+    const queue = buildDailyQueue({
+      dueFlashcards: [],
+      recommendations: [],
+      exercises: [],
+      conceptCards: [],
+      topicMap,
+      cramMode: true,
+    })
+    expect(queue).toEqual([])
+  })
+
+  it('respects time limit in cram mode', () => {
+    const cards = Array.from({ length: 30 }, (_, i) => makeFlashcard(`f${i}`, 't1'))
+    const queue = buildDailyQueue({
+      dueFlashcards: cards,
+      recommendations: [],
+      exercises: [],
+      conceptCards: [],
+      topicMap,
+      cramMode: true,
+      timeAvailableMinutes: 3,
+    })
+    const totalMin = queue.reduce((s, q) => s + q.estimatedMinutes, 0)
+    expect(totalMin).toBeLessThanOrEqual(3)
+  })
+})
+
+describe('buildDailyQueue — single flashcard', () => {
+  it('produces a single batch for one flashcard', () => {
+    const queue = buildDailyQueue({
+      dueFlashcards: [makeFlashcard('f1', 't1')],
+      recommendations: [],
+      exercises: [],
+      conceptCards: [],
+      topicMap,
+    })
+    const flashBatches = queue.filter(q => q.type === 'flashcard-review')
+    expect(flashBatches).toHaveLength(1)
+    expect(flashBatches[0].flashcardIds).toHaveLength(1)
+    expect(flashBatches[0].flashcardIds![0]).toBe('f1')
   })
 })

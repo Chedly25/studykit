@@ -65,6 +65,10 @@ const AdminRevenue = lazyWithRetry(() => import('./pages/admin/Revenue'))
 const AdminUsers = lazyWithRetry(() => import('./pages/admin/Users'))
 const AdminUsage = lazyWithRetry(() => import('./pages/admin/Usage'))
 
+// Legal
+const Privacy = lazyWithRetry(() => import('./pages/Privacy'))
+const Terms = lazyWithRetry(() => import('./pages/Terms'))
+
 // Subscription
 const Pricing = lazyWithRetry(() => import('./pages/Pricing'))
 const SubscriptionSuccess = lazyWithRetry(() => import('./pages/SubscriptionSuccess'))
@@ -128,6 +132,8 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="all-tools" element={<AllTools />} />
           <Route path="pricing" element={<Pricing />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="terms" element={<Terms />} />
 
           {/* Protected — Subscription */}
           <Route path="subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />

@@ -12,7 +12,9 @@
     "deploy": "npm run build && wrangler pages deploy dist --project-name=studieskit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "prepare": "husky"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.61.3",
@@ -49,11 +51,18 @@
     "stripe": "^20.4.1",
     "tailwindcss": "^4.2.1"
   },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix"
+    ]
+  },
   "overrides": {
     "serialize-javascript": ">=7.0.5"
   },
   "devDependencies": {
+    "@clerk/testing": "^2.0.11",
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.59.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -67,10 +76,12 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "fake-indexeddb": "^6.2.5",
     "globals": "^17.4.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.0.1",
+    "lint-staged": "^16.4.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.0.0",
+    "vite": "^8.0.7",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.1.0"
   }

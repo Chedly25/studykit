@@ -9,25 +9,27 @@ import type { Env } from '../env'
 // at 80% absorbs worst-case concurrent over-count.
 const SOFT_CAP_RATIO = 0.8
 
+// Daily caps tuned for 60% margin at EUR 29.99/mo (~$12.70 AI budget/user).
+// Realistic student usage: 30-50 chat msgs/day, occasional pipeline tasks.
 const DAILY_CAPS: Record<string, { free: number; pro: number }> = {
-  chat:       { free: 25,  pro: 500 },
-  fast:       { free: 0,   pro: 300 },
-  embed:      { free: 50,  pro: 200 },
-  search:     { free: 20,  pro: 100 },
+  chat:       { free: 15,  pro: 65 },
+  fast:       { free: 0,   pro: 45 },
+  embed:      { free: 30,  pro: 100 },
+  search:     { free: 10,  pro: 20 },
   email:      { free: 2,   pro: 5 },
   push:       { free: 10,  pro: 50 },
-  transcribe: { free: 0,   pro: 100 },
-  vision:     { free: 0,   pro: 50 },
+  transcribe: { free: 0,   pro: 10 },
+  vision:     { free: 0,   pro: 8 },
 }
 
 // ─── Global kill switch threshold (all users combined) ───────────
 const GLOBAL_DAILY_CAP: Record<string, number> = {
-  chat: 10000,
-  fast: 5000,
-  embed: 3000,
-  search: 2000,
-  transcribe: 2000,
-  vision: 1000,
+  chat: 5000,
+  fast: 3000,
+  embed: 2000,
+  search: 1000,
+  transcribe: 500,
+  vision: 500,
 }
 
 function todayKey(): string {

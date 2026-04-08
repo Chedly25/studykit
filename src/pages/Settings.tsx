@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2, Mail, Globe, Shield } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '@clerk/clerk-react'
 import { requestPermission, getNotificationStatus, registerServiceWorker } from '../lib/pushNotifications'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useCloudSync } from '../hooks/useCloudSync'
@@ -20,6 +21,7 @@ function formatBytes(bytes: number): string {
 
 export default function Settings() {
   const { t, i18n } = useTranslation()
+  const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [exporting, setExporting] = useState(false)
@@ -31,6 +33,17 @@ export default function Settings() {
   const [digestEnabled, setDigestEnabled] = useState(true)
   const cloudSync = useCloudSync()
   const [searchParams, setSearchParams] = useSearchParams()
+
+  // GDPR consent state
+  const [analyticsConsent, setAnalyticsConsent] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('gdpr_consent') ?? '{}').analytics === true } catch { return false }
+  })
+  const [errorTrackingConsent, setErrorTrackingConsent] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('gdpr_consent') ?? '{}').errorTracking === true } catch { return false }
+  })
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   const profileId = activeProfile?.id
 
@@ -69,6 +82,49 @@ export default function Settings() {
       setDigestEnabled(prefs?.weeklyDigest !== false) // default true
     })
   }, [profileId])
+
+  const updateConsent = (key: 'analytics' | 'errorTracking', value: boolean) => {
+    try {
+      const existing = JSON.parse(localStorage.getItem('gdpr_consent') ?? '{}')
+      const updated = { ...existing, [key]: value, timestamp: new Date().toISOString() }
+      localStorage.setItem('gdpr_consent', JSON.stringify(updated))
+      if (key === 'analytics') setAnalyticsConsent(value)
+      if (key === 'errorTracking') setErrorTrackingConsent(value)
+      window.dispatchEvent(new CustomEvent('gdpr-consent-changed'))
+    } catch { /* ignore */ }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') return
+    setDeletingAccount(true)
+    try {
+      const token = await getToken()
+      const profileIds = activeProfile ? [activeProfile.id] : []
+      const res = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ confirm: 'DELETE', profileIds }),
+      })
+      if (!res.ok) {
+        const err = await res.json() as { error: string }
+        throw new Error(err.error || 'Deletion failed')
+      }
+      // Clear all local data
+      const dbs = await indexedDB.databases?.() ?? []
+      for (const dbInfo of dbs) {
+        if (dbInfo.name) indexedDB.deleteDatabase(dbInfo.name)
+      }
+      localStorage.clear()
+      sessionStorage.clear()
+      window.location.href = '/'
+    } catch (err) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Account deletion failed' })
+      setDeletingAccount(false)
+    }
+  }
 
   const handleExport = async () => {
     if (!profileId) return
@@ -481,6 +537,80 @@ export default function Settings() {
             )}
           </div>
         )}
+      </div>
+
+      {/* ─── Privacy & Data ─────────────────────────────────────── */}
+      <div className="glass-card p-5 space-y-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2 text-[var(--text-heading)]">
+          <Shield className="w-5 h-5" /> Privacy & Data
+        </h2>
+
+        {/* Consent toggles */}
+        <div className="space-y-3">
+          <label className="flex items-center justify-between">
+            <span className="text-sm text-[var(--text-body)]">Analytics (PostHog)</span>
+            <input
+              type="checkbox"
+              checked={analyticsConsent}
+              onChange={(e) => updateConsent('analytics', e.target.checked)}
+              className="rounded"
+            />
+          </label>
+          <label className="flex items-center justify-between">
+            <span className="text-sm text-[var(--text-body)]">Error tracking (Sentry)</span>
+            <input
+              type="checkbox"
+              checked={errorTrackingConsent}
+              onChange={(e) => updateConsent('errorTracking', e.target.checked)}
+              className="rounded"
+            />
+          </label>
+          <p className="text-xs text-[var(--text-muted)]">
+            Essential cookies (authentication) are always active.{' '}
+            <Link to="/privacy" className="underline hover:text-[var(--accent-text)]">Privacy Policy</Link>
+          </p>
+        </div>
+
+        {/* Danger zone — Delete Account */}
+        <div className="pt-4 border-t border-[var(--border-card)]">
+          <h3 className="text-sm font-medium text-red-500 mb-2">Danger Zone</h3>
+          {!showDeleteAccount ? (
+            <button
+              onClick={() => setShowDeleteAccount(true)}
+              className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors flex items-center gap-1"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete my account and all data
+            </button>
+          ) : (
+            <div className="space-y-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <p className="text-xs text-red-500">
+                This will permanently delete your account, cloud data, and sign you out. Local data will be erased. This cannot be undone.
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder='Type "DELETE" to confirm'
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  className="text-xs px-2 py-1 rounded bg-[var(--bg-input)] border border-[var(--border-card)] text-[var(--text-body)] w-40"
+                />
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmText !== 'DELETE' || deletingAccount}
+                  className="text-xs font-medium text-white bg-red-500 px-3 py-1 rounded hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {deletingAccount ? 'Deleting...' : 'Delete Account'}
+                </button>
+                <button
+                  onClick={() => { setShowDeleteAccount(false); setDeleteConfirmText('') }}
+                  className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

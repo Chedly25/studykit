@@ -24,7 +24,7 @@ const IMPORTABLE_TABLES = new Set([
   'practiceExamSessions', 'generatedQuestions', 'examFormats',
   'revisionFiches', 'examDNA', 'misconceptions',
   'agentInsights', 'agentRuns',
-  'achievements',
+  'achievements', 'mockExams',
   'macroRoadmaps',
   'habitGoals', 'habitLogs',
   'reviewProjects', 'reviewArticles',
@@ -131,6 +131,9 @@ export async function exportProfileData(examProfileId: string): Promise<Blob> {
 
   // Achievements
   tables.achievements = await db.achievements.where('examProfileId').equals(examProfileId).toArray()
+
+  // Mock exams
+  tables.mockExams = await db.mockExams.where('examProfileId').equals(examProfileId).toArray()
 
   // Other profile-scoped tables
   tables.macroRoadmaps = await db.macroRoadmaps.where('examProfileId').equals(examProfileId).toArray()

@@ -633,11 +633,11 @@
     "free": "Gratuit",
     "freePlan": "Plan Gratuit",
     "proPlan": "Plan Pro",
-    "proMonthly": "19,99 €/mois",
+    "proMonthly": "29,99 €/mois",
     "currentPlan": "Plan actuel",
     "upgradeNow": "Passer à Pro",
-    "pricingSubtitle": "Étudiez gratuitement avec 25 messages IA/jour et 2 examens blancs/mois. Passez en Pro pour tout illimité.",
-    "yearlySavings": "Économisez 40 €/an",
+    "pricingSubtitle": "Étudiez gratuitement avec 15 messages IA/jour et 2 examens blancs/mois. Passez en Pro pour plus.",
+    "yearlySavings": "Économisez 60 €/an",
     "freeFeatures": {
       "tools": "Tous les outils d'étude",
       "profile": "1 profil d'études",
@@ -1490,5 +1490,19 @@
     "noUsers": "Aucun utilisateur trouvé",
     "usage": "Utilisation API",
     "byFeature": "Par fonctionnalité"
+  },
+  "gdpr": {
+    "title": "Préférences de cookies",
+    "description": "Nous utilisons des cookies et technologies similaires pour améliorer votre expérience. Vous pouvez choisir les catégories à autoriser.",
+    "essential": "Essentiels",
+    "essentialDesc": "Nécessaires pour l'authentification et les fonctionnalités de base. Toujours actifs.",
+    "analytics": "Analytique",
+    "analyticsDesc": "Nous aident à comprendre comment vous utilisez l'application pour l'améliorer. Données hébergées dans l'UE.",
+    "errorTracking": "Suivi des erreurs",
+    "errorTrackingDesc": "Signaler les plantages et erreurs pour corriger les bugs plus rapidement.",
+    "acceptAll": "Tout accepter",
+    "rejectAll": "Tout refuser",
+    "customize": "Personnaliser",
+    "savePreferences": "Enregistrer les préférences"
   }
 }

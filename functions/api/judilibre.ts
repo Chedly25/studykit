@@ -11,6 +11,10 @@
 import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
+import { checkRateLimit } from '../lib/rateLimiter'
+
+const RATE_LIMIT = 30
+const RATE_WINDOW_SECONDS = 3600
 
 const JUDILIBRE_BASE = 'https://api.piste.gouv.fr/cassation/judilibre/v1.0'
 
@@ -46,13 +50,26 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     )
   }
 
+  let userId: string
   try {
-    await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
+    const jwt = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
+    userId = jwt.sub
   } catch {
     return new Response(
       JSON.stringify({ error: 'Invalid token' }),
       { status: 401, headers: jsonHeaders },
     )
+  }
+
+  // Rate limit to protect shared Judilibre API quota
+  if (env.USAGE_KV) {
+    const rl = await checkRateLimit(env.USAGE_KV, 'judilibre', userId, RATE_LIMIT, RATE_WINDOW_SECONDS)
+    if (!rl.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Try again later.' }),
+        { status: 429, headers: { ...jsonHeaders, 'Retry-After': '60' } },
+      )
+    }
   }
 
   // Parse request

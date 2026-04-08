@@ -15,7 +15,7 @@ export default function Pricing() {
   const FREE_FEATURES = [
     t('subscription.freeFeatures.tools'),
     t('subscription.freeFeatures.profile'),
-    t('subscription.freeFeatures.messages', { count: 25 }),
+    t('subscription.freeFeatures.messages', { count: 15 }),
     t('subscription.freeFeatures.documents', { count: 3 }),
     t('subscription.freeFeatures.exams'),
   ]
@@ -31,8 +31,8 @@ export default function Pricing() {
     t('subscription.proFeatures.priority'),
   ]
 
-  const price = interval === 'year' ? '199.99' : '19.99'
-  const perMonth = interval === 'year' ? '16.67' : '19.99'
+  const price = interval === 'year' ? '299.99' : '29.99'
+  const perMonth = interval === 'year' ? '25.00' : '29.99'
   const savings = interval === 'year' ? t('subscription.yearlySavings') : null
 
   return (

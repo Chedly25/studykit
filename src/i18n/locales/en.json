@@ -633,11 +633,11 @@
     "free": "Free",
     "freePlan": "Free Plan",
     "proPlan": "Pro Plan",
-    "proMonthly": "€19.99/month",
+    "proMonthly": "€29.99/month",
     "currentPlan": "Current Plan",
     "upgradeNow": "Upgrade Now",
-    "pricingSubtitle": "Study for free with 25 AI messages/day and 2 practice exams/month. Go Pro for unlimited everything.",
-    "yearlySavings": "Save €40/yr",
+    "pricingSubtitle": "Study for free with 15 AI messages/day and 2 practice exams/month. Go Pro for more.",
+    "yearlySavings": "Save €60/yr",
     "freeFeatures": {
       "tools": "All study tools",
       "profile": "1 study profile",
@@ -1490,5 +1490,19 @@
     "noUsers": "No users found",
     "usage": "API Usage",
     "byFeature": "By Feature"
+  },
+  "gdpr": {
+    "title": "Cookie Preferences",
+    "description": "We use cookies and similar technologies to improve your experience. You can choose which categories to allow.",
+    "essential": "Essential",
+    "essentialDesc": "Required for authentication and core functionality. Always active.",
+    "analytics": "Analytics",
+    "analyticsDesc": "Help us understand how you use the app to improve it. Data is hosted in the EU.",
+    "errorTracking": "Error Tracking",
+    "errorTrackingDesc": "Report crashes and errors so we can fix bugs faster.",
+    "acceptAll": "Accept All",
+    "rejectAll": "Reject All",
+    "customize": "Customize",
+    "savePreferences": "Save Preferences"
   }
 }

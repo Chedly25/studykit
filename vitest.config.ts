@@ -5,6 +5,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    exclude: ['e2e/**', 'node_modules/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'text-summary', 'html'],
@@ -18,10 +19,10 @@ export default defineConfig({
         'src/vite-env.d.ts',
       ],
       thresholds: {
-        statements: 4.4,
-        branches: 3.2,
-        functions: 3.3,
-        lines: 4.5,
+        statements: 5.2,
+        branches: 3.8,
+        functions: 3.9,
+        lines: 5.3,
       },
     },
   },

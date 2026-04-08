@@ -3,29 +3,53 @@
  * Uses Cloudflare KV for storage, keyed by userId:profileId.
  */
 import type { Env } from '../env'
-import { verifyClerkJWT } from '../lib/auth'
+import { verifyClerkJWT, type JWTPayload } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
+import { checkRateLimit } from '../lib/rateLimiter'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const SYNC_RATE_LIMIT = 30
 const SYNC_RATE_WINDOW_SECONDS = 3600
 
-async function checkSyncRateLimit(
-  kv: KVNamespace,
-  userId: string,
-  action: string,
-  cors: Record<string, string>,
-): Promise<Response | null> {
-  const rateLimitKey = `sync_rate:${action}:${userId}:${Math.floor(Date.now() / (SYNC_RATE_WINDOW_SECONDS * 1000))}`
-  const currentCount = parseInt((await kv.get(rateLimitKey)) ?? '0', 10)
-  const softLimit = Math.floor(SYNC_RATE_LIMIT * 0.8)
-  if (currentCount >= softLimit) {
-    return new Response(JSON.stringify({ error: 'Sync rate limit exceeded. Try again later.' }), {
-      status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
-    })
+/** Shared auth + pro + rate-limit gate for all sync methods. */
+async function requireSyncAuth(
+  request: Request,
+  env: Env,
+  endpoint: string,
+): Promise<{ jwt: JWTPayload; error?: undefined } | { error: Response }> {
+  const cors = corsHeaders(env)
+  const json = { ...cors, 'Content-Type': 'application/json' }
+
+  if (!env.CLERK_ISSUER_URL) {
+    return { error: new Response(JSON.stringify({ error: 'Auth not configured' }), { status: 500, headers: json }) }
   }
-  await kv.put(rateLimitKey, String(currentCount + 1), { expirationTtl: SYNC_RATE_WINDOW_SECONDS })
-  return null
+
+  const authHeader = request.headers.get('Authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { error: new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: json }) }
+  }
+
+  let jwt: JWTPayload
+  try {
+    jwt = await verifyClerkJWT(authHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
+  } catch {
+    return { error: new Response(JSON.stringify({ error: 'Invalid token' }), { status: 401, headers: json }) }
+  }
+
+  if (jwt.metadata?.plan !== 'pro') {
+    return { error: new Response(JSON.stringify({ error: 'Cloud sync requires Pro plan' }), { status: 403, headers: json }) }
+  }
+
+  if (!env.USAGE_KV) {
+    return { error: new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), { status: 503, headers: json }) }
+  }
+
+  const rl = await checkRateLimit(env.USAGE_KV, endpoint, jwt.sub, SYNC_RATE_LIMIT, SYNC_RATE_WINDOW_SECONDS)
+  if (!rl.allowed) {
+    return { error: new Response(JSON.stringify({ error: 'Sync rate limit exceeded. Try again later.' }), { status: 429, headers: { ...json, 'Retry-After': '60' } }) }
+  }
+
+  return { jwt }
 }
 
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
@@ -37,34 +61,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const cors = corsHeaders(env)
 
   try {
-    if (!env.CLERK_ISSUER_URL) {
-      return new Response(JSON.stringify({ error: 'Auth not configured' }), {
-        status: 500, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const syncAuthHeader = context.request.headers.get('Authorization')
-    if (!syncAuthHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
-    if (jwt.metadata?.plan !== 'pro') {
-      return new Response(JSON.stringify({ error: 'Cloud sync requires Pro plan' }), {
-        status: 403, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Rate limit
-    if (!env.USAGE_KV) {
-      return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
-        status: 503, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-    const rlResponse = await checkSyncRateLimit(env.USAGE_KV, jwt.sub, 'store', cors)
-    if (rlResponse) return rlResponse
+    const auth = await requireSyncAuth(context.request, env, 'sync-store')
+    if (auth.error) return auth.error
+    const { jwt } = auth
 
     const body = await context.request.text()
     if (!body || body.length > 25_000_000) {
@@ -114,34 +113,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const cors = corsHeaders(env)
 
   try {
-    if (!env.CLERK_ISSUER_URL) {
-      return new Response(JSON.stringify({ error: 'Auth not configured' }), {
-        status: 500, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const syncAuthHeader = context.request.headers.get('Authorization')
-    if (!syncAuthHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
-    if (jwt.metadata?.plan !== 'pro') {
-      return new Response(JSON.stringify({ error: 'Cloud sync requires Pro plan' }), {
-        status: 403, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Rate limit
-    if (!env.USAGE_KV) {
-      return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
-        status: 503, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-    const rlResponse = await checkSyncRateLimit(env.USAGE_KV, jwt.sub, 'pull', cors)
-    if (rlResponse) return rlResponse
+    const auth = await requireSyncAuth(context.request, env, 'sync-pull')
+    if (auth.error) return auth.error
+    const { jwt } = auth
 
     const url = new URL(context.request.url)
     const profileId = url.searchParams.get('profileId')
@@ -180,34 +154,9 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
   const cors = corsHeaders(env)
 
   try {
-    if (!env.CLERK_ISSUER_URL) {
-      return new Response(JSON.stringify({ error: 'Auth not configured' }), {
-        status: 500, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const syncAuthHeader = context.request.headers.get('Authorization')
-    if (!syncAuthHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-
-    const jwt = await verifyClerkJWT(syncAuthHeader.slice(7), env.CLERK_ISSUER_URL, env.CLERK_JWT_AUDIENCE)
-    if (jwt.metadata?.plan !== 'pro') {
-      return new Response(JSON.stringify({ error: 'Cloud sync requires Pro plan' }), {
-        status: 403, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-
-    // Rate limit
-    if (!env.USAGE_KV) {
-      return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
-        status: 503, headers: { ...cors, 'Content-Type': 'application/json' },
-      })
-    }
-    const rlResponse = await checkSyncRateLimit(env.USAGE_KV, jwt.sub, 'delete', cors)
-    if (rlResponse) return rlResponse
+    const auth = await requireSyncAuth(context.request, env, 'sync-delete')
+    if (auth.error) return auth.error
+    const { jwt } = auth
 
     const url = new URL(context.request.url)
     const profileId = url.searchParams.get('profileId')

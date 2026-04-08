@@ -13,6 +13,7 @@ import { ExamProfileSelector } from './knowledge/ExamProfileSelector'
 const ChatPanel = lazy(() => import('./chat/ChatPanel').then(m => ({ default: m.ChatPanel })))
 const SearchModal = lazy(() => import('./SearchModal').then(m => ({ default: m.SearchModal })))
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal'
+import CookieConsent from './CookieConsent'
 import { OnboardingTour } from './OnboardingTour'
 import { ProBadge } from './subscription/ProBadge'
 import { useSubscription } from '../hooks/useSubscription'
@@ -350,6 +351,12 @@ export function Layout() {
                   <Link to="/pricing" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
                     {t('footer.pricing')}
                   </Link>
+                  <Link to="/privacy" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
+                    Privacy
+                  </Link>
+                  <Link to="/terms" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors">
+                    Terms
+                  </Link>
                   <span className="text-[var(--text-faint)]">{t('footer.dataLocal')}</span>
                 </div>
               </div>
@@ -387,6 +394,9 @@ export function Layout() {
       {/* PWA prompts */}
       <UpdatePrompt />
       <InstallPrompt />
+
+      {/* GDPR Consent Banner */}
+      <CookieConsent />
     </div>
   )
 }

@@ -278,7 +278,7 @@ export default function FlashcardMaker() {
       setAiGenerating(false)
       setAiDeckId(null)
     }
-  }, [aiTopic, getToken])
+  }, [aiTopic, aiCardCount, getToken])
 
   const studyDeck = studyDeckId ? decks.find(d => d.id === studyDeckId) : null
 

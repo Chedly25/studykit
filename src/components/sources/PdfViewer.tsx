@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2, Highlighter, BookOpen } from 'lucide-react'
 import { db } from '../../db'
+import { getPdfLib } from '../../lib/pdfInit'
 import { usePdfHighlights } from '../../hooks/usePdfHighlights'
 import { useExamProfile } from '../../hooks/useExamProfile'
 import { HighlightLayer } from './HighlightLayer'
@@ -48,9 +49,7 @@ export function PdfViewer({ documentId, title, onClose }: Props) {
           return
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pdfjsLib: any = await import('pdfjs-dist/build/pdf.mjs')
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
+        const pdfjsLib = await getPdfLib()
 
         const arrayBuffer = await docFile.file.arrayBuffer()
         const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise

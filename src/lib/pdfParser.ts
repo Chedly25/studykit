@@ -2,6 +2,7 @@
  * Client-side PDF text extraction using pdfjs-dist.
  * Dynamically imported to avoid loading the ~400KB lib unless needed.
  */
+import { getPdfLib } from './pdfInit'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const PAGE_BATCH_SIZE = 20
@@ -17,9 +18,7 @@ export async function parsePdf(file: File): Promise<PdfParseResult> {
   }
 
   // Dynamic import — only loaded when user uploads a PDF
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfjsLib: any = await import('pdfjs-dist/build/pdf.mjs')
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
+  const pdfjsLib = await getPdfLib()
 
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise

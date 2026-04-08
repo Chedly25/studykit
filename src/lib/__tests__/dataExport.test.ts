@@ -89,4 +89,110 @@ describe('importProfileData', () => {
       expect.arrayContaining([expect.objectContaining({ id: 'sub-1', name: 'Civil Law' })])
     )
   })
+
+  it('rejects unknown table names', async () => {
+    const data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      profile: { id: 'prof-1', name: 'Test' },
+      tables: {
+        hackerTable: [{ id: '1', malicious: true }],
+      },
+    }
+    const file = makeFile(JSON.stringify(data))
+    const result = await importProfileData(file)
+
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('unknown tables')
+  })
+
+  it('rejects records without id field', async () => {
+    const data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      profile: { id: 'prof-1', name: 'Test' },
+      tables: {
+        subjects: [{ name: 'No ID field here' }],
+      },
+    }
+    const file = makeFile(JSON.stringify(data))
+    const result = await importProfileData(file)
+
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects wrong version number', async () => {
+    const data = {
+      version: 99,
+      exportedAt: new Date().toISOString(),
+      profile: { id: 'prof-1', name: 'Test' },
+      tables: {},
+    }
+    const file = makeFile(JSON.stringify(data))
+    const result = await importProfileData(file)
+
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects missing exportedAt', async () => {
+    const data = {
+      version: 1,
+      profile: { id: 'prof-1', name: 'Test' },
+      tables: {},
+    }
+    const file = makeFile(JSON.stringify(data))
+    const result = await importProfileData(file)
+
+    expect(result.success).toBe(false)
+  })
+
+  it('imports empty tables without error', async () => {
+    const data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      profile: { id: 'prof-1', name: 'Test' },
+      tables: {
+        subjects: [],
+        topics: [],
+      },
+    }
+    const file = makeFile(JSON.stringify(data))
+    const result = await importProfileData(file)
+
+    expect(result.success).toBe(true)
+  })
+
+  it('accepts mockExams in tables (newly added)', async () => {
+    const data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      profile: { id: 'prof-1', name: 'Test' },
+      tables: {
+        mockExams: [{ id: 'mock-1', examProfileId: 'prof-1', status: 'completed' }],
+      },
+    }
+    const file = makeFile(JSON.stringify(data))
+    const result = await importProfileData(file)
+
+    expect(result.success).toBe(true)
+  })
+
+  it('imports multiple known tables in one file', async () => {
+    const data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      profile: { id: 'prof-1', name: 'Test' },
+      tables: {
+        subjects: [{ id: 'sub-1', name: 'Math' }],
+        topics: [{ id: 'top-1', name: 'Algebra' }],
+        chapters: [{ id: 'ch-1', name: 'Linear' }],
+      },
+    }
+    const file = makeFile(JSON.stringify(data))
+    const result = await importProfileData(file)
+
+    expect(result.success).toBe(true)
+    expect(mockSubjectsBulkPut).toHaveBeenCalledTimes(1)
+    expect(otherBulkPut).toHaveBeenCalledTimes(2) // topics + chapters
+  })
 })

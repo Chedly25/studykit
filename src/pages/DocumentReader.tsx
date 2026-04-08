@@ -11,6 +11,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2, MessageCircle, X } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
+import { getPdfLib } from '../lib/pdfInit'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { usePdfHighlights } from '../hooks/usePdfHighlights'
 import { PdfScrollViewer } from '../components/reader/PdfScrollViewer'
@@ -158,9 +159,7 @@ export default function DocumentReader() {
         }
 
         // Load pdfjs-dist
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pdfjsLib: any = await import('pdfjs-dist/build/pdf.mjs')
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
+        const pdfjsLib = await getPdfLib()
 
         const arrayBuffer = await docFile.file.arrayBuffer()
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise

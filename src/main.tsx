@@ -9,10 +9,18 @@ import './i18n'
 import './styles/globals.css'
 import App from './App'
 import { BackgroundJobsProvider } from './components/BackgroundJobsProvider'
-import { initAnalytics } from './lib/analytics'
+import { initAnalytics, refreshAnalyticsConsent } from './lib/analytics'
 
-// Initialize Sentry error monitoring (no-op if DSN not set)
-if (import.meta.env.VITE_SENTRY_DSN) {
+// Initialize Sentry error monitoring — gated on GDPR consent
+function hasErrorTrackingConsent(): boolean {
+  try {
+    const raw = localStorage.getItem('gdpr_consent')
+    if (!raw) return false
+    return JSON.parse(raw).errorTracking === true
+  } catch { return false }
+}
+
+if (import.meta.env.VITE_SENTRY_DSN && hasErrorTrackingConsent()) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
     environment: import.meta.env.MODE,
@@ -23,8 +31,23 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   })
 }
 
-// Initialize PostHog analytics (no-op if VITE_POSTHOG_KEY not set)
+// Initialize PostHog analytics (no-op if VITE_POSTHOG_KEY not set or no consent)
 initAnalytics()
+
+// Re-initialize analytics/Sentry when user changes consent in the current session
+window.addEventListener('gdpr-consent-changed', () => {
+  refreshAnalyticsConsent()
+  if (import.meta.env.VITE_SENTRY_DSN && hasErrorTrackingConsent() && !Sentry.getClient()) {
+    Sentry.init({
+      dsn: import.meta.env.VITE_SENTRY_DSN,
+      environment: import.meta.env.MODE,
+      integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
+      tracesSampleRate: 0.1,
+      replaysSessionSampleRate: 0,
+      replaysOnErrorSampleRate: 1.0,
+    })
+  }
+})
 
 // Register service worker via vite-plugin-pwa
 import { registerSW } from 'virtual:pwa-register'

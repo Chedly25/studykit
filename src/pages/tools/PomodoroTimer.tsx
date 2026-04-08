@@ -115,7 +115,7 @@ export default function PomodoroTimer() {
   }, [mode, sessionsCompleted, settings])
 
   const advancePhaseRef = useRef(advancePhase)
-  advancePhaseRef.current = advancePhase
+  useEffect(() => { advancePhaseRef.current = advancePhase }, [advancePhase])
 
   useEffect(() => {
     if (!isRunning) {
