@@ -68,9 +68,12 @@ function mockQuestionResultsChain(count: number) {
   })
 }
 
-let mockEnqueue: ReturnType<typeof vi.fn>
-let mockRunAgent: ReturnType<typeof vi.fn>
-let mockLlm: ReturnType<typeof vi.fn>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let mockEnqueue: any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let mockRunAgent: any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let mockLlm: any
 
 // ─── Setup ──────────────────────────────────────────────────
 beforeEach(() => {

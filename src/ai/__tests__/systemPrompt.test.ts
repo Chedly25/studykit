@@ -18,7 +18,8 @@ import {
 } from '../systemPrompt'
 import type { PromptContext, SessionContext } from '../systemPrompt'
 
-function makeProfile(overrides = {}) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function makeProfile(overrides = {}): any {
   return {
     id: 'p1',
     userId: 'u1',
@@ -29,31 +30,37 @@ function makeProfile(overrides = {}) {
     passingThreshold: 70,
     weeklyTargetHours: 15,
     createdAt: '2025-01-01',
+    isActive: true,
     ...overrides,
   }
 }
 
-function makeTopic(overrides = {}) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function makeTopic(overrides = {}): any {
   return {
     id: 't1',
-    profileId: 'p1',
+    examProfileId: 'p1',
     subjectId: 's1',
     name: 'Test Topic',
     mastery: 0.5,
     confidence: 0.5,
     questionsAttempted: 10,
     questionsCorrect: 7,
-    lastStudied: '2026-04-01',
+    easeFactor: 2.5,
+    interval: 1,
+    repetitions: 0,
+    nextReviewDate: '2026-04-01',
     status: null,
     prerequisiteTopicIds: null,
     ...overrides,
   }
 }
 
-function makeSubject(overrides = {}) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function makeSubject(overrides = {}): any {
   return {
     id: 's1',
-    profileId: 'p1',
+    examProfileId: 'p1',
     name: 'Test Subject',
     weight: 1,
     mastery: 0.5,
@@ -133,7 +140,7 @@ describe('buildSystemPrompt', () => {
   it('includes upcoming assignments', () => {
     const result = buildSystemPrompt(makeCtx({
       upcomingAssignments: [
-        { id: 'a1', profileId: 'p1', title: 'Homework 1', dueDate: '2026-04-15', priority: 'high', status: 'pending', description: '', createdAt: '' },
+        { id: 'a1', examProfileId: 'p1', title: 'Homework 1', dueDate: '2026-04-15', priority: 'high', status: 'pending', description: '', createdAt: '' },
       ],
     }))
     expect(result).toContain('Homework 1')
@@ -162,7 +169,7 @@ describe('buildSystemPrompt', () => {
     const result = buildSystemPrompt(makeCtx({
       tutorPreferences: {
         id: 'tp1',
-        profileId: 'p1',
+        examProfileId: 'p1',
         teachingStyle: 'concise',
         explanationApproach: 'analogies-first',
         feedbackTone: 'encouraging',
@@ -177,7 +184,7 @@ describe('buildSystemPrompt', () => {
     const result = buildSystemPrompt(makeCtx({
       studentModel: {
         id: 'sm1',
-        profileId: 'p1',
+        examProfileId: 'p1',
         learningStyle: '{"visual": true}',
         commonMistakes: '["Confuses A with B"]',
         personalityNotes: '["Shy learner"]',
@@ -193,7 +200,7 @@ describe('buildSystemPrompt', () => {
   it('includes exam formats when provided', () => {
     const result = buildSystemPrompt(makeCtx({
       examFormats: [
-        { id: 'ef1', profileId: 'p1', formatName: 'MCQ Section', timeAllocation: 60, pointWeight: 40, questionCount: 30, description: '', createdAt: '' },
+        { id: 'ef1', examProfileId: 'p1', formatName: 'MCQ Section', timeAllocation: 60, pointWeight: 40, questionCount: 30, description: '', createdAt: '' },
       ],
     }))
     expect(result).toContain('Exam Format')
@@ -335,7 +342,7 @@ describe('buildResearchSystemPrompt', () => {
     const result = buildResearchSystemPrompt(makeCtx({
       profile: makeProfile({ profileMode: 'research' }),
       conversationSummaries: [
-        { id: 'cs1', profileId: 'p1', sessionDate: '2026-04-07', topicsCovered: '["ML basics"]', keyOutcomes: '["Reviewed backprop"]', messageCount: 5, createdAt: '' },
+        { id: 'cs1', examProfileId: 'p1', sessionDate: '2026-04-07', topicsCovered: '["ML basics"]', keyOutcomes: '["Reviewed backprop"]', messageCount: 5, createdAt: '' },
       ],
       flashcardPerformance: [
         { deckName: 'ML Deck', cardCount: 20, retentionRate: 85, dueCount: 3, averageEaseFactor: 2.5 },

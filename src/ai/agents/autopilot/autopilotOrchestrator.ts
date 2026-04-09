@@ -34,7 +34,7 @@ interface SweepResult {
  */
 export async function runAutopilotSweep(
   examProfileId: string,
-  enqueue: EnqueueFn,
+  _enqueue: EnqueueFn,
   runAgent: RunAgentFn,
   llm?: (prompt: string, system?: string) => Promise<string>,
 ): Promise<SweepResult> {

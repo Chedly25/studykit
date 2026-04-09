@@ -380,8 +380,7 @@ export async function seedCPGE_MP(userId?: string): Promise<string> {
     teachingStyle: 'detailed',
     explanationApproach: 'step-by-step',
     feedbackTone: 'encouraging',
-    languageLevel: 'advanced',
-    language: 'fr',
+    languageLevel: 'expert',
   }
 
   // ── Student Model ──
@@ -408,6 +407,7 @@ export async function seedCPGE_MP(userId?: string): Promise<string> {
       'Progression visible sur les sujets de concours',
       'Résolution de problèmes difficiles',
     ]),
+    updatedAt: now,
   }
 
   // ── Write to DB ──

@@ -3,7 +3,7 @@ import { shouldReplan } from '../planMonitor'
 import type { StudyPlan, StudyPlanDay, Topic } from '../../db/schema'
 
 function makePlan(): StudyPlan {
-  return { id: 'plan-1', examProfileId: 'p1', status: 'active' } as StudyPlan
+  return { id: 'plan-1', examProfileId: 'p1', generatedAt: '2024-01-01', isActive: true, totalDays: 30 } as StudyPlan
 }
 
 function makePlanDay(overrides: Partial<StudyPlanDay> & { date: string; activities: string }): StudyPlanDay {

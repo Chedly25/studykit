@@ -152,7 +152,8 @@ Only JSON.`,
             completedStepIds: '[]',
             stepResults: '{}',
             createdAt: new Date().toISOString(),
-          })
+            updatedAt: new Date().toISOString(),
+          } as import('../../db/schema').BackgroundJob)
           dispatchSwarmEvent({ type: 'plan-stale', examProfileId, divergence: Math.round(divergence * 100) })
         } catch { /* non-critical — plan will regenerate on next manual trigger */ }
       }
