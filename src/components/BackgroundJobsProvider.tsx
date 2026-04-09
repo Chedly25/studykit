@@ -9,6 +9,8 @@ import { AgentRunner } from '../ai/agents/runner'
 import '../ai/agents/index' // Side-effect: registers all agents
 import { initSwarmOrchestrator } from '../ai/agents/swarmOrchestrator'
 import { useExamProfile } from '../hooks/useExamProfile'
+import { db } from '../db'
+import { seedCPGE_MP } from '../db/seed/cpgeMP'
 import type { JobType } from '../db/schema'
 import type { AgentId } from '../ai/agents/types'
 
@@ -57,6 +59,18 @@ export function BackgroundJobsProvider({ children }: { children: React.ReactNode
   }, [])
 
   const { activeProfile } = useExamProfile()
+
+  // Auto-seed CPGE MP profile if it doesn't exist yet
+  useEffect(() => {
+    if (!user?.id) return
+    db.examProfiles.get('cpge-mp-seed').then(existing => {
+      if (!existing) {
+        seedCPGE_MP(user.id).then(() => {
+          window.location.reload()
+        })
+      }
+    })
+  }, [user?.id])
 
   // Update agent runner and start scheduler when user + profile are available
   useEffect(() => {

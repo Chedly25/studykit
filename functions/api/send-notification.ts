@@ -5,10 +5,8 @@
 import type { Env } from '../env'
 import { verifyClerkJWT } from '../lib/auth'
 import { corsHeaders } from '../lib/cors'
+import { checkRateLimit } from '../lib/rateLimiter'
 import { renderTemplate, VALID_TEMPLATES } from '../lib/emailTemplates'
-
-const RATE_LIMIT = 10
-const RATE_WINDOW_SECONDS = 3600
 
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
   return new Response(null, { status: 204, headers: corsHeaders(context.env) })
@@ -68,15 +66,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   // Rate limit (10 emails/hour per user) — checked after Clerk fetch so failures don't consume quota
   {
-    const softLimit = Math.floor(RATE_LIMIT * 0.8)
-    const rateLimitKey = `email_rate:${userId}:${Math.floor(Date.now() / (RATE_WINDOW_SECONDS * 1000))}`
-    const currentCount = parseInt((await env.USAGE_KV.get(rateLimitKey)) ?? '0', 10)
-    if (currentCount >= softLimit) {
+    const rl = await checkRateLimit(env.USAGE_KV, 'email', userId, 10, 3600)
+    if (!rl.allowed) {
       return new Response(JSON.stringify({ error: 'Email rate limit exceeded' }), {
         status: 429, headers: { ...cors, 'Content-Type': 'application/json' },
       })
     }
-    await env.USAGE_KV.put(rateLimitKey, String(currentCount + 1), { expirationTtl: RATE_WINDOW_SECONDS })
   }
 
   const apiKey = env.RESEND_API_KEY
@@ -121,7 +116,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'StudiesKit <noreply@studieskit.com>',
+        from: env.EMAIL_FROM || 'StudiesKit <noreply@studieskit.com>',
         to: userEmail, // Always the authenticated user's own email
         subject: rendered.subject,
         html: rendered.html,

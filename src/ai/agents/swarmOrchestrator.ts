@@ -8,9 +8,11 @@
  *
  * All actions are non-invasive: content silently appears in existing UI surfaces.
  */
-import { subscribeSwarmEvents, type SwarmEvent } from './eventBus'
+import { subscribeSwarmEvents, dispatchSwarmEvent, type SwarmEvent } from './eventBus'
 import { toast } from 'sonner'
 import { db } from '../../db'
+import { runAutopilotSweep } from './autopilot/autopilotOrchestrator'
+import { isAutopilotEnabled } from './autopilot/budgetTracker'
 
 type EnqueueFn = (type: string, examProfileId: string, config: Record<string, unknown>, totalSteps: number) => Promise<string>
 type RunAgentFn = (agentId: string, examProfileId: string) => Promise<void>
@@ -44,7 +46,16 @@ export function initSwarmOrchestrator(enqueue: EnqueueFn, runAgent: RunAgentFn, 
           break
         case 'misconception-detected':
           // Fiche updates already happen in grading pipeline
-          // Additional handling could go here in the future
+          break
+        case 'autopilot-sweep':
+          await runAutopilotSweep(event.examProfileId, enqueue, runAgent)
+          break
+        case 'study-session-ended':
+          // Could trigger PULSE engagement analysis on significant sessions
+          break
+        case 'plan-stale':
+          // Triggered by strategist auto-replan — FORGE will pick up new gaps on next sweep
+          await logActivity(event.examProfileId, 'plan-stale', `Study plan divergence at ${event.divergence}% — replanning triggered`)
           break
       }
     } catch {
@@ -215,7 +226,14 @@ async function handleExamGraded(
     swarmToast('📊 Exam strategy ready', '')
   } catch { /* non-critical */ }
 
-  // 3. Store remediation hints for the daily queue
+  // 3. Trigger reactive autopilot sweep (delayed to let jobs settle)
+  if (await isAutopilotEnabled(examProfileId)) {
+    setTimeout(() => {
+      dispatchSwarmEvent({ type: 'autopilot-sweep', examProfileId, reason: 'reactive' })
+    }, 120_000) // 2 minutes delay
+  }
+
+  // 4. Store remediation hints for the daily queue
   // The queue engine will pick these up on next build
   try {
     const session = await db.practiceExamSessions.get(sessionId)

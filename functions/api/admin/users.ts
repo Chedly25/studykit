@@ -8,6 +8,7 @@ import type { Env } from '../../env'
 import { verifyAdmin, AdminError } from '../../lib/adminAuth'
 import { updateUserMetadata } from '../../lib/clerk'
 import { corsHeaders } from '../../lib/cors'
+import { checkRateLimit } from '../../lib/rateLimiter'
 
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
   return new Response(null, { status: 204, headers: corsHeaders(context.env) })
@@ -17,8 +18,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const { request, env } = context
   const cors = corsHeaders(env)
 
+  let adminUser: { userId: string }
   try {
-    await verifyAdmin(request, env)
+    adminUser = await verifyAdmin(request, env)
   } catch (e) {
     const status = e instanceof AdminError ? e.status : 403
     const message = e instanceof Error ? e.message : 'Unauthorized'
@@ -26,6 +28,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       status,
       headers: { ...cors, 'Content-Type': 'application/json' },
     })
+  }
+
+  if (env.USAGE_KV) {
+    const rl = await checkRateLimit(env.USAGE_KV, 'admin-users', adminUser.userId, 60, 60)
+    if (!rl.allowed) {
+      return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+        status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
+      })
+    }
   }
 
   const url = new URL(request.url)
@@ -95,8 +106,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { request, env } = context
   const cors = corsHeaders(env)
 
+  let adminUser: { userId: string }
   try {
-    await verifyAdmin(request, env)
+    adminUser = await verifyAdmin(request, env)
   } catch (e) {
     const status = e instanceof AdminError ? e.status : 403
     const message = e instanceof Error ? e.message : 'Unauthorized'
@@ -104,6 +116,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       status,
       headers: { ...cors, 'Content-Type': 'application/json' },
     })
+  }
+
+  if (env.USAGE_KV) {
+    const rl = await checkRateLimit(env.USAGE_KV, 'admin-users-write', adminUser.userId, 20, 60)
+    if (!rl.allowed) {
+      return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+        status: 429, headers: { ...cors, 'Content-Type': 'application/json', 'Retry-After': '60' },
+      })
+    }
   }
 
   try {

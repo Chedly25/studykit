@@ -3,6 +3,8 @@
  * between planned and actual activity, suggests adjustments.
  */
 import { db } from '../../db'
+import { dispatchSwarmEvent } from './eventBus'
+import { isAutopilotEnabled } from './autopilot/budgetTracker'
 import type { AgentDefinition, AgentContext, AgentResult } from './types'
 import type { DiagnosticReport } from './diagnostician'
 
@@ -133,6 +135,27 @@ Only JSON.`,
         createdAt: now,
         updatedAt: now,
       })
+
+      // Auto-replan if divergence is very high and autopilot is enabled
+      if (divergence > 0.4 && await isAutopilotEnabled(examProfileId)) {
+        try {
+          const profile = await db.examProfiles.get(examProfileId)
+          await db.backgroundJobs.add({
+            id: crypto.randomUUID(),
+            type: 'study-plan',
+            examProfileId,
+            config: JSON.stringify({ examProfileId, examName: profile?.name ?? 'Exam' }),
+            status: 'queued',
+            totalSteps: 1,
+            completedStepCount: 0,
+            currentStepName: 'Generating study plan',
+            completedStepIds: '[]',
+            stepResults: '{}',
+            createdAt: new Date().toISOString(),
+          })
+          dispatchSwarmEvent({ type: 'plan-stale', examProfileId, divergence: Math.round(divergence * 100) })
+        } catch { /* non-critical — plan will regenerate on next manual trigger */ }
+      }
 
       return {
         success: true,

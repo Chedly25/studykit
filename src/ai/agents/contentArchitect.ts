@@ -7,6 +7,7 @@ import { db } from '../../db'
 import { conceptCardValidator, flashcardValidator } from '../reflection/validators'
 import { trackContentCreation } from '../../lib/effectivenessTracker'
 import { getOptimalStrategy } from '../optimization/strategyOptimizer'
+import { canSpendLlm } from './autopilot/budgetTracker'
 import type { AgentDefinition, AgentContext, AgentResult } from './types'
 import type { DiagnosticReport } from './diagnostician'
 
@@ -37,14 +38,30 @@ export const contentArchitectAgent: AgentDefinition = {
       return { success: false, summary: 'Failed to parse diagnostic report', episodes: [] }
     }
 
+    // Check if autopilot FORGE mode is active (expanded topic limit)
+    let topicLimit = 3
+    const forgeMode = await db.agentInsights.get(`autopilot-forge-mode:${examProfileId}`)
+    if (forgeMode?.data) {
+      try {
+        const fm = JSON.parse(forgeMode.data) as { expandedTopicLimit: number; calledAt: string }
+        // Only honour if the hint was set within the last 5 minutes (from the same sweep)
+        if (Date.now() - new Date(fm.calledAt).getTime() < 5 * 60 * 1000) {
+          topicLimit = fm.expandedTopicLimit
+        }
+      } catch { /* use default */ }
+    }
+
     // Focus on critical and high priority topics
-    const targetTopics = report.priorities.filter(p => p.urgency === 'critical' || p.urgency === 'high').slice(0, 3)
+    const targetTopics = report.priorities.filter(p => p.urgency === 'critical' || p.urgency === 'high').slice(0, topicLimit)
     if (targetTopics.length === 0) {
       return { success: true, summary: 'No critical content gaps found', episodes: [] }
     }
 
     for (const priority of targetTopics) {
       if (ctx.signal.aborted) break
+
+      // Budget check: each topic needs ~2 LLM calls (generate + reflect)
+      if (topicLimit > 3 && !await canSpendLlm(examProfileId, 2)) break
 
       // Check existing content for this topic
       const existingCards = await db.conceptCards

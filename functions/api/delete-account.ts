@@ -76,17 +76,24 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     // --- Delete cloud sync data ---
     if (env.SYNC_KV && profileIds.length > 0) {
-      const deletePromises: Promise<void>[] = []
       for (const profileId of profileIds) {
-        // Delete sync data
-        deletePromises.push(env.SYNC_KV.delete(`sync:${userId}:${profileId}`))
-        // Delete changelog entries
-        deletePromises.push(env.SYNC_KV.delete(`changelog:${userId}:${profileId}`))
-      }
-      try {
-        await Promise.all(deletePromises)
-      } catch {
-        warnings.push('Some cloud sync data may not have been fully deleted.')
+        try {
+          // Delete sync snapshot
+          await env.SYNC_KV.delete(`sync:${userId}:${profileId}`)
+
+          // Delete all changelog entries (keys are changelog:{userId}:{profileId}:{timestamp})
+          const prefix = `changelog:${userId}:${profileId}:`
+          let cursor: string | undefined
+          do {
+            const list = await env.SYNC_KV.list({ prefix, cursor })
+            if (list.keys.length > 0) {
+              await Promise.all(list.keys.map(k => env.SYNC_KV.delete(k.name)))
+            }
+            cursor = list.list_complete ? undefined : list.cursor
+          } while (cursor)
+        } catch {
+          warnings.push(`Some cloud sync data for profile ${profileId} may not have been fully deleted.`)
+        }
       }
     }
 

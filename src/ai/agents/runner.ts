@@ -6,6 +6,8 @@ import { db } from '../../db'
 import type { AgentRun } from '../../db/schema'
 import type { AgentId, AgentTrigger, AgentContext, AgentResult, Validator, ReflectionResult } from './types'
 import { agentRegistry } from './registry'
+import { dispatchSwarmEvent } from './eventBus'
+import { isAutopilotEnabled } from './autopilot/budgetTracker'
 import { recallEpisodes, recordEpisode } from '../memory/episodicMemory'
 import { reflect } from '../reflection/reflectionLoop'
 import { callFastModel } from '../fastClient'
@@ -157,14 +159,24 @@ export class AgentRunner {
   startScheduler(examProfileId: string): void {
     this.stopScheduler()
 
-    this.schedulerInterval = setInterval(() => {
+    this.schedulerInterval = setInterval(async () => {
       this.runByTrigger('schedule', examProfileId)
+      // Dispatch autopilot sweep if enabled
+      if (await isAutopilotEnabled(examProfileId)) {
+        dispatchSwarmEvent({ type: 'autopilot-sweep', examProfileId, reason: 'schedule' })
+      }
     }, SCHEDULE_INTERVAL_MS)
 
     if (typeof document !== 'undefined') {
       this.visibilityHandler = () => {
         if (document.visibilityState === 'visible') {
           this.runByTrigger('app-open', examProfileId)
+          // Dispatch autopilot sweep if enabled
+          isAutopilotEnabled(examProfileId).then(enabled => {
+            if (enabled) {
+              dispatchSwarmEvent({ type: 'autopilot-sweep', examProfileId, reason: 'app-open' })
+            }
+          })
         }
       }
       document.addEventListener('visibilitychange', this.visibilityHandler)

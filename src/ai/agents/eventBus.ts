@@ -10,6 +10,9 @@ export type SwarmEvent =
   | { type: 'exam-graded'; sessionId: string; examProfileId: string; totalScore: number; maxScore: number }
   | { type: 'mastery-changed'; topicId: string; examProfileId: string; oldMastery: number; newMastery: number }
   | { type: 'misconception-detected'; examProfileId: string; topicId: string; description: string }
+  | { type: 'autopilot-sweep'; examProfileId: string; reason: 'schedule' | 'app-open' | 'reactive' }
+  | { type: 'study-session-ended'; examProfileId: string; sessionId: string; durationSeconds: number }
+  | { type: 'plan-stale'; examProfileId: string; divergence: number }
 
 type SwarmEventHandler = (event: SwarmEvent) => void
 

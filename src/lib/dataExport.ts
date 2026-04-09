@@ -30,6 +30,7 @@ const IMPORTABLE_TABLES = new Set([
   'reviewProjects', 'reviewArticles',
   'annotations', 'contentEffectiveness',
   'tutoringEpisodes',
+  'milestones', 'researchNotes', 'writingSessions', 'advisorMeetings',
 ])
 
 function validateExportData(data: unknown): data is ExportData {
@@ -109,7 +110,7 @@ export async function exportProfileData(examProfileId: string): Promise<Blob> {
   tables.studyPlans = await db.studyPlans.where('examProfileId').equals(examProfileId).toArray()
   const planIds = tables.studyPlans.map((p: Record<string, unknown>) => p.id as string)
   tables.studyPlanDays = planIds.length > 0
-    ? await db.studyPlanDays.where('studyPlanId').anyOf(planIds).toArray()
+    ? await db.studyPlanDays.where('planId').anyOf(planIds).toArray()
     : []
 
   // Exams
@@ -147,6 +148,12 @@ export async function exportProfileData(examProfileId: string): Promise<Blob> {
   tables.annotations = await db.annotations.where('examProfileId').equals(examProfileId).toArray()
   tables.contentEffectiveness = await db.contentEffectiveness.where('[examProfileId+contentType]').between([examProfileId, ''], [examProfileId, '\uffff']).toArray()
   tables.tutoringEpisodes = await db.tutoringEpisodes.filter(e => e.examProfileId === examProfileId).toArray()
+
+  // Research mode tables
+  tables.milestones = await db.milestones.where('examProfileId').equals(examProfileId).toArray()
+  tables.researchNotes = await db.researchNotes.where('examProfileId').equals(examProfileId).toArray()
+  tables.writingSessions = await db.writingSessions.where('examProfileId').equals(examProfileId).toArray()
+  tables.advisorMeetings = await db.advisorMeetings.where('examProfileId').equals(examProfileId).toArray()
 
   // DocumentFiles — convert Blob to base64
   const docFiles = await db.documentFiles.where('examProfileId').equals(examProfileId).toArray()

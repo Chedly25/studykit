@@ -23,4 +23,5 @@ export interface Env {
   VAPID_PRIVATE_KEY?: string
   PUSH_SUBSCRIPTIONS?: KVNamespace
   RESEND_API_KEY?: string
+  EMAIL_FROM?: string
 }

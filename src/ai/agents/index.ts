@@ -10,6 +10,7 @@ import { strategistAgent } from './strategist'
 import { contentArchitectAgent } from './contentArchitect'
 import { resourceScoutAgent } from './resourceScout'
 import { examStrategistAgent } from './examStrategist'
+import { engagementMonitorAgent } from './engagementMonitor'
 
 agentRegistry.register(diagnosticianAgent)
 agentRegistry.register(progressMonitorAgent)
@@ -18,3 +19,4 @@ agentRegistry.register(strategistAgent)
 agentRegistry.register(contentArchitectAgent)
 agentRegistry.register(resourceScoutAgent)
 agentRegistry.register(examStrategistAgent)
+agentRegistry.register(engagementMonitorAgent)

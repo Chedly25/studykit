@@ -14,6 +14,7 @@ export type AgentId =
   | 'misconception-hunter'
   | 'progress-monitor'
   | 'resource-scout'
+  | 'engagement-monitor'
 
 export type AgentTrigger = 'event' | 'schedule' | 'app-open' | 'manual'
 

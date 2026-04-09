@@ -21,6 +21,7 @@ const SYNCABLE_TABLES = new Set([
   'agentRuns', 'achievements', 'macroRoadmaps',
   'habitGoals', 'habitLogs', 'reviewProjects', 'reviewArticles',
   'annotations', 'contentEffectiveness', 'tutoringEpisodes',
+  'milestones', 'researchNotes', 'writingSessions', 'advisorMeetings',
 ])
 
 interface PushResult {

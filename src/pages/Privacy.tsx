@@ -20,16 +20,6 @@ export default function Privacy() {
         {t('privacy.title', 'Privacy Policy')}
       </h1>
 
-      {/* Template banner */}
-      <div className="glass-card p-4 mb-8 border-l-4 border-amber-500 bg-amber-50/10">
-        <p className="text-sm text-[var(--text-body)] font-medium">
-          {t(
-            'privacy.templateBanner',
-            'This privacy policy is a template and should be reviewed by a legal professional before use.'
-          )}
-        </p>
-      </div>
-
       <p className="text-sm text-[var(--text-muted)] mb-8">
         {t('privacy.lastUpdated', 'Last updated: April 2026')}
       </p>
@@ -43,7 +33,7 @@ export default function Privacy() {
           <p>
             {t(
               'privacy.controllerBody',
-              '[Company Name], [Address]. For any data-related inquiries, please contact us at privacy@studieskit.com.'
+              'StudiesKit, operated by Chedly Boukhris. For any data-related inquiries, please contact us at privacy@studieskit.com.'
             )}
           </p>
         </section>
