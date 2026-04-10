@@ -272,7 +272,7 @@ export default function DocumentReader() {
         )}
 
         {!isMobile && chatOpen && documentMeta && (
-          <div style={{ width: chatWidth }} className="flex-shrink-0">
+          <div style={{ width: chatWidth }} className="flex-shrink-0 h-full min-h-0">
             <ReaderChatPane
               documentId={documentId!}
               documentTitle={documentMeta.title}
