@@ -19,13 +19,35 @@ interface StudyActivity {
   completed: boolean
 }
 
-const ACTIVITY_ROUTES: Record<string, string | null> = {
-  practice: '/practice-exam',
-  socratic: null,
-  'explain-back': null,
-  flashcards: '/flashcard-maker',
-  review: null,
-  read: '/sources',
+/**
+ * Route per activity type. Returns a route that may include `?topic=...&mode=...`.
+ * Null means "no route, use fallback" — currently unreachable since every
+ * activity type has a destination.
+ */
+function activityRoute(activityType: string, topicName: string | undefined): string | null {
+  const topicPart = topicName ? `topic=${encodeURIComponent(topicName)}` : ''
+  const makeSessionRoute = (mode?: string) => {
+    const parts = [topicPart, mode ? `mode=${mode}` : ''].filter(Boolean)
+    return parts.length > 0 ? `/session?${parts.join('&')}` : '/session'
+  }
+  switch (activityType) {
+    case 'practice':
+      return '/practice-exam'
+    case 'flashcards':
+      return '/flashcard-maker'
+    case 'read':
+      return '/sources'
+    // Structured session modes activate a specialized system prompt
+    // (see `buildSocraticPrompt` / `buildExplainBackPrompt` in src/ai/systemPrompt.ts)
+    case 'socratic':
+      return makeSessionRoute('socratic')
+    case 'explain-back':
+      return makeSessionRoute('explain-back')
+    case 'review':
+      return makeSessionRoute()
+    default:
+      return null
+  }
 }
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -333,21 +355,17 @@ export default function StudyPlan() {
                         {ACTIVITY_LABELS[act.activityType] ?? act.activityType} &middot; {act.durationMinutes}m
                       </span>
                     </div>
-                    {ACTIVITY_ROUTES[act.activityType] ? (
-                      <Link
-                        to={ACTIVITY_ROUTES[act.activityType]!}
-                        className="text-xs text-[var(--accent-text)] hover:underline"
-                      >
-                        Start
-                      </Link>
-                    ) : (
-                      <button
-                        onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel'))}
-                        className="text-xs text-[var(--accent-text)] hover:underline"
-                      >
-                        Start
-                      </button>
-                    )}
+                    {(() => {
+                      const route = activityRoute(act.activityType, act.topicName)
+                      return route ? (
+                        <Link
+                          to={route}
+                          className="text-xs text-[var(--accent-text)] hover:underline"
+                        >
+                          Start
+                        </Link>
+                      ) : null
+                    })()}
                   </div>
                 ))}
               </div>

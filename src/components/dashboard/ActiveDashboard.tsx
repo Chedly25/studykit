@@ -6,7 +6,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowRight, MessageCircle, Sparkles, Target } from 'lucide-react'
+import { ArrowRight, Sparkles, Target } from 'lucide-react'
 import { EmptyState } from '../EmptyState'
 import type { ExamProfile, Subject, Topic } from '../../db/schema'
 import { db } from '../../db'
@@ -105,17 +105,10 @@ export function ActiveDashboard({
               <ArrowRight className="w-4 h-4" />
             </Link>
           ) : (
-            <div className="flex gap-2">
-              <Link to="/practice-exam" className="btn-primary flex-1 py-2.5 text-sm font-medium flex items-center justify-center gap-2">
-                {t('dashboard.startFirstExam')}
-              </Link>
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel', { detail: {} }))}
-                className="btn-ghost py-2.5 px-4 text-sm flex items-center gap-2"
-              >
-                <MessageCircle className="w-4 h-4" />
-              </button>
-            </div>
+            <Link to="/practice-exam" className="btn-primary w-full py-3 text-sm font-medium flex items-center justify-center gap-2">
+              {t('dashboard.startFirstExam')}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           )}
         </div>
       </div>

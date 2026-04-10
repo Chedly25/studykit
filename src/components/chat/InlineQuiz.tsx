@@ -3,7 +3,7 @@ import { CheckCircle, XCircle, Trophy } from 'lucide-react'
 import { getTransient } from '../../lib/transientStore'
 import { MathText } from '../MathText'
 
-interface QuizQuestion {
+export interface QuizQuestion {
   question: string
   options: string[]
   correctIndex: number
@@ -11,21 +11,36 @@ interface QuizQuestion {
 }
 
 interface InlineQuizProps {
-  quizId: string
+  /** Chat-rendered quizzes pass a quizId to look up questions in transientStore. */
+  quizId?: string
+  /** Structured-action callers pass questions directly. */
+  questions?: QuizQuestion[]
+  /** Optional callback fired when the student completes the quiz. */
+  onComplete?: (score: number, total: number) => void
 }
 
-export function InlineQuiz({ quizId }: InlineQuizProps) {
-  const [questions, setQuestions] = useState<QuizQuestion[]>([])
+export function InlineQuiz({ quizId, questions: questionsProp, onComplete }: InlineQuizProps) {
+  const [questions, setQuestions] = useState<QuizQuestion[]>(questionsProp ?? [])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [answered, setAnswered] = useState(false)
   const [score, setScore] = useState(0)
   const [completed, setCompleted] = useState(false)
 
+  // Prop-based path: sync local state when the prop changes.
   useEffect(() => {
-    const data = getTransient<QuizQuestion[]>(quizId)
-    if (data) setQuestions(data)
-  }, [quizId])
+    if (questionsProp) {
+      setQuestions(questionsProp)
+    }
+  }, [questionsProp])
+
+  // Fallback path: for chat-rendered quizzes, look up questions from the transient store by id.
+  useEffect(() => {
+    if (!questionsProp && quizId) {
+      const data = getTransient<QuizQuestion[]>(quizId)
+      if (data) setQuestions(data)
+    }
+  }, [quizId, questionsProp])
 
   if (questions.length === 0) {
     return (
@@ -70,6 +85,7 @@ export function InlineQuiz({ quizId }: InlineQuizProps) {
   const handleNext = () => {
     if (currentIndex + 1 >= questions.length) {
       setCompleted(true)
+      onComplete?.(score, questions.length)
     } else {
       setCurrentIndex(i => i + 1)
       setSelectedOption(null)

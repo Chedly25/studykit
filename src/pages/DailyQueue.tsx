@@ -487,7 +487,20 @@ function DailyQueueContent() {
           onDismiss={() => setShowCompletion(false)}
           onAction={(linkTo) => {
             if (linkTo === '#open-chat') {
-              window.dispatchEvent(new CustomEvent('open-chat-panel'))
+              const struggledNames = [...new Set(struggled.map(r => r.topicName))]
+              const deltaLines = masteryDeltas
+                .map(d => `${d.topicName}: ${Math.round(d.before * 100)}% → ${Math.round(d.after * 100)}%`)
+                .slice(0, 5)
+              window.dispatchEvent(new CustomEvent('open-chat-panel', {
+                detail: {
+                  context: {
+                    topicName: 'session debrief',
+                    score: `${completedCount}/${totalCount} items completed`,
+                    ...(struggledNames.length > 0 ? { weakTopics: struggledNames.join(', ') } : {}),
+                    ...(deltaLines.length > 0 ? { question: `Can you help me understand these mastery changes and what to focus on next? ${deltaLines.join('; ')}` } : {}),
+                  },
+                },
+              }))
               setShowCompletion(false)
             } else {
               navigate(linkTo)

@@ -34,6 +34,8 @@ import { ReviewView } from '../components/session/ReviewView'
 import { KnowledgeMap } from '../components/session/KnowledgeMap'
 import { CodePlayground } from '../components/session/CodePlayground'
 import { ExerciseDrill } from '../components/session/ExerciseDrill'
+import { InlineActionContainer } from '../components/actions/InlineActionContainer'
+import { useInlineAction } from '../hooks/useInlineAction'
 import type { SessionContext } from '../ai/systemPrompt'
 import type { ChatAttachment } from '../hooks/useAttachments'
 
@@ -47,6 +49,9 @@ export default function StudySession() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const topicParam = searchParams.get('topic')
+  const modeParam = searchParams.get('mode')
+  // Valid session modes activate a specialized system prompt in useAgent.
+  const sessionMode = modeParam === 'socratic' || modeParam === 'explain-back' ? modeParam : undefined
 
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
@@ -59,7 +64,9 @@ export default function StudySession() {
   const { getExerciseStatsForTopic, getExerciseStatsByTopic: getExerciseStatsMap } = useExerciseBank(profileId)
   const exerciseStatsByTopic = useMemo(() => getExerciseStatsMap(), [getExerciseStatsMap])
 
-  const [activeView, setActiveView] = useState<SessionView>('course')
+  // When a structured session mode is requested (e.g. Socratic), default to chat.
+  const [activeView, setActiveView] = useState<SessionView>(sessionMode ? 'chat' : 'course')
+  const inlineAction = useInlineAction()
 
   // Determine layout variant based on exam type
   const layoutVariant = useMemo(() => {
@@ -181,6 +188,7 @@ export default function StudySession() {
     studentModel,
     conversationSummaries,
     sessionContext,
+    sessionMode,
   })
 
   const {
@@ -328,11 +336,17 @@ export default function StudySession() {
             <ChatContextProvider value={{ examProfileId: profileId, getToken }}>
               <div ref={scrollRef} className="flex-1 overflow-y-auto">
                 <div className={`mx-auto w-full px-6 py-6 ${layoutVariant === 'coding' ? 'max-w-full' : 'max-w-[740px]'}`}>
-                  {messages.length === 0 && !streamingText ? (
+                  {inlineAction.current ? (
+                    <InlineActionContainer
+                      action={inlineAction.current}
+                      onClose={inlineAction.close}
+                    />
+                  ) : messages.length === 0 && !streamingText ? (
                     <SessionSuggestions
                       topic={topic}
                       dueFlashcards={dueFlashcards}
                       sessionInsights={recentInsights ?? []}
+                      onAction={inlineAction.dispatch}
                       onSend={(prompt) => handleSend(prompt)}
                     />
                   ) : (
@@ -399,9 +413,14 @@ export default function StudySession() {
           <CardsView
             examProfileId={profileId}
             topicId={topic.id}
-            onQuizMe={(title) => {
+            onQuizMe={(title, cardId) => {
+              inlineAction.dispatch({
+                type: 'quiz-concept-card',
+                cardId,
+                cardTitle: title,
+                topicId: topic.id,
+              })
               setActiveView('chat')
-              handleSend(`Quiz me on ${title}`)
             }}
           />
         )}

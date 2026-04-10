@@ -15,7 +15,7 @@ interface FicheViewerProps {
   onClose: () => void
   onPrev?: () => void
   onNext?: () => void
-  onQuizMe?: (topic: string) => void
+  onQuizMe?: (title: string, cardId: string) => void
   hasPrev?: boolean
   hasNext?: boolean
 }
@@ -99,7 +99,7 @@ export function FicheViewer({ card, onClose, onPrev, onNext, onQuizMe, hasPrev, 
           <div className="flex items-center gap-2 shrink-0 ml-4">
             {onQuizMe && (
               <button
-                onClick={() => onQuizMe(card.title)}
+                onClick={() => onQuizMe(card.title, card.id)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent-bg)] text-[var(--accent-text)] hover:opacity-80 transition-opacity"
               >
                 <HelpCircle className="w-3.5 h-3.5" /> {t('cards.quizMe')}

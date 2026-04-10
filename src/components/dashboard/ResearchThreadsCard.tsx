@@ -61,7 +61,15 @@ export function ResearchThreadsCard({ topics, subjects }: Props) {
                 return (
                   <button
                     key={topic.id}
-                    onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel'))}
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel', {
+                      detail: {
+                        prefill: `Help me study: ${topic.name}`,
+                        context: {
+                          topicName: topic.name,
+                          ...(subject ? { subjectName: subject.name } : {}),
+                        },
+                      },
+                    }))}
                     className="flex items-center justify-between text-sm hover:bg-[var(--bg-input)] rounded px-2 py-1 transition-colors w-full text-left"
                   >
                     <span className="text-[var(--text-body)] truncate">

@@ -89,7 +89,15 @@ export function LandscapeCard({ topics, subjects }: Props) {
                   return (
                     <button
                       key={topic.id}
-                      onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel'))}
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-chat-panel', {
+                        detail: {
+                          prefill: `Help me study: ${topic.name}`,
+                          context: {
+                            topicName: topic.name,
+                            ...(subject ? { subjectName: subject.name } : {}),
+                          },
+                        },
+                      }))}
                       className={`text-xs px-2 py-1 rounded-md bg-[var(--accent-text)] text-white hover:scale-105 transition-transform ${level.opacity}`}
                       title={`${topic.name}${subject ? ` · ${subject.name}` : ''} — ${Math.round(topic.dm * 100)}%`}
                     >

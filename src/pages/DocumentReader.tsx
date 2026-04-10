@@ -18,6 +18,8 @@ import { PdfScrollViewer, type PdfScrollViewerHandle } from '../components/reade
 import { ReaderChatPane } from '../components/reader/ReaderChatPane'
 import { ReaderToolbar } from '../components/reader/ReaderToolbar'
 import { RecallSuggestion } from '../components/reader/RecallSuggestion'
+import { InlineActionContainer } from '../components/actions/InlineActionContainer'
+import { useInlineAction } from '../hooks/useInlineAction'
 import type { Document } from '../db/schema'
 
 export default function DocumentReader() {
@@ -47,13 +49,18 @@ export default function DocumentReader() {
   // Highlights for "quiz on highlights" feature
   const { highlights: allHighlights } = usePdfHighlights(documentId ?? '', profileId)
 
+  // Inline action dispatcher (quiz on highlights, recall check)
+  const inlineAction = useInlineAction()
+
   const handleQuizOnHighlights = useCallback(() => {
-    if (!allHighlights || allHighlights.length === 0 || !documentMeta) return
-    const texts = allHighlights.slice(-20).map((h, i) => `${i + 1}. "${h.text.slice(0, 200)}"`)
-    const prompt = `Quiz me on my highlights from this document. Here are the passages I highlighted:\n\n${texts.join('\n')}\n\nGenerate 3-5 questions that test my understanding of these highlighted passages. Use the renderQuiz tool.`
-    setSelectionContext({ text: prompt, pageNumber: currentPage, documentTitle: documentMeta.title })
-    setChatOpen(true)
-  }, [allHighlights, documentMeta, currentPage])
+    if (!allHighlights || allHighlights.length === 0 || !documentMeta || !documentId) return
+    inlineAction.dispatch({
+      type: 'quiz-highlights',
+      highlights: allHighlights.slice(-20).map(h => ({ text: h.text, pageNumber: h.pageNumber })),
+      documentTitle: documentMeta.title,
+      documentId,
+    })
+  }, [allHighlights, documentMeta, documentId, inlineAction])
 
   // Active recall suggestion
   const [showRecallSuggestion, setShowRecallSuggestion] = useState(false)
@@ -71,13 +78,14 @@ export default function DocumentReader() {
     setShowRecallSuggestion(false)
     const fromPage = Math.max(1, currentPage - PAGE_INTERVAL + 1)
     lastQuizPageRef.current = currentPage
-    setChatOpen(true)
-    setSelectionContext({
-      text: `Quick recall check: generate a 2-question quiz about what I just read (pages ${fromPage} to ${currentPage}).`,
-      pageNumber: currentPage,
-      documentTitle: documentMeta?.title ?? 'this document',
+    if (!documentMeta || !documentId) return
+    inlineAction.dispatch({
+      type: 'quiz-recall',
+      pages: [fromPage, currentPage],
+      documentTitle: documentMeta.title,
+      documentId,
     })
-  }, [currentPage, documentMeta])
+  }, [currentPage, documentMeta, documentId, inlineAction])
 
   const handleRecallDismiss = useCallback(() => {
     setShowRecallSuggestion(false)
@@ -260,11 +268,21 @@ export default function DocumentReader() {
               examProfileId={profileId}
               topicHighlightTexts={topicChunkTexts}
             />
-            {showRecallSuggestion && (
+            {showRecallSuggestion && !inlineAction.current && (
               <RecallSuggestion
                 onQuizMe={handleRecallQuiz}
                 onDismiss={handleRecallDismiss}
               />
+            )}
+            {inlineAction.current && (
+              <div className="absolute inset-0 z-20 bg-black/40 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto animate-fade-in">
+                <div className="w-full max-w-2xl mt-8">
+                  <InlineActionContainer
+                    action={inlineAction.current}
+                    onClose={inlineAction.close}
+                  />
+                </div>
+              </div>
             )}
           </div>
         )}

@@ -91,7 +91,21 @@ export function ErrorDrillDown({ topicName, errorType, examProfileId, onClose }:
           {actions.map(action => (
             <button
               key={action.linkTo}
-              onClick={() => { onClose(); action.linkTo === '#open-chat' ? window.dispatchEvent(new CustomEvent('open-chat-panel')) : navigate(action.linkTo) }}
+              onClick={() => {
+                onClose()
+                if (action.linkTo === '#open-chat') {
+                  window.dispatchEvent(new CustomEvent('open-chat-panel', {
+                    detail: {
+                      context: {
+                        topicName,
+                        question: `Help me understand my ${ERROR_LABELS[errorType]?.toLowerCase() ?? errorType + ' errors'} on this topic. Walk me through what I'm getting wrong.`,
+                      },
+                    },
+                  }))
+                } else {
+                  navigate(action.linkTo)
+                }
+              }}
               className="w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-[var(--bg-input)] transition-colors"
             >
               <div className="w-8 h-8 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center shrink-0">

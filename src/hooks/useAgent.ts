@@ -3,8 +3,15 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import * as Sentry from '@sentry/react'
 import { runAgentLoop } from '../ai/agentLoop'
-import { buildSessionPrompt, buildSourceSection } from '../ai/systemPrompt'
+import { buildSessionPrompt, buildSourceSection, buildSocraticPrompt, buildExplainBackPrompt } from '../ai/systemPrompt'
 import type { SessionContext } from '../ai/systemPrompt'
+
+/**
+ * Structured session modes. When set, overrides the default tutor system prompt
+ * with a specialized variant from `src/ai/systemPrompt.ts`. Only effective when
+ * `sessionContext` is also provided (since the prompts need a topic name).
+ */
+export type SessionPromptMode = 'socratic' | 'explain-back'
 import { buildAdaptivePrompt } from '../ai/adaptivePrompt'
 import { routeChat } from '../ai/agents/chatRouter'
 import { recallEpisodes } from '../ai/memory/episodicMemory'
@@ -53,12 +60,18 @@ interface UseAgentOptions {
   conversationSummaries?: ConversationSummary[]
   sessionContext?: SessionContext
   customSystemPrompt?: string
+  /**
+   * Optional structured session mode. When set along with `sessionContext`,
+   * the AI uses a specialized prompt variant instead of the default tutor.
+   * Used to implement Socratic dialog and explain-back workflows.
+   */
+  sessionMode?: SessionPromptMode
   subjectId?: string | null
   subjectName?: string | null
 }
 
 export function useAgent(options: UseAgentOptions) {
-  const { profile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, customSystemPrompt, subjectId, subjectName } = options
+  const { profile, subjects, topics, dailyLogs, sourcesEnabled, tutorPreferences, sessionInsights, studentModel, conversationSummaries, customSystemPrompt, sessionMode, subjectId, subjectName } = options
   const { getToken } = useAuth()
   const { i18n } = useTranslation()
   const { isPro } = useSubscription()
@@ -242,6 +255,10 @@ export function useAgent(options: UseAgentOptions) {
         if (sourceContext) {
           systemPrompt += buildSourceSection(sourceContext)
         }
+      } else if (sessionContextRef.current && sessionMode === 'socratic') {
+        systemPrompt = buildSocraticPrompt(ctx, sessionContextRef.current.topicName)
+      } else if (sessionContextRef.current && sessionMode === 'explain-back') {
+        systemPrompt = buildExplainBackPrompt(ctx, sessionContextRef.current.topicName)
       } else if (sessionContextRef.current) {
         systemPrompt = buildSessionPrompt(ctx, sessionContextRef.current)
       } else {
@@ -339,7 +356,7 @@ export function useAgent(options: UseAgentOptions) {
       setIsLoading(false)
       isLoadingRef.current = false
     }
-  }, [getToken, isPro, sourcesEnabled, customSystemPrompt, subjectId, subjectName, i18n.language])
+  }, [getToken, isPro, sourcesEnabled, customSystemPrompt, sessionMode, subjectId, subjectName, i18n.language])
 
   // Generate insight on page unload to prevent lost sessions
   useEffect(() => {

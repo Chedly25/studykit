@@ -8,11 +8,14 @@ import { Sparkles, BookOpen, FileText, TrendingUp, TrendingDown, Minus, Star, Ch
 import { useTopicDetail } from '../../hooks/useTopicDetail'
 import { SkeletonLine, SkeletonBlock } from '../Skeleton'
 import { MathText } from '../MathText'
+import { InlineActionContainer } from '../actions/InlineActionContainer'
+import { useInlineAction } from '../../hooks/useInlineAction'
 
 interface Props {
   topicId: string
   topicName: string
-  subjectName: string
+  /** Kept on the interface for compat with existing callers; no longer used. */
+  subjectName?: string
   mastery: number
   examProfileId: string
   questionsAttempted: number
@@ -35,17 +38,12 @@ function difficultyStars(level: number) {
   )
 }
 
-export function TopicDetailPanel({ topicId, topicName, subjectName, mastery, examProfileId, questionsAttempted, questionsCorrect }: Props) {
+export function TopicDetailPanel({ topicId, topicName, mastery, examProfileId, questionsAttempted, questionsCorrect }: Props) {
   const detail = useTopicDetail(topicId, examProfileId)
   const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null)
   const [showSolution, setShowSolution] = useState<Set<string>>(new Set())
   const [expandedFicheId, setExpandedFicheId] = useState<string | null>(null)
-
-  const dispatchAI = (prefill: string) => {
-    window.dispatchEvent(new CustomEvent('open-chat-panel', {
-      detail: { prefill, context: { topicId, topicName, subjectName, mastery } }
-    }))
-  }
+  const inlineAction = useInlineAction()
 
   const toggleSolution = (id: string) => {
     setShowSolution(prev => {
@@ -132,9 +130,17 @@ export function TopicDetailPanel({ topicId, topicName, subjectName, mastery, exa
                         {statusBadge(ex.status, ex.lastAttemptScore ?? undefined)}
                         <span className="flex-1" />
                         <span
-                          onClick={(e) => { e.stopPropagation(); dispatchAI(`Explain this exercise:\n${ex.text.slice(0, 500)}`) }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            inlineAction.dispatch({
+                              type: 'explain-exercise',
+                              exerciseId: ex.id,
+                              exerciseText: ex.text,
+                              topicName,
+                            })
+                          }}
                           className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors"
-                          title="Ask AI about this exercise"
+                          title="Explain this exercise"
                         >
                           <Sparkles className="w-3 h-3" />
                         </span>
@@ -160,10 +166,16 @@ export function TopicDetailPanel({ topicId, topicName, subjectName, mastery, exa
                             </>
                           )}
                           <button
-                            onClick={() => dispatchAI(`Help me with this exercise:\n${ex.text.slice(0, 500)}${ex.solutionText ? '\n\nReference solution:\n' + ex.solutionText.slice(0, 500) : ''}`)}
+                            onClick={() => inlineAction.dispatch({
+                              type: 'explain-exercise',
+                              exerciseId: ex.id,
+                              exerciseText: ex.text,
+                              topicName,
+                              solutionText: ex.solutionText ?? undefined,
+                            })}
                             className="flex items-center gap-1 text-[10px] text-[var(--accent-text)] hover:underline mt-1"
                           >
-                            <MessageCircle className="w-3 h-3" /> Discuss with AI
+                            <MessageCircle className="w-3 h-3" /> Walk me through this
                           </button>
                         </div>
                       )}
@@ -254,13 +266,24 @@ export function TopicDetailPanel({ topicId, topicName, subjectName, mastery, exa
         <p className="text-xs text-[var(--text-muted)] italic">No exercises, flashcards, or documents for this topic yet.</p>
       )}
 
-      {/* Ask AI footer */}
-      <button
-        onClick={() => dispatchAI(`Help me study ${topicName}`)}
+      {/* Inline action container (mounts when an action is dispatched) */}
+      {inlineAction.current && (
+        <div onClick={e => e.stopPropagation()}>
+          <InlineActionContainer
+            action={inlineAction.current}
+            onClose={inlineAction.close}
+          />
+        </div>
+      )}
+
+      {/* Study CTA footer — routes into session instead of opening chat */}
+      <Link
+        to={`/session?topic=${encodeURIComponent(topicName)}`}
+        onClick={e => e.stopPropagation()}
         className="flex items-center gap-1.5 text-xs font-medium text-[var(--accent-text)] hover:underline"
       >
-        <Sparkles className="w-3 h-3" /> Ask AI about this topic
-      </button>
+        <Sparkles className="w-3 h-3" /> Study this topic <ArrowRight className="w-3 h-3" />
+      </Link>
     </div>
   )
 }

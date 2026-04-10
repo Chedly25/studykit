@@ -13,7 +13,7 @@ import type { ConceptCard } from '../../db/schema'
 interface CardsViewProps {
   examProfileId: string
   topicId: string
-  onQuizMe?: (topic: string) => void
+  onQuizMe?: (title: string, cardId: string) => void
 }
 
 // ─── Card Form (create + edit) ──────
@@ -127,7 +127,7 @@ function CardForm({ initialTitle, initialKeyPoints, initialExample, onSave, onCa
 
 function CardItem({ card, onQuizMe, onEdit, onDelete, onViewFiche }: {
   card: ConceptCard
-  onQuizMe?: (t: string) => void
+  onQuizMe?: (title: string, cardId: string) => void
   onEdit: () => void
   onDelete: () => void
   onViewFiche: () => void
@@ -207,7 +207,7 @@ function CardItem({ card, onQuizMe, onEdit, onDelete, onViewFiche }: {
           </button>
           {onQuizMe && (
             <button
-              onClick={() => onQuizMe(card.title)}
+              onClick={() => onQuizMe(card.title, card.id)}
               className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-[var(--bg-input)] text-[var(--text-muted)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] transition-colors"
             >
               <HelpCircle className="w-3 h-3" /> {t('cards.quizMe')}
