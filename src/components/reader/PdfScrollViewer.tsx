@@ -94,16 +94,40 @@ export const PdfScrollViewer = forwardRef<PdfScrollViewerHandle, Props>(function
 
     const observer = new IntersectionObserver(
       (entries) => {
-        setVisiblePages(prev => {
-          const next = new Set(prev)
-          for (const entry of entries) {
-            const pageNum = parseInt(entry.target.getAttribute('data-page') ?? '0')
-            if (!pageNum) continue
-            if (entry.isIntersecting) next.add(pageNum)
-            else next.delete(pageNum)
-          }
-          return next
-        })
+        // Don't touch visiblePages while the user has an active text selection —
+        // unmounting pages destroys the text layer spans and kills the selection,
+        // causing flicker during drag-selection across page boundaries.
+        const activeSelection = window.getSelection()
+        const hasActiveSelection = activeSelection && !activeSelection.isCollapsed
+
+        if (!hasActiveSelection) {
+          setVisiblePages(prev => {
+            const next = new Set(prev)
+            for (const entry of entries) {
+              const pageNum = parseInt(entry.target.getAttribute('data-page') ?? '0')
+              if (!pageNum) continue
+              if (entry.isIntersecting) next.add(pageNum)
+              else next.delete(pageNum)
+            }
+            return next
+          })
+        } else {
+          // Still add new visible pages (so nothing disappears), just never delete
+          setVisiblePages(prev => {
+            let changed = false
+            const next = new Set(prev)
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue
+              const pageNum = parseInt(entry.target.getAttribute('data-page') ?? '0')
+              if (!pageNum) continue
+              if (!next.has(pageNum)) {
+                next.add(pageNum)
+                changed = true
+              }
+            }
+            return changed ? next : prev
+          })
+        }
 
         // Track current page — highest intersection ratio
         let maxRatio = 0
@@ -118,7 +142,7 @@ export const PdfScrollViewer = forwardRef<PdfScrollViewerHandle, Props>(function
       },
       {
         root: containerRef.current,
-        rootMargin: '300px 0px',
+        rootMargin: '800px 0px',  // Larger buffer reduces thrashing at boundaries
         threshold: [0, 0.1, 0.5],
       }
     )
