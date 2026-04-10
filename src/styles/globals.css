@@ -391,9 +391,11 @@ body {
 .dark .chat-input-shadow { box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3); }
 
 /* ─── PDF Text Layer ─── */
-/* Required CSS vars + positioning for PDF.js 5.x text layer.
-   Without --total-scale-factor and font-size calc, spans are mispositioned
-   and text selection doesn't match the rendered canvas. */
+/* Mirrors PDF.js 5.x text_layer_builder.css exactly — DO NOT modify the
+   core rules. PDF.js's TextLayer class relies on these CSS vars:
+   --total-scale-factor (set by us per scale)
+   --min-font-size      (set by PDF.js via inline style on the container)
+   --font-height, --scale-x, --rotate (set by PDF.js per span) */
 .textLayer {
   position: absolute;
   text-align: initial;
@@ -402,12 +404,12 @@ body {
   opacity: 1;
   line-height: 1;
   -webkit-text-size-adjust: none;
+  -moz-text-size-adjust: none;
   text-size-adjust: none;
   forced-color-adjust: none;
   transform-origin: 0 0;
   caret-color: CanvasText;
   z-index: 2;
-  cursor: text;
   --total-scale-factor: 1;
   --min-font-size: 1;
   --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
@@ -437,12 +439,17 @@ body {
 }
 .textLayer span[role="img"] {
   -webkit-user-select: none;
+  -moz-user-select: none;
   user-select: none;
   cursor: default;
 }
-.textLayer ::selection {
-  background: color-mix(in srgb, var(--accent) 35%, transparent);
+.textLayer ::-moz-selection {
+  background: color-mix(in srgb, var(--accent-text, #10b981) 40%, transparent);
 }
+.textLayer ::selection {
+  background: color-mix(in srgb, var(--accent-text, #10b981) 40%, transparent);
+}
+.textLayer br::-moz-selection,
 .textLayer br::selection {
   background: transparent;
 }
@@ -450,12 +457,21 @@ body {
   display: block;
   position: absolute;
   inset: 100% 0 0;
-  z-index: -1;
+  z-index: 0;
   cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: none;
   user-select: none;
 }
 .textLayer.selecting .endOfContent {
   top: 0;
+}
+
+/* Canvas below the text layer must NOT capture pointer events — otherwise
+   clicks on empty space between text spans hit the canvas and selection
+   "jumps" or feels random. */
+.pdf-page-canvas {
+  pointer-events: none;
 }
 
 /* ─── Drag overlay ─── */
