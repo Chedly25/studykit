@@ -46,6 +46,10 @@ export function ContextualAssistant({ chatOpen, subjectName }: Props) {
   // Hide when chat is open (after all hooks)
   if (chatOpen) return null
 
+  // Hide on the document reader — it has its own dedicated chat pane (ReaderChatPane)
+  // and the FAB would overlap the reader's content.
+  if (location.pathname.startsWith('/read/')) return null
+
   const openChat = (prefill?: string, detail?: Record<string, unknown>) => {
     window.dispatchEvent(new CustomEvent('open-chat-panel', {
       detail: { prefill, ...detail },

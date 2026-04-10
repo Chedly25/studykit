@@ -243,12 +243,12 @@ export default function DocumentReader() {
   }
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] flex flex-col">
+    <div className="h-[calc(100vh-3.5rem)] flex flex-col overflow-hidden">
       {/* Split pane: PDF + Chat */}
-      <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex min-h-0 min-w-0">
         {/* PDF viewer */}
         {pdfDoc && (
-          <div className="flex-1 relative min-w-0">
+          <div className="flex-1 relative min-w-0 min-h-0 flex flex-col">
             <PdfScrollViewer
               ref={pdfViewerRef}
               pdfDoc={pdfDoc}
