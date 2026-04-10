@@ -474,6 +474,36 @@ body {
   pointer-events: none;
 }
 
+/* PDF.js Annotation Layer — links, form fields, popups.
+   Sits above the text layer so links are clickable, but the container itself
+   is pointer-events:none so it doesn't block text selection between link areas.
+   Individual annotations (links, etc.) re-enable pointer-events. */
+.annotationLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+  transform-origin: 0 0;
+  --total-scale-factor: 1;
+}
+.annotationLayer section {
+  position: absolute;
+  pointer-events: auto;
+  box-sizing: border-box;
+  transform-origin: 0 0;
+}
+.annotationLayer .linkAnnotation > a {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.annotationLayer .linkAnnotation:hover > a {
+  background: color-mix(in srgb, var(--accent-text, #10b981) 15%, transparent);
+  border-radius: 2px;
+}
+
 /* ─── Drag overlay ─── */
 .drag-overlay { background: rgba(16, 185, 129, 0.08); border: 2px dashed var(--accent-text); border-radius: 1rem; }
 .dark .drag-overlay { background: rgba(16, 185, 129, 0.12); }

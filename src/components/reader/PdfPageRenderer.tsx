@@ -32,6 +32,7 @@ export function PdfPageRenderer({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textLayerRef = useRef<HTMLDivElement>(null)
+  const annotationLayerRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; text: string } | null>(null)
   const [flashcardModal, setFlashcardModal] = useState<{ highlightId: string; back: string } | null>(null)
@@ -124,6 +125,46 @@ export function PdfPageRenderer({
             // TextLayer might not be available — fallback: no text selection
           }
         }
+
+        // Render annotation layer (links, form fields, etc.)
+        if (!cancelled && annotationLayerRef.current) {
+          annotationLayerRef.current.innerHTML = ''
+          annotationLayerRef.current.style.setProperty('--total-scale-factor', String(scale))
+          try {
+            const [{ AnnotationLayer }, { SimpleLinkService }] = await Promise.all([
+              import('pdfjs-dist/build/pdf.mjs') as Promise<any>,
+              import('pdfjs-dist/web/pdf_viewer.mjs') as Promise<any>,
+            ])
+            if (cancelled || !annotationLayerRef.current) return
+
+            const annotations = await page.getAnnotations()
+            if (cancelled || !annotationLayerRef.current || annotations.length === 0) return
+
+            // Configure SimpleLinkService to open external URLs in new tabs
+            const linkService = new SimpleLinkService()
+            linkService.externalLinkTarget = 2 // LinkTarget.BLANK — opens in new tab
+            linkService.externalLinkRel = 'noopener noreferrer nofollow'
+
+            const annotationLayer = new AnnotationLayer({
+              div: annotationLayerRef.current,
+              page,
+              viewport: viewport.clone({ dontFlip: true }),
+              linkService,
+              annotationStorage: undefined,
+              downloadManager: null,
+              renderForms: false,
+            })
+
+            await annotationLayer.render({
+              annotations,
+              linkService,
+              renderForms: false,
+              imageResourcesPath: '',
+            })
+          } catch {
+            // AnnotationLayer unavailable — links won't be clickable but viewer still works
+          }
+        }
       } catch (err) {
         if (!cancelled && !(err instanceof Error && err.message.includes('cancelled'))) {
           Sentry.captureException(err instanceof Error ? err : new Error(`Page ${pageNumber} render error: ` + String(err)))
@@ -212,6 +253,7 @@ export function PdfPageRenderer({
     <div ref={containerRef} className="relative w-full h-full" onMouseUp={handleMouseUp}>
       <canvas ref={canvasRef} className="pdf-page-canvas absolute inset-0" />
       <div ref={textLayerRef} className="textLayer" />
+      <div ref={annotationLayerRef} className="annotationLayer" />
 
       {/* Highlights */}
       <HighlightLayer
