@@ -77,12 +77,16 @@ export function BackgroundJobsProvider({ children }: { children: React.ReactNode
     if (user?.id) {
       agentRunnerRef.current?.setUserId(user.id)
     }
-    if (user?.id && activeProfile?.id) {
-      agentRunnerRef.current?.startScheduler(activeProfile.id)
-      // Fire app-open agents immediately
+    if (!user?.id || !activeProfile?.id) return
+
+    agentRunnerRef.current?.startScheduler(activeProfile.id)
+    // Delay app-open agents by 5s so the page can settle and avoid
+    // flooding the API with parallel calls during initial hydration.
+    const timer = setTimeout(() => {
       agentRunnerRef.current?.runByTrigger('app-open', activeProfile.id)
-    }
+    }, 5000)
     return () => {
+      clearTimeout(timer)
       agentRunnerRef.current?.stopScheduler()
     }
   }, [user?.id, activeProfile?.id])

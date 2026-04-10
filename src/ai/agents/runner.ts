@@ -168,16 +168,20 @@ export class AgentRunner {
     }, SCHEDULE_INTERVAL_MS)
 
     if (typeof document !== 'undefined') {
+      let lastAppOpenRun = 0
       this.visibilityHandler = () => {
-        if (document.visibilityState === 'visible') {
-          this.runByTrigger('app-open', examProfileId)
-          // Dispatch autopilot sweep if enabled
-          isAutopilotEnabled(examProfileId).then(enabled => {
-            if (enabled) {
-              dispatchSwarmEvent({ type: 'autopilot-sweep', examProfileId, reason: 'app-open' })
-            }
-          })
-        }
+        if (document.visibilityState !== 'visible') return
+        // Throttle: don't re-run agents if tab became visible < 5 min ago
+        if (Date.now() - lastAppOpenRun < 5 * 60 * 1000) return
+        lastAppOpenRun = Date.now()
+
+        this.runByTrigger('app-open', examProfileId)
+        // Dispatch autopilot sweep if enabled
+        isAutopilotEnabled(examProfileId).then(enabled => {
+          if (enabled) {
+            dispatchSwarmEvent({ type: 'autopilot-sweep', examProfileId, reason: 'app-open' })
+          }
+        })
       }
       document.addEventListener('visibilitychange', this.visibilityHandler)
     }

@@ -423,7 +423,326 @@ export async function seedCPGE_MP(userId?: string): Promise<string> {
     }
   )
 
+  // ── Seed Documents + Chunks ──
+  await seedDocuments(PROFILE_ID, now)
+
   return PROFILE_ID
+}
+
+// ─── Document Seed Data ──────────────────────────────────────
+
+interface SeedDoc {
+  title: string
+  category: 'course' | 'exam'
+  content: string
+}
+
+const SEED_DOCUMENTS: SeedDoc[] = [
+  {
+    title: 'Précis de Mécanique — CPGE MP',
+    category: 'course',
+    content: `Chapitre 1 — Mécanique
+
+1.1 Rappels de mécanique du point
+
+1.1.1 Référentiel galiléen
+Un référentiel est galiléen s'il vérifie le principe d'inertie. Tout référentiel en translation rectiligne uniforme par rapport à un référentiel galiléen est aussi galiléen.
+
+Référentiel de Copernic : A pour origine le centre de masse du système solaire et ses axes sont dirigés vers des étoiles très éloignées. Très bon galiléen.
+
+Référentiel héliocentrique : Le centre de masse du système solaire est confondu avec le centre du soleil (qui représente 99% de la masse, tout de même).
+
+Référentiel terrestre : Mêmes axes mais centré sur la terre. Or la terre est en translation elliptique dans le référentiel de Copernic. Cependant, les accélérations sont faibles étant donné la période de révolution. C'est donc un bon galiléen.
+
+1.1.2 Principe fondamental de la dynamique
+On note p = mv la quantité de mouvement ou impulsion d'une masse ponctuelle M(m).
+dp/dt = F où F est la résultante des forces appliquées en M.
+
+1.1.3 Théorème du moment cinétique
+On note L_O = OM ∧ p le moment cinétique en O du point M et M_O = OM ∧ F le moment en O de la résultante des forces appliquées en M. A condition que O soit fixe dans le référentiel, on dispose du théorème du moment cinétique :
+dL_O/dt = M_O
+
+1.1.4 Référentiel non galiléen
+Soit R2 un référentiel en mouvement quelconque par rapport à R1.
+(dA/dt)_R2 = (dA/dt)_R1 + ω_{R1/R2} ∧ A
+
+On en déduit la loi de composition des vitesses d'un point M :
+v(M)_{R1} = v(M)_{R2} + v_e
+
+La loi de composition des accélérations s'écrit :
+a(M)_{R1} = a(M)_{R2} + a_e + a_c
+
+où a_e et a_c sont les accélérations respectivement d'entraînement et de Coriolis :
+a_c = 2ω_{R2/R1} ∧ v(M)_{R2}
+
+Il ne faut pas oublier les forces d'inertie d'entraînement et de Coriolis quand on applique le PFD ou le TMC dans un référentiel non galiléen.
+
+1.2 Étude énergétique
+
+1.2.1 Travail, puissance, énergie cinétique
+Le travail élémentaire et la puissance d'une force sont δW = F · dr et P = F · v.
+L'énergie cinétique d'une masse m est donnée par Ec = ½mv².
+
+1.2.2 Théorème de la puissance cinétique
+dEc/dt = P_int + P_ext
+
+1.2.3 Énergie potentielle
+Une force F dérive du potentiel Ep si elle est à circulation conservative. δW = F · dOM = -dEp et F = -grad(Ep).
+
+1.2.4 Énergie mécanique
+L'énergie mécanique est définie par Em = Ec + Ep. Le théorème de l'énergie mécanique affirme qu'une variation de l'énergie mécanique est due au travail des forces non conservatives.
+
+1.3 Forces centrales conservatives
+Une force centrale est de la forme F(r) = f(r)u_r. On s'intéresse tout particulièrement à une force coulombienne : F = -grad(k/r).
+Les conséquences sont nombreuses : dL/dt = 0, L = mr²θ' = mC.
+Le mouvement est plan car OM et v sont orthogonaux à L_O. C est la constante des aires ou deuxième loi de Kepler.
+
+1.4 Mécanique du solide
+
+1.4.1 Propriétés des solides
+Torseur cinétique : p_S = Σp_i = ∫∫∫_S v(M)dm et L_A(S) = Σ L_A(M_i)
+
+1.4.2 Formule fondamentale de la cinématique du solide
+v(B ∈ S) = v(A ∈ S) + BA ∧ Ω_S
+
+1.4.6 Moment d'inertie
+Le moment cinétique du solide en rotation à vitesse angulaire ω est L_Δ = J_Δ ω.
+Moments d'inertie classiques : Cylindre creux mR², Cylindre plein ½mR², Boule ⅖mR², Tige ⅓ml².
+
+1.4.7 Théorème de Huyghens
+J_{Δ',A} = J_{Δ,G} + m(AG)²`,
+  },
+  {
+    title: 'Cours d\'Électromagnétisme — CPGE MP',
+    category: 'course',
+    content: `Chapitre 2 — Électromagnétisme
+
+2.1 Analyse vectorielle
+
+2.1.1 Flux, circulation d'un champ
+Φ = ∫∫_S W · dS (flux d'un champ vectoriel à travers une surface)
+C = ∫_Γ W · dl (circulation d'un champ vectoriel le long d'une courbe)
+
+2.1.2 Gradient
+df = grad(f) · dl
+∫_A^B grad(f) · dl = f(B) - f(A)
+Un champ W est à circulation conservative si il dérive d'un champ scalaire (ou potentiel) : W = -grad(f).
+
+2.1.3 Divergent
+Formule d'Ostrogradsky : ∫∫∫_V div(W)dV = ∮∮_S W · dS
+Les champs de divergence nulle sont donc à flux conservatif.
+
+2.1.4 Rotationnel
+Formule de Stokes : ∫∫_S rot(W) · dS = ∮_Γ W · dl
+Les champs de rotationnel nul sont à circulation conservative.
+
+2.2 Les sources du champ électromagnétique
+Ce sont les charges électriques, fixes (distribution de charges) ou mobiles (distribution de courants). La charge électrique est quantifiée (multiple entier de e), et se mesure en Coulombs.
+
+2.2.1 Densité de charge
+Densité volumique : dq = ρdτ ; surfacique : dq = σdS ; linéique : dq = λdl.
+
+2.2.2 Densité de courant
+j = ρ_m × v (vecteur densité de courant)
+
+2.2.3 Conservation de la charge
+div(j) + ∂ρ/∂t = 0 (équation de continuité)
+
+2.3 Équations de Maxwell dans le vide
+Maxwell-Thomson : div(B) = 0
+Maxwell-Gauss : div(E) = ρ/ε₀
+Maxwell-Faraday : rot(E) = -∂B/∂t
+Maxwell-Ampère : rot(B) = μ₀(j + j_D) avec j_D = ε₀∂E/∂t
+
+Les équations de Maxwell sont linéaires : le principe de superposition s'applique.
+
+2.4 Relations de passage
+Lors de la traversée d'une surface S de densité de charge σ ou de densité de courants surfaciques j_S :
+E₂ - E₁ = σ/ε₀ × n (composante normale)
+B₂ - B₁ = μ₀j_S ∧ n (composante tangentielle)
+
+2.5 Force de Lorentz
+Une particule de charge q soumise à un champ électromagnétique (E, B) subit une force de Lorentz : F = q(E + v ∧ B)
+
+2.7 Électrostatique
+
+2.7.1 Théorème de Gauss
+∮∮_S E · dS = Q_int/ε₀
+
+2.7.2 Équation de Poisson et solution
+ΔV + ρ/ε₀ = 0
+V(M) = 1/(4πε₀) ∫∫∫ ρ(P)/(PM) dτ
+
+Loi de Coulomb : E(M) = 1/(4πε₀) ∫∫∫ ρ(P)PM/(PM³) dτ
+Cas particulier d'une charge q à l'origine : V(M) = q/(4πε₀r) et E(M) = q/(4πε₀r²) u_r
+
+2.8 Magnétostatique
+Théorème d'Ampère : ∮ B · dl = μ₀ I_enlacé
+Champ créé par un fil infini : B = μ₀I/(2πr) u_θ`,
+  },
+  {
+    title: 'Chimie des Solutions Aqueuses — Oxydoréduction',
+    category: 'course',
+    content: `Réactions d'oxydoréduction en solution aqueuse : aspect thermodynamique
+
+I. RAPPELS SUR LES RÉACTIONS D'OXYDORÉDUCTION
+
+1. Réactions d'oxydoréduction
+Définitions :
+- Oxydo-réduction = échange d'électrons entre espèces chimiques
+- Oxydant = capteur d'électrons
+- Réducteur = donneur d'électrons
+- Oxydation = perte d'électrons
+- Réduction = gain d'électrons
+- Couple redox = ensemble de deux espèces chimiques contenant un élément commun, tel que l'une soit oxydante et l'autre réductrice
+- ox + n.e⁻ ⇌ red
+
+Amphotère redox = espèce chimique à la fois oxydante et réductrice (dismutation / amphotérisation)
+
+2. Nombres d'oxydation
+Le nombre d'oxydation (N.O.) d'un élément dans une espèce chimique est le nombre algébrique d'électrons cédés par un atome pour passer de l'état neutre à l'état de l'atome dans l'espèce chimique considérée.
+
+Règles de calcul :
+- Si l'élément est sous forme d'atome : N.O. = 0
+- Si l'élément est sous forme d'ion simple : N.O. = nombre de charges de l'ion
+- N.O.(H lié) = +I ; N.O.(O lié) = -II
+
+II. CELLULES ÉLECTROCHIMIQUES
+
+1. Demi-pile et électrode
+Une demi-pile est un système physicochimique siège d'une demi-réaction redox.
+- Anode = électrode correspondant au compartiment où se produit une oxydation
+- Cathode = électrode correspondant au compartiment où se produit une réduction
+- Cellule électrochimique = association de deux demi-piles reliées par une jonction électrolytique
+
+2. Potentiel d'électrode, potentiel redox
+E(ox/red) = V_métal - V_solution
+Si ε est la fem de la pile constituée d'une électrode standard à hydrogène (ESH) et de l'électrode étudiée, alors ε = E(ox/red)
+
+III. ÉTUDE THERMODYNAMIQUE DES RÉACTIONS REDOX
+
+Formule de Nernst : E_i = E°_i + (RT)/(n_i F) ln(a_ox/a_red) = E°_i + 0.059/n_i log(a_ox/a_red)
+
+ΔrG = -n₁n₂F·ε et ΔrG° = -n₁n₂F·ε°`,
+  },
+  {
+    title: 'Algorithmique et Structures de Données — CPGE MP',
+    category: 'course',
+    content: `Cours d'Informatique MP — Algorithmique
+
+1. Complexité algorithmique
+La complexité d'un algorithme mesure les ressources (temps, mémoire) nécessaires à son exécution en fonction de la taille n de l'entrée.
+
+Notations asymptotiques :
+- O(f(n)) : borne supérieure asymptotique (worst case)
+- Ω(f(n)) : borne inférieure asymptotique (best case)
+- Θ(f(n)) : encadrement asymptotique (average case)
+
+Complexités classiques : O(1) constante, O(log n) logarithmique, O(n) linéaire, O(n log n) quasi-linéaire, O(n²) quadratique, O(2ⁿ) exponentielle.
+
+2. Algorithmes de tri
+Tri par insertion : O(n²) en moyenne et au pire, O(n) au meilleur. Stable, en place.
+Tri par sélection : O(n²) dans tous les cas. En place mais non stable.
+Tri fusion (merge sort) : O(n log n) dans tous les cas. Stable mais non en place (O(n) mémoire).
+Tri rapide (quicksort) : O(n log n) en moyenne, O(n²) au pire. En place, non stable.
+
+Théorème : Tout algorithme de tri par comparaison a une complexité au pire en Ω(n log n).
+
+3. Récursivité et programmation dynamique
+Un algorithme récursif est un algorithme qui s'appelle lui-même. La récursivité est l'analogue algorithmique de la récurrence en mathématiques.
+
+Programmation dynamique : technique d'optimisation pour les problèmes avec sous-structure optimale et chevauchement des sous-problèmes. On mémorise les résultats des sous-problèmes pour éviter les recalculs.
+
+Exemples classiques :
+- Suite de Fibonacci : passage de O(2ⁿ) récursif naïf à O(n) avec mémoïsation
+- Plus longue sous-suite commune (LCS) : O(nm) par programmation dynamique
+- Problème du sac à dos : O(nW) pseudo-polynomial
+
+4. Algorithmes sur les graphes
+Un graphe G = (V, E) est un ensemble de sommets V et d'arêtes E.
+
+Parcours en largeur (BFS) : explore les sommets par distance croissante à la source. Utilise une file (FIFO). Complexité O(|V| + |E|). Calcule les plus courts chemins en nombre d'arêtes.
+
+Parcours en profondeur (DFS) : explore un chemin aussi loin que possible avant de revenir en arrière. Utilise une pile (LIFO) ou la récursion. Complexité O(|V| + |E|). Détecte les cycles, calcule les composantes connexes.
+
+Algorithme de Dijkstra : plus courts chemins depuis une source avec poids positifs. Complexité O((|V| + |E|) log |V|) avec un tas binaire.
+
+5. Structures de données
+Listes chaînées : insertion/suppression en O(1), accès en O(n).
+Piles (LIFO) : push/pop en O(1). Applications : évaluation d'expressions, parcours DFS.
+Files (FIFO) : enqueue/dequeue en O(1). Applications : BFS, gestion de tâches.
+Arbres binaires de recherche : insertion/recherche/suppression en O(h) où h est la hauteur.
+Tables de hachage : insertion/recherche en O(1) amorti, O(n) au pire.
+
+6. Bases de données et SQL
+Modèle relationnel : données organisées en tables (relations) avec des attributs (colonnes) et des tuples (lignes).
+Clé primaire : identifiant unique d'un tuple.
+Clé étrangère : référence vers la clé primaire d'une autre table.
+
+Requêtes SQL essentielles :
+SELECT colonnes FROM table WHERE condition
+JOIN : INNER JOIN, LEFT JOIN, RIGHT JOIN
+GROUP BY + fonctions d'agrégation (COUNT, SUM, AVG, MIN, MAX)
+ORDER BY, LIMIT, DISTINCT
+Sous-requêtes et requêtes imbriquées`,
+  },
+  {
+    title: 'Mines-Ponts 2025 — Mathématiques 1 MP',
+    category: 'exam',
+    content: `Concours Mines-Ponts 2025 — Épreuve de Mathématiques 1 — Filière MP
+Durée : 3 heures
+
+Ce sujet est un sujet de concours officiel. Il teste les connaissances en analyse et algèbre du programme de MP. Les candidats doivent traiter toutes les parties. La qualité de la rédaction et la rigueur des démonstrations sont prises en compte dans l'évaluation.
+
+Note : Ce document est un placeholder pour le sujet complet. Le PDF original est disponible dans corrections/sujets-mines-ponts-mp/2025-maths-mp-1.pdf.`,
+  },
+  {
+    title: 'Mines-Ponts 2024 — Mathématiques 1 MP',
+    category: 'exam',
+    content: `Concours Mines-Ponts 2024 — Épreuve de Mathématiques 1 — Filière MP
+Durée : 3 heures
+
+Sujet de concours officiel Mines-Ponts 2024. Le PDF original est disponible dans corrections/sujets-mines-ponts-mp/2024-maths-mp-1.pdf.`,
+  },
+]
+
+async function seedDocuments(profileId: string, now: string) {
+  const { chunkText, computeKeywords } = await import('../../lib/sources')
+
+  const documents: import('../schema').Document[] = []
+  const chunks: import('../schema').DocumentChunk[] = []
+
+  for (let di = 0; di < SEED_DOCUMENTS.length; di++) {
+    const doc = SEED_DOCUMENTS[di]
+    const docId = `${profileId}:doc${di}`
+    const textChunks = chunkText(doc.content, 400)
+
+    documents.push({
+      id: docId,
+      examProfileId: profileId,
+      title: doc.title,
+      sourceType: 'text',
+      category: doc.category,
+      originalContent: doc.content,
+      chunkCount: textChunks.length,
+      wordCount: doc.content.split(/\s+/).length,
+      createdAt: now,
+    })
+
+    for (let ci = 0; ci < textChunks.length; ci++) {
+      chunks.push({
+        id: `${docId}:chunk${ci}`,
+        documentId: docId,
+        examProfileId: profileId,
+        content: textChunks[ci],
+        chunkIndex: ci,
+        keywords: computeKeywords(textChunks[ci]),
+      })
+    }
+  }
+
+  await db.documents.bulkPut(documents)
+  await db.documentChunks.bulkPut(chunks)
 }
 
 /** Quick stats about the seeded data */

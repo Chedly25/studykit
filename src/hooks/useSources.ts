@@ -2,7 +2,7 @@
  * Reactive hook for the Sources library.
  * Provides live-query documents, upload/paste/delete, and search.
  */
-import { useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useAuth } from '@clerk/clerk-react'
@@ -51,6 +51,29 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
     [examProfileId],
     0,
   )
+
+  // Safety net: auto-embed chunks missing embeddings (seeded docs, pasted text).
+  // Delayed 15s so agents and other startup work settles first.
+  useEffect(() => {
+    if (!examProfileId) return
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      if (cancelled) return
+      try {
+        const allChunks = await db.documentChunks.where('examProfileId').equals(examProfileId).toArray()
+        if (allChunks.length === 0 || cancelled) return
+        const existingEmbeddings = await db.chunkEmbeddings.where('examProfileId').equals(examProfileId).toArray()
+        const existingChunkIds = new Set(existingEmbeddings.map(e => e.chunkId))
+        const unembedded = allChunks.filter(c => !existingChunkIds.has(c.id))
+        if (unembedded.length === 0 || cancelled) return
+        // Fresh token right before the call
+        const token = await getToken({ skipCache: true })
+        if (!token || cancelled) return
+        await embedAndStoreChunks(unembedded, token)
+      } catch { /* non-critical */ }
+    }, 15_000)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [examProfileId, getToken])
 
   const uploadPdf = useCallback(async (file: File) => {
     if (!examProfileId) return
@@ -166,7 +189,13 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
     try {
       const doc = await createDocument(examProfileId, title, 'paste', text)
       const chunks = chunkText(text)
-      await saveChunks(doc.id, examProfileId, chunks)
+      const stored = await saveChunks(doc.id, examProfileId, chunks)
+      // Generate embeddings so semantic search works
+      const token = await getToken()
+      if (token && stored.length > 0) {
+        await embedAndStoreChunks(stored, token).catch(() => { /* non-critical */ })
+      }
+      onDocumentReadyRef.current?.(doc.id)
       toast.success('Text saved')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Save failed')
@@ -175,7 +204,7 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
       setIsProcessing(false)
       setProcessingStatus('')
     }
-  }, [examProfileId])
+  }, [examProfileId, getToken])
 
   const saveNote = useCallback(async (title: string, text: string) => {
     if (!examProfileId || !text.trim()) return
@@ -183,7 +212,13 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
     try {
       const doc = await createDocument(examProfileId, title, 'text', text)
       const chunks = chunkText(text)
-      await saveChunks(doc.id, examProfileId, chunks)
+      const stored = await saveChunks(doc.id, examProfileId, chunks)
+      // Generate embeddings so semantic search works
+      const token = await getToken()
+      if (token && stored.length > 0) {
+        await embedAndStoreChunks(stored, token).catch(() => { /* non-critical */ })
+      }
+      onDocumentReadyRef.current?.(doc.id)
       toast.success('Note saved')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Save failed')
@@ -191,7 +226,7 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
     } finally {
       setIsProcessing(false)
     }
-  }, [examProfileId])
+  }, [examProfileId, getToken])
 
   const deleteSource = useCallback(async (documentId: string) => {
     await deleteEmbeddings(documentId)

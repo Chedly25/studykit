@@ -173,13 +173,13 @@ describe('generateEmbeddings', () => {
     expect(result.length).toBe(75)
   })
 
-  it('throws on API error', async () => {
+  it('throws on non-retryable API error (401)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
-      new Response('Error', { status: 500, headers: { 'Content-Type': 'text/plain' } }),
+      new Response('Unauthorized', { status: 401, headers: { 'Content-Type': 'text/plain' } }),
     ))
 
     await expect(generateEmbeddings(['test'], 'token'))
-      .rejects.toThrow('Embedding API error: 500')
+      .rejects.toThrow('Embedding API error: 401')
   })
 
   it('includes auth header', async () => {

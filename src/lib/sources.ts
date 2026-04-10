@@ -6,6 +6,7 @@ import type { Document, DocumentChunk, DocumentSourceType, DocumentCategory } fr
 
 // ─── Stopwords ──────────────────────────────────────────────────
 const STOPWORDS = new Set([
+  // English
   'a','an','the','and','or','but','in','on','at','to','for','of','with',
   'by','from','is','it','as','be','was','were','are','been','being',
   'have','has','had','do','does','did','will','would','shall','should',
@@ -15,6 +16,13 @@ const STOPWORDS = new Set([
   'not','no','nor','so','if','then','than','too','very','just','about',
   'up','out','into','over','after','before','between','under','again',
   'each','every','all','both','few','more','most','other','some','such',
+  // French
+  'les','des','est','une','son','ses','aux','par','sur','dans','pas',
+  'plus','que','qui','ont','été','fait','avec','ces','mais','pour',
+  'tout','tous','sans','elle','nous','vous','leur','leurs','bien',
+  'même','très','peu','trop','donc','car','soit','dont','comme',
+  'cette','entre','après','avant','chez','vers','lors','aussi',
+  'toute','chaque','peut','sont','elles','quand','quel',
 ])
 
 // ─── Helpers ────────────────────────────────────────────────────
@@ -25,7 +33,7 @@ function generateId(): string {
 export function tokenize(text: string): string[] {
   return text
     .toLowerCase()
-    .split(/[^a-z0-9]+/)
+    .split(/[^a-zà-öø-ÿ0-9]+/)
     .filter(w => w.length > 2 && !STOPWORDS.has(w))
 }
 
@@ -37,7 +45,7 @@ export function computeKeywords(text: string): string {
 }
 
 // ─── Text Chunking ─────────────────────────────────────────────
-export function chunkText(text: string, maxTokens = 500): string[] {
+export function chunkText(text: string, maxTokens = 300): string[] {
   const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim())
   const chunks: string[] = []
   let current = ''

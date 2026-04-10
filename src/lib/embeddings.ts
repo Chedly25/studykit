@@ -31,23 +31,42 @@ export async function generateEmbeddings(
 
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
     const batch = texts.slice(i, i + BATCH_SIZE)
-    const res = await fetchWithGate(embedGate, () =>
-      fetch('/api/embed', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ texts: batch }),
-      })
-    )
 
-    if (!res.ok) {
+    // Retry with exponential backoff on 429/5xx
+    let lastError: Error | null = null
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (attempt > 0) {
+        await new Promise(r => setTimeout(r, Math.min(2000 * 2 ** attempt, 30000)))
+      }
+
+      const res = await fetchWithGate(embedGate, () =>
+        fetch('/api/embed', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ texts: batch }),
+        })
+      )
+
+      if (res.ok) {
+        const data = (await res.json()) as { embeddings: string[] }
+        results.push(...data.embeddings)
+        lastError = null
+        break
+      }
+
+      if (res.status === 429 || res.status >= 500) {
+        lastError = new Error(`Embedding API error: ${res.status}`)
+        continue // retry
+      }
+
+      // 401/403 — no point retrying
       throw new Error(`Embedding API error: ${res.status}`)
     }
 
-    const data = (await res.json()) as { embeddings: string[] }
-    results.push(...data.embeddings)
+    if (lastError) throw lastError
   }
 
   return results
