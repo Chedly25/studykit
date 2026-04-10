@@ -82,6 +82,10 @@ export function PdfPageRenderer({
         // Render text layer
         if (!cancelled && textLayerRef.current) {
           textLayerRef.current.innerHTML = ''
+          // Critical: set CSS var used by PDF.js to position each span
+          textLayerRef.current.style.setProperty('--total-scale-factor', String(scale))
+          textLayerRef.current.style.width = `${viewport.width}px`
+          textLayerRef.current.style.height = `${viewport.height}px`
           try {
             const pdfjsLib: any = await import('pdfjs-dist/build/pdf.mjs')
             if (cancelled || !textLayerRef.current) return

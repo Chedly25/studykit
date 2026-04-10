@@ -142,7 +142,7 @@ export function Layout() {
   }, [sidebarPinned])
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className={isChatPage ? 'h-screen flex flex-col overflow-hidden' : 'min-h-screen flex flex-col'}>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:bg-[var(--accent-text)] focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm">
         Skip to content
       </a>
@@ -208,7 +208,7 @@ export function Layout() {
         </div>
       </header>
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-h-0">
         {/* ─── Desktop Sidebar Rail ───────────────────────────── */}
         <SignedIn>
           <aside
@@ -319,7 +319,7 @@ export function Layout() {
         )}
 
         {/* ─── Main content ───────────────────────────────────── */}
-        <main id="main-content" className={isChatPage ? 'flex-1 w-full min-w-0 pb-16 md:pb-0' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0 pb-16 md:pb-0'}>
+        <main id="main-content" className={isChatPage ? 'flex-1 w-full min-w-0 min-h-0 pb-16 md:pb-0 md:overflow-hidden' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0 pb-16 md:pb-0'}>
           {!isOnline && (
             <div className="mb-4 px-4 py-2 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)] text-sm text-[var(--color-warning)] text-center">
               You're offline. Some features may not work.

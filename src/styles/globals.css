@@ -391,7 +391,9 @@ body {
 .dark .chat-input-shadow { box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3); }
 
 /* ─── PDF Text Layer ─── */
-/* Follows the official PDF.js text_layer_builder.css reference for reliable text selection. */
+/* Required CSS vars + positioning for PDF.js 5.x text layer.
+   Without --total-scale-factor and font-size calc, spans are mispositioned
+   and text selection doesn't match the rendered canvas. */
 .textLayer {
   position: absolute;
   text-align: initial;
@@ -399,14 +401,20 @@ body {
   overflow: clip;
   opacity: 1;
   line-height: 1;
+  -webkit-text-size-adjust: none;
   text-size-adjust: none;
   forced-color-adjust: none;
   transform-origin: 0 0;
   caret-color: CanvasText;
   z-index: 2;
   cursor: text;
-  user-select: text;
-  -webkit-user-select: text;
+  --total-scale-factor: 1;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.textLayer.highlighting {
+  touch-action: none;
 }
 .textLayer :is(span, br) {
   color: transparent;
@@ -414,13 +422,23 @@ body {
   white-space: pre;
   cursor: text;
   transform-origin: 0% 0%;
-  user-select: text;
-  -webkit-user-select: text;
-  pointer-events: all;
 }
-.textLayer span.markedContent {
-  top: 0;
-  height: 0;
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.textLayer .markedContent {
+  display: contents;
+}
+.textLayer span[role="img"] {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
 }
 .textLayer ::selection {
   background: color-mix(in srgb, var(--accent) 35%, transparent);
