@@ -39,13 +39,14 @@ export function hasCitations(text: string): boolean {
 }
 
 /**
- * Load chunk content for a citation.
+ * Load chunk content + metadata for a citation.
+ * Returns null if no matching document or chunk found.
  */
 export async function loadChunkForCitation(
   examProfileId: string,
   docTitle: string,
   chunkIndex: number,
-): Promise<string | null> {
+): Promise<{ content: string; pageNumber?: number; documentId: string } | null> {
   const docs = await db.documents
     .where('examProfileId')
     .equals(examProfileId)
@@ -60,7 +61,12 @@ export async function loadChunkForCitation(
     .filter(c => c.chunkIndex === chunkIndex)
     .toArray()
 
-  return chunks.length > 0 ? chunks[0].content : null
+  if (chunks.length === 0) return null
+  return {
+    content: chunks[0].content,
+    pageNumber: chunks[0].pageNumber,
+    documentId: docs[0].id,
+  }
 }
 
 // ─── Components ─────────────────────────────────────────────────
@@ -121,8 +127,13 @@ export function CitationPopover({ citation, content, isLoading, onClose }: Citat
 
 /**
  * Hook for managing citation popover state.
+ * Optionally takes an onJumpToPage callback that's called when the clicked
+ * citation's chunk has a known pageNumber (only PDF uploads).
  */
-export function useCitationPopover(examProfileId: string | undefined) {
+export function useCitationPopover(
+  examProfileId: string | undefined,
+  onJumpToPage?: (pageNumber: number) => void,
+) {
   const [activeCitation, setActiveCitation] = useState<Citation | null>(null)
   const [citationContent, setCitationContent] = useState<string | null>(null)
   const [isLoadingCitation, setIsLoadingCitation] = useState(false)
@@ -134,14 +145,18 @@ export function useCitationPopover(examProfileId: string | undefined) {
     setCitationContent(null)
 
     try {
-      const content = await loadChunkForCitation(examProfileId, citation.documentTitle, citation.chunkIndex)
-      setCitationContent(content)
+      const result = await loadChunkForCitation(examProfileId, citation.documentTitle, citation.chunkIndex)
+      setCitationContent(result?.content ?? null)
+      // Jump to page if we have one and a handler is provided
+      if (result?.pageNumber !== undefined && onJumpToPage) {
+        onJumpToPage(result.pageNumber)
+      }
     } catch {
       setCitationContent(null)
     } finally {
       setIsLoadingCitation(false)
     }
-  }, [examProfileId])
+  }, [examProfileId, onJumpToPage])
 
   const closeCitation = useCallback(() => {
     setActiveCitation(null)

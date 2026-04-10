@@ -14,7 +14,7 @@ import { db } from '../db'
 import { getPdfLib } from '../lib/pdfInit'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { usePdfHighlights } from '../hooks/usePdfHighlights'
-import { PdfScrollViewer } from '../components/reader/PdfScrollViewer'
+import { PdfScrollViewer, type PdfScrollViewerHandle } from '../components/reader/PdfScrollViewer'
 import { ReaderChatPane } from '../components/reader/ReaderChatPane'
 import { ReaderToolbar } from '../components/reader/ReaderToolbar'
 import { RecallSuggestion } from '../components/reader/RecallSuggestion'
@@ -38,6 +38,11 @@ export default function DocumentReader() {
   const [chatOpen, setChatOpen] = useState(() => window.innerWidth >= 768)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectionContext, setSelectionContext] = useState<{ text: string; pageNumber: number; documentTitle: string } | null>(null)
+  const pdfViewerRef = useRef<PdfScrollViewerHandle>(null)
+
+  const handleJumpToPage = useCallback((pageNumber: number) => {
+    pdfViewerRef.current?.scrollToPage(pageNumber)
+  }, [])
 
   // Highlights for "quiz on highlights" feature
   const { highlights: allHighlights } = usePdfHighlights(documentId ?? '', profileId)
@@ -245,6 +250,7 @@ export default function DocumentReader() {
         {pdfDoc && (
           <div className="flex-1 relative min-w-0">
             <PdfScrollViewer
+              ref={pdfViewerRef}
               pdfDoc={pdfDoc}
               scale={scale}
               onPageChange={handlePageChange}
@@ -280,6 +286,7 @@ export default function DocumentReader() {
               selectionContext={selectionContext}
               onSelectionContextConsumed={() => setSelectionContext(null)}
               onClose={() => setChatOpen(false)}
+              onJumpToPage={handleJumpToPage}
             />
           </div>
         )}
@@ -313,6 +320,7 @@ export default function DocumentReader() {
               selectionContext={selectionContext}
               onSelectionContextConsumed={() => setSelectionContext(null)}
               onClose={() => setChatOpen(false)}
+              onJumpToPage={handleJumpToPage}
             />
           </div>
         </div>

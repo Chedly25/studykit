@@ -8,6 +8,7 @@ import { useAgent } from '../../hooks/useAgent'
 import { useTutorPreferences } from '../../hooks/useTutorPreferences'
 import { useAttachments } from '../../hooks/useAttachments'
 import { ChatMessageBubble } from './ChatMessage'
+import { CitationPopover, useCitationPopover } from './SourceCitation'
 import { ChatInput } from './ChatInput'
 import { ToolCallIndicator } from './ToolCallIndicator'
 import { ChatHistory } from './ChatHistory'
@@ -46,6 +47,7 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId
   const { documentCount } = useSources(profileId)
   const { preferences, updatePreferences, resetToDefaults } = useTutorPreferences(profileId)
   const [showSettings, setShowSettings] = useState(false)
+  const citationPopover = useCitationPopover(profileId)
 
   const {
     attachments, addFiles, removeAttachment, clearAttachments, isParsing, getRelevantChunks,
@@ -204,7 +206,12 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId
         ) : null}
 
         {messages.map((msg) => (
-          <ChatMessageBubble key={msg.id} message={msg} />
+          <ChatMessageBubble
+            key={msg.id}
+            message={msg}
+            examProfileId={profileId}
+            onCitationClick={citationPopover.showCitation}
+          />
         ))}
 
         {streamingText && (
@@ -291,6 +298,15 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId
           preferences={preferences}
           onUpdate={updatePreferences}
           onReset={resetToDefaults}
+        />
+      )}
+
+      {citationPopover.activeCitation && (
+        <CitationPopover
+          citation={citationPopover.activeCitation}
+          content={citationPopover.citationContent}
+          isLoading={citationPopover.isLoadingCitation}
+          onClose={citationPopover.closeCitation}
         />
       )}
     </div>

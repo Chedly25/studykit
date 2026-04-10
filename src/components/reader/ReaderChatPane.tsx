@@ -14,6 +14,7 @@ import { useKnowledgeGraph } from '../../hooks/useKnowledgeGraph'
 import { useAgent } from '../../hooks/useAgent'
 import { useAttachments } from '../../hooks/useAttachments'
 import { ChatMessageBubble } from '../chat/ChatMessage'
+import { CitationPopover, useCitationPopover } from '../chat/SourceCitation'
 import { ChatInput, type ContextPill } from '../chat/ChatInput'
 import { ToolCallIndicator } from '../chat/ToolCallIndicator'
 import { ChatContextProvider } from '../chat/ChatContext'
@@ -27,6 +28,8 @@ interface Props {
   selectionContext?: { text: string; pageNumber: number; documentTitle: string } | null
   onSelectionContextConsumed: () => void
   onClose: () => void
+  /** Called when a citation with a known page number is clicked. */
+  onJumpToPage?: (pageNumber: number) => void
 }
 
 const CONV_KEY = (docId: string) => `reader_conv_${docId}`
@@ -85,7 +88,7 @@ function buildCourseCompanionPrompt(docTitle: string): string {
 
 // ─── Component ──────
 
-export function ReaderChatPane({ documentId, documentTitle, documentCategory, selectionContext, onSelectionContextConsumed, onClose }: Props) {
+export function ReaderChatPane({ documentId, documentTitle, documentCategory, selectionContext, onSelectionContextConsumed, onClose, onJumpToPage }: Props) {
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const profileId = activeProfile?.id
@@ -93,6 +96,7 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
   const scrollRef = useRef<HTMLDivElement>(null)
   const [contextPills, setContextPills] = useState<ContextPill[]>([])
   const restoredRef = useRef(false)
+  const citationPopover = useCitationPopover(profileId, onJumpToPage)
 
   const isExam = documentCategory === 'exam'
 
@@ -259,7 +263,12 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
           )}
 
           {messages.map((msg) => (
-            <ChatMessageBubble key={msg.id} message={msg} />
+            <ChatMessageBubble
+              key={msg.id}
+              message={msg}
+              examProfileId={profileId}
+              onCitationClick={citationPopover.showCitation}
+            />
           ))}
 
           {streamingText && (
@@ -295,6 +304,15 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
           isParsing={isParsing}
         />
       </div>
+
+      {citationPopover.activeCitation && (
+        <CitationPopover
+          citation={citationPopover.activeCitation}
+          content={citationPopover.citationContent}
+          isLoading={citationPopover.isLoadingCitation}
+          onClose={citationPopover.closeCitation}
+        />
+      )}
     </div>
   )
 }

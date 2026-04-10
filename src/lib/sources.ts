@@ -114,24 +114,51 @@ export async function deleteDocument(documentId: string): Promise<void> {
   await db.documents.delete(documentId)
 }
 
+/**
+ * Save chunks to the database. Accepts either plain strings (for pasted text,
+ * notes — no page tracking) or objects with pageNumber (for PDF uploads).
+ */
 export async function saveChunks(
   documentId: string,
   examProfileId: string,
-  chunks: string[],
+  chunks: string[] | Array<{ content: string; pageNumber?: number }>,
 ): Promise<DocumentChunk[]> {
-  const rows: DocumentChunk[] = chunks.map((content, i) => ({
-    id: generateId(),
-    documentId,
-    examProfileId,
-    content,
-    chunkIndex: i,
-    keywords: computeKeywords(content),
-  }))
+  const rows: DocumentChunk[] = chunks.map((chunk, i) => {
+    const content = typeof chunk === 'string' ? chunk : chunk.content
+    const pageNumber = typeof chunk === 'string' ? undefined : chunk.pageNumber
+    return {
+      id: generateId(),
+      documentId,
+      examProfileId,
+      content,
+      chunkIndex: i,
+      keywords: computeKeywords(content),
+      ...(pageNumber !== undefined ? { pageNumber } : {}),
+    }
+  })
 
   await db.documentChunks.bulkPut(rows)
   await db.documents.update(documentId, { chunkCount: rows.length })
 
   return rows
+}
+
+/**
+ * Chunk an array of pages, preserving page numbers on each chunk.
+ * Each page is chunked independently so chunk boundaries never cross pages.
+ */
+export function chunkPages(
+  pages: Array<{ pageNumber: number; text: string }>,
+  maxTokens = 300,
+): Array<{ content: string; pageNumber: number }> {
+  const result: Array<{ content: string; pageNumber: number }> = []
+  for (const page of pages) {
+    const pageChunks = chunkText(page.text, maxTokens)
+    for (const content of pageChunks) {
+      result.push({ content, pageNumber: page.pageNumber })
+    }
+  }
+  return result
 }
 
 export async function getChunksByDocumentId(documentId: string): Promise<DocumentChunk[]> {

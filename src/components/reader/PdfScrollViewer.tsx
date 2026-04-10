@@ -2,7 +2,7 @@
  * Multi-page scrollable PDF viewer with IntersectionObserver virtualization.
  * Only renders canvas + text layer for pages visible in the viewport.
  */
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { Loader2 } from 'lucide-react'
 import type { PDFDocumentProxy } from 'pdfjs-dist'
 import { usePdfHighlights } from '../../hooks/usePdfHighlights'
@@ -24,7 +24,16 @@ interface PageDim {
   height: number
 }
 
-export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, onAutoScale, documentId, examProfileId, topicHighlightTexts }: Props) {
+/** Imperative handle exposed to parent via ref. */
+export interface PdfScrollViewerHandle {
+  /** Scroll a specific 1-based page into view. */
+  scrollToPage(pageNumber: number): void
+}
+
+export const PdfScrollViewer = forwardRef<PdfScrollViewerHandle, Props>(function PdfScrollViewer(
+  { pdfDoc, scale, onPageChange, onAskAI, onAutoScale, documentId, examProfileId, topicHighlightTexts },
+  ref,
+) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [pageDimensions, setPageDimensions] = useState<PageDim[]>([])
   const [visiblePages, setVisiblePages] = useState<Set<number>>(new Set([1]))
@@ -32,6 +41,16 @@ export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, onAutoSc
   const observerRef = useRef<IntersectionObserver | null>(null)
 
   const { highlights: _highlights, addHighlight, updateNote, deleteHighlight, createFlashcardFromHighlight, getHighlightsForPage } = usePdfHighlights(documentId, examProfileId)
+
+  // Expose scrollToPage API to parent via ref
+  useImperativeHandle(ref, () => ({
+    scrollToPage(pageNumber: number) {
+      const pageEl = pageRefs.current.get(pageNumber)
+      if (pageEl) {
+        pageEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    },
+  }), [])
 
   // Pre-calculate all page dimensions
   useEffect(() => {
@@ -167,4 +186,4 @@ export function PdfScrollViewer({ pdfDoc, scale, onPageChange, onAskAI, onAutoSc
       })}
     </div>
   )
-}
+})

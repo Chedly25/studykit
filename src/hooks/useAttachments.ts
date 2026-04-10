@@ -95,7 +95,8 @@ export function useAttachments() {
       const { title, chunks } = att.processed
 
       for (let i = 0; i < chunks.length; i++) {
-        const chunkWords = tokenize(chunks[i])
+        const chunkContent = chunks[i].content
+        const chunkWords = tokenize(chunkContent)
         if (chunkWords.length === 0) continue
 
         // TF-IDF scoring
@@ -103,13 +104,13 @@ export function useAttachments() {
         for (const term of queryTerms) {
           const tf = chunkWords.filter(w => w === term).length / chunkWords.length
           // Simple IDF approximation within this attachment
-          const containsTerm = chunks.some(c => tokenize(c).includes(term))
+          const containsTerm = chunks.some(c => tokenize(c.content).includes(term))
           const idf = containsTerm ? Math.log(chunks.length / 1) + 1 : 0
           score += tf * idf
         }
 
         if (score > 0) {
-          allChunks.push({ content: chunks[i], documentTitle: title, chunkIndex: i, score })
+          allChunks.push({ content: chunkContent, documentTitle: title, chunkIndex: i, score })
         }
       }
     }

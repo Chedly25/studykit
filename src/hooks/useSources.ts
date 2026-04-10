@@ -13,6 +13,7 @@ import {
   deleteDocument,
   saveChunks,
   chunkText,
+  chunkPages,
 } from '../lib/sources'
 import { parsePdf } from '../lib/pdfParser'
 import { processFile } from '../lib/fileProcessor'
@@ -80,7 +81,7 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
     setIsProcessing(true)
     setProcessingStatus('Parsing PDF...')
     try {
-      const { text, pageCount } = await parsePdf(file)
+      const { text, pages, pageCount } = await parsePdf(file)
       const title = file.name.replace(/\.pdf$/i, '')
       setProcessingStatus('Creating document...')
       const doc = await createDocument(examProfileId, title, 'pdf', text)
@@ -92,7 +93,9 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
         file: file,
       })
       setProcessingStatus(`Chunking ${pageCount} pages...`)
-      const chunks = chunkText(text)
+      // Page-aware chunking: each chunk carries its source page number
+      // so the Course Companion can jump to the right page on citation click.
+      const chunks = chunkPages(pages)
       await saveChunks(doc.id, examProfileId, chunks)
       // Embed immediately at upload time (uses Cloudflare Workers AI, separate from LLM)
       try {

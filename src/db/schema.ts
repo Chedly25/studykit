@@ -132,6 +132,7 @@ export interface DocumentChunk {
   chunkIndex: number
   keywords: string // comma-separated lowercase terms for search
   contextPrefix?: string // Generated context sentence for retrieval enrichment
+  pageNumber?: number // 1-based page number for PDF uploads; undefined for text/paste
 }
 
 export interface DocumentFile {
