@@ -16,6 +16,8 @@ import { useAttachments } from '../../hooks/useAttachments'
 import { ChatMessageBubble } from '../chat/ChatMessage'
 import { CitationPopover, useCitationPopover } from '../chat/SourceCitation'
 import { ChatInput, type ContextPill } from '../chat/ChatInput'
+import SimilarExamsModal from './SimilarExamsModal'
+import { Search as SearchIcon } from 'lucide-react'
 import { ToolCallIndicator } from '../chat/ToolCallIndicator'
 import { ChatContextProvider } from '../chat/ChatContext'
 import { UpgradePrompt } from '../subscription/UpgradePrompt'
@@ -97,6 +99,7 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
   const [contextPills, setContextPills] = useState<ContextPill[]>([])
   const restoredRef = useRef(false)
   const citationPopover = useCitationPopover(profileId, onJumpToPage)
+  const [similarSourceChunkId, setSimilarSourceChunkId] = useState<string | null>(null)
 
   const isExam = documentCategory === 'exam'
 
@@ -217,6 +220,16 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
     setContextPills(prev => prev.filter(p => p.id !== id))
   }, [])
 
+  const handleFindSimilarExams = useCallback(async () => {
+    // Use the first chunk of this document as the source for similarity
+    const firstChunk = await db.documentChunks
+      .where('documentId').equals(documentId)
+      .first()
+    if (firstChunk) {
+      setSimilarSourceChunkId(firstChunk.id)
+    }
+  }, [documentId])
+
   // Mode icon + label
   const ModeIcon = isExam ? ClipboardCheck : BookOpen
   const modeLabel = isExam ? 'Exam Companion' : documentCategory === 'course' ? 'Course Companion' : 'AI Assistant'
@@ -229,9 +242,21 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
           <ModeIcon className="w-4 h-4 text-[var(--accent-text)]" />
           <span className="text-sm font-medium text-[var(--text-heading)]">{modeLabel}</span>
         </div>
-        <button onClick={onClose} className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-body)] hover:bg-[var(--bg-input)] transition-colors">
-          <X className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          {isExam && (
+            <button
+              onClick={handleFindSimilarExams}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors"
+              title="Trouver des sujets similaires dans tes annales"
+            >
+              <SearchIcon className="w-3 h-3" />
+              Similaires
+            </button>
+          )}
+          <button onClick={onClose} className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-body)] hover:bg-[var(--bg-input)] transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -311,6 +336,14 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
           content={citationPopover.citationContent}
           isLoading={citationPopover.isLoadingCitation}
           onClose={citationPopover.closeCitation}
+        />
+      )}
+
+      {similarSourceChunkId && profileId && (
+        <SimilarExamsModal
+          sourceChunkId={similarSourceChunkId}
+          examProfileId={profileId}
+          onClose={() => setSimilarSourceChunkId(null)}
         />
       )}
     </div>

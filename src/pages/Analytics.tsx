@@ -34,6 +34,7 @@ import { AIProfileCard } from '../components/analytics/AIProfileCard'
 import { ExamPatternsCard } from '../components/analytics/ExamPatternsCard'
 import { MisconceptionCard } from '../components/analytics/MisconceptionCard'
 import { LandscapeCard } from '../components/dashboard/LandscapeCard'
+import GapAnalysisCard from '../components/analytics/GapAnalysisCard'
 import { ResearchThreadsCard } from '../components/dashboard/ResearchThreadsCard'
 import { WeakTopicsCard } from '../components/dashboard/WeakTopicsCard'
 import { ActivityFeed } from '../components/dashboard/ActivityFeed'
@@ -374,6 +375,12 @@ export default function Analytics() {
       {profileId && (
         <div className="mt-4">
           <ExamPatternsCard examProfileId={profileId} />
+        </div>
+      )}
+
+      {profileId && (
+        <div className="mt-4">
+          <GapAnalysisCard examProfileId={profileId} />
         </div>
       )}
 

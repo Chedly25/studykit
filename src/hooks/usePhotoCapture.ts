@@ -110,10 +110,84 @@ export function usePhotoCapture() {
     }
   }, [getToken])
 
+  /** Grade a handwritten solution. Returns parsed GradingResult or null on failure. */
+  const gradeWork = useCallback(async (image: Blob): Promise<GradingResult | null> => {
+    setError(null)
+    setIsExtracting(true)
+    try {
+      const token = await getToken()
+      if (!token) { setError('Not authenticated'); return null }
+
+      const formData = new FormData()
+      formData.append('image', image, 'photo.jpg')
+      formData.append('mode', 'grade')
+
+      const res = await fetch('/api/vision', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      })
+
+      if (res.status === 403) {
+        setError('La correction de copie nécessite Pro')
+        return null
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Grading failed' })) as { error?: string }
+        setError(data.error ?? 'Correction failed')
+        return null
+      }
+
+      const data = await res.json() as { text?: string; error?: string }
+      if (data.error) { setError(data.error); return null }
+
+      // Parse JSON from the response (may be wrapped in markdown code fence)
+      const raw = data.text ?? ''
+      const jsonMatch = raw.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        setError('Impossible de parser la correction')
+        return null
+      }
+
+      try {
+        const parsed = JSON.parse(jsonMatch[0]) as GradingResult
+        track('photo_graded')
+        return parsed
+      } catch {
+        setError('Format de réponse invalide')
+        return null
+      }
+    } catch {
+      setError('La correction a échoué')
+      return null
+    } finally {
+      setIsExtracting(false)
+    }
+  }, [getToken])
+
   return {
     selectFromFiles,
     extractText,
+    gradeWork,
     isExtracting,
     error,
   }
+}
+
+export interface GradingStep {
+  line: number
+  content: string
+  status: 'correct' | 'partial' | 'error'
+  feedback: string
+}
+
+export interface GradingResult {
+  transcription: string
+  problemStatement: string
+  steps: GradingStep[]
+  overallScore: number
+  maxScore: number
+  summary: string
+  suggestions: string[]
 }

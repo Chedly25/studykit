@@ -178,6 +178,85 @@ export async function semanticSearch(
   return searchChunks(examProfileId, query, topN)
 }
 
+// ─── Similar chunks finder ──────────────────────────────────────
+
+export interface SimilarChunk extends DocumentChunk {
+  similarity: number
+  documentTitle?: string
+  documentCategory?: string
+}
+
+/**
+ * Find chunks semantically similar to a source chunk using cosine similarity
+ * on stored embeddings. Optionally filter by document category.
+ */
+export async function findSimilarChunks(
+  sourceChunkId: string,
+  options: {
+    examProfileId: string
+    topN?: number
+    category?: 'course' | 'exam' | 'other'
+    minSimilarity?: number
+  },
+): Promise<SimilarChunk[]> {
+  const topN = options.topN ?? 5
+  const minSim = options.minSimilarity ?? 0.4
+
+  // Get source embedding
+  const allEmbeddings = await db.chunkEmbeddings
+    .where('examProfileId')
+    .equals(options.examProfileId)
+    .toArray()
+
+  const sourceEmb = allEmbeddings.find(e => e.chunkId === sourceChunkId)
+  if (!sourceEmb) return []
+
+  const sourceVec = base64ToFloat32Array(sourceEmb.embedding)
+
+  // Score all OTHER embeddings
+  const scored = allEmbeddings
+    .filter(e => e.chunkId !== sourceChunkId)
+    .map(e => ({
+      chunkId: e.chunkId,
+      documentId: e.documentId,
+      similarity: cosineSimilarity(sourceVec, base64ToFloat32Array(e.embedding)),
+    }))
+    .filter(s => s.similarity >= minSim)
+    .sort((a, b) => b.similarity - a.similarity)
+
+  if (scored.length === 0) return []
+
+  // Load candidate chunks + their documents in bulk
+  const candidateIds = scored.slice(0, topN * 3).map(s => s.chunkId)
+  const chunks = await db.documentChunks.where('id').anyOf(candidateIds).toArray()
+  const chunkMap = new Map(chunks.map(c => [c.id, c]))
+
+  const docIds = [...new Set(chunks.map(c => c.documentId))]
+  const docs = await db.documents.where('id').anyOf(docIds).toArray()
+  const docMap = new Map(docs.map(d => [d.id, d]))
+
+  // Combine, filter by category if requested
+  const results: SimilarChunk[] = []
+  for (const s of scored) {
+    const chunk = chunkMap.get(s.chunkId)
+    if (!chunk) continue
+    const doc = docMap.get(chunk.documentId)
+    if (!doc) continue
+    if (options.category && doc.category !== options.category) continue
+
+    results.push({
+      ...chunk,
+      similarity: s.similarity,
+      documentTitle: doc.title,
+      documentCategory: doc.category,
+    })
+
+    if (results.length >= topN) break
+  }
+
+  return results
+}
+
 // ─── Check if embeddings exist for a document ───────────────────
 
 export async function hasEmbeddings(documentId: string): Promise<boolean> {

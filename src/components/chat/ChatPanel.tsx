@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
-import { X, Brain, Settings, Volume2, VolumeX } from 'lucide-react'
+import { X, Brain, Settings, Headphones } from 'lucide-react'
 import { useExamProfile } from '../../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../../hooks/useKnowledgeGraph'
 import { useAgent } from '../../hooks/useAgent'
@@ -10,6 +10,8 @@ import { useAttachments } from '../../hooks/useAttachments'
 import { ChatMessageBubble } from './ChatMessage'
 import { CitationPopover, useCitationPopover } from './SourceCitation'
 import { ChatInput } from './ChatInput'
+import VoiceModeBanner from './VoiceModeBanner'
+import GradingResultModal from './GradingResultModal'
 import { ToolCallIndicator } from './ToolCallIndicator'
 import { ChatHistory } from './ChatHistory'
 import { TutorSettingsModal } from './TutorSettingsModal'
@@ -21,7 +23,7 @@ import { AttachmentSavePrompt } from './AttachmentSavePrompt'
 import { useSources } from '../../hooks/useSources'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useVoiceOutput } from '../../hooks/useVoiceOutput'
-import { usePhotoCapture } from '../../hooks/usePhotoCapture'
+import { usePhotoCapture, type GradingResult } from '../../hooks/usePhotoCapture'
 import { useSubscription } from '../../hooks/useSubscription'
 import type { ChatAttachment } from '../../hooks/useAttachments'
 
@@ -73,6 +75,32 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId
     text: string | null
     isExtracting: boolean
   } | null>(null)
+
+  // "Corrige ma copie" grading state
+  const [gradingImageUrl, setGradingImageUrl] = useState<string | null>(null)
+  const [gradingResult, setGradingResult] = useState<GradingResult | null>(null)
+  const [gradingLoading, setGradingLoading] = useState(false)
+
+  const handleGradeWork = useCallback(async () => {
+    const blob = await photoCapture.selectFromFiles()
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    setGradingImageUrl(url)
+    setGradingResult(null)
+    setGradingLoading(true)
+    try {
+      const result = await photoCapture.gradeWork(blob)
+      setGradingResult(result)
+    } finally {
+      setGradingLoading(false)
+    }
+  }, [photoCapture])
+
+  const closeGradingModal = useCallback(() => {
+    if (gradingImageUrl) URL.revokeObjectURL(gradingImageUrl)
+    setGradingImageUrl(null)
+    setGradingResult(null)
+  }, [gradingImageUrl])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const [pendingSaveAttachments, setPendingSaveAttachments] = useState<ChatAttachment[] | null>(null)
@@ -158,15 +186,22 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId
           </button>
           {isPro && (
             <button
-              onClick={() => voiceOutput.setVoiceEnabled(!voiceOutput.voiceEnabled)}
-              className={`p-1 rounded-lg transition-colors ${
+              onClick={() => {
+                const newState = !voiceOutput.voiceEnabled
+                voiceOutput.setVoiceEnabled(newState)
+                if (!newState && voiceInput.isRecording) {
+                  voiceInput.cancelRecording()
+                }
+              }}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-colors text-xs font-medium ${
                 voiceOutput.voiceEnabled
-                  ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+                  ? 'bg-[var(--accent)] text-white shadow-sm'
                   : 'hover:bg-[var(--bg-input)] text-[var(--text-muted)]'
               }`}
-              title={voiceOutput.voiceEnabled ? 'Disable voice output' : 'Enable voice output'}
+              title={voiceOutput.voiceEnabled ? 'Quitter le mode vocal' : 'Activer le mode vocal'}
             >
-              {voiceOutput.voiceEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              <Headphones className="w-3.5 h-3.5" />
+              {voiceOutput.voiceEnabled ? 'Vocal' : 'Vocal'}
             </button>
           )}
           <QuotaIndicator messagesUsedToday={messagesUsedToday} />
@@ -187,6 +222,30 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId
           onSelect={loadConversation}
           onNew={newConversation}
           compact
+        />
+      )}
+
+      {/* Voice Mode Banner */}
+      {voiceOutput.voiceEnabled && isPro && (
+        <VoiceModeBanner
+          isRecording={voiceInput.isRecording}
+          isTranscribing={voiceInput.isTranscribing}
+          isSpeaking={voiceOutput.isSpeaking}
+          recordingMs={voiceInput.recordingMs}
+          maxDurationMs={voiceInput.maxDurationMs}
+          onToggleMic={async () => {
+            if (voiceInput.isRecording) {
+              const text = await voiceInput.stopRecording()
+              if (text) handleSend(text)
+            } else {
+              voiceInput.startRecording()
+            }
+          }}
+          onExit={() => {
+            voiceOutput.setVoiceEnabled(false)
+            if (voiceInput.isRecording) voiceInput.cancelRecording()
+            voiceOutput.stop()
+          }}
         />
       )}
 
@@ -277,6 +336,7 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId
               const text = await photoCapture.extractText(blob)
               setImagePreviewData(prev => prev ? { ...prev, text, isExtracting: false } : null)
             },
+            onGradeWork: handleGradeWork,
             isExtracting: photoCapture.isExtracting,
             imagePreview: imagePreviewData ? {
               imageUrl: imagePreviewData.url,
@@ -307,6 +367,15 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId
           content={citationPopover.citationContent}
           isLoading={citationPopover.isLoadingCitation}
           onClose={citationPopover.closeCitation}
+        />
+      )}
+
+      {gradingImageUrl && (
+        <GradingResultModal
+          result={gradingResult}
+          imageUrl={gradingImageUrl}
+          isLoading={gradingLoading}
+          onClose={closeGradingModal}
         />
       )}
     </div>

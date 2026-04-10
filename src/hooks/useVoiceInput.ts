@@ -2,7 +2,7 @@
  * Audio recording + transcription via Cloudflare Whisper.
  * Uses MediaRecorder API for capture, /api/transcribe for STT.
  */
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { track } from '../lib/analytics'
 
@@ -13,20 +13,36 @@ export function useVoiceInput(maxDurationMs: number = DEFAULT_MAX_DURATION_MS) {
   const [isRecording, setIsRecording] = useState(false)
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [recordingMs, setRecordingMs] = useState(0)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const startTimeRef = useRef<number>(0)
+
+  // Tick every 100ms while recording to update duration
+  useEffect(() => {
+    if (!isRecording) return
+    tickRef.current = setInterval(() => {
+      setRecordingMs(Date.now() - startTimeRef.current)
+    }, 100)
+    return () => {
+      if (tickRef.current) clearInterval(tickRef.current)
+    }
+  }, [isRecording])
 
   const cleanup = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current)
+    if (tickRef.current) clearInterval(tickRef.current)
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop())
       streamRef.current = null
     }
     mediaRecorderRef.current = null
     chunksRef.current = []
+    setRecordingMs(0)
   }, [])
 
   const startRecording = useCallback(async () => {
@@ -51,6 +67,8 @@ export function useVoiceInput(maxDurationMs: number = DEFAULT_MAX_DURATION_MS) {
       }
 
       recorder.start(250) // Collect chunks every 250ms
+      startTimeRef.current = Date.now()
+      setRecordingMs(0)
       setIsRecording(true)
 
       // Auto-stop after max duration
@@ -150,5 +168,7 @@ export function useVoiceInput(maxDurationMs: number = DEFAULT_MAX_DURATION_MS) {
     stopRecording,
     cancelRecording,
     error,
+    recordingMs,
+    maxDurationMs,
   }
 }

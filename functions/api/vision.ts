@@ -15,6 +15,39 @@ const MODEL = 'claude-haiku-4-5-20251001'
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 const DEFAULT_PROMPT = 'Extract all text from this image. Preserve formatting, equations (use LaTeX $...$ notation), and structure. Return only the extracted text, no commentary.'
 
+const GRADING_PROMPT = `Tu es un professeur agrégé de prépa MP/MP* qui corrige une copie manuscrite d'étudiant.
+
+**Étape 1 — Transcription** : lis l'image et transcris fidèlement le travail de l'étudiant. Utilise LaTeX pour toutes les formules mathématiques ($...$ pour inline, $$...$$ pour display).
+
+**Étape 2 — Analyse** : identifie ce que l'étudiant essaie de démontrer ou calculer.
+
+**Étape 3 — Correction ligne par ligne** : évalue chaque étape du raisonnement :
+- ✅ correcte (rigoureuse, juste)
+- ⚠️ partielle (résultat correct mais justification incomplète, ou hypothèses non vérifiées)
+- ❌ erronée (erreur de calcul, raisonnement faux, contre-sens)
+
+**Étape 4 — Feedback** : pour chaque erreur, explique clairement :
+- Ce qui est faux
+- Pourquoi c'est faux
+- Comment corriger
+
+**Format de sortie** : retourne UNIQUEMENT un JSON strict (pas de markdown, pas de texte autour) :
+\`\`\`json
+{
+  "transcription": "la transcription complète en LaTeX markdown",
+  "problemStatement": "l'énoncé ou le but de l'exercice (1 phrase)",
+  "steps": [
+    { "line": 1, "content": "contenu de la ligne", "status": "correct" | "partial" | "error", "feedback": "commentaire précis (vide si correct)" }
+  ],
+  "overallScore": 12,
+  "maxScore": 20,
+  "summary": "bilan général en 2-3 phrases (points forts, points faibles)",
+  "suggestions": ["amélioration 1", "amélioration 2"]
+}
+\`\`\`
+
+Sois honnête et rigoureux. Un étudiant de prépa préfère une correction sévère et juste à une correction complaisante.`
+
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
   return new Response(null, { status: 204, headers: corsHeaders(context.env) })
 }
@@ -92,7 +125,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
 
-    const prompt = DEFAULT_PROMPT
+    const mode = formData.get('mode')
+    const prompt = mode === 'grade' ? GRADING_PROMPT : DEFAULT_PROMPT
+    const maxTokens = mode === 'grade' ? 8192 : 4096
 
     // Convert to base64 using chunked encoding (avoids call stack overflow on large files)
     const imageBuffer = await imageFile.arrayBuffer()
@@ -128,7 +163,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     // Call Anthropic Vision API
     const anthropicBody = {
       model: MODEL,
-      max_tokens: 4096,
+      max_tokens: maxTokens,
       messages: [{
         role: 'user',
         content: [

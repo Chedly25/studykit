@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Send, Paperclip, FileText, X, Mic, MicOff, Camera, Loader2 } from 'lucide-react'
+import { Send, Paperclip, FileText, X, Mic, MicOff, Camera, Loader2, PenTool } from 'lucide-react'
 import { AttachmentChip } from './AttachmentChip'
 import { ImagePreview } from './ImagePreview'
 import type { ChatAttachment } from '../../hooks/useAttachments'
@@ -23,6 +23,8 @@ export interface VoiceInputState {
 
 export interface PhotoState {
   onSelectPhoto: () => void
+  /** Optional: separate action for grading handwritten work. */
+  onGradeWork?: () => void
   isExtracting: boolean
   imagePreview: {
     imageUrl: string
@@ -206,6 +208,19 @@ export function ChatInput({ onSend, disabled, placeholder, attachments, onAddFil
             ) : (
               <Camera className="w-5 h-5" />
             )}
+          </button>
+        )}
+
+        {/* "Corrige ma copie" — grade handwritten work */}
+        {photo?.onGradeWork && (
+          <button
+            onClick={photo.onGradeWork}
+            disabled={disabled || photo.isExtracting}
+            className="p-2 rounded-xl text-[var(--text-muted)] hover:bg-[var(--bg-input)] hover:text-[var(--accent-text)] transition-colors disabled:opacity-40"
+            title="Corrige ma copie"
+            aria-label="Corrige ma copie"
+          >
+            <PenTool className="w-5 h-5" />
           </button>
         )}
 

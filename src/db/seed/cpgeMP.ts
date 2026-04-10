@@ -28,7 +28,7 @@ interface SeedSubject {
   chapters: SeedChapter[]
 }
 
-const SUBJECTS: SeedSubject[] = [
+export const SUBJECTS: SeedSubject[] = [
   {
     name: 'Mathématiques',
     weight: 35,
