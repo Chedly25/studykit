@@ -235,9 +235,9 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
   const modeLabel = isExam ? 'Exam Companion' : documentCategory === 'course' ? 'Course Companion' : 'AI Assistant'
 
   return (
-    <div className="flex flex-col h-full border-l border-[var(--border-card)] bg-[var(--bg-card)]">
+    <div className="flex-1 flex flex-col min-h-0 h-full border-l border-[var(--border-card)] bg-[var(--bg-card)]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-card)]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-card)] shrink-0">
         <div className="flex items-center gap-2">
           <ModeIcon className="w-4 h-4 text-[var(--accent-text)]" />
           <span className="text-sm font-medium text-[var(--text-heading)]">{modeLabel}</span>
@@ -316,7 +316,7 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
       </ChatContextProvider>
 
       {/* Input */}
-      <div className="p-3 border-t border-[var(--border-card)]">
+      <div className="p-3 border-t border-[var(--border-card)] shrink-0">
         <ChatInput
           onSend={handleSend}
           disabled={isLoading || !activeProfile || quotaExceeded}
