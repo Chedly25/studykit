@@ -23,6 +23,7 @@ import { SourceDetailModal } from '../components/sources/SourceDetailModal'
 import { PdfViewer } from '../components/sources/PdfViewer'
 import { SourceProcessingBanner } from '../components/sources/SourceProcessingBanner'
 import { BatchUploadProgress } from '../components/sources/BatchUploadProgress'
+import { HighlightsList } from '../components/sources/HighlightsList'
 import { buildSummaryPrompt, buildFlashcardPrompt } from '../lib/sourceActions'
 import { getChunksByDocumentId } from '../lib/sources'
 import { db } from '../db'
@@ -51,7 +52,22 @@ export default function Sources() {
 
   const { coverage } = useSourceCoverage(profileId)
   const { processExamDocument, isRunning: isExamProcessing } = useExamProcessing(profileId)
-  const [categoryFilter, setCategoryFilter] = useState<'' | 'course' | 'exam'>('')
+  const [categoryFilter, setCategoryFilter] = useState<'' | 'course' | 'exam' | 'highlights'>('')
+  const [tagFilter, setTagFilter] = useState<string>('')
+
+  // Compute unique tags across all documents
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>()
+    for (const doc of documents) {
+      if (doc.tags) {
+        try {
+          const tags = JSON.parse(doc.tags) as string[]
+          tags.forEach(t => tagSet.add(t))
+        } catch { /* ignore */ }
+      }
+    }
+    return [...tagSet].sort()
+  }, [documents])
   const [pdfViewDoc, setPdfViewDoc] = useState<Document | null>(null)
 
   // Track which documents have stored PDF files
@@ -242,6 +258,7 @@ export default function Sources() {
           { key: '' as const, label: t('sources.all') },
           { key: 'course' as const, label: t('sources.courses') },
           { key: 'exam' as const, label: t('sources.exams') },
+          { key: 'highlights' as const, label: t('sources.highlights', 'Highlights') },
         ]).map(({ key, label }) => (
           <button
             key={key}
@@ -256,6 +273,25 @@ export default function Sources() {
           </button>
         ))}
       </div>
+
+      {/* Tag filter bar */}
+      {allTags.length > 0 && (
+        <div className="flex gap-1 mb-4 flex-wrap">
+          {allTags.map(tag => (
+            <button
+              key={tag}
+              onClick={() => setTagFilter(f => f === tag ? '' : tag)}
+              className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${
+                tagFilter === tag
+                  ? 'bg-[var(--accent-text)] text-white'
+                  : 'bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--text-body)]'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
 
       {isProcessing && !batchProgress && (
         <div className="glass-card p-4 mb-4 flex items-center gap-3">
@@ -408,8 +444,20 @@ export default function Sources() {
         </div>
       )}
 
-      <SourceList
-        documents={categoryFilter === '' ? documents : documents.filter(d => categoryFilter === 'course' ? d.category !== 'exam' : d.category === 'exam')}
+      {categoryFilter === 'highlights' && profileId ? (
+        <HighlightsList examProfileId={profileId} />
+      ) : <SourceList
+        documents={documents.filter(d => {
+          if (categoryFilter && categoryFilter !== 'highlights' && (categoryFilter === 'course' ? d.category === 'exam' : d.category !== 'exam')) return false
+          if (tagFilter) {
+            try {
+              const tags = d.tags ? JSON.parse(d.tags) as string[] : []
+              if (!tags.includes(tagFilter)) return false
+            } catch { return false }
+          }
+          return true
+        })}
+        examProfileId={profileId}
         onView={setViewDoc}
         onViewPdf={(doc: Document) => navigate(`/read/${doc.id}`)}
         onDelete={handleDelete}
@@ -420,7 +468,7 @@ export default function Sources() {
         generatingFlashcardsId={generatingFlashcards}
         deleteConfirmId={deleteConfirm}
         pdfDocIds={pdfDocIds}
-      />
+      />}
 
       <PasteTextModal
         open={showPaste}

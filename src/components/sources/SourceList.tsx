@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Search, FileText } from 'lucide-react'
+import { useAuth } from '@clerk/clerk-react'
+import { Search, FileText, Loader2 } from 'lucide-react'
 import { SourceCard } from './SourceCard'
+import { hybridSearch } from '../../lib/hybridSearch'
 import type { Document } from '../../db/schema'
 
 interface Props {
   documents: Document[]
+  examProfileId: string | undefined
   onView: (doc: Document) => void
   onViewPdf?: (doc: Document) => void
   onDelete: (docId: string) => void
@@ -20,6 +23,7 @@ interface Props {
 
 export function SourceList({
   documents,
+  examProfileId,
   onView,
   onViewPdf,
   onDelete,
@@ -32,11 +36,45 @@ export function SourceList({
   pdfDocIds,
 }: Props) {
   const { t } = useTranslation()
+  const { getToken } = useAuth()
   const [search, setSearch] = useState('')
+  const [contentResults, setContentResults] = useState<Map<string, string>>(new Map())
+  const [isSearching, setIsSearching] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
+  // Content search via hybridSearch (debounced, 3+ chars)
+  useEffect(() => {
+    clearTimeout(debounceRef.current)
+    if (!search.trim() || search.trim().length < 3 || !examProfileId) {
+      setContentResults(new Map())
+      setIsSearching(false)
+      return
+    }
+    setIsSearching(true)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const token = await getToken()
+        const results = await hybridSearch(examProfileId, search.trim(), token ?? undefined, { topN: 10, rerank: false })
+        const map = new Map<string, string>()
+        for (const r of results) {
+          if (!map.has(r.documentId)) {
+            map.set(r.documentId, r.content.slice(0, 150).replace(/\n/g, ' '))
+          }
+        }
+        setContentResults(map)
+      } catch {
+        setContentResults(new Map())
+      } finally {
+        setIsSearching(false)
+      }
+    }, 400)
+    return () => clearTimeout(debounceRef.current)
+  }, [search, examProfileId, getToken])
+
+  // Filter: title match OR content match
   const filtered = search.trim()
     ? documents.filter(d =>
-        d.title.toLowerCase().includes(search.toLowerCase())
+        d.title.toLowerCase().includes(search.toLowerCase()) || contentResults.has(d.id)
       )
     : documents
 
@@ -60,27 +98,36 @@ export function SourceList({
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder={t('common.search')}
+          placeholder={t('sources.searchPlaceholder', 'Search by title or content...')}
           className="w-full pl-9 pr-4 py-2 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-lg text-sm text-[var(--text-body)] placeholder:text-[var(--text-faint)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-text)]/30"
         />
+        {isSearching && (
+          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-faint)] animate-spin" />
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map(doc => (
-          <SourceCard
-            key={doc.id}
-            document={doc}
-            onView={() => onView(doc)}
-            onViewPdf={onViewPdf ? () => onViewPdf(doc) : undefined}
-            onDelete={() => onDelete(doc.id)}
-            onSummarize={() => onSummarize(doc)}
-            onGenerateFlashcards={() => onGenerateFlashcards(doc)}
-            onGeneratePracticeExam={() => onGeneratePracticeExam(doc)}
-            isSummarizing={summarizingId === doc.id}
-            isGeneratingFlashcards={generatingFlashcardsId === doc.id}
-            deleteConfirm={deleteConfirmId === doc.id}
-            hasPdfFile={pdfDocIds?.has(doc.id)}
-          />
+          <div key={doc.id}>
+            <SourceCard
+              document={doc}
+              onView={() => onView(doc)}
+              onViewPdf={onViewPdf ? () => onViewPdf(doc) : undefined}
+              onDelete={() => onDelete(doc.id)}
+              onSummarize={() => onSummarize(doc)}
+              onGenerateFlashcards={() => onGenerateFlashcards(doc)}
+              onGeneratePracticeExam={() => onGeneratePracticeExam(doc)}
+              isSummarizing={summarizingId === doc.id}
+              isGeneratingFlashcards={generatingFlashcardsId === doc.id}
+              deleteConfirm={deleteConfirmId === doc.id}
+              hasPdfFile={pdfDocIds?.has(doc.id)}
+            />
+            {contentResults.has(doc.id) && (
+              <p className="text-xs text-[var(--text-muted)] px-3 pb-2 -mt-2 line-clamp-2 italic">
+                ...{contentResults.get(doc.id)}...
+              </p>
+            )}
+          </div>
         ))}
       </div>
 

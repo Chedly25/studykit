@@ -120,6 +120,8 @@ export interface Document {
   chunkCount: number
   wordCount: number
   sourceUrl?: string
+  /** User-editable tags for organization. JSON-encoded string[]. */
+  tags?: string
   createdAt: string
 }
 

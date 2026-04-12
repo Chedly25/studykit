@@ -244,6 +244,10 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
 
   const documentCount = useMemo(() => documents?.length ?? 0, [documents])
 
+  const updateTags = useCallback(async (docId: string, tags: string[]) => {
+    await db.documents.update(docId, { tags: JSON.stringify(tags) })
+  }, [])
+
   return {
     documents: documents ?? [],
     totalChunks: totalChunks ?? 0,
@@ -254,6 +258,7 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
     saveNote,
     deleteSource,
     searchSources,
+    updateTags,
     isProcessing,
     processingStatus,
     batchProgress,

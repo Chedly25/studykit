@@ -527,6 +527,12 @@ button:disabled,
 .dark .drag-overlay { background: rgba(16, 185, 129, 0.12); }
 
 /* ─── Reduced motion ─── */
+/* PDF search match highlighting */
+.pdf-search-match {
+  background-color: rgba(250, 204, 21, 0.4) !important;
+  border-radius: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

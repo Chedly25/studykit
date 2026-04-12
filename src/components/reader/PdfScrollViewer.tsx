@@ -17,6 +17,7 @@ interface Props {
   documentId: string
   examProfileId: string | undefined
   topicHighlightTexts?: string[]
+  searchQuery?: string
 }
 
 interface PageDim {
@@ -31,7 +32,7 @@ export interface PdfScrollViewerHandle {
 }
 
 export const PdfScrollViewer = forwardRef<PdfScrollViewerHandle, Props>(function PdfScrollViewer(
-  { pdfDoc, scale, onPageChange, onAskAI, onAutoScale, documentId, examProfileId, topicHighlightTexts },
+  { pdfDoc, scale, onPageChange, onAskAI, onAutoScale, documentId, examProfileId, topicHighlightTexts, searchQuery },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -203,6 +204,7 @@ export const PdfScrollViewer = forwardRef<PdfScrollViewerHandle, Props>(function
                 onAskAI={(text) => onAskAI(text, pageNum)}
                 onCreateFlashcard={createFlashcardFromHighlight}
                 topicHighlightTexts={topicHighlightTexts}
+                searchQuery={searchQuery}
               />
             )}
           </div>

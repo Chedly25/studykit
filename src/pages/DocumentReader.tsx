@@ -18,6 +18,7 @@ import { PdfScrollViewer, type PdfScrollViewerHandle } from '../components/reade
 import { ReaderChatPane } from '../components/reader/ReaderChatPane'
 import { ReaderToolbar } from '../components/reader/ReaderToolbar'
 import { RecallSuggestion } from '../components/reader/RecallSuggestion'
+import { PdfOutline } from '../components/reader/PdfOutline'
 import { InlineActionContainer } from '../components/actions/InlineActionContainer'
 import { useInlineAction } from '../hooks/useInlineAction'
 import type { Document } from '../db/schema'
@@ -41,6 +42,12 @@ export default function DocumentReader() {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectionContext, setSelectionContext] = useState<{ text: string; pageNumber: number; documentTitle: string } | null>(null)
   const pdfViewerRef = useRef<PdfScrollViewerHandle>(null)
+  // Search state
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  // TOC outline
+  const [outline, setOutline] = useState<any[] | null>(null)
+  const [outlineOpen, setOutlineOpen] = useState(false)
 
   const handleJumpToPage = useCallback((pageNumber: number) => {
     pdfViewerRef.current?.scrollToPage(pageNumber)
@@ -193,17 +200,34 @@ export default function DocumentReader() {
     return () => { cancelled = true }
   }, [documentId])
 
+  // Load PDF outline (TOC) for navigation
+  useEffect(() => {
+    if (!pdfDoc) return
+    pdfDoc.getOutline().then((o: any[] | null) => {
+      if (o && o.length > 0) setOutline(o)
+    }).catch(() => { /* no outline */ })
+  }, [pdfDoc])
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Ctrl+F / Cmd+F → open search (intercept browser default)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault()
+        setSearchOpen(true)
+        return
+      }
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) return
-      if (e.key === 'Escape') navigate(-1)
+      if (e.key === 'Escape') {
+        if (searchOpen) { setSearchOpen(false); setSearchQuery('') }
+        else navigate(-1)
+      }
       else if (e.key === '+' || e.key === '=') { manualZoom.current = true; setScale(s => Math.min(3, s + 0.2)) }
       else if (e.key === '-') { manualZoom.current = true; setScale(s => Math.max(0.5, s - 0.2)) }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [navigate])
+  }, [navigate, searchOpen])
 
   // Mobile detection
   useEffect(() => {
@@ -257,6 +281,15 @@ export default function DocumentReader() {
         {/* PDF viewer */}
         {pdfDoc && (
           <div className="flex-1 relative min-w-0 min-h-0 flex flex-col">
+            {/* TOC sidebar */}
+            {outlineOpen && outline && (
+              <PdfOutline
+                outline={outline}
+                pdfDoc={pdfDoc}
+                onJumpToPage={handleJumpToPage}
+                onClose={() => setOutlineOpen(false)}
+              />
+            )}
             <PdfScrollViewer
               ref={pdfViewerRef}
               pdfDoc={pdfDoc}
@@ -267,6 +300,7 @@ export default function DocumentReader() {
               documentId={documentId!}
               examProfileId={profileId}
               topicHighlightTexts={topicChunkTexts}
+              searchQuery={searchOpen ? searchQuery : undefined}
             />
             {showRecallSuggestion && !inlineAction.current && (
               <RecallSuggestion
@@ -357,6 +391,13 @@ export default function DocumentReader() {
         title={documentMeta?.title ?? ''}
         highlightCount={allHighlights?.length ?? 0}
         onQuizHighlights={handleQuizOnHighlights}
+        searchOpen={searchOpen}
+        onToggleSearch={() => setSearchOpen(o => !o)}
+        searchQuery={searchQuery}
+        onSearchQueryChange={setSearchQuery}
+        onSearchClose={() => { setSearchOpen(false); setSearchQuery('') }}
+        hasOutline={!!outline && outline.length > 0}
+        onToggleOutline={() => setOutlineOpen(o => !o)}
       />
     </div>
   )

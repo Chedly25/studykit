@@ -23,12 +23,14 @@ interface Props {
   onAskAI: (text: string) => void
   onCreateFlashcard: (highlightId: string, front: string) => Promise<string | null>
   topicHighlightTexts?: string[]
+  /** When set, highlights matching text in the text layer spans. */
+  searchQuery?: string
 }
 
 export function PdfPageRenderer({
   pdfDoc, pageNumber, scale, width: _width, height: _height, highlights,
   onAddHighlight, onUpdateNote, onDeleteHighlight, onAskAI, onCreateFlashcard,
-  topicHighlightTexts,
+  topicHighlightTexts, searchQuery,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const textLayerRef = useRef<HTMLDivElement>(null)
@@ -178,6 +180,23 @@ export function PdfPageRenderer({
       try { renderTaskRef.current?.cancel() } catch { /* ignore */ }
     }
   }, [pdfDoc, pageNumber, scale])
+
+  // Search highlighting: mark spans matching the search query
+  useEffect(() => {
+    if (!textLayerRef.current) return
+    const spans = textLayerRef.current.querySelectorAll('span')
+    // Clear previous search highlights
+    spans.forEach(s => s.classList.remove('pdf-search-match'))
+
+    if (!searchQuery || searchQuery.length < 2) return
+    const q = searchQuery.toLowerCase()
+    spans.forEach(span => {
+      const text = (span.textContent ?? '').toLowerCase()
+      if (text.includes(q)) {
+        span.classList.add('pdf-search-match')
+      }
+    })
+  }, [searchQuery, pageNumber, scale])
 
   // Handle text selection → context menu
   const handleMouseUp = useCallback(() => {
