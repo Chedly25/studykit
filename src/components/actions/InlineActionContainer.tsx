@@ -5,7 +5,13 @@
  * their own container via the `useInlineAction` hook. The container is a
  * thin discriminated-union switch over action types — no global state, no
  * registry pattern.
+ *
+ * Wrapped in React.memo because parent re-renders (e.g. StudySession during
+ * chat streaming) would otherwise re-create inline object literals passed to
+ * child components, causing useEffect dependencies to re-fire and abort
+ * in-flight API calls.
  */
+import { memo } from 'react'
 import type { InlineAction } from './types'
 import { InlineExplainAction } from './InlineExplainAction'
 import { InlineQuizAction } from './InlineQuizAction'
@@ -18,7 +24,7 @@ interface Props {
   onClose: () => void
 }
 
-export function InlineActionContainer({ action, onClose }: Props) {
+export const InlineActionContainer = memo(function InlineActionContainer({ action, onClose }: Props) {
   switch (action.type) {
     case 'explain-topic':
       return (
@@ -109,4 +115,4 @@ export function InlineActionContainer({ action, onClose }: Props) {
         />
       )
   }
-}
+})

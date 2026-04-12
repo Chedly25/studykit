@@ -85,15 +85,6 @@ export function TopicDetailPanel({ topicId, topicName, mastery, examProfileId, q
         {accuracy !== null && <span>{questionsAttempted} questions · {accuracy}% accuracy</span>}
       </div>
 
-      {/* Study CTA */}
-      <Link
-        to={`/session?topic=${encodeURIComponent(topicName)}`}
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent-text)] text-white text-xs font-semibold hover:opacity-90 transition-opacity"
-        onClick={e => e.stopPropagation()}
-      >
-        Study this topic <ArrowRight className="w-3 h-3" />
-      </Link>
-
       {/* Exercises */}
       {detail.exerciseGroups.length > 0 && (
         <div>
