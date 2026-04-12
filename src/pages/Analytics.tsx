@@ -39,6 +39,46 @@ import { ResearchThreadsCard } from '../components/dashboard/ResearchThreadsCard
 import { WeakTopicsCard } from '../components/dashboard/WeakTopicsCard'
 import { ActivityFeed } from '../components/dashboard/ActivityFeed'
 import { TopicTree } from '../components/knowledge/TopicTree'
+import { ChevronDown } from 'lucide-react'
+
+// ─── Collapsible section wrapper ────────────────────────────────
+
+function CollapsibleSection({ id, title, icon: Icon, defaultOpen = false, profileId, children }: {
+  id: string
+  title: string
+  icon: React.ComponentType<{ className?: string }>
+  defaultOpen?: boolean
+  profileId?: string
+  children: React.ReactNode
+}) {
+  const storageKey = `analytics_section_${id}_${profileId ?? 'default'}`
+  const [open, setOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey)
+      return saved !== null ? saved === 'true' : defaultOpen
+    } catch { return defaultOpen }
+  })
+
+  const toggle = () => {
+    const next = !open
+    setOpen(next)
+    try { localStorage.setItem(storageKey, String(next)) } catch { /* ignore */ }
+  }
+
+  return (
+    <div className="mb-6">
+      <button
+        onClick={toggle}
+        className="flex items-center gap-2 w-full text-left mb-3 group"
+      >
+        <Icon className="w-4 h-4 text-[var(--accent-text)]" />
+        <h2 className="text-lg font-bold text-[var(--text-heading)]">{title}</h2>
+        <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${open ? '' : '-rotate-90'}`} />
+      </button>
+      {open && <div className="animate-fade-in">{children}</div>}
+    </div>
+  )
+}
 
 export default function Analytics() {
   const { t, i18n } = useTranslation()
@@ -188,252 +228,159 @@ export default function Analytics() {
       </div>
       <p className="text-sm text-[var(--text-muted)] mb-2">{t('analytics.subtitle')}</p>
 
-      {/* Section navigation */}
-      <nav className="flex gap-3 mb-6 text-sm overflow-x-auto pb-1">
-        <a href="#study-hours" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.studyTime')}</a>
-        <a href="#insights" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.insights')}</a>
-        <a href="#knowledge" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.knowledgeMap')}</a>
-        <a href="#exams" className="text-[var(--text-muted)] hover:text-[var(--accent-text)] transition-colors whitespace-nowrap">{t('analytics.exams')}</a>
-      </nav>
-
-      {/* ─── Study Hours ─── */}
-      <div id="study-hours" className="glass-card p-4 mb-4">
-        <h2 className="font-semibold text-[var(--text-heading)] mb-4 flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-[var(--accent-text)]" /> {t('analytics.studyTime')}
-        </h2>
-        <div className="flex items-end gap-2 h-40">
-          {weeklyHours.map(d => {
-            const pct = maxHours > 0 ? (d.hours / maxHours) * 100 : 0
-            const dayLabel = new Date(d.date + 'T12:00:00').toLocaleDateString(i18n.language, { weekday: 'short' })
-            return (
-              <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-xs text-[var(--text-muted)]">{d.hours.toFixed(1)}h</span>
-                <div className="w-full rounded-t-md bg-[var(--accent-text)]/80 transition-all duration-300" style={{ height: `${Math.max(pct, 2)}%` }} />
-                <span className="text-xs text-[var(--text-faint)]">{dayLabel}</span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Subject Balance */}
-        <div className="glass-card p-4">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.subjectBalance')}</h2>
-          {subjectBalance.length === 0 ? (
-            <EmptyState icon={BarChart3} title={t('emptyState.analyticsNoData.title')} subtitle={t('emptyState.analyticsNoData.subtitle')} compact />
-          ) : (
-            <div className="space-y-3">
-              {subjectBalance.map(s => (
-                <div key={s.name}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-[var(--text-body)]">{s.name}</span>
-                    <span className="text-[var(--text-muted)]">
-                      {s.actual.toFixed(0)}% actual / {s.weight}% target
-                    </span>
-                  </div>
-                  <div className="relative w-full h-2 rounded-full bg-[var(--border-card)] overflow-hidden">
-                    <div
-                      className="absolute h-full rounded-full opacity-80 transition-all"
-                      style={{ width: `${Math.min(s.actual, 100)}%`, backgroundColor: s.color }}
-                    />
-                    <div
-                      className="absolute h-full w-0.5 bg-[var(--text-heading)]"
-                      style={{ left: `${Math.min(s.weight, 100)}%` }}
-                      title={`Target: ${s.weight}%`}
-                    />
-                  </div>
+      {/* ─── Study Trends ─── */}
+      <CollapsibleSection id="study-trends" title={t('analytics.studyTime')} icon={BarChart3} defaultOpen profileId={profileId}>
+        <div className="glass-card p-4 mb-4">
+          <div className="flex items-end gap-2 h-40">
+            {weeklyHours.map(d => {
+              const pct = maxHours > 0 ? (d.hours / maxHours) * 100 : 0
+              const dayLabel = new Date(d.date + 'T12:00:00').toLocaleDateString(i18n.language, { weekday: 'short' })
+              return (
+                <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-xs text-[var(--text-muted)]">{d.hours.toFixed(1)}h</span>
+                  <div className="w-full rounded-t-md bg-[var(--accent-text)]/80 transition-all duration-300" style={{ height: `${Math.max(pct, 2)}%` }} />
+                  <span className="text-xs text-[var(--text-faint)]">{dayLabel}</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Session Distribution */}
-        <div className="glass-card p-4">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.sessionTypes')}</h2>
-          {sessionDistribution.length === 0 ? (
-            <EmptyState icon={BarChart3} title={t('emptyState.analyticsNoData.title')} subtitle={t('emptyState.analyticsNoData.subtitle')} compact />
-          ) : (
-            <div className="space-y-2">
-              {sessionDistribution.map(s => (
-                <div key={s.type} className="flex items-center justify-between text-sm">
-                  <span className="text-[var(--text-body)] capitalize">{s.type.replace('-', ' ')}</span>
-                  <span className="text-[var(--text-muted)]">{s.count} sessions &middot; {s.totalMinutes}m</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Score Trend */}
-        <div className="glass-card p-4 md:col-span-2">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.scoreTrend')}</h2>
-          {scoreTrend.length === 0 ? (
-            <EmptyState icon={BarChart3} title={t('emptyState.analyticsNoData.title')} subtitle={t('emptyState.analyticsNoData.subtitle')} compact />
-          ) : (
-            <div className="h-32 flex items-end gap-px">
-              {scoreTrend.map((point, i) => (
-                <div
-                  key={i}
-                  className="flex-1 bg-[var(--accent-text)]/60 rounded-t-sm transition-all"
-                  style={{ height: `${point.score}%` }}
-                  title={`${point.score.toFixed(0)}%`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Exam Scores */}
-        <div id="exams" className="md:col-span-2" />
-        <SimulationExamScoresCard examProfileId={profileId} passingThreshold={activeProfile.passingThreshold} />
-        <MockExamScoresCard examProfileId={profileId} />
-
-        {/* Mastery Trend */}
-        <div className="glass-card p-4 md:col-span-2">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-[var(--text-heading)]">{t('analytics.masteryTrend')}</h2>
-            <select
-              value={selectedTrendTopic}
-              onChange={e => setSelectedTrendTopic(e.target.value)}
-              className="text-sm bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-2 py-1 text-[var(--text-body)]"
-            >
-              <option value="">{t('analytics.selectTopic')}</option>
-              {topics.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
+              )
+            })}
           </div>
-          <MasteryTrendChart
-            data={selectedTrendTopic ? computeMasteryHistory(masterySnapshots, selectedTrendTopic, 30) : []}
-            topicName={topics.find(t => t.id === selectedTrendTopic)?.name ?? 'Select a topic'}
-          />
         </div>
-
-        {/* Confidence Calibration */}
-        <div className="glass-card p-4 md:col-span-2">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.calibration')}</h2>
-          <CalibrationChart data={calibrationData} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="glass-card p-4">
+            <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.subjectBalance')}</h3>
+            {subjectBalance.length === 0 ? (
+              <EmptyState icon={BarChart3} title={t('emptyState.analyticsNoData.title')} subtitle={t('emptyState.analyticsNoData.subtitle')} compact />
+            ) : (
+              <div className="space-y-3">
+                {subjectBalance.map(s => (
+                  <div key={s.name}>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-[var(--text-body)]">{s.name}</span>
+                      <span className="text-[var(--text-muted)]">{s.actual.toFixed(0)}% actual / {s.weight}% target</span>
+                    </div>
+                    <div className="relative w-full h-2 rounded-full bg-[var(--border-card)] overflow-hidden">
+                      <div className="absolute h-full rounded-full opacity-80 transition-all" style={{ width: `${Math.min(s.actual, 100)}%`, backgroundColor: s.color }} />
+                      <div className="absolute h-full w-0.5 bg-[var(--text-heading)]" style={{ left: `${Math.min(s.weight, 100)}%` }} title={`Target: ${s.weight}%`} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="glass-card p-4">
+            <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.sessionTypes')}</h3>
+            {sessionDistribution.length === 0 ? (
+              <EmptyState icon={BarChart3} title={t('emptyState.analyticsNoData.title')} subtitle={t('emptyState.analyticsNoData.subtitle')} compact />
+            ) : (
+              <div className="space-y-2">
+                {sessionDistribution.map(s => (
+                  <div key={s.type} className="flex items-center justify-between text-sm">
+                    <span className="text-[var(--text-body)] capitalize">{s.type.replace('-', ' ')}</span>
+                    <span className="text-[var(--text-muted)]">{s.count} sessions &middot; {s.totalMinutes}m</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+      </CollapsibleSection>
 
-        {/* Error Patterns */}
-        <div className="glass-card p-4 md:col-span-2">
-          <h2 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.errorPatterns')}</h2>
-          <ErrorPatternChart
-            data={errorPatterns}
-            onDrillDown={(topicName, errorType) => {
-              setDrillDownTopic(topicName)
-              setDrillDownType(errorType)
-            }}
-          />
+      {/* ─── Exam Scores ─── */}
+      <CollapsibleSection id="exams" title={t('analytics.exams', 'Exam Scores')} icon={BarChart3} defaultOpen profileId={profileId}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="glass-card p-4 md:col-span-2">
+            <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.scoreTrend')}</h3>
+            {scoreTrend.length === 0 ? (
+              <EmptyState icon={BarChart3} title={t('emptyState.analyticsNoData.title')} subtitle={t('emptyState.analyticsNoData.subtitle')} compact />
+            ) : (
+              <div className="h-32 flex items-end gap-px">
+                {scoreTrend.map((point, i) => (
+                  <div key={i} className="flex-1 bg-[var(--accent-text)]/60 rounded-t-sm transition-all" style={{ height: `${point.score}%` }} title={`${point.score.toFixed(0)}%`} />
+                ))}
+              </div>
+            )}
+          </div>
+          <SimulationExamScoresCard examProfileId={profileId} passingThreshold={activeProfile.passingThreshold} />
+          <MockExamScoresCard examProfileId={profileId} />
+          <div className="glass-card p-4 md:col-span-2">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-[var(--text-heading)]">{t('analytics.masteryTrend')}</h3>
+              <select
+                value={selectedTrendTopic}
+                onChange={e => setSelectedTrendTopic(e.target.value)}
+                className="text-sm bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-2 py-1 text-[var(--text-body)]"
+              >
+                <option value="">{t('analytics.selectTopic')}</option>
+                {topics.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </div>
+            <MasteryTrendChart
+              data={selectedTrendTopic ? computeMasteryHistory(masterySnapshots, selectedTrendTopic, 30) : []}
+              topicName={topics.find(t => t.id === selectedTrendTopic)?.name ?? 'Select a topic'}
+            />
+          </div>
         </div>
-
-        {/* Error Drill-Down Modal */}
-        {drillDownTopic && drillDownType && (
-          <ErrorDrillDown
-            topicName={drillDownTopic}
-            errorType={drillDownType}
-            examProfileId={profileId ?? ''}
-            onClose={() => { setDrillDownTopic(null); setDrillDownType(null) }}
-          />
-        )}
-      </div>
+      </CollapsibleSection>
 
       {/* ─── Insights ─── */}
-      <h2 id="insights" className="text-lg font-bold text-[var(--text-heading)] mt-8 mb-4">
-        {t('analytics.insights')}
-      </h2>
+      <CollapsibleSection id="insights" title={t('analytics.insights')} icon={Lightbulb} defaultOpen profileId={profileId}>
+        <StudyStreakCard streak={streak} weeklyHours={kgWeeklyHours} weeklyTarget={activeProfile.weeklyTargetHours} freezeUsed={freezeUsed} dailyLogs={dailyLogs} />
+        <div className="mt-4"><InsightCard insights={insights} /></div>
+        {profileId && <div className="mt-4"><AIProfileCard studentModel={studentModel} profileId={profileId} /></div>}
+        {profileId && <div className="mt-4"><MisconceptionCard examProfileId={profileId} /></div>}
+        <CoachInsightsSection examProfileId={profileId} />
+        {profileId && <div className="mt-4"><ExamPatternsCard examProfileId={profileId} /></div>}
+        {profileId && <div className="mt-4"><GapAnalysisCard examProfileId={profileId} /></div>}
+        <div className="mt-4"><IntelligenceBriefCard recommendations={recommendations} insights={insights} dueFlashcardCount={dueFlashcards} /></div>
+        {sessionInsights.length > 0 && <div className="mt-4"><SessionInsightsCard insights={sessionInsights} /></div>}
+      </CollapsibleSection>
 
-      <StudyStreakCard
-        streak={streak}
-        weeklyHours={kgWeeklyHours}
-        weeklyTarget={activeProfile.weeklyTargetHours}
-        freezeUsed={freezeUsed}
-        dailyLogs={dailyLogs}
-      />
-
-      <div className="mt-4">
-        <InsightCard insights={insights} />
-      </div>
-
-      {profileId && (
-        <div className="mt-4">
-          <AIProfileCard studentModel={studentModel} profileId={profileId} />
+      {/* ─── Error Analysis ─── */}
+      <CollapsibleSection id="errors" title={t('analytics.errorPatterns', 'Error Analysis')} icon={AlertTriangle} profileId={profileId}>
+        <div className="space-y-4">
+          <div className="glass-card p-4">
+            <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.calibration')}</h3>
+            <CalibrationChart data={calibrationData} />
+          </div>
+          <div className="glass-card p-4">
+            <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('analytics.errorPatterns')}</h3>
+            <ErrorPatternChart data={errorPatterns} onDrillDown={(topicName, errorType) => { setDrillDownTopic(topicName); setDrillDownType(errorType) }} />
+          </div>
         </div>
-      )}
-
-      {profileId && (
-        <div className="mt-4">
-          <MisconceptionCard examProfileId={profileId} />
-        </div>
-      )}
-
-      {/* Coach Insights from Progress Monitor agent */}
-      <CoachInsightsSection examProfileId={profileId} />
-
-      {profileId && (
-        <div className="mt-4">
-          <ExamPatternsCard examProfileId={profileId} />
-        </div>
-      )}
-
-      {profileId && (
-        <div className="mt-4">
-          <GapAnalysisCard examProfileId={profileId} />
-        </div>
-      )}
-
-      <div className="mt-4">
-        <IntelligenceBriefCard
-          recommendations={recommendations}
-          insights={insights}
-          dueFlashcardCount={dueFlashcards}
-        />
-      </div>
-
-      {sessionInsights.length > 0 && (
-        <div className="mt-4">
-          <SessionInsightsCard insights={sessionInsights} />
-        </div>
-      )}
+      </CollapsibleSection>
 
       {/* ─── Knowledge Map ─── */}
-      <h2 id="knowledge" className="text-lg font-bold text-[var(--text-heading)] mt-8 mb-4">
-        {t('analytics.knowledgeMap')}
-      </h2>
-
-      {isResearch ? (
-        <ResearchThreadsCard topics={weakTopics.length > 0 ? weakTopics : kgTopics} subjects={kgSubjects} />
-      ) : (
-        <LandscapeCard topics={kgTopics} subjects={kgSubjects} />
-      )}
-
-      {!isResearch && weakTopics.length > 0 && (
-        <div className="mt-4">
-          <WeakTopicsCard topics={weakTopics} subjects={kgSubjects} />
+      <CollapsibleSection id="knowledge" title={t('analytics.knowledgeMap')} icon={Sparkles} profileId={profileId}>
+        {isResearch
+          ? <ResearchThreadsCard topics={weakTopics.length > 0 ? weakTopics : kgTopics} subjects={kgSubjects} />
+          : <LandscapeCard topics={kgTopics} subjects={kgSubjects} />
+        }
+        {!isResearch && weakTopics.length > 0 && <div className="mt-4"><WeakTopicsCard topics={weakTopics} subjects={kgSubjects} /></div>}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <ActivityFeed sessions={sessions} />
+          <div className="glass-card p-4">
+            <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('dashboard.knowledgeGraph')}</h3>
+            <TopicTree subjects={kgSubjects} getTopicsForSubject={getTopicsForSubject} showStatus={isResearch} />
+          </div>
         </div>
-      )}
+        {sourceCoverage && sourceCoverage.totalTopics > 0 && (
+          <div className="glass-card p-3 mt-4 flex items-center justify-between">
+            <span className="text-sm text-[var(--text-body)]">
+              <Trans i18nKey="dashboard.sourceCoverage" values={{ percent: sourceCoverage.coveragePercent }} components={{ 1: <strong /> }} />
+            </span>
+            <Link to="/sources" className="text-xs text-[var(--accent-text)] hover:underline">{t('dashboard.viewSources')}</Link>
+          </div>
+        )}
+      </CollapsibleSection>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <ActivityFeed sessions={sessions} />
-        <div className="glass-card p-4">
-          <h3 className="font-semibold text-[var(--text-heading)] mb-3">{t('dashboard.knowledgeGraph')}</h3>
-          <TopicTree subjects={kgSubjects} getTopicsForSubject={getTopicsForSubject} showStatus={isResearch} />
-        </div>
-      </div>
-
-      {sourceCoverage && sourceCoverage.totalTopics > 0 && (
-        <div className="glass-card p-3 mt-4 flex items-center justify-between">
-          <span className="text-sm text-[var(--text-body)]">
-            <Trans
-              i18nKey="dashboard.sourceCoverage"
-              values={{ percent: sourceCoverage.coveragePercent }}
-              components={{ 1: <strong /> }}
-            />
-          </span>
-          <Link to="/sources" className="text-xs text-[var(--accent-text)] hover:underline">{t('dashboard.viewSources')}</Link>
-        </div>
+      {/* Error Drill-Down Modal (global, outside sections) */}
+      {drillDownTopic && drillDownType && (
+        <ErrorDrillDown
+          topicName={drillDownTopic}
+          errorType={drillDownType}
+          examProfileId={profileId ?? ''}
+          onClose={() => { setDrillDownTopic(null); setDrillDownType(null) }}
+        />
       )}
     </div>
   )

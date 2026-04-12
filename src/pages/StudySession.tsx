@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
-import { Upload, MessageCircle, Layers, RotateCcw, GitBranch, ListChecks, BookOpen } from 'lucide-react'
+import { Upload, MessageCircle, Layers, RotateCcw, GitBranch, ListChecks, BookOpen, X } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useAgent } from '../hooks/useAgent'
@@ -32,14 +32,13 @@ import { CardsView } from '../components/session/CardsView'
 import { CourseView } from '../components/session/CourseView'
 import { ReviewView } from '../components/session/ReviewView'
 import { KnowledgeMap } from '../components/session/KnowledgeMap'
-import { CodePlayground } from '../components/session/CodePlayground'
 import { ExerciseDrill } from '../components/session/ExerciseDrill'
 import { InlineActionContainer } from '../components/actions/InlineActionContainer'
 import { useInlineAction } from '../hooks/useInlineAction'
 import type { SessionContext } from '../ai/systemPrompt'
 import type { ChatAttachment } from '../hooks/useAttachments'
 
-type SessionView = 'course' | 'chat' | 'cards' | 'map' | 'review' | 'exercises'
+type SessionView = 'course' | 'cards' | 'map' | 'review' | 'exercises'
 
 const CODING_KEYWORDS = ['python', 'java', 'javascript', 'c++', 'programming', 'code', 'coding', 'algorithm', 'data structure', 'web dev', 'react', 'sql']
 
@@ -64,9 +63,10 @@ export default function StudySession() {
   const { getExerciseStatsForTopic, getExerciseStatsByTopic: getExerciseStatsMap } = useExerciseBank(profileId)
   const exerciseStatsByTopic = useMemo(() => getExerciseStatsMap(), [getExerciseStatsMap])
 
-  // When a structured session mode is requested (e.g. Socratic), default to chat.
-  const [activeView, setActiveView] = useState<SessionView>(sessionMode ? 'chat' : 'course')
+  const [activeView, setActiveView] = useState<SessionView>('course')
   const inlineAction = useInlineAction()
+  // Chat is a slide-in side panel, not a tab. Auto-open for Socratic/explain-back modes.
+  const [chatPanelOpen, setChatPanelOpen] = useState(!!sessionMode)
 
   // Determine layout variant based on exam type
   const layoutVariant = useMemo(() => {
@@ -281,7 +281,20 @@ export default function StudySession() {
         onToggleActivity={markActivityCompleted}
       />
 
-      {/* View toggle */}
+      {/* Session suggestions strip (above tabs, only when no messages yet) */}
+      {messages.length === 0 && !streamingText && !inlineAction.current && (
+        <div className="px-4 py-2 border-b border-[var(--border-card)] bg-[var(--bg-card)]/20 overflow-x-auto">
+          <SessionSuggestions
+            topic={topic}
+            dueFlashcards={dueFlashcards}
+            sessionInsights={recentInsights ?? []}
+            onAction={inlineAction.dispatch}
+            onSend={(prompt) => { setChatPanelOpen(true); handleSend(prompt) }}
+          />
+        </div>
+      )}
+
+      {/* View toggle — 5 tabs (Chat is a side panel, not a tab) */}
       <div className="flex items-center gap-1 px-4 py-1.5 border-b border-[var(--border-card)] bg-[var(--bg-card)]/30 overflow-x-auto">
         {([
           { key: 'course' as const, icon: BookOpen, label: 'Course' },
@@ -289,7 +302,6 @@ export default function StudySession() {
           { key: 'exercises' as const, icon: ListChecks, label: 'Exercises' },
           { key: 'review' as const, icon: RotateCcw, label: 'Review' },
           { key: 'map' as const, icon: GitBranch, label: 'Map' },
-          { key: 'chat' as const, icon: MessageCircle, label: 'Chat' },
         ]).map(({ key, icon: Icon, label }) => (
           <button
             key={key}
@@ -305,99 +317,14 @@ export default function StudySession() {
         ))}
       </div>
 
-      {/* Drill mode progress bar */}
-      {layoutVariant === 'drill' && activeView === 'chat' && (
-        <div className="px-4 py-2 border-b border-[var(--border-card)]">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-[var(--text-muted)]">Mastery</span>
-            <div className="flex-1 h-2 rounded-full bg-[var(--bg-input)] overflow-hidden">
-              <div
-                className="h-full rounded-full bg-[var(--accent-text)] transition-all"
-                style={{ width: `${Math.round(topic.mastery * 100)}%` }}
-              />
-            </div>
-            <span className="text-xs font-semibold text-[var(--accent-text)]">{Math.round(topic.mastery * 100)}%</span>
-          </div>
-        </div>
-      )}
-
       {/* Main content area */}
       <div className="flex-1 flex relative min-h-0">
-        {activeView === 'chat' && (
-          <div className={`flex-1 flex ${layoutVariant === 'coding' ? 'flex-row' : 'flex-col'} min-w-0`}>
-            {/* Chat column */}
-            <div className={`flex flex-col min-w-0 ${layoutVariant === 'coding' ? 'flex-1' : 'flex-1'}`}>
-            {/* Concept card strip */}
-            {topic && profileId && (
-              <ConceptCardStrip examProfileId={profileId} topicId={topic.id} />
-            )}
-
-            {/* Messages */}
-            <ChatContextProvider value={{ examProfileId: profileId, getToken }}>
-              <div ref={scrollRef} className="flex-1 overflow-y-auto">
-                <div className={`mx-auto w-full px-6 py-6 ${layoutVariant === 'coding' ? 'max-w-full' : 'max-w-[740px]'}`}>
-                  {inlineAction.current ? (
-                    <InlineActionContainer
-                      action={inlineAction.current}
-                      onClose={inlineAction.close}
-                    />
-                  ) : messages.length === 0 && !streamingText ? (
-                    <SessionSuggestions
-                      topic={topic}
-                      dueFlashcards={dueFlashcards}
-                      sessionInsights={recentInsights ?? []}
-                      onAction={inlineAction.dispatch}
-                      onSend={(prompt) => handleSend(prompt)}
-                    />
-                  ) : (
-                    <div className="space-y-6">
-                      {messages.map((msg) => (
-                        <ChatMessageBubble key={msg.id} message={msg} />
-                      ))}
-
-                      {streamingText && (
-                        <ChatMessageBubble
-                          message={{ id: 'streaming', role: 'assistant', content: streamingText }}
-                          isStreaming
-                        />
-                      )}
-
-                      <ToolCallIndicator toolName={currentToolCall} onCancel={cancel} />
-
-                      {quotaExceeded ? (
-                        <UpgradePrompt messagesUsed={messagesUsedToday} />
-                      ) : error ? (
-                        <div className="text-sm text-red-500 bg-red-500/10 rounded-lg p-3">{error}</div>
-                      ) : null}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </ChatContextProvider>
-
-            {/* Input */}
-            <div className={`mx-auto w-full px-4 pb-4 pt-2 ${layoutVariant === 'coding' ? 'max-w-full' : 'max-w-[740px]'}`}>
-              <div className="flex items-center gap-2 mb-1 justify-end">
-                <QuotaIndicator messagesUsedToday={messagesUsedToday} />
-              </div>
-              <ChatInput
-                onSend={handleSend}
-                disabled={isLoading || quotaExceeded}
-                placeholder={t('session.placeholder', 'Ask about {{topic}}...', { topic: topic.name })}
-                attachments={attachments}
-                onAddFiles={addFiles}
-                onRemoveAttachment={removeAttachment}
-                isParsing={isParsing}
-              />
+        {/* Inline action overlay (renders above any tab when an action is dispatched) */}
+        {inlineAction.current && (
+          <div className="absolute inset-0 z-20 bg-black/30 backdrop-blur-sm flex items-start justify-center p-6 overflow-y-auto animate-fade-in">
+            <div className="w-full max-w-2xl mt-4">
+              <InlineActionContainer action={inlineAction.current} onClose={inlineAction.close} />
             </div>
-            </div>{/* end chat column */}
-
-            {/* Code editor pane (coding layout only) */}
-            {layoutVariant === 'coding' && (
-              <div className="w-[45%] border-l border-[var(--border-card)] flex-shrink-0 flex flex-col">
-                <CodePlayground language="python" />
-              </div>
-            )}
           </div>
         )}
 
@@ -420,7 +347,6 @@ export default function StudySession() {
                 cardTitle: title,
                 topicId: topic.id,
               })
-              setActiveView('chat')
             }}
           />
         )}
@@ -447,19 +373,77 @@ export default function StudySession() {
           <ReviewView
             examProfileId={profileId}
             topicId={topic.id}
-            onDone={() => setActiveView('chat')}
+            onDone={() => setActiveView('course')}
           />
         )}
 
-        {/* Materials panel (overlay, chat view only) */}
-        {activeView === 'chat' && (
-          <MaterialsPanel
-            documents={documents}
-            isOpen={materialsOpen}
-            onClose={() => setMaterialsOpen(false)}
-          />
+        {/* Materials panel (available on all views) */}
+        <MaterialsPanel
+          documents={documents}
+          isOpen={materialsOpen}
+          onClose={() => setMaterialsOpen(false)}
+        />
+
+        {/* Chat side panel (slide-in from right) */}
+        {chatPanelOpen && (
+          <div className="fixed right-0 top-0 bottom-0 w-full sm:w-[400px] z-30 bg-[var(--bg-card)] border-l border-[var(--border-card)] flex flex-col shadow-xl animate-slide-in-right">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border-card)] shrink-0">
+              <span className="text-sm font-medium text-[var(--text-heading)] truncate">
+                {sessionMode === 'socratic' ? 'Socratic dialog' : sessionMode === 'explain-back' ? 'Explain back' : topic.name}
+              </span>
+              <button onClick={() => setChatPanelOpen(false)} className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-body)]">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {topic && profileId && <ConceptCardStrip examProfileId={profileId} topicId={topic.id} />}
+            <ChatContextProvider value={{ examProfileId: profileId, getToken }}>
+              <div ref={scrollRef} className="flex-1 overflow-y-auto">
+                <div className="px-4 py-4">
+                  <div className="space-y-6">
+                    {messages.map((msg) => (
+                      <ChatMessageBubble key={msg.id} message={msg} />
+                    ))}
+                    {streamingText && (
+                      <ChatMessageBubble message={{ id: 'streaming', role: 'assistant', content: streamingText }} isStreaming />
+                    )}
+                    <ToolCallIndicator toolName={currentToolCall} onCancel={cancel} />
+                    {quotaExceeded ? (
+                      <UpgradePrompt messagesUsed={messagesUsedToday} />
+                    ) : error ? (
+                      <div className="text-sm text-red-500 bg-red-500/10 rounded-lg p-3">{error}</div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </ChatContextProvider>
+            <div className="px-4 pb-4 pt-2 shrink-0">
+              <div className="flex items-center gap-2 mb-1 justify-end">
+                <QuotaIndicator messagesUsedToday={messagesUsedToday} />
+              </div>
+              <ChatInput
+                onSend={handleSend}
+                disabled={isLoading || quotaExceeded}
+                placeholder={t('session.placeholder', 'Ask about {{topic}}...', { topic: topic.name })}
+                attachments={attachments}
+                onAddFiles={addFiles}
+                onRemoveAttachment={removeAttachment}
+                isParsing={isParsing}
+              />
+            </div>
+          </div>
         )}
       </div>
+
+      {/* Floating chat FAB (when panel is closed) */}
+      {!chatPanelOpen && (
+        <button
+          onClick={() => setChatPanelOpen(true)}
+          aria-label="Open chat"
+          className="fixed bottom-20 right-4 z-20 w-12 h-12 rounded-full bg-[var(--accent-text)] text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+        >
+          <MessageCircle className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Drag overlay */}
       {isDragging && (
