@@ -66,14 +66,15 @@ export function createGradingWorkflow(config: GradingConfig): WorkflowDefinition
 
           let isCorrect = false
           if (q.format === 'multiple-choice' && q.correctOptionIndex !== undefined) {
+            const options: string[] = q.options ? JSON.parse(q.options) : []
             const userAnswer = (q.userAnswer ?? '').trim()
-            // Prefer numeric index comparison (new sessions store the option index)
+            // Try numeric index if the answer is a pure digit within the valid range
+            // (future sessions may store option index directly)
             const numericIndex = parseInt(userAnswer, 10)
-            if (!isNaN(numericIndex) && numericIndex >= 0) {
+            if (!isNaN(numericIndex) && String(numericIndex) === userAnswer && numericIndex >= 0 && numericIndex < options.length) {
               isCorrect = numericIndex === q.correctOptionIndex
             } else {
-              // Fallback: reverse-match answer text to options (old sessions)
-              const options: string[] = q.options ? JSON.parse(q.options) : []
+              // Match answer text to options (case-insensitive)
               const selectedIndex = options.findIndex(
                 o => o.trim().toLowerCase() === userAnswer.toLowerCase(),
               )

@@ -50,8 +50,9 @@ export function ChatMessageBubble({ message, messageIndex, conversationId, examP
   // Parse citations from assistant messages
   const citations = useMemo(() => isUser ? [] : parseCitations(text), [text, isUser])
 
-  // Validate citations — strip ones that don't resolve in the DB
-  const [validCitationIndices, setValidCitationIndices] = useState<Set<number>>(new Set())
+  // Validate citations — strip ones that don't resolve in the DB.
+  // Start with all indices valid (no flicker), then remove invalid ones after async check.
+  const [validCitationIndices, setValidCitationIndices] = useState<Set<number> | null>(null)
   useEffect(() => {
     if (citations.length === 0 || !examProfileId || isStreaming) return
     let cancelled = false
@@ -66,7 +67,10 @@ export function ChatMessageBubble({ message, messageIndex, conversationId, examP
     return () => { cancelled = true }
   }, [citations, examProfileId, isStreaming])
 
-  const validatedCitations = citations.filter((_, i) => isStreaming || citations.length === 0 || validCitationIndices.has(i))
+  // Before validation completes (null), show all citations. After, show only valid ones.
+  const validatedCitations = validCitationIndices === null
+    ? citations
+    : citations.filter((_, i) => validCitationIndices.has(i))
 
   const textWithoutCitations = useMemo(() => {
     if (citations.length === 0) return text
