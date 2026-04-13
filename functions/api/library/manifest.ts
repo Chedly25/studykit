@@ -47,11 +47,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   // R2 free-tier protection: 1 Class B (GET) operation
-  if (env.USAGE_KV) {
-    const r2Check = await checkR2Limit(env.USAGE_KV, 'classB')
-    if (!r2Check.allowed) {
-      return new Response(JSON.stringify({ error: 'Library temporarily unavailable (daily R2 limit reached)' }), { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } })
-    }
+  // HARD BLOCK if USAGE_KV is unavailable — never touch R2 without the counter
+  if (!env.USAGE_KV) {
+    return new Response(JSON.stringify({ error: 'Library not available (rate limiter not configured)' }), { status: 503, headers: { ...cors, 'Content-Type': 'application/json' } })
+  }
+  const r2Check = await checkR2Limit(env.USAGE_KV, 'classB')
+  if (!r2Check.allowed) {
+    return new Response(JSON.stringify({ error: 'Library temporarily unavailable (daily R2 limit reached)' }), { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } })
   }
 
   const obj = await env.LIBRARY_R2.get(`library/${examId}/manifest.json`)
