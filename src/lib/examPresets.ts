@@ -17,6 +17,7 @@ export interface ExamPresetSection {
   instructions?: string
   canGoBack?: boolean
   shuffleQuestions?: boolean
+  passingScore?: number
 }
 
 export interface ExamPreset {
