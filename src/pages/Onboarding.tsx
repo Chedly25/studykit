@@ -15,7 +15,6 @@ import { getExamBlueprint } from '../lib/examTopicMaps'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useOnboarding } from '../hooks/useOnboarding'
-import { useExamProfile } from '../hooks/useExamProfile'
 import type { DisplayMessage, PendingWidget } from '../ai/workflows/onboardingAgent'
 import type { ExtractedSubject } from '../ai/topicExtractor'
 
@@ -725,7 +724,6 @@ export default function Onboarding() {
   const { user } = useUser()
   const { userId } = useAuth()
   const { state, sendMessage, respondToWidget, completeOnboarding, resetOnboarding, forceFallback } = useOnboarding()
-  const { profiles, profilesLoaded } = useExamProfile()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showManualSetup, setShowManualSetup] = useState(false)
 
