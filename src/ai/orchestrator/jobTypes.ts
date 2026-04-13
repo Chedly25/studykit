@@ -21,6 +21,7 @@ import { createCasPratiqueGenerationWorkflow } from '../workflows/casPratiqueGen
 import { createGrandOralGenerationWorkflow } from '../workflows/grandOralGeneration'
 import { createFicheGenerationWorkflow } from '../workflows/ficheGeneration'
 import { createExamDNAAnalysisWorkflow } from '../workflows/examDNAAnalysis'
+import { createLibrarySyncWorkflow } from '../workflows/librarySync'
 
 /**
  * Reconstruct a WorkflowDefinition from a job type and its serialized config.
@@ -138,6 +139,11 @@ export function reconstructWorkflow(type: JobType, config: Record<string, unknow
         documentIds: config.documentIds as string[],
         name: config.name as string,
         subject: config.subject as string,
+      })
+
+    case 'library-sync':
+      return createLibrarySyncWorkflow({
+        examId: config.examId as string,
       })
 
     case 'fiche-generation':

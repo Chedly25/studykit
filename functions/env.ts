@@ -24,4 +24,5 @@ export interface Env {
   PUSH_SUBSCRIPTIONS?: KVNamespace
   RESEND_API_KEY?: string
   EMAIL_FROM?: string
+  LIBRARY_R2?: R2Bucket
 }

@@ -496,7 +496,39 @@ export async function executeOnboardingTool(
         }
       }
 
-      return { type: 'result', content: `Seeded ${dbSubjects.length} subjects with ${dbTopics.length} topics.${ctx.certificationId ? ' Exam format and passing threshold auto-configured from certification catalog.' : ''}` }
+      // Queue library sync if a content library exists for this exam
+      let librarySynced = false
+      try {
+        const { getLibraryExamId } = await import('../../data/libraryCatalog')
+        const profile = await db.examProfiles.get(profileId)
+        const examNameForLibrary = profile?.name || (ctx.certificationId ?? '')
+        const libraryId = getLibraryExamId(examNameForLibrary)
+        if (libraryId) {
+          const now = new Date().toISOString()
+          await db.backgroundJobs.put({
+            id: crypto.randomUUID(),
+            examProfileId: profileId,
+            type: 'library-sync' as const,
+            status: 'queued' as const,
+            config: JSON.stringify({ examId: libraryId }),
+            completedStepIds: '[]',
+            stepResults: '{}',
+            totalSteps: 4,
+            completedStepCount: 0,
+            currentStepName: '',
+            createdAt: now,
+            updatedAt: now,
+          })
+          librarySynced = true
+        }
+      } catch { /* library sync failure is non-critical */ }
+
+      const extras = [
+        ctx.certificationId ? 'Exam format auto-configured.' : '',
+        librarySynced ? 'Content library sync queued — papers will download in the background.' : '',
+      ].filter(Boolean).join(' ')
+
+      return { type: 'result', content: `Seeded ${dbSubjects.length} subjects with ${dbTopics.length} topics.${extras ? ' ' + extras : ''}` }
     }
 
     case 'save_student_assessment': {

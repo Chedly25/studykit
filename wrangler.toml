@@ -17,6 +17,12 @@ preview_id = "fd56d9a17848456ab6b9f6d8dcefae1b"
 binding = "SYNC_KV"
 id = "046e13c65fa84fa18c2df093b57601b8"
 
+# R2 bucket for shared content library (exam papers, corrections)
+# Create with: wrangler r2 bucket create studykit-library
+[[r2_buckets]]
+binding = "LIBRARY_R2"
+bucket_name = "studykit-library"
+
 # For Clerk auth, set the issuer URL as a secret:
 # wrangler pages secret put CLERK_ISSUER_URL
 #

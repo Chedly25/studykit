@@ -855,6 +855,7 @@ export type JobType =
   | 'grand-oral-generation'
   | 'fiche-generation'
   | 'exam-dna-analysis'
+  | 'library-sync'
 
 export interface BackgroundJob {
   id: string
