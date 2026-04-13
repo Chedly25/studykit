@@ -32,6 +32,16 @@ const GLOBAL_DAILY_CAP: Record<string, number> = {
   vision: 500,
 }
 
+// ─── R2 free-tier protection ─────────────────────────────────────
+// R2 free tier: 1M Class A (PUT/POST/LIST) + 10M Class B (GET/HEAD) per month.
+// Daily budget = 80% of monthly free tier / 30 days.
+// Class A: 1,000,000 * 0.8 / 30 = 26,666/day
+// Class B: 10,000,000 * 0.8 / 30 = 266,666/day
+const R2_DAILY_CAPS = {
+  classA: 26_000, // writes (PUT, POST, DELETE, LIST)
+  classB: 260_000, // reads (GET, HEAD)
+}
+
 function todayKey(): string {
   return new Date().toISOString().slice(0, 10)
 }
@@ -82,6 +92,29 @@ export async function checkGlobalCap(
   const current = parseInt((await kv.get(key)) ?? '0', 10)
 
   if (current >= softCap) {
+    return { allowed: false }
+  }
+
+  await kv.put(key, String(current + 1), { expirationTtl: 172800 })
+  return { allowed: true }
+}
+
+/**
+ * Check and increment the global R2 operation counter.
+ * Prevents exceeding the R2 free tier (1M Class A + 10M Class B per month).
+ * Uses daily caps derived from the monthly budget with 80% safety margin.
+ *
+ * @param opClass - 'classA' for writes (PUT/POST) or 'classB' for reads (GET/HEAD)
+ */
+export async function checkR2Limit(
+  kv: KVNamespace,
+  opClass: 'classA' | 'classB',
+): Promise<{ allowed: boolean }> {
+  const cap = R2_DAILY_CAPS[opClass]
+  const key = `r2:${opClass}:${todayKey()}`
+  const current = parseInt((await kv.get(key)) ?? '0', 10)
+
+  if (current >= cap) {
     return { allowed: false }
   }
 

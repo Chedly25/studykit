@@ -6,6 +6,7 @@ import type { Env } from '../../env'
 import { verifyClerkJWT } from '../../lib/auth'
 import { corsHeaders } from '../../lib/cors'
 import { checkRateLimit } from '../../lib/rateLimiter'
+import { checkR2Limit } from '../../lib/costProtection'
 
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
   return new Response(null, { status: 204, headers: corsHeaders(context.env) })
@@ -43,6 +44,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   if (!env.LIBRARY_R2) {
     return new Response(JSON.stringify({ error: 'Library not available' }), { status: 503, headers: { ...cors, 'Content-Type': 'application/json' } })
+  }
+
+  // R2 free-tier protection: 1 Class B (GET) operation
+  if (env.USAGE_KV) {
+    const r2Check = await checkR2Limit(env.USAGE_KV, 'classB')
+    if (!r2Check.allowed) {
+      return new Response(JSON.stringify({ error: 'Library temporarily unavailable (daily R2 limit reached)' }), { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } })
+    }
   }
 
   const obj = await env.LIBRARY_R2.get(`library/${examId}/manifest.json`)

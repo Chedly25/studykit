@@ -6,6 +6,7 @@ import type { Env } from '../../env'
 import { verifyClerkJWT } from '../../lib/auth'
 import { corsHeaders } from '../../lib/cors'
 import { checkRateLimit } from '../../lib/rateLimiter'
+import { checkR2Limit } from '../../lib/costProtection'
 
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
   return new Response(null, { status: 204, headers: corsHeaders(context.env) })
@@ -40,6 +41,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   if (!env.LIBRARY_R2) {
     return new Response(JSON.stringify({ exists: false }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } })
+  }
+
+  // R2 free-tier protection: 1 Class B (GET) operation
+  if (env.USAGE_KV) {
+    const r2Check = await checkR2Limit(env.USAGE_KV, 'classB')
+    if (!r2Check.allowed) {
+      return new Response(JSON.stringify({ error: 'Library temporarily unavailable (daily R2 limit reached)' }), { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } })
+    }
   }
 
   const obj = await env.LIBRARY_R2.get(`library/corrections/${paperId}.json`)
@@ -89,10 +98,26 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return new Response(JSON.stringify({ error: 'Correction too large (max 500KB)' }), { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } })
   }
 
+  // R2 free-tier protection: 1 Class B (HEAD) + potentially 1 Class A (PUT)
+  if (env.USAGE_KV) {
+    const r2ReadCheck = await checkR2Limit(env.USAGE_KV, 'classB')
+    if (!r2ReadCheck.allowed) {
+      return new Response(JSON.stringify({ error: 'Library temporarily unavailable (daily R2 read limit reached)' }), { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } })
+    }
+  }
+
   // First-write-wins: don't overwrite existing corrections
   const existing = await env.LIBRARY_R2.head(`library/corrections/${paperId}.json`)
   if (existing) {
     return new Response(JSON.stringify({ success: true, alreadyExists: true }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } })
+  }
+
+  // Class A (write) check — only if we're actually going to write
+  if (env.USAGE_KV) {
+    const r2WriteCheck = await checkR2Limit(env.USAGE_KV, 'classA')
+    if (!r2WriteCheck.allowed) {
+      return new Response(JSON.stringify({ error: 'Library temporarily unavailable (daily R2 write limit reached)' }), { status: 429, headers: { ...cors, 'Content-Type': 'application/json' } })
+    }
   }
 
   await env.LIBRARY_R2.put(
