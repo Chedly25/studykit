@@ -48,7 +48,7 @@ export function createExamExerciseProcessingWorkflow(
 
         return {
           doc: { id: doc.id, title: doc.title },
-          fullContent: fullContent.slice(0, 20000),
+          fullContent: fullContent.slice(0, 60000),
           topics: topics.map(t => ({ id: t.id, name: t.name, subjectId: t.subjectId, chapterId: t.chapterId })),
           chapters: chapters.map(ch => ({ id: ch.id, name: ch.name, subjectId: ch.subjectId })),
           subjects: subjects.map(s => ({ id: s.id, name: s.name })),

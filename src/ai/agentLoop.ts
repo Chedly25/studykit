@@ -59,7 +59,7 @@ import { db } from '../db'
 
 const MAX_ITERATIONS = 10
 const TIMEOUT_MS = 120000
-const MAX_TOOL_RESULT_CHARS = 15000 // Truncate oversized tool results to prevent payload bloat
+const MAX_TOOL_RESULT_CHARS = 50000 // Truncate oversized tool results to prevent payload bloat
 
 interface AgentLoopOptions {
   messages: Message[]

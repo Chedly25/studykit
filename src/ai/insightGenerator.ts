@@ -13,9 +13,9 @@ export async function generateSessionInsight(
   conversationId: string,
   authToken: string,
 ): Promise<SessionInsight | null> {
-  // Only run if conversation has >= 4 user messages
+  // Only run if conversation has >= 2 user messages
   const userMessages = messages.filter(m => m.role === 'user' && typeof m.content === 'string')
-  if (userMessages.length < 4) return null
+  if (userMessages.length < 2) return null
 
   // Build conversation transcript
   const transcript = messages

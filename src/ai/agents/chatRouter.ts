@@ -34,7 +34,7 @@ export async function routeChat(
   try {
     // Build compact context for the router
     const lastMessages = messages
-      .slice(-6)
+      .slice(-15)
       .filter(m => typeof m.content === 'string')
       .map(m => `${m.role}: ${(m.content as string).slice(0, 150)}`)
       .join('\n')

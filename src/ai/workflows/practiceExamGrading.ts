@@ -66,15 +66,21 @@ export function createGradingWorkflow(config: GradingConfig): WorkflowDefinition
 
           let isCorrect = false
           if (q.format === 'multiple-choice' && q.correctOptionIndex !== undefined) {
-            // Compare by option index (more reliable)
-            const options: string[] = q.options ? JSON.parse(q.options) : []
             const userAnswer = (q.userAnswer ?? '').trim()
-            const selectedIndex = options.findIndex(
-              o => o.trim().toLowerCase() === userAnswer.toLowerCase(),
-            )
-            isCorrect = selectedIndex === q.correctOptionIndex
+            // Prefer numeric index comparison (new sessions store the option index)
+            const numericIndex = parseInt(userAnswer, 10)
+            if (!isNaN(numericIndex) && numericIndex >= 0) {
+              isCorrect = numericIndex === q.correctOptionIndex
+            } else {
+              // Fallback: reverse-match answer text to options (old sessions)
+              const options: string[] = q.options ? JSON.parse(q.options) : []
+              const selectedIndex = options.findIndex(
+                o => o.trim().toLowerCase() === userAnswer.toLowerCase(),
+              )
+              isCorrect = selectedIndex === q.correctOptionIndex
+            }
           } else {
-            // Fallback: compare answer text
+            // Non-MCQ: compare answer text
             isCorrect =
               (q.userAnswer ?? '').trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()
           }

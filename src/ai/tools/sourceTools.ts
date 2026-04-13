@@ -12,10 +12,19 @@ export async function searchSourcesTool(
   authToken?: string,
 ): Promise<string> {
   const results = await hybridSearch(examProfileId, query, authToken, { topN })
+  const uniqueDocs = new Set(results.map(r => r.documentTitle)).size
   if (results.length === 0) {
-    return JSON.stringify({ results: [], message: 'No matching content found in uploaded sources.' })
+    return JSON.stringify({
+      results: [],
+      resultCount: 0,
+      documentsSearched: 0,
+      message: `No matching content found in uploaded sources for query: "${query}". Tell the student you could not find this in their materials and provide a general explanation instead.`,
+    })
   }
   return JSON.stringify({
+    resultCount: results.length,
+    documentsMatched: uniqueDocs,
+    message: `Found ${results.length} relevant passage(s) across ${uniqueDocs} document(s). Cite the sources using [Source: "Title", §ChunkIndex] format.`,
     results: results.map(r => ({
       documentTitle: r.documentTitle,
       content: r.content,

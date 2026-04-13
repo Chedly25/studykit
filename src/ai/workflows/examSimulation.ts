@@ -392,7 +392,7 @@ STUDENT CONTEXT:
 ${context.subjectsList}
 Weak areas: ${context.weakTopics}
 ${context.studentModel ? `Common mistakes: ${context.studentModel.commonMistakes}` : ''}
-${sources ? `\nSOURCE MATERIAL (ground questions in this content):\n${sources.slice(0, 30000)}` : ''}
+${sources ? `\nSOURCE MATERIAL (ground questions in this content):\n${sources.slice(0, 80000)}` : ''}
 
 RULES:
 - Generate EXACTLY ${simSection.questionCount} questions following the blueprint slots

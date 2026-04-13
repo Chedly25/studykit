@@ -222,7 +222,7 @@ async function sourceFromWeb(
           slot,
           title,
           sourceUrl: result.url,
-          rawContent: content.slice(0, 30000),
+          rawContent: content.slice(0, 80000),
         }
       }
     } catch (err) {

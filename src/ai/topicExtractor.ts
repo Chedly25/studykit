@@ -51,14 +51,14 @@ export async function extractTopicStructure(
       .where('documentId')
       .equals(doc.id)
       .sortBy('chunkIndex')
-    const sample = chunks.slice(0, 8).map(c => c.content)
+    const sample = chunks.slice(0, 30).map(c => c.content)
     allSamples.push(...sample)
   }
 
-  // Limit total content to ~8k chars
+  // Limit total content
   let sampleContent = ''
   for (const s of allSamples) {
-    if (sampleContent.length + s.length > 8000) break
+    if (sampleContent.length + s.length > 30000) break
     sampleContent += s + '\n\n---\n\n'
   }
 
@@ -189,13 +189,13 @@ export async function extractTopicStructureStreaming(
         .where('documentId')
         .equals(doc.id)
         .sortBy('chunkIndex')
-      const sample = chunks.slice(0, 8).map(c => c.content)
+      const sample = chunks.slice(0, 30).map(c => c.content)
       allSamples.push(...sample)
     }
 
     sampleContent = ''
     for (const s of allSamples) {
-      if (sampleContent.length + s.length > 8000) break
+      if (sampleContent.length + s.length > 30000) break
       sampleContent += s + '\n\n---\n\n'
     }
   }

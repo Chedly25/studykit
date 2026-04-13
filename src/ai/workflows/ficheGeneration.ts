@@ -16,7 +16,7 @@ export interface FicheGenerationConfig {
   language?: 'fr' | 'en'
 }
 
-async function llmMain(prompt: string, system: string, ctx: WorkflowContext, maxTokens = 8192): Promise<string> {
+async function llmMain(prompt: string, system: string, ctx: WorkflowContext, maxTokens = 16384): Promise<string> {
   const response = await streamChat({
     messages: [{ id: crypto.randomUUID(), role: 'user', content: prompt }],
     system,
@@ -61,7 +61,7 @@ export function createFicheGenerationWorkflow(config: FicheGenerationConfig): Wo
               .filter(c => c.content.toLowerCase().includes(searchTerm))
               .map(c => c.content)
               .join('\n\n---\n\n')
-              .slice(0, 30000)
+              .slice(0, 80000)
           }
 
           // Gather existing concept cards
@@ -85,7 +85,7 @@ export function createFicheGenerationWorkflow(config: FicheGenerationConfig): Wo
             subjectName: config.subjectName,
             examName: config.examName,
             mastery,
-            courseContent: courseContent.slice(0, 40000),
+            courseContent: courseContent.slice(0, 100000),
             conceptCards: conceptCards.map(c => {
               let cardContent = c.content ?? ''
               if (!cardContent && c.keyPoints) {

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
@@ -6,7 +6,7 @@ import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import { Bot, Loader2, FileText } from 'lucide-react'
 import type { Message } from '../../ai/types'
-import { parseCitations, CitationBadge, type Citation } from './SourceCitation'
+import { parseCitations, CitationBadge, loadChunkForCitation, type Citation } from './SourceCitation'
 import { StudyPlanCanvas } from './StudyPlanCanvas'
 import { ConceptCardBlock } from './ConceptCardBlock'
 import { InlineQuiz } from './InlineQuiz'
@@ -49,6 +49,25 @@ export function ChatMessageBubble({ message, messageIndex, conversationId, examP
 
   // Parse citations from assistant messages
   const citations = useMemo(() => isUser ? [] : parseCitations(text), [text, isUser])
+
+  // Validate citations — strip ones that don't resolve in the DB
+  const [validCitationIndices, setValidCitationIndices] = useState<Set<number>>(new Set())
+  useEffect(() => {
+    if (citations.length === 0 || !examProfileId || isStreaming) return
+    let cancelled = false
+    ;(async () => {
+      const valid = new Set<number>()
+      await Promise.all(citations.map(async (c, i) => {
+        const chunk = await loadChunkForCitation(examProfileId, c.documentTitle, c.chunkIndex)
+        if (chunk && !cancelled) valid.add(i)
+      }))
+      if (!cancelled) setValidCitationIndices(valid)
+    })()
+    return () => { cancelled = true }
+  }, [citations, examProfileId, isStreaming])
+
+  const validatedCitations = citations.filter((_, i) => isStreaming || citations.length === 0 || validCitationIndices.has(i))
+
   const textWithoutCitations = useMemo(() => {
     if (citations.length === 0) return text
     let cleaned = text
@@ -170,9 +189,9 @@ export function ChatMessageBubble({ message, messageIndex, conversationId, examP
             </div>
           )}
         </div>
-        {citations.length > 0 && (
+        {validatedCitations.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-[var(--border-card)]">
-            {citations.map((citation, i) => (
+            {validatedCitations.map((citation, i) => (
               <CitationBadge
                 key={`cite-${i}`}
                 citation={citation}
