@@ -46,17 +46,30 @@ if (!examId || !inputDir) {
 // ─── PDF text extraction (Node-compatible) ──────────────
 
 async function extractPdfText(filePath: string): Promise<{ text: string; pages: Array<{ pageNumber: number; text: string }> }> {
-  // Use pdf-parse for Node.js
-  const pdfParse = (await import('pdf-parse')).default
+  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
   const buffer = readFileSync(filePath)
-  const data = await pdfParse(buffer)
+  const uint8 = new Uint8Array(buffer)
+  const doc = await pdfjsLib.getDocument({ data: uint8, useSystemFonts: true }).promise
 
-  // pdf-parse returns full text but not per-page. Split by form feeds as approximation.
-  const fullText = data.text
-  const pageTexts = fullText.split('\f').filter(t => t.trim().length > 0)
-  const pages = pageTexts.map((text, i) => ({ pageNumber: i + 1, text: text.trim() }))
+  const pages: Array<{ pageNumber: number; text: string }> = []
+  const allText: string[] = []
 
-  return { text: fullText, pages }
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i)
+    const content = await page.getTextContent()
+    const pageText = content.items
+      .filter((item): item is { str: string } => 'str' in item)
+      .map(item => item.str)
+      .join(' ')
+      .trim()
+
+    if (pageText) {
+      pages.push({ pageNumber: i, text: pageText })
+      allText.push(pageText)
+    }
+  }
+
+  return { text: allText.join('\n\n'), pages }
 }
 
 // ─── Chunking (mirrors src/lib/sources.ts logic) ────────

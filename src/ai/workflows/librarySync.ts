@@ -155,6 +155,41 @@ export function createLibrarySyncWorkflow(config: LibrarySyncConfig): WorkflowDe
         },
       },
       {
+        id: 'generate-embeddings',
+        name: 'Generating search embeddings',
+        optional: true,
+        execute: async (_input: unknown, ctx: WorkflowContext) => {
+          // Find library documents without embeddings and generate them
+          const { embedAndStoreChunks } = await import('../../lib/embeddings')
+          const docs = await db.documents.where('examProfileId').equals(ctx.examProfileId).toArray()
+          const libraryDocs = docs.filter(d => {
+            if (!d.tags) return false
+            try { return (JSON.parse(d.tags) as string[]).includes('library') } catch { return false }
+          })
+
+          let embedded = 0
+          for (const doc of libraryDocs) {
+            // Check if embeddings already exist for this document
+            const existingCount = await db.chunkEmbeddings.where('documentId').equals(doc.id).count()
+            if (existingCount > 0) continue
+
+            const chunks = await db.documentChunks.where('documentId').equals(doc.id).toArray()
+            if (chunks.length === 0) continue
+
+            try {
+              await embedAndStoreChunks(chunks, ctx.authToken)
+              embedded++
+              ctx.updateProgress?.(`Embedded ${embedded} documents`)
+            } catch {
+              // Non-fatal — keyword search still works without embeddings
+              break // Stop on first failure (likely rate limit)
+            }
+          }
+
+          return { embedded, total: libraryDocs.length }
+        },
+      },
+      {
         id: 'finalize',
         name: 'Library sync complete',
         execute: async (_input: unknown, ctx: WorkflowContext) => {

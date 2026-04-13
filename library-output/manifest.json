@@ -1,0 +1,275 @@
+{
+  "examId": "cpge-mp",
+  "updatedAt": "2026-04-13T16:09:09.734Z",
+  "documents": [
+    {
+      "id": "cours-cpge-mp-chimie-chimie-oxydoreduction",
+      "title": "chimie oxydoreduction",
+      "category": "course",
+      "chunkCount": 9,
+      "sizeBytes": 29759
+    },
+    {
+      "id": "cours-cpge-mp-chimie-chimie-solutions-aqueuses",
+      "title": "chimie solutions aqueuses",
+      "category": "course",
+      "chunkCount": 77,
+      "sizeBytes": 283556
+    },
+    {
+      "id": "cours-cpge-mp-chimie-chimie-transformations-solutions",
+      "title": "chimie transformations solutions",
+      "category": "course",
+      "chunkCount": 30,
+      "sizeBytes": 162482
+    },
+    {
+      "id": "cours-cpge-mp-informatique-cours-info-mp-fermat",
+      "title": "cours info mp fermat",
+      "category": "course",
+      "chunkCount": 100,
+      "sizeBytes": 534465
+    },
+    {
+      "id": "cours-cpge-mp-informatique-intro-ocaml",
+      "title": "intro ocaml",
+      "category": "course",
+      "chunkCount": 13,
+      "sizeBytes": 54744
+    },
+    {
+      "id": "cours-cpge-mp-maths-cours-maths-mp-complet",
+      "title": "cours maths mp complet",
+      "category": "course",
+      "chunkCount": 454,
+      "sizeBytes": 2463481
+    },
+    {
+      "id": "cours-cpge-mp-maths-programme-officiel-mp-maths",
+      "title": "programme officiel mp maths",
+      "category": "course",
+      "chunkCount": 29,
+      "sizeBytes": 212308
+    },
+    {
+      "id": "cours-cpge-mp-physique-cours-physique-mp-complet",
+      "title": "cours physique mp complet",
+      "category": "course",
+      "chunkCount": 120,
+      "sizeBytes": 502317
+    },
+    {
+      "id": "cours-cpge-mp-physique-fiches-physique-mpsi-mp",
+      "title": "fiches physique mpsi mp",
+      "category": "course",
+      "chunkCount": 160,
+      "sizeBytes": 543970
+    },
+    {
+      "id": "cours-cpge-mp-physique-precis-physique-mp",
+      "title": "precis physique mp",
+      "category": "course",
+      "chunkCount": 21,
+      "sizeBytes": 120705
+    },
+    {
+      "id": "cours-cpge-mp-si-sciences-industrielles-mpsi",
+      "title": "sciences industrielles mpsi",
+      "category": "course",
+      "chunkCount": 297,
+      "sizeBytes": 1675545
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2014-math-mp-1-2014",
+      "title": "2014 math mp 1 2014",
+      "category": "exam",
+      "year": 2014,
+      "chunkCount": 4,
+      "sizeBytes": 17187
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2014-math-mp-2-2014",
+      "title": "2014 math mp 2 2014",
+      "category": "exam",
+      "year": 2014,
+      "chunkCount": 6,
+      "sizeBytes": 26064
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2015-math-mp-1-2015",
+      "title": "2015 math mp 1 2015",
+      "category": "exam",
+      "year": 2015,
+      "chunkCount": 5,
+      "sizeBytes": 19386
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2015-math-mp-2-2015",
+      "title": "2015 math mp 2 2015",
+      "category": "exam",
+      "year": 2015,
+      "chunkCount": 5,
+      "sizeBytes": 21886
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2016-math-mp-1-2016",
+      "title": "2016 math mp 1 2016",
+      "category": "exam",
+      "year": 2016,
+      "chunkCount": 6,
+      "sizeBytes": 21146
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2016-math-mp-2-2016",
+      "title": "2016 math mp 2 2016",
+      "category": "exam",
+      "year": 2016,
+      "chunkCount": 5,
+      "sizeBytes": 18665
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2017-math-mp-1-2017",
+      "title": "2017 math mp 1 2017",
+      "category": "exam",
+      "year": 2017,
+      "chunkCount": 4,
+      "sizeBytes": 12340
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2017-maths-mp-2-2017",
+      "title": "2017 maths mp 2 2017",
+      "category": "exam",
+      "year": 2017,
+      "chunkCount": 6,
+      "sizeBytes": 25559
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2018-maths-mp-1-2018",
+      "title": "2018 maths mp 1 2018",
+      "category": "exam",
+      "year": 2018,
+      "chunkCount": 6,
+      "sizeBytes": 22868
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2018-maths-mp-2-2018",
+      "title": "2018 maths mp 2 2018",
+      "category": "exam",
+      "year": 2018,
+      "chunkCount": 6,
+      "sizeBytes": 24451
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2019-math-mp-2-2019",
+      "title": "2019 math mp 2 2019",
+      "category": "exam",
+      "year": 2019,
+      "chunkCount": 5,
+      "sizeBytes": 18763
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2019-maths-mp-1-2019",
+      "title": "2019 maths mp 1 2019",
+      "category": "exam",
+      "year": 2019,
+      "chunkCount": 6,
+      "sizeBytes": 19745
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2020-math-mp-1-2020",
+      "title": "2020 math mp 1 2020",
+      "category": "exam",
+      "year": 2020,
+      "chunkCount": 6,
+      "sizeBytes": 26369
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2020-math-mp-2-2020",
+      "title": "2020 math mp 2 2020",
+      "category": "exam",
+      "year": 2020,
+      "chunkCount": 6,
+      "sizeBytes": 20207
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2021-maths-mp-1-2021",
+      "title": "2021 maths mp 1 2021",
+      "category": "exam",
+      "year": 2021,
+      "chunkCount": 5,
+      "sizeBytes": 16827
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2021-maths-mp-2-2021",
+      "title": "2021 maths mp 2 2021",
+      "category": "exam",
+      "year": 2021,
+      "chunkCount": 6,
+      "sizeBytes": 25954
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2022-maths-mp1-2022",
+      "title": "2022 maths mp1 2022",
+      "category": "exam",
+      "year": 2022,
+      "chunkCount": 8,
+      "sizeBytes": 27537
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2022-maths-mp2-2022",
+      "title": "2022 maths mp2 2022",
+      "category": "exam",
+      "year": 2022,
+      "chunkCount": 7,
+      "sizeBytes": 24306
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2023-maths-mp-1",
+      "title": "2023 maths mp 1",
+      "category": "exam",
+      "year": 2023,
+      "chunkCount": 6,
+      "sizeBytes": 22854
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2023-maths-mp-2",
+      "title": "2023 maths mp 2",
+      "category": "exam",
+      "year": 2023,
+      "chunkCount": 6,
+      "sizeBytes": 16030
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2024-maths-mp-1",
+      "title": "2024 maths mp 1",
+      "category": "exam",
+      "year": 2024,
+      "chunkCount": 6,
+      "sizeBytes": 15897
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2024-maths-mp-2",
+      "title": "2024 maths mp 2",
+      "category": "exam",
+      "year": 2024,
+      "chunkCount": 9,
+      "sizeBytes": 35476
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2025-maths-mp-1",
+      "title": "2025 maths mp 1",
+      "category": "exam",
+      "year": 2025,
+      "chunkCount": 6,
+      "sizeBytes": 18020
+    },
+    {
+      "id": "sujets-mines-ponts-mp-2025-maths-mp-2",
+      "title": "2025 maths mp 2",
+      "category": "exam",
+      "year": 2025,
+      "chunkCount": 7,
+      "sizeBytes": 30179
+    }
+  ]
+}

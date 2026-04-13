@@ -513,7 +513,7 @@ export async function executeOnboardingTool(
             config: JSON.stringify({ examId: libraryId }),
             completedStepIds: '[]',
             stepResults: '{}',
-            totalSteps: 4,
+            totalSteps: 5,
             completedStepCount: 0,
             currentStepName: '',
             createdAt: now,
