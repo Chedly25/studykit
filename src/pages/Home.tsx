@@ -6,16 +6,15 @@ import { ArrowRight, ArrowDown } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { InteractiveDemo } from '../components/home/InteractiveDemo'
 import { FeaturePillars } from '../components/home/FeaturePillars'
-import Dashboard from './Dashboard'
 
 export default function Home() {
   const { t } = useTranslation()
   const { isSignedIn } = useAuth()
   const { activeProfile, profiles, profilesLoaded } = useExamProfile()
 
-  // Signed in with profile → show dashboard
+  // Signed in with profile → redirect to dashboard
   if (isSignedIn && activeProfile) {
-    return <Dashboard />
+    return <Navigate to="/dashboard" replace />
   }
 
   // Signed in, no profiles at all → auto-redirect to conversational onboarding

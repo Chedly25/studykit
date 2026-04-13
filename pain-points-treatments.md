@@ -2,20 +2,30 @@
 
 **Date:** 2026-04-10
 **Scope:** Full-app audit from a student's perspective, with concrete treatment plans per pain point.
-**Status:** Planning document. No code changes made. Each pain point will be planned and scoped individually before implementation.
+**Status:** Implementation complete (2026-04-13). See completion status below.
 
 ---
 
-## How to use this document
+## Completion Status (as of 2026-04-13)
 
-- Each pain point has: **Problem** (what's wrong, with citations), **Student impact** (why it matters), **Treatment** (target behavior), **Implementation checklist** (concrete sub-items), **Dependencies**, **Open questions**, and **Effort/severity** tags.
-- Sections marked **Prompt-first** require drafting and validating prompts with user approval BEFORE any code change.
-- File/line citations are a snapshot from 2026-04-10. Verify against current code before implementing any specific sub-item.
-- No section should be built without re-confirming scope — this document is a plan, not a spec.
+| # | Pain point | Status | Commits |
+|---|---|---|---|
+| 1 | Chat is the center of gravity | DONE | d25c338, f90eaac |
+| 2 | Decision fatigue everywhere | DONE | 9999713 |
+| 3 | Documents are second-class citizens | DONE | 2fe49a6, cc48576 |
+| 4 | AI content quality has cracks | DONE | 242445e, 27ef4fa |
+| 5 | No escape hatch when AI fails | DONE | b625750 |
+| 6 | Fragmented session loop | SKIPPED | User decided not worth the risk/effort |
+| 7 | Thin emotional / motivational layer | DEFERRED | Future work |
+| 8 | Mobile compromised for real studying | DEFERRED | Future work (partially addressed by PP1-3) |
+| 9 | Swarm invisible in the wrong way | DONE | db0988e |
+| 10 | Smaller cleanup items | DONE | See below |
+
+**PP10 sub-items:** 10a Home redirect (fixed), 10b quiz persistence (fixed in PP1), 10c AI feedback (already existed), 10d i18n (already clean), 10e service worker (already handled).
 
 ---
 
-## Index
+## Original Index (for reference)
 
 | # | Pain point | Severity | Effort | Prompt-first |
 |---|---|---|---|---|
