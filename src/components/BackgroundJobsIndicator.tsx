@@ -28,6 +28,7 @@ const JOB_LABELS: Record<JobType, string> = {
   'grand-oral-generation': 'Generating grand oral',
   'fiche-generation': 'Generating revision fiche',
   'exam-dna-analysis': 'Analyzing exam DNA',
+  'library-sync': 'Syncing content library',
 }
 
 export function BackgroundJobsIndicator() {

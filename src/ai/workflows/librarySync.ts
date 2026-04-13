@@ -3,6 +3,7 @@
  * Runs as a background job after onboarding when a content library exists for the exam.
  */
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
+import type { DocumentSourceType, DocumentCategory } from '../../db/schema'
 import { db } from '../../db'
 
 interface LibrarySyncConfig {
@@ -24,8 +25,8 @@ interface LibraryDocumentPackage {
   document: {
     id: string
     title: string
-    sourceType: string
-    category: string
+    sourceType: DocumentSourceType
+    category: DocumentCategory
     originalContent: string
     summary?: string
     chunkCount: number
