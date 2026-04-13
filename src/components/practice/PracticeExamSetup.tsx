@@ -13,13 +13,14 @@ import type { DocumentExamSubject, ConcoursType } from '../../ai/prompts/documen
 import { SPECIALTY_OPTIONS } from '../../ai/prompts/casPratiquePrompts'
 import type { CasPratiqueSpecialty } from '../../ai/prompts/casPratiquePrompts'
 
-type ExamCategory = 'cpge' | 'crfpa' | 'medical' | 'general'
+type ExamCategory = 'cpge' | 'crfpa' | 'medical' | 'certification' | 'general'
 
 function detectExamCategory(profileName: string): ExamCategory {
   const lower = profileName.toLowerCase()
   if (/cpge|mines|polytechnique|centrale|ccinp|ccp|concours|mp\b|pc\b|psi\b|prépa/i.test(lower)) return 'cpge'
   if (/crfpa|barreau|avocat|droit des obligations|note de synth/i.test(lower)) return 'crfpa'
   if (/usmle|ecni?|médecine|medicine|nclex|step\s*[123]/i.test(lower)) return 'medical'
+  if (/aws|azure|az-?\d|gcp|google\s*cloud|comptia|cisco|ccn[ap]|ckad?|cks|kubernetes|databricks|terraform|hashicorp|snowflake|snowpro|security\+|network\+|linux\+/i.test(lower)) return 'certification'
   return 'general'
 }
 
@@ -399,7 +400,7 @@ export function PracticeExamSetup({
           )}
 
           {/* CPGE: Document Exam */}
-          {(examCategory === 'cpge' || examCategory === 'general') && (
+          {examCategory === 'cpge' && (
             <>
               <button
                 onClick={() => setShowDocumentExam(!showDocumentExam)}
@@ -418,7 +419,7 @@ export function PracticeExamSetup({
         </div>
 
         {/* CRFPA exam types */}
-        {(examCategory === 'crfpa' || examCategory === 'general') && (
+        {examCategory === 'crfpa' && (
           <div className="space-y-2">
             {examCategory === 'crfpa' && (
               <p className="text-xs text-[var(--text-faint)] uppercase tracking-wider font-semibold px-1">CRFPA</p>
@@ -510,7 +511,7 @@ export function PracticeExamSetup({
         )}
 
         {/* Document exam configuration panel (CPGE only) */}
-        {showDocumentExam && (examCategory === 'cpge' || examCategory === 'general') && (
+        {showDocumentExam && examCategory === 'cpge' && (
           <div className="space-y-3 p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-input)]">
             <h3 className="text-sm font-semibold text-[var(--text-heading)]">
               {t('documentExam.configTitle')}

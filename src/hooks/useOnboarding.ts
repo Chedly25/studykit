@@ -35,7 +35,7 @@ const MAX_RETRIES_BEFORE_FALLBACK = 2
 type PersistedState = Pick<
   ConversationalOnboardingState,
   'messages' | 'displayMessages' | 'profileId' | 'examName' |
-  'extractedSubjects' | 'topicsSeeded' | 'weeklyHoursSet' | 'completed' | 'useFallback' | 'error'
+  'extractedSubjects' | 'topicsSeeded' | 'weeklyHoursSet' | 'completed' | 'useFallback' | 'error' | 'certificationId'
 >
 
 function loadState(): ConversationalOnboardingState | null {
@@ -74,6 +74,7 @@ function saveState(state: ConversationalOnboardingState) {
       completed: state.completed,
       useFallback: state.useFallback,
       error: state.error,
+      certificationId: state.certificationId,
     }
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(persisted))
   } catch { /* quota exceeded — non-fatal */ }
@@ -238,6 +239,11 @@ export function useOnboarding() {
               setExtractedSubjects: (subjects: typeof stateRef.current.extractedSubjects) => {
                 stateRef.current = { ...stateRef.current, extractedSubjects: subjects }
                 setState(prev => ({ ...prev, extractedSubjects: subjects }))
+              },
+              certificationId: stateRef.current.certificationId,
+              setCertificationId: (id: string) => {
+                stateRef.current = { ...stateRef.current, certificationId: id }
+                setState(prev => ({ ...prev, certificationId: id }))
               },
               setTopicsSeeded: (v: boolean) => {
                 stateRef.current = { ...stateRef.current, topicsSeeded: v }

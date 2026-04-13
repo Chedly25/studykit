@@ -139,6 +139,7 @@ export function createPracticeExamWorkflow(config: PracticeExamConfig): Workflow
           examType: profile?.examType ?? 'custom',
           examDate: profile?.examDate ?? '',
           passingThreshold: profile?.passingThreshold ?? 60,
+          examIntelligence: profile?.examIntelligence,
           subjectsList,
           topicsList,
           knowledgeGraph,
@@ -409,6 +410,16 @@ Format rules:
             ? `\nExam format sections:\n${context.examFormats.map(f => `- ${f.formatName}: ${f.description}${f.samplePrompt ? ` (Example: ${f.samplePrompt})` : ''}`).join('\n')}`
             : ''
 
+          // Certification-specific question style guidance
+          let certificationStyle = ''
+          try {
+            const { findCertification } = await import('../../data/certifications')
+            const cert = findCertification(context.profileName ?? '')
+            if (cert) {
+              certificationStyle = `\nCERTIFICATION EXAM STYLE:\n${cert.questionStyle}\n`
+            }
+          } catch { /* catalog not available — no-op */ }
+
           const prompt = `You are generating a practice exam for a student studying for: "${context.profileName}" (${context.examType}).
 ${context.examDate ? `Exam date: ${context.examDate}.` : ''}
 Passing threshold: ${context.passingThreshold}%.
@@ -419,6 +430,7 @@ ${context.subjectsList || 'No subjects defined yet.'}
 ${focusNote}
 ${sectionNote}
 ${examFormatInfo}
+${certificationStyle}
 
 STUDENT PERFORMANCE DATA:
 Knowledge graph: ${context.knowledgeGraph}

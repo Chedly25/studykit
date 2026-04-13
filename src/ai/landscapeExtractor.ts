@@ -231,6 +231,24 @@ const KNOWN_EXAM_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /\bbut\b|dut\b/i, label: 'BUT/DUT' },
   // French exams — Brevet
   { pattern: /\bbrevet\b|dnb\b/i, label: 'Brevet des Collèges' },
+  // Tech certifications (Apr 2026)
+  { pattern: /\baws\b/i, label: 'AWS Certification' },
+  { pattern: /\b(saa|dva|soa|dop|sap|scs|ans|dea|aif|mla|clf|aip)[\s-]?c?\d{0,2}/i, label: 'AWS Certification' },
+  { pattern: /\bcloudops\s*engineer\b/i, label: 'AWS Certification' },
+  { pattern: /\bazure\b/i, label: 'Azure Certification' },
+  { pattern: /\b(az|sc|dp|ai|pl|ab)[\s-]?\d{2,4}\b/i, label: 'Azure Certification' },
+  { pattern: /\bgcp\b|\bgoogle\s*cloud\b/i, label: 'GCP Certification' },
+  { pattern: /\bcompti?a\b|security\+|network\+|linux\+|cloud\+|cysa\+|pentest\+|data\+|\ba\+\b|\bsecurityx\b/i, label: 'CompTIA Certification' },
+  { pattern: /\b(sy0|n10|cv0|cs0|cas|xk0|pt0|da0)[\s-]?\d{3,4}\b/i, label: 'CompTIA Certification' },
+  { pattern: /\bccna\b|\bccnp\b|\bccie\b|\bencor\b/i, label: 'Cisco Certification' },
+  { pattern: /\bckad?\b|\bcks\b|\bkcna\b/i, label: 'Kubernetes Certification' },
+  { pattern: /\bterraform\b|\bhashicorp\b|\bvault\b.*cert/i, label: 'HashiCorp Certification' },
+  { pattern: /\bdatabricks\b/i, label: 'Databricks Certification' },
+  { pattern: /\bsnowflake\b|\bsnowpro\b/i, label: 'Snowflake Certification' },
+  { pattern: /\bpmp\b|\bproject\s*management\s*professional/i, label: 'PMP Certification' },
+  { pattern: /\bitil\b/i, label: 'ITIL Certification' },
+  { pattern: /\bpsm\s*i?\b.*scrum|scrum.*\bpsm\b/i, label: 'Scrum Certification' },
+  { pattern: /\bdocker\s*(dca|certified)/i, label: 'Docker Certification' },
 ]
 
 /**
@@ -242,6 +260,13 @@ export async function generateKnownExamLandscape(
   jurisdiction?: string,
   authToken?: string,
 ): Promise<ExtractionResult | null> {
+  // Fast path: check certification catalog first (instant, no API call)
+  const { findCertification } = await import('../data/certifications')
+  const cert = findCertification(examName)
+  if (cert) {
+    return { examName: `${cert.vendor} ${cert.certName} (${cert.certCode})`, subjects: cert.subjects }
+  }
+
   // Check if this is a known exam
   const isKnown = KNOWN_EXAM_PATTERNS.some(p => p.pattern.test(examName))
   if (!isKnown) return null

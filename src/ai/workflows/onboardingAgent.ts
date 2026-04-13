@@ -39,6 +39,7 @@ export interface ConversationalOnboardingState {
   streamingText: string
   error: string | null
   useFallback: boolean
+  certificationId: string | null
 }
 
 export function createInitialConversationalState(): ConversationalOnboardingState {
@@ -56,6 +57,7 @@ export function createInitialConversationalState(): ConversationalOnboardingStat
     streamingText: '',
     error: null,
     useFallback: false,
+    certificationId: null,
   }
 }
 
@@ -96,6 +98,7 @@ You MUST use your tools to collect information. Do NOT describe options as text 
 
 ## ExamType inference
 - Bar, MCAT, LSAT, GRE, GMAT, CPA, CFA, USMLE, NCLEX, PE, FE, Concours, CRFPA, CPGE, Agregation, CAPES → "professional-exam"
+- AWS, Azure, GCP, CompTIA, Cisco, Kubernetes, Terraform, Databricks, Snowflake, Docker, PMP, ITIL and other tech certifications → "professional-exam"
 - DELF, DALF, TOEFL, IELTS, TOEIC, HSK, JLPT → "language-learning"
 - PhD, thesis, dissertation, qualifying exam → "graduate-research"
 - university, course, class, semester, module, AP, Bac → "university-course"
@@ -116,7 +119,7 @@ export const WIDGET_TOOLS = new Set([
 export const onboardingToolDefs: ToolDefinition[] = [
   {
     name: 'detect_known_exam',
-    description: 'Check if this exam/course is in our database. Returns topic structure if known, null if unknown. Call this early.',
+    description: 'Check if this exam/course/certification is in our database. Covers 60+ tech certifications (AWS, Azure, GCP, Databricks, Kubernetes, CompTIA, HashiCorp, Cisco, etc.) plus academic and professional exams. Returns topic structure if known. Call this early.',
     input_schema: {
       type: 'object',
       properties: {
@@ -273,8 +276,10 @@ interface ToolContext {
   userId: string
   authToken: string | null
   extractedSubjects: ExtractedSubject[]
+  certificationId: string | null
   setProfileId: (id: string) => void
   setExtractedSubjects: (subjects: ExtractedSubject[]) => void
+  setCertificationId: (id: string) => void
   setTopicsSeeded: (v: boolean) => void
   setWeeklyHoursSet: (v: boolean) => void
   setExamName: (name: string) => void
@@ -288,6 +293,18 @@ export async function executeOnboardingTool(
   switch (toolName) {
     case 'detect_known_exam': {
       try {
+        // Check certification catalog first (instant, no API call needed)
+        const { findCertification } = await import('../../data/certifications')
+        const cert = findCertification(input.examName as string)
+        if (cert) {
+          ctx.setExtractedSubjects(cert.subjects)
+          ctx.setCertificationId(cert.id)
+          const subjectNames = cert.subjects.map(s => `${s.name} (${s.weight}%)`).join(', ')
+          const retireNote = cert.retirementDate ? `\n\nNote: This exam is retiring on ${cert.retirementDate}.${cert.replacedBy ? ' Consider the replacement exam.' : ''}` : ''
+          return { type: 'result', content: `${cert.vendor} ${cert.certName} (${cert.certCode}) recognized from our official catalog!\n\nOfficial domains: ${subjectNames}\n\nExam: ${cert.questionCountTotal} questions, ${cert.totalDurationMinutes} min, passing ${cert.scoringScale.passing}/${cert.scoringScale.max}${retireNote}\n\nCall show_topic_preview to show them to the student, then seed_topics to confirm.` }
+        }
+
+        // Fall through to web search + LLM path for non-catalog exams
         if (!ctx.authToken) return { type: 'result', content: 'No auth token — cannot detect exam. Ask the student to describe their topics.' }
         const { generateKnownExamLandscape } = await import('../landscapeExtractor')
         const result = await generateKnownExamLandscape(
@@ -456,7 +473,28 @@ export async function executeOnboardingTool(
       await db.chapters.bulkPut(dbChapters)
       await db.topics.bulkPut(dbTopics)
       ctx.setTopicsSeeded(true)
-      return { type: 'result', content: `Seeded ${dbSubjects.length} subjects with ${dbTopics.length} topics.` }
+
+      // Auto-configure exam format and intelligence for catalog certifications
+      if (ctx.certificationId) {
+        const { findCertificationById } = await import('../../data/certifications')
+        const cert = findCertificationById(ctx.certificationId)
+        if (cert) {
+          for (let i = 0; i < cert.formats.length; i++) {
+            await db.examFormats.put({
+              id: crypto.randomUUID(),
+              examProfileId: profileId,
+              ...cert.formats[i],
+              order: i,
+            })
+          }
+          await db.examProfiles.update(profileId, {
+            examIntelligence: JSON.stringify(cert.examIntelligence),
+            passingThreshold: cert.passingThresholdPercent,
+          })
+        }
+      }
+
+      return { type: 'result', content: `Seeded ${dbSubjects.length} subjects with ${dbTopics.length} topics.${ctx.certificationId ? ' Exam format and passing threshold auto-configured from certification catalog.' : ''}` }
     }
 
     case 'save_student_assessment': {

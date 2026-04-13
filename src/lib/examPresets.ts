@@ -22,7 +22,7 @@ export interface ExamPresetSection {
 export interface ExamPreset {
   id: string
   name: string
-  category: 'engineering' | 'medical' | 'law' | 'business' | 'language' | 'general'
+  category: 'engineering' | 'medical' | 'law' | 'business' | 'language' | 'technology' | 'general'
   sections: ExamPresetSection[]
 }
 
@@ -127,6 +127,56 @@ export const EXAM_PRESETS: ExamPreset[] = [
     ],
   },
 
+  // ─── Technology & Cloud ───
+  {
+    id: 'aws-associate',
+    name: 'AWS Associate Certification (SAA/DVA/SOA/DEA)',
+    category: 'technology',
+    sections: [
+      { formatName: 'Multiple Choice & Multi-Select', description: '65 questions (50 scored + 15 unscored), scenario-based', timeAllocation: 130, pointWeight: 100, questionCount: 65, questionFormat: 'multiple-choice', canGoBack: true, passingScore: 72, instructions: 'Select the best answer. Some questions ask to select 2 or 3 answers.' },
+    ],
+  },
+  {
+    id: 'aws-professional',
+    name: 'AWS Professional Certification (SAP/DOP)',
+    category: 'technology',
+    sections: [
+      { formatName: 'Multiple Choice & Multi-Select', description: '75 questions (65 scored + 10 unscored), complex scenarios', timeAllocation: 180, pointWeight: 100, questionCount: 75, questionFormat: 'multiple-choice', canGoBack: true, passingScore: 75 },
+    ],
+  },
+  {
+    id: 'azure-fundamentals',
+    name: 'Azure Fundamentals (AZ-900 / AI-900 / DP-900)',
+    category: 'technology',
+    sections: [
+      { formatName: 'Mixed Format', description: '40-60 questions: MCQ, drag-and-drop, hot area', timeAllocation: 45, pointWeight: 100, questionCount: 50, questionFormat: 'multiple-choice', canGoBack: true, passingScore: 70 },
+    ],
+  },
+  {
+    id: 'azure-associate',
+    name: 'Azure Associate (AZ-104 / AZ-204 / AZ-305)',
+    category: 'technology',
+    sections: [
+      { formatName: 'Mixed Format + Case Studies', description: '40-60 questions with possible lab simulations', timeAllocation: 100, pointWeight: 100, questionCount: 50, questionFormat: 'multiple-choice', canGoBack: true, passingScore: 70 },
+    ],
+  },
+  {
+    id: 'comptia-standard',
+    name: 'CompTIA Standard (Security+ / Network+ / Cloud+)',
+    category: 'technology',
+    sections: [
+      { formatName: 'MCQ + Performance-Based', description: 'Up to 90 questions including performance-based questions', timeAllocation: 90, pointWeight: 100, questionCount: 90, questionFormat: 'multiple-choice', canGoBack: true, passingScore: 83, instructions: 'Performance-based questions appear first. MCQ follows.' },
+    ],
+  },
+  {
+    id: 'kubernetes-cka',
+    name: 'Kubernetes CKA / CKAD / CKS (Performance-Based)',
+    category: 'technology',
+    sections: [
+      { formatName: 'Hands-On Tasks', description: '15-20 performance-based tasks on a live Kubernetes cluster', timeAllocation: 120, pointWeight: 100, questionCount: 17, sectionType: 'practical', passingScore: 66, instructions: 'Entirely hands-on CLI tasks. No multiple choice. Use kubectl commands.' },
+    ],
+  },
+
   // ─── General ───
   {
     id: 'generic-mcq',
@@ -153,6 +203,7 @@ export const PRESET_CATEGORIES: Record<string, string> = {
   medical: 'Medical',
   law: 'Law',
   business: 'Business & Finance',
+  technology: 'Technology & Cloud',
   language: 'Language',
   general: 'General',
 }

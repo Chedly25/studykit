@@ -168,6 +168,7 @@ GROUNDING RULE (ALWAYS APPLIES): Before answering any conceptual question about 
     ctx.topics && ctx.topics.length > 0 ? truncateSection(buildTopicDependencySection(ctx.topics), sectionBudget, 'topic dependencies') : '',
     ctx.examFormats && ctx.examFormats.length > 0 ? truncateSection(buildExamFormatSection(ctx.examFormats), sectionBudget, 'exam format') : '',
     ctx.profile.examIntelligence ? truncateSection(buildExamIntelligenceSection(ctx.profile.examIntelligence), sectionBudget, 'exam intelligence') : '',
+    buildCertificationGuidanceSection(ctx.profile.examIntelligence),
     ctx.sourceContext ? truncateSection(buildSourceSection(ctx.sourceContext), sectionBudget * 2, 'source context') : '',
     ctx.tutorPreferences ? truncateSection(buildTutorPersonaSection(ctx.tutorPreferences), sectionBudget, 'tutor persona') : '',
     truncateSection(buildEmotionalIntelligenceSection(), sectionBudget, 'emotional intelligence'),
@@ -424,6 +425,18 @@ function buildExamFormatSection(formats: ExamFormat[]): string {
 The exam has ${formats.length} section${formats.length === 1 ? '' : 's'}:
 ${lines.join('\n')}
 Match question format to exam sections when generating practice questions.`
+}
+
+function buildCertificationGuidanceSection(examIntelligence?: string): string {
+  if (!examIntelligence) return ''
+  try {
+    const intel = JSON.parse(examIntelligence) as { overview?: string; tips?: string[] }
+    if (!intel.overview) return ''
+    // Detect certification-style exams by checking for common certification keywords
+    const isCert = /certif|certified|associate|professional|specialty|practitioner|fundamentals/i.test(intel.overview)
+    if (!isCert) return ''
+    return `\n\n## Certification Guidance\nThis is a technology certification exam. When tutoring:\n- Use scenario-based "which is BEST" questions for at least 80% of practice\n- All MCQ options must be plausible services/configurations\n- Include real-world context (company scenarios, architecture decisions)\n- Test understanding of trade-offs, not just recall\n- Reference specific services, features, and best practices by name`
+  } catch { return '' }
 }
 
 function buildExamIntelligenceSection(intelligenceJson: string): string {
