@@ -103,7 +103,7 @@ export default function Dashboard() {
       <div className="max-w-4xl mx-auto px-4 py-12 text-center">
         <h1 className="text-2xl font-bold text-[var(--text-heading)] mb-4">{t('dashboard.welcome')}</h1>
         <p className="text-[var(--text-muted)] mb-6">{t('dashboard.setupPrompt')}</p>
-        <Link to="/exam-profile" className="btn-primary px-6 py-2.5 inline-block">{t('dashboard.createProfile')}</Link>
+        <Link to="/welcome" className="btn-primary px-6 py-2.5 inline-block">{t('dashboard.createProfile')}</Link>
       </div>
     )
   }

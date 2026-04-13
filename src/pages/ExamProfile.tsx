@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Trash2, Link2, FileBarChart, ArrowRight, Pencil, X, Check, Calendar, Clock, Target } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
-import { hasSavedWizardDraft, clearWizardDraft } from '../hooks/useWizardDraft'
-import { ProjectBriefingWizard } from '../components/wizard/ProjectBriefingWizard'
 import { DependencyEditor } from '../components/knowledge/DependencyEditor'
 import { QuickStartModal } from '../components/QuickStartModal'
 import { ExamFormatEditor } from '../components/knowledge/ExamFormatEditor'
@@ -243,9 +241,9 @@ function ProfileCard({
 
 export default function ExamProfile() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { profiles, activeProfile, setActiveProfile, updateProfile, deleteProfile, profilesLoaded } = useExamProfile()
   const { topics } = useKnowledgeGraph(activeProfile?.id)
-  const [showWizard, setShowWizard] = useState(() => hasSavedWizardDraft())
   const [showDependencyEditor, setShowDependencyEditor] = useState(false)
   const [dependencyTopic, setDependencyTopic] = useState<Topic | null>(null)
   const [showExamFormatEditor, setShowExamFormatEditor] = useState(false)
@@ -259,30 +257,12 @@ export default function ExamProfile() {
     return map
   }, [])
 
-  // Auto-show wizard when there are no profiles (first-time user).
-  // Once showWizard is latched true, it stays true until user cancels — this prevents
-  // the wizard from unmounting when createProfile() in Step 1 adds a profile to the DB.
+  // Redirect to conversational onboarding when there are no profiles
   useEffect(() => {
     if (profilesLoaded && profiles.length === 0) {
-      setShowWizard(true)
+      navigate('/welcome', { replace: true })
     }
-  }, [profilesLoaded, profiles.length])
-
-  if (showWizard) {
-    return (
-      <div className="mx-auto px-4 py-8 animate-fade-in">
-        <div className="max-w-4xl mx-auto flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-[var(--text-heading)]">{t('profile.create')}</h1>
-          {profiles.length > 0 && (
-            <button onClick={() => { setShowWizard(false); clearWizardDraft() }} className="text-sm text-[var(--text-muted)] hover:text-[var(--text-body)] transition-colors">
-              {t('common.back')}
-            </button>
-          )}
-        </div>
-        <ProjectBriefingWizard />
-      </div>
-    )
-  }
+  }, [profilesLoaded, profiles.length, navigate])
 
   if (!profilesLoaded) {
     return (
@@ -303,7 +283,7 @@ export default function ExamProfile() {
           <button onClick={() => setShowQuickStart(true)} className="btn-secondary px-4 py-2 text-sm">
             Quick Start
           </button>
-          <button onClick={() => setShowWizard(true)} className="btn-primary px-4 py-2 text-sm">
+          <button onClick={() => navigate('/welcome')} className="btn-primary px-4 py-2 text-sm">
             {t('profile.create')}
           </button>
         </div>
