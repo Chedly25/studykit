@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { Search, FileText, Loader2 } from 'lucide-react'
-import { SourceCard } from './SourceCard'
+import { SourceCard, type DocStatusChips } from './SourceCard'
 import { hybridSearch } from '../../lib/hybridSearch'
+import { db } from '../../db'
 import type { Document } from '../../db/schema'
 
 interface Props {
@@ -41,6 +43,39 @@ export function SourceList({
   const [contentResults, setContentResults] = useState<Map<string, string>>(new Map())
   const [isSearching, setIsSearching] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  // Compute per-document status chips (topics linked + exercise count)
+  const docIds = useMemo(() => documents.map(d => d.id), [documents])
+  const statusChipsMap = useLiveQuery(async () => {
+    if (!examProfileId || docIds.length === 0) return new Map<string, DocStatusChips>()
+    const map = new Map<string, DocStatusChips>()
+
+    // Count chunks with topicId per document
+    const chunks = await db.documentChunks
+      .where('examProfileId').equals(examProfileId)
+      .filter(c => !!c.topicId)
+      .toArray()
+    const topicCountByDoc = new Map<string, Set<string>>()
+    for (const c of chunks) {
+      if (!topicCountByDoc.has(c.documentId)) topicCountByDoc.set(c.documentId, new Set())
+      if (c.topicId) topicCountByDoc.get(c.documentId)!.add(c.topicId)
+    }
+
+    // Count exercises per source document (exercise → examSource → documentId)
+    const examSources = await db.examSources.where('examProfileId').equals(examProfileId).toArray()
+    const exCountByDoc = new Map<string, number>()
+    for (const src of examSources) {
+      exCountByDoc.set(src.documentId, (exCountByDoc.get(src.documentId) ?? 0) + src.totalExercises)
+    }
+
+    for (const docId of docIds) {
+      map.set(docId, {
+        topicsLinked: topicCountByDoc.get(docId)?.size ?? 0,
+        exerciseCount: exCountByDoc.get(docId) ?? 0,
+      })
+    }
+    return map
+  }, [examProfileId, docIds]) ?? new Map<string, DocStatusChips>()
 
   // Content search via hybridSearch (debounced, 3+ chars)
   useEffect(() => {
@@ -121,6 +156,7 @@ export function SourceList({
               isGeneratingFlashcards={generatingFlashcardsId === doc.id}
               deleteConfirm={deleteConfirmId === doc.id}
               hasPdfFile={pdfDocIds?.has(doc.id)}
+              statusChips={statusChipsMap.get(doc.id)}
             />
             {contentResults.has(doc.id) && (
               <p className="text-xs text-[var(--text-muted)] px-3 pb-2 -mt-2 line-clamp-2 italic">

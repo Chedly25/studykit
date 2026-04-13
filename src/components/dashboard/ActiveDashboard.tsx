@@ -55,16 +55,38 @@ export function ActiveDashboard({
     return sorted.slice(0, 3)
   }, [topics])
 
-  // Swarm activity log — last 24h entries
-  const recentActivity = useLiveQuery(async () => {
-    const key = `swarm-activity-log:${profile.id}`
-    const insight = await db.agentInsights.get(key)
-    if (!insight?.data) return []
-    try {
-      const entries = JSON.parse(insight.data) as { action: string; summary: string; timestamp: string }[]
-      const cutoff = Date.now() - 24 * 60 * 60 * 1000
-      return entries.filter(e => new Date(e.timestamp).getTime() > cutoff)
-    } catch { return [] }
+  // Recent completed agent jobs — last 48h, for "Working for you" narrative
+  const recentJobs = useLiveQuery(async () => {
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
+    const jobs = await db.backgroundJobs
+      .where('examProfileId').equals(profile.id)
+      .filter(j => j.status === 'completed' && (j.completedAt ?? j.updatedAt) > cutoff)
+      .toArray()
+    return jobs
+      .sort((a, b) => (b.completedAt ?? b.updatedAt).localeCompare(a.completedAt ?? a.updatedAt))
+      .slice(0, 5)
+      .map(j => {
+        let label = j.type.replace(/-/g, ' ')
+        try {
+          const cfg = JSON.parse(j.config) as Record<string, unknown>
+          const name = (cfg.topicName ?? cfg.title ?? cfg.documentTitle ?? '') as string
+          if (name) {
+            const labels: Record<string, string> = {
+              'source-processing': `Processed document: ${name}`,
+              'fiche-generation': `Generated revision fiche for ${name}`,
+              'exam-exercise-processing': `Extracted exercises from ${name}`,
+              'exam-dna-analysis': `Analyzed exam patterns in ${name}`,
+              'practice-exam-generation': `Generated practice exam`,
+              'practice-exam-grading': `Graded practice exam`,
+              'study-plan': `Updated study plan`,
+            }
+            label = labels[j.type] ?? `Completed ${j.type.replace(/-/g, ' ')}`
+          }
+        } catch { /* config not parseable */ }
+        const ago = Math.round((Date.now() - new Date(j.completedAt ?? j.updatedAt).getTime()) / 60000)
+        const timeAgo = ago < 60 ? `${ago}m ago` : ago < 1440 ? `${Math.round(ago / 60)}h ago` : `${Math.round(ago / 1440)}d ago`
+        return { label, timeAgo }
+      })
   }, [profile.id]) ?? []
 
   return (
@@ -114,17 +136,22 @@ export function ActiveDashboard({
       </div>
 
       {/* ─── Working for you ─── */}
-      {recentActivity.length > 0 ? (
+      {recentJobs.length > 0 ? (
         <div className="glass-card p-4 mb-4 animate-fade-in-up stagger-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-4 h-4 text-[var(--accent-text)] animate-gentle-pulse" />
             <span className="text-xs font-semibold text-[var(--text-heading)]">
               {t('dashboard.workingForYou')}
             </span>
           </div>
-          <p className="text-xs text-[var(--text-muted)] mt-1.5 leading-relaxed">
-            {recentActivity.map(e => e.summary).join(' · ')}
-          </p>
+          <div className="space-y-1">
+            {recentJobs.map((job, i) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <span className="text-[var(--text-body)] truncate">{job.label}</span>
+                <span className="text-[var(--text-faint)] ml-2 shrink-0">{job.timeAgo}</span>
+              </div>
+            ))}
+          </div>
         </div>
       ) : topics.length > 0 ? (
         <div className="glass-card p-4 mb-4 animate-fade-in-up stagger-2">

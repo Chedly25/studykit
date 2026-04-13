@@ -10,6 +10,11 @@ const typeIcons: Record<string, typeof FileText> = {
   image: FileText,
 }
 
+export interface DocStatusChips {
+  topicsLinked: number
+  exerciseCount: number
+}
+
 interface Props {
   document: Document
   onView: () => void
@@ -22,6 +27,7 @@ interface Props {
   isGeneratingFlashcards?: boolean
   deleteConfirm?: boolean
   hasPdfFile?: boolean
+  statusChips?: DocStatusChips
 }
 
 export function SourceCard({
@@ -36,6 +42,7 @@ export function SourceCard({
   deleteConfirm,
   onViewPdf,
   hasPdfFile,
+  statusChips,
 }: Props) {
   const { t } = useTranslation()
   const Icon = typeIcons[doc.sourceType] ?? FileText
@@ -68,6 +75,18 @@ export function SourceCard({
           </>
         )}
       </div>
+
+      {/* Agent status chips */}
+      {statusChips && (statusChips.topicsLinked > 0 || statusChips.exerciseCount > 0) && (
+        <div className="flex flex-wrap gap-1">
+          {statusChips.topicsLinked > 0 && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600">{statusChips.topicsLinked} topics linked</span>
+          )}
+          {statusChips.exerciseCount > 0 && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600">{statusChips.exerciseCount} exercises</span>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-1.5 mt-auto pt-1">
         <button

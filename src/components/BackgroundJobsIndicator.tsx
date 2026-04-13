@@ -47,7 +47,11 @@ export function BackgroundJobsIndicator() {
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--accent-bg)] text-[var(--accent-text)] text-xs font-medium hover:bg-[var(--accent-text)]/20 transition-colors"
       >
         <Loader2 size={14} className="animate-spin" />
-        <span>{runningCount + queuedCount}</span>
+        {activeJobs.length === 1 ? (
+          <span className="truncate max-w-[160px]">{JOB_LABELS[activeJobs[0].type] ?? activeJobs[0].type}...</span>
+        ) : (
+          <span>{runningCount + queuedCount} processing</span>
+        )}
       </button>
 
       {open && (
