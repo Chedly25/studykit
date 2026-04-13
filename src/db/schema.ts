@@ -483,6 +483,10 @@ export interface GeneratedQuestion {
   timeSpentSeconds?: number
   flagged?: boolean
   markingScheme?: string         // JSON marking scheme from Answer Key Builder
+  // Grade dispute fields
+  disputed?: boolean
+  disputeReason?: string
+  disputeResult?: string          // JSON: { accepted: boolean, explanation: string, updatedScore?: number }
 }
 
 // ─── Sync Queue (incremental sync tracking) ────────────────────

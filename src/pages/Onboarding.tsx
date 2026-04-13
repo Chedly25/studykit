@@ -402,17 +402,29 @@ function SummaryWidget({ data, onDashboard, onStudy, disabled }: {
 
 // ─── Error banner ─────────────────────────────────────────
 
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ErrorBanner({ message, onRetry, onManualSetup }: { message: string; onRetry: () => void; onManualSetup?: () => void }) {
   return (
-    <div className="flex items-center gap-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 mb-4">
-      <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-      <span className="text-sm text-red-700 dark:text-red-300 flex-1">{message}</span>
-      <button
-        onClick={onRetry}
-        className="flex items-center gap-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:underline"
-      >
-        <RefreshCw className="w-3.5 h-3.5" /> Retry
-      </button>
+    <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 mb-4">
+      <div className="flex items-center gap-3">
+        <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+        <span className="text-sm text-red-700 dark:text-red-300 flex-1">{message}</span>
+      </div>
+      <div className="flex items-center gap-3 mt-2 ml-7">
+        <button
+          onClick={onRetry}
+          className="flex items-center gap-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:underline"
+        >
+          <RefreshCw className="w-3.5 h-3.5" /> Retry
+        </button>
+        {onManualSetup && (
+          <button
+            onClick={onManualSetup}
+            className="text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-body)] hover:underline"
+          >
+            Use manual setup instead
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -712,7 +724,7 @@ export default function Onboarding() {
   const navigate = useNavigate()
   const { user } = useUser()
   const { userId } = useAuth()
-  const { state, sendMessage, respondToWidget, completeOnboarding, resetOnboarding } = useOnboarding()
+  const { state, sendMessage, respondToWidget, completeOnboarding, resetOnboarding, forceFallback } = useOnboarding()
   const { profiles, profilesLoaded } = useExamProfile()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showManualSetup, setShowManualSetup] = useState(false)
@@ -787,7 +799,7 @@ export default function Onboarding() {
 
       {/* Error banner */}
       {state.error && (
-        <ErrorBanner message={state.error} onRetry={() => sendMessage()} />
+        <ErrorBanner message={state.error} onRetry={() => sendMessage()} onManualSetup={forceFallback} />
       )}
 
       {/* Messages */}

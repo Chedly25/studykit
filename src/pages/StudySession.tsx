@@ -281,6 +281,28 @@ export default function StudySession() {
         onToggleActivity={markActivityCompleted}
       />
 
+      {/* Auto-resolution banner — shown when topic was not explicitly chosen via URL */}
+      {(!topicParam || topic.name !== topicParam) && (
+        <div className="flex items-center gap-2 px-4 py-1.5 border-b border-[var(--border-card)] bg-blue-500/5 text-xs text-[var(--text-muted)]">
+          <span>
+            Studying: <strong className="text-[var(--text-heading)]">{topic.name}</strong>
+            {!topicParam ? ' (auto-selected)' : ' (closest match)'}
+          </span>
+          <select
+            value={topic.name}
+            onChange={e => {
+              const selected = topics.find(t => t.name === e.target.value)
+              if (selected) navigate(`/session?topic=${encodeURIComponent(selected.name)}`, { replace: true })
+            }}
+            className="ml-auto text-xs bg-[var(--bg-input)] border border-[var(--border-card)] rounded px-2 py-0.5 text-[var(--text-body)]"
+          >
+            {topics.map(t => (
+              <option key={t.id} value={t.name}>{t.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Session suggestions strip (above tabs, only when no messages yet) */}
       {messages.length === 0 && !streamingText && !inlineAction.current && (
         <div className="px-4 py-2 border-b border-[var(--border-card)] bg-[var(--bg-card)]/20 overflow-x-auto">

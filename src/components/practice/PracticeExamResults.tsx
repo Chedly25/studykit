@@ -1,13 +1,15 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAuth } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
-import { Trophy, BarChart3, RotateCcw, ChevronDown, ChevronUp, RefreshCw, ShieldAlert, Clock, MessageCircle } from 'lucide-react'
+import { Trophy, BarChart3, RotateCcw, ChevronDown, ChevronUp, RefreshCw, ShieldAlert, Clock, MessageCircle, AlertTriangle } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { GeneratedQuestion, PracticeExamSession } from '../../db/schema'
 import { QuestionRenderer } from './QuestionRenderer'
 import type { WorkflowProgress } from '../../ai/orchestrator/types'
 import { Loader2 } from 'lucide-react'
 import { db } from '../../db'
+import { evaluateDispute, type DisputeResult } from '../../ai/workflows/gradeDispute'
 
 interface PracticeExamResultsProps {
   session: PracticeExamSession | undefined
@@ -369,6 +371,12 @@ export function PracticeExamResults({
                           {t('practiceExam.explainDifferently')}
                         </button>
                       )}
+                      {!q.isCorrect && !q.disputed && (
+                        <DisputeButton question={q} />
+                      )}
+                      {q.disputed && q.disputeResult && (
+                        <DisputeResultBadge result={q.disputeResult} />
+                      )}
                     </div>
                   </div>
                 )}
@@ -480,6 +488,116 @@ function ExamStrategySection({ sessionId }: { sessionId: string }) {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Grade Dispute Components ──────────────────────────────────
+
+function DisputeButton({ question }: { question: GeneratedQuestion }) {
+  const { t } = useTranslation()
+  const { getToken } = useAuth()
+  const [open, setOpen] = useState(false)
+  const [argument, setArgument] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [result, setResult] = useState<DisputeResult | null>(null)
+
+  const handleSubmit = useCallback(async () => {
+    if (!argument.trim() || isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      const token = await getToken()
+      if (!token) return
+      const res = await evaluateDispute({
+        questionText: question.text,
+        correctAnswer: question.correctAnswer,
+        studentAnswer: question.userAnswer ?? '',
+        originalIsCorrect: !!question.isCorrect,
+        originalFeedback: question.feedback ?? '',
+        originalPoints: question.earnedPoints ?? 0,
+        maxPoints: question.points,
+        studentArgument: argument.trim(),
+        markingScheme: question.markingScheme,
+      }, token)
+      setResult(res)
+      // Update the question in DB
+      await db.generatedQuestions.update(question.id, {
+        disputed: true,
+        disputeReason: argument.trim(),
+        disputeResult: JSON.stringify(res),
+        ...(res.accepted && res.updatedScore !== undefined ? {
+          isCorrect: res.updatedScore >= question.points * 0.5,
+          earnedPoints: res.updatedScore,
+          feedback: res.explanation,
+        } : {}),
+      })
+    } catch {
+      setResult({ accepted: false, explanation: 'Failed to evaluate dispute. Try again.' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [argument, question, getToken, isSubmitting])
+
+  if (result) {
+    return (
+      <div className={`mt-3 rounded-lg p-3 text-xs ${result.accepted ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'}`}>
+        <p className="font-medium mb-1">{result.accepted ? 'Dispute accepted' : 'Dispute reviewed'}</p>
+        <p>{result.explanation}</p>
+        {result.accepted && result.updatedScore !== undefined && (
+          <p className="mt-1 font-semibold">Updated score: {result.updatedScore}/{question.points}</p>
+        )}
+      </div>
+    )
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="mt-2 flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-amber-600 hover:underline"
+      >
+        <AlertTriangle className="w-3 h-3" />
+        {t('practiceExam.disputeGrade', 'I think this grade is wrong')}
+      </button>
+    )
+  }
+
+  return (
+    <div className="mt-3 glass-card p-3 space-y-2">
+      <p className="text-xs font-medium text-[var(--text-heading)]">{t('practiceExam.disputeTitle', 'Why do you think this is wrong?')}</p>
+      <textarea
+        value={argument}
+        onChange={e => setArgument(e.target.value)}
+        placeholder={t('practiceExam.disputePlaceholder', 'Explain why your answer should be correct...')}
+        className="w-full text-xs p-2 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg text-[var(--text-body)] placeholder:text-[var(--text-faint)] resize-none"
+        rows={3}
+        autoFocus
+      />
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleSubmit}
+          disabled={!argument.trim() || isSubmitting}
+          className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5"
+        >
+          {isSubmitting ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+          {isSubmitting ? 'Evaluating...' : 'Submit dispute'}
+        </button>
+        <button onClick={() => setOpen(false)} className="text-xs text-[var(--text-muted)] hover:underline">Cancel</button>
+      </div>
+    </div>
+  )
+}
+
+function DisputeResultBadge({ result: raw }: { result: string }) {
+  const res = useMemo<DisputeResult | null>(() => {
+    try { return JSON.parse(raw) as DisputeResult } catch { return null }
+  }, [raw])
+
+  if (!res) return null
+
+  return (
+    <div className={`mt-2 text-[10px] px-2 py-1 rounded inline-flex items-center gap-1 ${res.accepted ? 'bg-emerald-500/15 text-emerald-600' : 'bg-amber-500/15 text-amber-600'}`}>
+      {res.accepted ? 'Grade updated' : 'Dispute reviewed'}: {res.explanation.slice(0, 80)}{res.explanation.length > 80 ? '...' : ''}
     </div>
   )
 }

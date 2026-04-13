@@ -48,6 +48,7 @@ export default function Sources() {
     documents, totalChunks,
     uploadPdf, uploadMultiplePdfs, pasteText, saveNote, deleteSource,
     isProcessing, processingStatus, batchProgress,
+    lastUploadError, clearUploadError,
   } = useSources(profileId, sourceOptions)
 
   const { coverage } = useSourceCoverage(profileId)
@@ -310,6 +311,24 @@ export default function Sources() {
           error={processingError}
           onCancel={cancelProcessing}
         />
+      )}
+
+      {/* Persistent upload error card with guidance */}
+      {lastUploadError && (
+        <div className="glass-card p-4 mb-4 border-l-4 border-red-500 animate-fade-in">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-[var(--text-heading)] mb-1">{t('sources.uploadFailed', 'Upload failed')}</p>
+              <p className="text-xs text-[var(--text-muted)]">{lastUploadError}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-2">
+                {lastUploadError.includes('maximum file size') && t('sources.errorGuidanceSize', 'Try compressing the PDF or splitting it into smaller parts.')}
+                {lastUploadError.includes('scanned') && t('sources.errorGuidanceScanned', 'Try running OCR on the PDF first, or upload a text-based version.')}
+                {lastUploadError.includes('network') && t('sources.errorGuidanceNetwork', 'Check your internet connection and try again.')}
+              </p>
+            </div>
+            <button onClick={clearUploadError} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)]">Dismiss</button>
+          </div>
+        </div>
       )}
 
       {unprocessedDocs.length > 0 && !isProcessingDoc && (

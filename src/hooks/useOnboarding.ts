@@ -515,5 +515,9 @@ export function useOnboarding() {
     setState(fresh)
   }, [])
 
-  return { state, sendMessage, respondToWidget, completeOnboarding, resetOnboarding }
+  const forceFallback = useCallback(() => {
+    setState(prev => ({ ...prev, useFallback: true, error: null }))
+  }, [])
+
+  return { state, sendMessage, respondToWidget, completeOnboarding, resetOnboarding, forceFallback }
 }

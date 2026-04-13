@@ -36,6 +36,7 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingStatus, setProcessingStatus] = useState('')
   const [batchProgress, setBatchProgress] = useState<BatchUploadProgressState | null>(null)
+  const [lastUploadError, setLastUploadError] = useState<string | null>(null)
 
   const documents = useLiveQuery(
     () => examProfileId
@@ -114,7 +115,9 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
       // Auto-trigger processing if callback provided
       try { onDocumentReadyRef.current?.(doc.id) } catch { /* non-blocking */ }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Upload failed')
+      const msg = err instanceof Error ? err.message : 'Upload failed'
+      setLastUploadError(msg)
+      toast.error(msg)
       throw err
     } finally {
       setIsProcessing(false)
@@ -262,5 +265,7 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
     isProcessing,
     processingStatus,
     batchProgress,
+    lastUploadError,
+    clearUploadError: useCallback(() => setLastUploadError(null), []),
   }
 }
