@@ -734,14 +734,8 @@ export default function Onboarding() {
     () => state.displayMessages.length === 0 && !state.completed
   )
 
-  // Redirect if user already has profiles (not from this onboarding)
-  // Skip redirect if onboarding is actively in progress (messages exist or streaming)
-  useEffect(() => {
-    if (profilesLoaded && profiles.length > 0 && !state.profileId
-        && state.displayMessages.length === 0 && !state.isStreaming) {
-      navigate('/dashboard', { replace: true })
-    }
-  }, [profilesLoaded, profiles.length, state.profileId, state.displayMessages.length, state.isStreaming, navigate])
+  // Previously redirected users with existing profiles away from /welcome.
+  // Removed: /welcome is now the sole path for creating any profile (including additional ones).
 
   // Initial greeting — trigger AI opening message once auth is ready
   const greetingSentRef = useRef(false)
