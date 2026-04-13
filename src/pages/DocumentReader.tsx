@@ -21,6 +21,7 @@ import { RecallSuggestion } from '../components/reader/RecallSuggestion'
 import { PdfOutline } from '../components/reader/PdfOutline'
 import { InlineActionContainer } from '../components/actions/InlineActionContainer'
 import { useInlineAction } from '../hooks/useInlineAction'
+import { usePdfSearch } from '../hooks/usePdfSearch'
 import type { Document } from '../db/schema'
 
 export default function DocumentReader() {
@@ -42,9 +43,10 @@ export default function DocumentReader() {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectionContext, setSelectionContext] = useState<{ text: string; pageNumber: number; documentTitle: string } | null>(null)
   const pdfViewerRef = useRef<PdfScrollViewerHandle>(null)
-  // Search state
+  // Search state — usePdfSearch manages query, matches, and navigation
   const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [pageTexts, setPageTexts] = useState<string[]>([])
+  const pdfSearch = usePdfSearch(pageTexts)
   // TOC outline
   const [outline, setOutline] = useState<any[] | null>(null)
   const [outlineOpen, setOutlineOpen] = useState(false)
@@ -208,6 +210,23 @@ export default function DocumentReader() {
     }).catch(() => { /* no outline */ })
   }, [pdfDoc])
 
+  // Extract page texts for Ctrl+F search
+  useEffect(() => {
+    if (!pdfDoc) return
+    let cancelled = false
+    ;(async () => {
+      const texts: string[] = []
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        if (cancelled) return
+        const page = await pdfDoc.getPage(i)
+        const content = await page.getTextContent()
+        texts.push(content.items.map((item: any) => item.str).join(' '))
+      }
+      if (!cancelled) setPageTexts(texts)
+    })()
+    return () => { cancelled = true }
+  }, [pdfDoc])
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -219,7 +238,8 @@ export default function DocumentReader() {
       }
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) return
       if (e.key === 'Escape') {
-        if (searchOpen) { setSearchOpen(false); setSearchQuery('') }
+        if (searchOpen) { setSearchOpen(false); pdfSearch.clear() }
+        else if (outlineOpen) { setOutlineOpen(false) }
         else navigate(-1)
       }
       else if (e.key === '+' || e.key === '=') { manualZoom.current = true; setScale(s => Math.min(3, s + 0.2)) }
@@ -227,7 +247,7 @@ export default function DocumentReader() {
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [navigate, searchOpen])
+  }, [navigate, searchOpen, outlineOpen, pdfSearch])
 
   // Mobile detection
   useEffect(() => {
@@ -300,7 +320,7 @@ export default function DocumentReader() {
               documentId={documentId!}
               examProfileId={profileId}
               topicHighlightTexts={topicChunkTexts}
-              searchQuery={searchOpen ? searchQuery : undefined}
+              searchQuery={searchOpen ? pdfSearch.query : undefined}
             />
             {showRecallSuggestion && !inlineAction.current && (
               <RecallSuggestion
@@ -393,9 +413,19 @@ export default function DocumentReader() {
         onQuizHighlights={handleQuizOnHighlights}
         searchOpen={searchOpen}
         onToggleSearch={() => setSearchOpen(o => !o)}
-        searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
-        onSearchClose={() => { setSearchOpen(false); setSearchQuery('') }}
+        searchQuery={pdfSearch.query}
+        onSearchQueryChange={pdfSearch.setQuery}
+        searchMatchCount={pdfSearch.matchCount}
+        searchCurrentIndex={pdfSearch.currentIndex}
+        onSearchNext={() => {
+          const match = pdfSearch.goToNext()
+          if (match) pdfViewerRef.current?.scrollToPage(match.pageNumber)
+        }}
+        onSearchPrev={() => {
+          const match = pdfSearch.goToPrev()
+          if (match) pdfViewerRef.current?.scrollToPage(match.pageNumber)
+        }}
+        onSearchClose={() => { setSearchOpen(false); pdfSearch.clear() }}
         hasOutline={!!outline && outline.length > 0}
         onToggleOutline={() => setOutlineOpen(o => !o)}
       />
