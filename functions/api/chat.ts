@@ -194,7 +194,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         })
         .filter((t): t is NonNullable<typeof t> => t !== undefined)
         .slice(0, 40)
-      if (filtered.length > 0) llmBody.tools = filtered
+      if (filtered.length > 0) {
+        llmBody.tools = filtered
+        // Forward tool_choice if provided by client
+        if (body.tool_choice) llmBody.tool_choice = body.tool_choice
+      }
     }
 
     // Fetch with retry for transient failures

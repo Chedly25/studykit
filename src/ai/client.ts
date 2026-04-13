@@ -28,6 +28,7 @@ export interface ChatRequestOptions {
   tools: ToolDefinition[]
   model?: string
   maxTokens?: number
+  toolChoice?: 'auto' | 'required' | 'none'
   authToken?: string
   getToken?: () => Promise<string | null>
   onToken?: (text: string) => void
@@ -123,7 +124,7 @@ function toOpenAIMessages(messages: Message[], system: string) {
 }
 
 export async function streamChat(options: ChatRequestOptions): Promise<ChatResponse> {
-  const { messages, system, tools, model, maxTokens = 4096, authToken, getToken, onToken, onToolCall, signal } = options
+  const { messages, system, tools, model, maxTokens = 4096, toolChoice, authToken, getToken, onToken, onToolCall, signal } = options
 
   const openaiMessages = toOpenAIMessages(messages, system)
   const openaiTools = tools.length > 0 ? toOpenAITools(tools) : undefined
@@ -135,6 +136,7 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
   }
   if (model) body.model = model
   if (openaiTools) body.tools = openaiTools
+  if (toolChoice && openaiTools) body.tool_choice = toolChoice
 
   let currentToken = authToken
 

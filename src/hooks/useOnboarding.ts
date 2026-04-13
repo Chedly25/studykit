@@ -171,6 +171,7 @@ export function useOnboarding() {
           messages: stateRef.current.messages as Message[],
           system: buildOnboardingSystemPrompt(),
           tools: onboardingToolDefs,
+          toolChoice: 'auto',
           maxTokens: 1024,
           authToken: token ?? undefined,
           onToken: (t: string) => {
