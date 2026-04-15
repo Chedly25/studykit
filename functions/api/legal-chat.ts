@@ -23,6 +23,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const cors = corsHeaders(env)
   const jsonH = { ...cors, 'Content-Type': 'application/json' }
 
+  try {
+
   const apiKey = env.ANTHROPIC_API_KEY
   if (!apiKey) return new Response(JSON.stringify({ error: 'Legal chat not configured' }), { status: 503, headers: jsonH })
 
@@ -105,7 +107,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   // Convert OpenAI tools → Anthropic tools, using server-side canonical definitions
   const toolNames = (body.tools ?? []).map(t => t.function?.name).filter(Boolean)
   const anthropicTools = toolNames.map(name => {
-    const serverTool = SERVER_TOOLS.find(t => t.function.name === name)
+    const serverTool = SERVER_TOOLS.get(name)
     if (serverTool) {
       return { name: serverTool.function.name, description: serverTool.function.description, input_schema: serverTool.function.parameters }
     }
@@ -241,4 +243,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   return new Response(readable, {
     headers: { ...cors, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
   })
+
+  } catch (e) {
+    const cors = corsHeaders(context.env)
+    return new Response(
+      JSON.stringify({ error: String((e as Error).message ?? e), stack: String((e as Error).stack ?? '').slice(0, 500) }),
+      { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } },
+    )
+  }
 }

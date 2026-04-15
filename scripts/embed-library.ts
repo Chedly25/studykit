@@ -19,7 +19,7 @@ const docsDir = join(dir, 'docs')
 async function main() {
   console.log('=== Re-embed Library with BGE-M3 ===\n')
   console.log('Loading BGE-M3 model...')
-  const embedder = await pipeline('feature-extraction', 'Xenova/bge-m3', { dtype: 'fp32' })
+  const embedder = await pipeline('feature-extraction', 'Xenova/multilingual-e5-large', { dtype: 'fp32' })
   console.log('Model loaded.\n')
 
   const files = readdirSync(docsDir).filter(f => f.endsWith('.json'))

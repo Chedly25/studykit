@@ -59,7 +59,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return new Response(JSON.stringify({ error: 'Legal search not available' }), { status: 503, headers: jsonHeaders })
   }
 
-  let body: { query?: string; topK?: number; codeName?: string }
+  let body: { query?: string; topK?: number; codeName?: string; vector?: number[] }
   try {
     body = await request.json()
   } catch {
@@ -74,11 +74,34 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const topK = Math.min(Math.max(body.topK ?? 10, 1), 20)
 
   try {
-    // Embed the query
-    const embResult = await env.AI.run('@cf/baai/bge-m3', { text: [query] })
-    const queryVector = embResult.data?.[0]
+    // Use pre-computed vector from client if available, else embed via HuggingFace
+    let queryVector: number[] | undefined = body.vector
+
+    if (!queryVector || queryVector.length !== 1024) {
+      // Embed via HuggingFace Inference API (intfloat/multilingual-e5-large, free with token)
+      const hfToken = env.HF_API_TOKEN
+      if (hfToken) {
+        const hfRes = await fetch('https://router.huggingface.co/hf-inference/models/intfloat/multilingual-e5-large', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${hfToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inputs: `query: ${query}` }),
+        })
+        if (hfRes.ok) {
+          const hfData = await hfRes.json() as number[] | number[][]
+          queryVector = Array.isArray(hfData[0]) ? (hfData as number[][])[0] : hfData as number[]
+        }
+      }
+      // Fallback: Workers AI
+      if (!queryVector) {
+        try {
+          const embResult = await env.AI.run('@cf/baai/bge-m3', { text: [query] })
+          queryVector = embResult.data?.[0]
+        } catch { /* quota exhausted */ }
+      }
+    }
+
     if (!queryVector) {
-      return new Response(JSON.stringify({ error: 'Embedding generation failed' }), { status: 502, headers: jsonHeaders })
+      return new Response(JSON.stringify({ error: 'Embedding failed — configure HF_API_TOKEN or wait for Workers AI quota reset' }), { status: 502, headers: jsonHeaders })
     }
 
     // Query Vectorize

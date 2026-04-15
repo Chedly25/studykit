@@ -88,6 +88,28 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     } else if (body.action === 'getArticle') {
       path = '/consult/getArticle'
       payload = { id: String(body.id) }
+    } else if (body.action === 'judilibreSearch') {
+      // Judilibre case law search
+      if (!context.env.JUDILIBRE_API_KEY) return new Response(JSON.stringify({ error: 'Judilibre not configured' }), { status: 503, headers: json })
+      const params = new URLSearchParams({ query: String(body.query ?? ''), page_size: String(body.pageSize ?? 50) })
+      if (body.chamber) params.set('chamber', String(body.chamber))
+      if (body.dateStart) params.set('date_start', String(body.dateStart))
+      if (body.dateEnd) params.set('date_end', String(body.dateEnd))
+      if (body.publication) params.set('publication', String(body.publication))
+      if (body.page) params.set('page', String(body.page))
+      const res = await fetch(`https://api.piste.gouv.fr/cassation/judilibre/v1.0/search?${params}`, {
+        headers: { KeyId: context.env.JUDILIBRE_API_KEY },
+      })
+      if (!res.ok) { const t = await res.text().catch(() => ''); return new Response(JSON.stringify({ error: `judilibre ${res.status}`, body: t.slice(0, 500) }), { status: 502, headers: json }) }
+      return new Response(JSON.stringify(await res.json()), { headers: json })
+    } else if (body.action === 'judilibreDecision') {
+      if (!context.env.JUDILIBRE_API_KEY) return new Response(JSON.stringify({ error: 'Judilibre not configured' }), { status: 503, headers: json })
+      if (!body.id) return new Response(JSON.stringify({ error: 'missing id' }), { status: 400, headers: json })
+      const res = await fetch(`https://api.piste.gouv.fr/cassation/judilibre/v1.0/decision?id=${encodeURIComponent(String(body.id))}`, {
+        headers: { KeyId: context.env.JUDILIBRE_API_KEY },
+      })
+      if (!res.ok) { const t = await res.text().catch(() => ''); return new Response(JSON.stringify({ error: `judilibre ${res.status}`, body: t.slice(0, 500) }), { status: 502, headers: json }) }
+      return new Response(JSON.stringify(await res.json()), { headers: json })
     } else if (body.action === 'embed') {
       // Embed texts via Workers AI — no rate limit for admin batch jobs
       const texts = (body.texts as string[])?.slice(0, 100).map((t: string) => String(t).slice(0, 8192))

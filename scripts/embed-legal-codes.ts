@@ -68,7 +68,7 @@ async function main() {
   console.log('=== Local Embedding Generation ===\n')
   console.log('Loading BGE-base model (first run downloads ~130MB)...')
 
-  const embedder = await pipeline('feature-extraction', 'Xenova/bge-m3', {
+  const embedder = await pipeline('feature-extraction', 'Xenova/multilingual-e5-large', {
     dtype: 'fp32',
   })
   console.log('Model loaded.\n')

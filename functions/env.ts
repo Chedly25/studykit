@@ -27,4 +27,5 @@ export interface Env {
   LIBRARY_R2?: R2Bucket
   LEGAL_CODES_INDEX?: VectorizeIndex
   ADMIN_API_KEY?: string
+  HF_API_TOKEN?: string
 }

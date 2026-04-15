@@ -1,6 +1,7 @@
 /**
  * Client-side legal search tool.
- * Calls /api/legal-search (Vectorize-backed semantic search across French legal codes).
+ * Embeds query locally with BGE-M3 via transformers.js, then queries Vectorize via /api/legal-search.
+ * Falls back to server-side embedding if local model unavailable.
  */
 
 const LEGAL_SEARCH_URL = import.meta.env.VITE_API_URL
