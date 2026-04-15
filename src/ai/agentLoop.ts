@@ -71,6 +71,8 @@ interface AgentLoopOptions {
   onToolCall?: (toolName: string) => void
   onMessagesUpdate?: (messages: Message[]) => void
   signal?: AbortSignal
+  /** Override the chat API URL (e.g., /api/legal-chat for Claude) */
+  chatUrl?: string
 }
 
 interface AgentLoopResult {
@@ -129,6 +131,11 @@ async function executeToolLocally(
       if (!authToken) return JSON.stringify({ error: 'Authentication required for web search' })
       const { searchWeb } = await import('./tools/webSearchTool')
       return searchWeb(input.query as string, authToken, (input.maxResults as number) ?? 5)
+    }
+    case 'searchLegalCodes': {
+      if (!authToken) return JSON.stringify({ error: 'Authentication required for legal search' })
+      const { searchLegalCodes } = await import('./tools/legalSearchTool')
+      return searchLegalCodes(input.query as string, authToken, { topK: input.topK as number, codeName: input.codeName as string })
     }
     case 'getCalibrationData':
       return getCalibrationData(examProfileId, (input.threshold as number) ?? 0.2)
@@ -215,7 +222,7 @@ async function executeToolLocally(
 }
 
 export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoopResult> {
-  const { systemPrompt, examProfileId, authToken, getToken, onToken, onToolCall, signal } = options
+  const { systemPrompt, examProfileId, authToken, getToken, onToken, onToolCall, signal, chatUrl } = options
   const messages = [...options.messages]
   let finalText = ''
   // Collect markers from tool results (quiz, card, code) to inject if the AI doesn't include them
@@ -242,6 +249,7 @@ export async function runAgentLoop(options: AgentLoopOptions): Promise<AgentLoop
       onToken,
       onToolCall,
       signal,
+      url: chatUrl,
     })
 
     // Check for tool use

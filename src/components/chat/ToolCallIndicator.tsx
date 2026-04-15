@@ -17,6 +17,7 @@ const toolLabels: Record<string, string> = {
   addAssignment: 'Adding assignment...',
   getStudyRecommendation: 'Building study plan...',
   searchSources: 'Searching your sources...',
+  searchLegalCodes: 'Recherche dans les codes français...',
   getDocumentContent: 'Reading document...',
   listSources: 'Listing your sources...',
   getCalibrationData: 'Analyzing confidence calibration...',

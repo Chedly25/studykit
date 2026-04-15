@@ -70,6 +70,11 @@ const TOOL_LIST: OpenAITool[] = [
   tool('searchWeb', 'Search the internet for information.', p({
     query: { type: 'string' }, maxResults: { type: 'number' },
   }, ['query'])),
+  tool('searchLegalCodes', 'Search French legal codes (Code civil, Code pénal, Code du travail, etc.) for articles relevant to a legal question. Returns article text with exact article numbers and code references.', p({
+    query: { type: 'string', description: 'Natural language legal question in French' },
+    codeName: { type: 'string', description: 'Optional: filter to a specific code (e.g., "Code civil")' },
+    topK: { type: 'number', description: 'Number of results (default 10)' },
+  }, ['query'])),
 
   // Plans
   tool('generateStudyPlan', 'Generate a personalized multi-day study plan.', p({ daysAhead: { type: 'number' } })),

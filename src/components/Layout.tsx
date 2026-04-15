@@ -6,7 +6,7 @@ import {
   Menu, X, BarChart3, MessageCircle,
   BookOpen, Shield, Zap, FolderOpen,
   PanelLeftClose, PanelLeftOpen, Search, Settings,
-  ClipboardCheck, CalendarDays,
+  ClipboardCheck, CalendarDays, Scale,
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 import { ExamProfileSelector } from './knowledge/ExamProfileSelector'
@@ -51,7 +51,7 @@ export function Layout() {
   const { t } = useTranslation()
   const location = useLocation()
   const isOnline = useOnlineStatus()
-  const isChatPage = location.pathname === '/session' || location.pathname.startsWith('/read/')
+  const isChatPage = location.pathname === '/session' || location.pathname.startsWith('/read/') || location.pathname === '/legal'
 
   // Streak risk detection for banner
   const { streak, dailyLogs } = useKnowledgeGraph(activeProfile?.id)
@@ -238,6 +238,7 @@ export function Layout() {
               <SidebarLink to="/sources" icon={FolderOpen} label="Library" active={location.pathname === '/sources'} collapsed={collapsed} dataTour="library" />
               <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} collapsed={collapsed} dataTour="progress" />
               <SidebarLink to="/study-plan" icon={CalendarDays} label="Plan" active={location.pathname === '/study-plan'} collapsed={collapsed} />
+              <SidebarLink to="/legal" icon={Scale} label="Codes" active={location.pathname === '/legal'} collapsed={collapsed} />
             </nav>
 
             {/* Settings at bottom */}
@@ -296,6 +297,7 @@ export function Layout() {
                 <SidebarLink to="/sources" icon={FolderOpen} label="Library" active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
                 <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} onClick={closeSidebar} collapsed={false} />
                 <SidebarLink to="/study-plan" icon={CalendarDays} label="Plan" active={location.pathname === '/study-plan'} onClick={closeSidebar} collapsed={false} />
+                <SidebarLink to="/legal" icon={Scale} label="Codes" active={location.pathname === '/legal'} onClick={closeSidebar} collapsed={false} />
 
                 <div className="pt-3 mt-3 border-t border-[var(--border-card)]">
                   <SidebarLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} onClick={closeSidebar} collapsed={false} />

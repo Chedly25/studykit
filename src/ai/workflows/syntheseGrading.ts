@@ -9,6 +9,26 @@ import { localStep } from '../orchestrator/steps'
 import type { WorkflowDefinition, WorkflowContext } from '../orchestrator/types'
 import { streamChat } from '../client'
 import type { SynthesisRubric, DossierDocument } from '../prompts/synthesePrompts'
+import { searchLegalCodes } from '../tools/legalSearchTool'
+
+export interface CitationVerification {
+  cited: string
+  verified: boolean
+  confidence: number
+  suggestion?: string
+  articleText?: string
+}
+
+function extractArticleCitations(text: string): string[] {
+  const citations: string[] = []
+  // Match: "Art. 1240 du Code civil", "article L. 1234-1 du Code du travail", "Art. 311-4", etc.
+  const regex = /Art(?:icle)?\.?\s*(?:L\.?\s*|R\.?\s*|D\.?\s*)?(\d+(?:-\d+)*(?:\s+al\.?\s*\d+)?)/gi
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(text)) !== null) {
+    citations.push(match[0].trim())
+  }
+  return [...new Set(citations)] // deduplicate
+}
 
 export interface SyntheseGradingConfig {
   sessionId: string
@@ -215,6 +235,60 @@ Donne un retour global en 3-4 phrases : points forts, points faibles, et un cons
 
           const feedback = await llmMain(prompt, system, ctx, 1024)
           return feedback.trim()
+        },
+      },
+
+      // ── Step 2b: Verify article citations (cas pratique only) ──
+      {
+        id: 'verifyCitations',
+        name: 'Verifying article citations',
+        optional: true,
+        async execute(_input: unknown, ctx: WorkflowContext): Promise<CitationVerification[] | null> {
+          try {
+            const session = await db.practiceExamSessions.get(config.sessionId)
+            if (!session || (session.examMode !== 'cas-pratique' && session.examMode !== 'grand-oral')) {
+              return null
+            }
+
+            const studentAnswer = session.synthesisAnswer ?? ''
+            if (!studentAnswer.trim()) return null
+
+            const citations = extractArticleCitations(studentAnswer).slice(0, 5) // cap at 5
+            if (citations.length === 0) return null
+
+            ctx.updateProgress?.(`Verifying ${citations.length} article citations...`)
+
+            const results: CitationVerification[] = []
+            for (const cited of citations) {
+              try {
+                const searchResult = await searchLegalCodes(cited, ctx.authToken ?? '', { topK: 1 })
+                const parsed = JSON.parse(searchResult)
+                if (parsed.resultCount > 0 && parsed.results) {
+                  // Check if the top result matches
+                  const firstLine = String(parsed.results).split('\n\n')[0] ?? ''
+                  const hasMatch = firstLine.toLowerCase().includes(cited.replace(/Art\.?\s*/i, '').trim().toLowerCase())
+                  results.push({
+                    cited,
+                    verified: hasMatch,
+                    confidence: hasMatch ? 0.9 : 0.3,
+                    articleText: firstLine.replace(/^\d+\.\s*/, '').trim().slice(0, 300),
+                  })
+                } else {
+                  results.push({ cited, verified: false, confidence: 0.1, suggestion: 'Article non trouvé dans les codes en vigueur' })
+                }
+              } catch {
+                results.push({ cited, verified: false, confidence: 0, suggestion: 'Vérification impossible' })
+              }
+            }
+
+            await db.practiceExamSessions.update(config.sessionId, {
+              citationVerification: JSON.stringify(results),
+            })
+
+            return results
+          } catch {
+            return null // Never block grading
+          }
         },
       },
 

@@ -34,6 +34,8 @@ export interface ChatRequestOptions {
   onToken?: (text: string) => void
   onToolCall?: (name: string) => void
   signal?: AbortSignal
+  /** Override the API endpoint URL (defaults to /api/chat) */
+  url?: string
 }
 
 export interface ChatResponse {
@@ -124,7 +126,8 @@ function toOpenAIMessages(messages: Message[], system: string) {
 }
 
 export async function streamChat(options: ChatRequestOptions): Promise<ChatResponse> {
-  const { messages, system, tools, model, maxTokens = 4096, toolChoice, authToken, getToken, onToken, onToolCall, signal } = options
+  const { messages, system, tools, model, maxTokens = 4096, toolChoice, authToken, getToken, onToken, onToolCall, signal, url: customUrl } = options
+  const chatUrl = customUrl ?? API_URL
 
   const openaiMessages = toOpenAIMessages(messages, system)
   const openaiTools = tools.length > 0 ? toOpenAITools(tools) : undefined
@@ -143,7 +146,7 @@ export async function streamChat(options: ChatRequestOptions): Promise<ChatRespo
   const doFetch = (token?: string) => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (token) headers['Authorization'] = `Bearer ${token}`
-    return fetch(API_URL, { method: 'POST', headers, body: JSON.stringify(body), signal })
+    return fetch(chatUrl, { method: 'POST', headers, body: JSON.stringify(body), signal })
   }
 
   // Use the global LLM gate for concurrency control + automatic 429 retry

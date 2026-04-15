@@ -144,7 +144,7 @@ describe('POST /api/embed', () => {
     // Workers AI should receive truncated text
     const aiCall = (ctx.env as any).AI.run
     expect(aiCall).toHaveBeenCalledWith(
-      '@cf/baai/bge-base-en-v1.5',
+      '@cf/baai/bge-m3',
       expect.objectContaining({
         text: [expect.any(String)],
       }),

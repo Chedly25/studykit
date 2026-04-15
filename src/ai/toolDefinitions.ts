@@ -499,6 +499,20 @@ export const agentTools: ToolDefinition[] = [
       required: ['query'],
     },
   },
+  // ─── Legal Code Search ────────────────────────────────────
+  {
+    name: 'searchLegalCodes',
+    description: 'Search French legal codes (Code civil, Code pénal, Code du travail, etc.) for articles relevant to a legal question. Returns article text with exact article numbers and code references. Use this for any question about French law.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Natural language legal question in French' },
+        codeName: { type: 'string', description: 'Optional: filter to a specific code (e.g., "Code civil")' },
+        topK: { type: 'number', description: 'Number of results (default 10)' },
+      },
+      required: ['query'],
+    },
+  },
   // ─── Rich UI Rendering ─────────────────────────────────────
   {
     name: 'renderConceptCard',

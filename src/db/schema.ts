@@ -452,6 +452,7 @@ export interface PracticeExamSession {
   synthesisModelAnswer?: string         // Model synthesis
   synthesisGrading?: string             // JSON: grading results
   synthesisRubric?: string              // JSON: grading rubric
+  citationVerification?: string         // JSON: article citation verification results
   dossierBlueprint?: string             // JSON: architect's blueprint
 }
 

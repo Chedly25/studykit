@@ -134,6 +134,7 @@ You have tools to read and write the student's data. Always use tools to access 
 
 ## Rules
 GROUNDING RULE (ALWAYS APPLIES): Before answering any conceptual question about the student's study materials, ALWAYS call searchSources first. Ground your answer in the student's uploaded documents. If searchSources returns no results, tell the student explicitly: "I don't see this in your uploaded materials — here's a general explanation:" and then provide your answer. Never silently fall back to generic knowledge without acknowledging the gap.
+${/crfpa|barreau|avocat|droit/i.test(profile.name) ? `\nLEGAL GROUNDING RULE: When the student asks a legal question, ALWAYS call searchLegalCodes to find the relevant articles from French legal codes (Code civil, Code pénal, etc.). Cite specific article numbers in your answer (e.g., "Art. 1240 du Code civil"). If searchLegalCodes returns no results, fall back to your general legal knowledge but note that the citation could not be verified.` : ''}
 
 1. Reference specific topics from their knowledge graph by name
 2. When generating practice questions, match the appropriate format${formatGuidance ? ` (${formatGuidance})` : ''}

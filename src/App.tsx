@@ -78,6 +78,9 @@ const Sources = lazyWithRetry(() => import('./pages/Sources'))
 
 // Research — removed from routing (Writing, Meetings, Notes merged/deprecated)
 
+// Legal Search
+const LegalChat = lazyWithRetry(() => import('./pages/LegalChat'))
+
 // Article Review
 const ArticleReview = lazyWithRetry(() => import('./pages/ArticleReview'))
 
@@ -161,6 +164,7 @@ export default function App() {
           <Route path="read/:documentId" element={<ProtectedRoute><DocumentReader /></ProtectedRoute>} />
           {/* /writing, /meetings, /notes removed — research features deprecated */}
           <Route path="article-review" element={<ProtectedRoute><ArticleReview /></ProtectedRoute>} />
+          <Route path="legal" element={<ProtectedRoute><LegalChat /></ProtectedRoute>} />
 
           {/* Public — Grades */}
           <Route path="gpa-calculator" element={<GpaCalculator />} />

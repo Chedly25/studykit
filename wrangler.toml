@@ -23,6 +23,12 @@ id = "046e13c65fa84fa18c2df093b57601b8"
 binding = "LIBRARY_R2"
 bucket_name = "studykit-library"
 
+# Vectorize index for French legal codes (semantic search)
+# Create with: wrangler vectorize create legal-codes --dimensions=768 --metric=cosine
+[[vectorize]]
+binding = "LEGAL_CODES_INDEX"
+index_name = "legal-codes"
+
 # For Clerk auth, set the issuer URL as a secret:
 # wrangler pages secret put CLERK_ISSUER_URL
 #

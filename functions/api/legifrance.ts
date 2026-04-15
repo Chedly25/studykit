@@ -204,6 +204,37 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       return new Response(JSON.stringify(data), { headers: jsonHeaders })
     }
 
+    if (body.action === 'listCodes') {
+      const res = await fetch(`${LEGIFRANCE_BASE}/list/code`, {
+        method: 'POST',
+        headers: apiHeaders,
+        body: JSON.stringify({ date: body.date ?? null }),
+      })
+      if (!res.ok) throw new Error(`Legifrance listCodes: ${res.status}`)
+      const data = await res.json()
+      return new Response(JSON.stringify(data), { headers: jsonHeaders })
+    }
+
+    if (body.action === 'getTableMatieres') {
+      if (!body.textId) {
+        return new Response(
+          JSON.stringify({ error: 'Missing textId' }),
+          { status: 400, headers: jsonHeaders },
+        )
+      }
+      const res = await fetch(`${LEGIFRANCE_BASE}/consult/code/tableMatieres`, {
+        method: 'POST',
+        headers: apiHeaders,
+        body: JSON.stringify({
+          textId: String(body.textId),
+          date: body.date ?? new Date().toISOString().slice(0, 10),
+        }),
+      })
+      if (!res.ok) throw new Error(`Legifrance tableMatieres: ${res.status}`)
+      const data = await res.json()
+      return new Response(JSON.stringify(data), { headers: jsonHeaders })
+    }
+
     return new Response(
       JSON.stringify({ error: 'Unknown action. Use "getArticle", "search", or "getJorfText".' }),
       { status: 400, headers: jsonHeaders },

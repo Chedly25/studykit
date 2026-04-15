@@ -25,4 +25,6 @@ export interface Env {
   RESEND_API_KEY?: string
   EMAIL_FROM?: string
   LIBRARY_R2?: R2Bucket
+  LEGAL_CODES_INDEX?: VectorizeIndex
+  ADMIN_API_KEY?: string
 }

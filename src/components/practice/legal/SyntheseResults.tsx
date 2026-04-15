@@ -5,7 +5,8 @@
  */
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Trophy, RotateCcw, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react'
+import { Trophy, RotateCcw, CheckCircle, XCircle, Eye, EyeOff, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import type { CitationVerification } from '../../../ai/workflows/syntheseGrading'
 import type { PracticeExamSession } from '../../../db/schema'
 import { DocumentMarkdown } from '../document/DocumentMarkdown'
 
@@ -52,6 +53,14 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
   const examMode = session?.examMode ?? 'synthesis'
   const isGrandOral = examMode === 'grand-oral'
   const isSynthesis = examMode === 'synthesis'
+  const isCasPratique = examMode === 'cas-pratique'
+
+  const citationVerifications = useMemo<CitationVerification[]>(() => {
+    if (!session?.citationVerification) return []
+    try { return JSON.parse(session.citationVerification) } catch { return [] }
+  }, [session?.citationVerification])
+
+  const [citationsOpen, setCitationsOpen] = useState(false)
 
   // Parse Grand Oral model answer (stored as JSON, not text)
   const grandOralModel = useMemo<GrandOralModel | null>(() => {
@@ -149,6 +158,45 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
               <> — {t('syntheseExam.missing')}: {grading.documentsMissed.join(', ')}</>
             )}
           </p>
+        </div>
+      )}
+
+      {/* Citation verification — cas pratique / grand oral only */}
+      {(isCasPratique || isGrandOral) && citationVerifications.length > 0 && (
+        <div className="glass-card overflow-hidden">
+          <button
+            onClick={() => setCitationsOpen(!citationsOpen)}
+            className="w-full flex items-center justify-between p-4 hover:bg-[var(--bg-hover)] transition-colors"
+          >
+            <span className="text-sm font-semibold text-[var(--text-heading)]">
+              Vérification des citations ({citationVerifications.length})
+            </span>
+            {citationsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          {citationsOpen && (
+            <div className="border-t border-[var(--border-card)] divide-y divide-[var(--border-card)]">
+              {citationVerifications.map((cv, i) => (
+                <div key={i} className="px-4 py-3 flex items-start gap-3">
+                  {cv.verified ? (
+                    <CheckCircle className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
+                  ) : cv.confidence > 0.2 ? (
+                    <AlertCircle className="w-4 h-4 mt-0.5 text-amber-500 shrink-0" />
+                  ) : (
+                    <XCircle className="w-4 h-4 mt-0.5 text-red-500 shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-heading)]">{cv.cited}</p>
+                    {cv.verified && cv.articleText && (
+                      <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">{cv.articleText}</p>
+                    )}
+                    {!cv.verified && cv.suggestion && (
+                      <p className="text-xs text-red-500 mt-1">{cv.suggestion}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

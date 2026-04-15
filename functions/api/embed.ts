@@ -1,6 +1,6 @@
 /**
  * Cloudflare Pages Function: POST /api/embed
- * Generates text embeddings via Workers AI (@cf/baai/bge-base-en-v1.5, 768-dim).
+ * Generates text embeddings via Workers AI (@cf/baai/bge-m3, 1024-dim).
  * Does NOT count against daily message quota.
  */
 
@@ -107,7 +107,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     // Truncate long texts
     const texts = body.texts.map(t => typeof t === 'string' ? t.slice(0, MAX_TEXT_LENGTH) : '')
 
-    const result = await env.AI.run('@cf/baai/bge-base-en-v1.5', { text: texts }) as {
+    const result = await env.AI.run('@cf/baai/bge-m3', { text: texts }) as {
       data: number[][]
     }
 
