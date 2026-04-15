@@ -11,7 +11,7 @@ import { checkRateLimit } from '../lib/rateLimiter'
 import { checkCostLimits } from '../lib/costProtection'
 import { SERVER_TOOLS } from '../lib/toolDefinitions'
 
-const MODEL = 'claude-sonnet-4-6-20250514'
+const MODEL = 'claude-sonnet-4-6'
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
