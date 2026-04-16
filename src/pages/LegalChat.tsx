@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Scale, Send, Loader2, Trash2, Paperclip, X, FileText } from 'lucide-react'
+import { Scale, Send, Trash2, Paperclip, X, FileText } from 'lucide-react'
 import { useLegalChat } from '../hooks/useLegalChat'
 import { LegalMessageBubble } from '../components/legal/LegalMessageBubble'
 import { LegalArticlesPanel } from '../components/legal/LegalArticlesPanel'
