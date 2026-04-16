@@ -4,7 +4,8 @@
  *  - state-dependent body (idle picker / editor / grading spinner / results)
  *  - history sidebar (previously generated scenarios)
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { Loader2, Menu, Trash2, X, PenSquare } from 'lucide-react'
 import { LegalPageTabs } from '../components/legal/LegalPageTabs'
@@ -42,6 +43,19 @@ export default function SyllogismeCoach() {
   const [themeId, setThemeId] = useState<string>(SYLLOGISME_THEMES[0].id)
   const [difficulty, setDifficulty] = useState<SyllogismeDifficulty>('beginner')
   const [historyOpen, setHistoryOpen] = useState(false)
+
+  // Deep-link: ?session=ID auto-loads that session on mount (once per ID).
+  const [searchParams, setSearchParams] = useSearchParams()
+  const loadedRef = useRef<string | null>(null)
+  useEffect(() => {
+    const id = searchParams.get('session')
+    if (!id || loadedRef.current === id) return
+    loadedRef.current = id
+    loadSession(id).then(() => {
+      // Remove ?session= from the URL so back/forward doesn't replay the load
+      setSearchParams({}, { replace: true })
+    })
+  }, [searchParams, loadSession, setSearchParams])
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">

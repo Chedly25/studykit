@@ -16,6 +16,7 @@ import {
   generateSyllogismeScenario,
   gradeSyllogismeSubmission,
 } from '../ai/coaching/syllogismeCoach'
+import { classifyCoachingError, formatCoachingError } from '../ai/coaching/coachingErrors'
 import {
   createSyllogismeSession,
   deleteSyllogismeSession,
@@ -43,6 +44,37 @@ export interface SubmissionDraft {
 }
 
 const EMPTY_DRAFT: SubmissionDraft = { majeure: '', mineure: '', conclusion: '' }
+
+// ─── Draft persistence (localStorage) ─────────────────────────────
+// Persisted per session so a page reload / accidental navigation doesn't wipe work.
+const DRAFT_KEY = (id: string) => `studyskit.draft.syllogisme.${id}`
+
+function readDraft(id: string): SubmissionDraft | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY(id))
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<SubmissionDraft>
+    return {
+      majeure: parsed.majeure ?? '',
+      mineure: parsed.mineure ?? '',
+      conclusion: parsed.conclusion ?? '',
+    }
+  } catch {
+    return null
+  }
+}
+
+function writeDraft(id: string, draft: SubmissionDraft): void {
+  try {
+    // Skip writing an empty draft — no point cluttering storage
+    if (!draft.majeure.trim() && !draft.mineure.trim() && !draft.conclusion.trim()) return
+    localStorage.setItem(DRAFT_KEY(id), JSON.stringify(draft))
+  } catch { /* quota or private mode — draft persistence is best-effort */ }
+}
+
+function clearDraft(id: string): void {
+  try { localStorage.removeItem(DRAFT_KEY(id)) } catch { /* noop */ }
+}
 
 export function useSyllogismeCoach() {
   const { getToken } = useAuth()
@@ -72,6 +104,8 @@ export function useSyllogismeCoach() {
   const reset = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
+    // Clear any saved draft for the previous session
+    if (sessionId) clearDraft(sessionId)
     setPhase('idle')
     setSessionId(null)
     setTask(null)
@@ -79,7 +113,7 @@ export function useSyllogismeCoach() {
     setSubmission(null)
     setGrading(null)
     setError(null)
-  }, [])
+  }, [sessionId])
 
   const newScenario = useCallback(
     async (themeId: string, difficulty: SyllogismeDifficulty) => {
@@ -118,7 +152,7 @@ export function useSyllogismeCoach() {
         await refreshHistory()
       } catch (err) {
         if ((err as Error).name === 'AbortError') return
-        setError((err as Error).message || 'Impossible de générer le scénario')
+        setError(formatCoachingError(classifyCoachingError(err)))
         setPhase('idle')
       }
     },
@@ -126,8 +160,12 @@ export function useSyllogismeCoach() {
   )
 
   const saveDraft = useCallback((partial: Partial<SubmissionDraft>) => {
-    setDraft(prev => ({ ...prev, ...partial }))
-  }, [])
+    setDraft(prev => {
+      const next = { ...prev, ...partial }
+      if (sessionId) writeDraft(sessionId, next)
+      return next
+    })
+  }, [sessionId])
 
   const submit = useCallback(async () => {
     if (!task || !sessionId) return
@@ -157,12 +195,14 @@ export function useSyllogismeCoach() {
       })
 
       await saveSyllogismeGrading(sessionId, result)
+      // Clear draft once graded — it's now the persisted submission
+      clearDraft(sessionId)
       setGrading(result)
       setPhase('graded')
       await refreshHistory()
     } catch (err) {
       if ((err as Error).name === 'AbortError') return
-      setError((err as Error).message || 'Impossible de corriger la copie')
+      setError(formatCoachingError(classifyCoachingError(err)))
       setPhase('editing')
     }
   }, [task, sessionId, draft, getToken, refreshHistory])
@@ -181,7 +221,9 @@ export function useSyllogismeCoach() {
         })
         setSubmission(view.submission)
       } else {
-        setDraft(EMPTY_DRAFT)
+        // Restore locally-saved draft if present (auto-save from previous session)
+        const savedDraft = readDraft(view.id)
+        setDraft(savedDraft ?? EMPTY_DRAFT)
         setSubmission(null)
       }
       setGrading(view.grading ?? null)
@@ -194,6 +236,7 @@ export function useSyllogismeCoach() {
   const removeSession = useCallback(
     async (id: string) => {
       await deleteSyllogismeSession(id)
+      clearDraft(id)
       if (id === sessionId) reset()
       await refreshHistory()
     },

@@ -3,7 +3,7 @@ import { useAuth } from '@clerk/clerk-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import Dexie from 'dexie'
 import { db } from '../db'
-import type { ExamProfile, ExamType, Subject, Topic, Subtopic, ProfileMode } from '../db/schema'
+import type { ExamProfile, ExamType, Subject, Topic, Subtopic, ProfileMode, ProfileVertical } from '../db/schema'
 import { getExamBlueprint } from '../lib/examTopicMaps'
 import type { ExtractedSubject } from '../ai/topicExtractor'
 
@@ -28,10 +28,12 @@ export function useExamProfile() {
     examType: ExamType,
     examDate: string,
     weeklyTargetHours: number,
-    profileMode?: ProfileMode
+    profileMode?: ProfileMode,
+    profileVertical?: ProfileVertical,
   ): Promise<string> => {
     const blueprint = getExamBlueprint(examType)
     const profileId = crypto.randomUUID()
+    const vertical: ProfileVertical = profileVertical ?? 'generic'
 
     // Deactivate all existing profiles for this user
     await db.examProfiles.where('userId').equals(effectiveUserId).modify({ isActive: false })
@@ -48,8 +50,15 @@ export function useExamProfile() {
       userId: effectiveUserId,
       createdAt: new Date().toISOString(),
       profileMode: profileMode ?? 'study',
+      profileVertical: vertical,
     }
     await db.examProfiles.put(profile)
+
+    // Vertical profiles (crfpa/cpge) don't use the Subject/Topic data model —
+    // their units are coaching sessions, not topic-level mastery.
+    if (vertical !== 'generic') {
+      return profileId
+    }
 
     // Seed subjects, topics, subtopics
     const subjects: Subject[] = []

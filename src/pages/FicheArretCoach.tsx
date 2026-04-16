@@ -1,20 +1,18 @@
 /**
- * CRFPA Plan Détaillé Coach page — composes:
- *  - shared tab bar (LegalPageTabs)
- *  - state-dependent body (idle picker / editor / grading spinner / results)
- *  - history sidebar with previously drafted plans
+ * CRFPA Fiche d'arrêt Trainer page.
+ * Decision picker (by chamber) → editor → results.
  */
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-import { Loader2, Menu, Trash2, X, ListTree } from 'lucide-react'
+import { Loader2, Menu, Trash2, X, FileText } from 'lucide-react'
 import { LegalPageTabs } from '../components/legal/LegalPageTabs'
-import { PlanEditor } from '../components/legal/PlanEditor'
-import { PlanResults } from '../components/legal/PlanResults'
-import { usePlanCoach } from '../hooks/usePlanCoach'
-import { PLAN_THEMES } from '../ai/prompts/planPrompts'
+import { FicheArretEditor } from '../components/legal/FicheArretEditor'
+import { FicheArretResults } from '../components/legal/FicheArretResults'
+import { useFicheArretCoach } from '../hooks/useFicheArretCoach'
+import { FICHE_CHAMBERS } from '../ai/prompts/ficheArretPrompts'
 
-export default function PlanCoach() {
+export default function FicheArretCoach() {
   const {
     phase,
     task,
@@ -24,19 +22,19 @@ export default function PlanCoach() {
     history,
     error,
     sessionId,
-    newQuestion,
+    newDecision,
     saveDraft,
     submit,
     loadSession,
     removeSession,
     reset,
     cancel,
-  } = usePlanCoach()
+  } = useFicheArretCoach()
 
-  const [themeId, setThemeId] = useState<string>(PLAN_THEMES[0].id)
+  const [chamberId, setChamberId] = useState<string>(FICHE_CHAMBERS[0].id)
   const [historyOpen, setHistoryOpen] = useState(false)
 
-  // Deep-link: ?session=ID auto-loads that session on mount.
+  // Deep-link: ?session=ID auto-loads that session.
   const [searchParams, setSearchParams] = useSearchParams()
   const loadedRef = useRef<string | null>(null)
   useEffect(() => {
@@ -51,10 +49,10 @@ export default function PlanCoach() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       <Helmet>
-        <title>Plan détaillé — Coach CRFPA | StudiesKit</title>
+        <title>Fiche d'arrêt — Coach CRFPA | StudiesKit</title>
         <meta
           name="description"
-          content="Entraînement au plan détaillé CRFPA : problématique, I/II, sous-parties — correction méthodologique sur 6 axes."
+          content="Entraînement à la fiche d'arrêt CRFPA sur des décisions réelles de la Cour de cassation."
         />
       </Helmet>
 
@@ -84,15 +82,9 @@ export default function PlanCoach() {
               <HistoryList
                 history={history}
                 activeId={sessionId}
-                onSelect={id => {
-                  loadSession(id)
-                  setHistoryOpen(false)
-                }}
+                onSelect={id => { loadSession(id); setHistoryOpen(false) }}
                 onDelete={removeSession}
-                onNew={() => {
-                  reset()
-                  setHistoryOpen(false)
-                }}
+                onNew={() => { reset(); setHistoryOpen(false) }}
               />
             </div>
           </div>
@@ -107,30 +99,30 @@ export default function PlanCoach() {
             >
               <Menu className="w-5 h-5" />
             </button>
-            <ListTree className="w-5 h-5 text-[var(--accent-text)]" />
+            <FileText className="w-5 h-5 text-[var(--accent-text)]" />
             <div>
-              <h1 className="text-lg font-semibold text-[var(--text-heading)]">Coach Plan détaillé</h1>
+              <h1 className="text-lg font-semibold text-[var(--text-heading)]">Coach Fiche d'arrêt</h1>
               <p className="text-xs text-[var(--text-muted)]">
-                Construis un plan problématisé en deux parties — reçois une correction sur 6 axes.
+                Rédige la fiche d'une décision réelle de la Cour de cassation — correction sur 5 axes.
               </p>
             </div>
           </div>
 
           {phase === 'idle' && (
             <IdlePicker
-              themeId={themeId}
-              onThemeChange={setThemeId}
-              onStart={() => newQuestion(themeId)}
+              chamberId={chamberId}
+              onChamberChange={setChamberId}
+              onStart={() => newDecision(chamberId)}
               error={error}
             />
           )}
 
           {phase === 'generating' && (
-            <CenteredSpinner label="Génération du sujet…" onCancel={cancel} />
+            <CenteredSpinner label="Sélection d'une décision…" onCancel={cancel} />
           )}
 
           {(phase === 'editing' || phase === 'grading') && task && (
-            <PlanEditor
+            <FicheArretEditor
               task={task}
               draft={draft}
               onChange={saveDraft}
@@ -142,12 +134,12 @@ export default function PlanCoach() {
           )}
 
           {phase === 'graded' && task && submission && grading && (
-            <PlanResults
+            <FicheArretResults
               task={task}
               submission={submission}
               grading={grading}
               onRetry={reset}
-              onNewQuestion={reset}
+              onNewDecision={reset}
             />
           )}
         </div>
@@ -156,74 +148,60 @@ export default function PlanCoach() {
   )
 }
 
-// ─── Subcomponents ────────────────────────────────────────────────
-
 interface IdlePickerProps {
-  themeId: string
-  onThemeChange: (id: string) => void
+  chamberId: string
+  onChamberChange: (id: string) => void
   onStart: () => void
   error?: string | null
 }
 
-const DOMAIN_LABELS: Record<string, string> = {
-  civil: 'Droit civil',
-  social: 'Droit social',
-  penal: 'Droit pénal',
-  administratif: 'Droit administratif',
-  constitutionnel: 'Droit constitutionnel',
-  europeen: 'Droit européen',
-}
-
-function IdlePicker({ themeId, onThemeChange, onStart, error }: IdlePickerProps) {
-  const byDomain = PLAN_THEMES.reduce<Record<string, typeof PLAN_THEMES>>((acc, t) => {
-    (acc[t.domain] ??= []).push(t)
-    return acc
-  }, {})
-
+function IdlePicker({ chamberId, onChamberChange, onStart, error }: IdlePickerProps) {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
       <div className="max-w-lg w-full space-y-6">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-[var(--text-heading)] mb-2">
-            Choisis un thème de dissertation
+            Choisis une chambre
           </h2>
           <p className="text-sm text-[var(--text-muted)]">
-            Le sujet sera ancré dans des articles réels du droit français. Le plan modèle reste caché jusqu'à ta correction.
+            Une décision réelle sera tirée au hasard du corpus Cour de cassation.
           </p>
         </div>
 
         <div className="glass-card p-4 space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs uppercase tracking-wider text-[var(--text-muted)] font-semibold">
-              Thème
+              Chambre
             </label>
-            <select
-              value={themeId}
-              onChange={e => onThemeChange(e.target.value)}
-              className="w-full bg-[var(--bg-input)] border border-[var(--border-card)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[var(--accent-text)] focus:outline-none"
-            >
-              {Object.entries(byDomain).map(([domain, themes]) => (
-                <optgroup key={domain} label={DOMAIN_LABELS[domain] ?? domain}>
-                  {themes.map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+            <div className="grid grid-cols-2 gap-2">
+              {FICHE_CHAMBERS.map(c => {
+                const active = chamberId === c.id
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => onChamberChange(c.id)}
+                    className={`px-3 py-2.5 rounded-lg text-sm border transition-colors ${
+                      active
+                        ? 'border-[var(--accent-text)] bg-[var(--accent-bg)] text-[var(--accent-text)] font-medium'
+                        : 'border-[var(--border-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
-          {error && (
-            <div className="text-sm text-rose-600 dark:text-rose-400">{error}</div>
-          )}
+          {error && <div className="text-sm text-rose-600 dark:text-rose-400">{error}</div>}
 
           <button
             type="button"
             onClick={onStart}
             className="w-full px-4 py-2.5 rounded-lg bg-[var(--accent-bg)] text-[var(--accent-text)] text-sm font-medium hover:opacity-90"
           >
-            Générer un sujet
+            Tirer une décision
           </button>
         </div>
       </div>
@@ -252,7 +230,7 @@ function CenteredSpinner({ label, onCancel }: { label: string; onCancel?: () => 
 }
 
 interface HistoryListProps {
-  history: ReturnType<typeof usePlanCoach>['history']
+  history: ReturnType<typeof useFicheArretCoach>['history']
   activeId: string | null
   onSelect: (id: string) => void
   onDelete: (id: string) => void
@@ -267,18 +245,17 @@ function HistoryList({ history, activeId, onSelect, onDelete, onNew }: HistoryLi
           onClick={onNew}
           className="w-full px-3 py-2 rounded-lg bg-[var(--accent-bg)] text-[var(--accent-text)] text-sm font-medium hover:opacity-90"
         >
-          Nouveau sujet
+          Nouvelle décision
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {history.length === 0 ? (
           <p className="text-xs text-[var(--text-muted)] text-center mt-6 px-3">
-            Pas encore de plans. Génère ton premier sujet.
+            Pas encore de fiches. Tire ta première décision.
           </p>
         ) : (
           history.map(h => {
             const isActive = h.id === activeId
-            const preview = h.task.question.slice(0, 60)
             const status = h.grading ? 'Corrigé' : h.submission ? 'Soumis' : 'En cours'
             return (
               <div
@@ -290,21 +267,18 @@ function HistoryList({ history, activeId, onSelect, onDelete, onNew }: HistoryLi
               >
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-medium text-[var(--text-heading)] truncate">
-                    {h.task.themeLabel}
+                    {h.task.decision.chamber}
                   </div>
-                  <div className="text-[11px] text-[var(--text-muted)] line-clamp-2 leading-tight">
-                    {preview}
+                  <div className="text-[11px] text-[var(--text-muted)] line-clamp-2 leading-tight font-mono">
+                    {h.task.decision.reference}
                   </div>
                   <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mt-1">
                     {status}
-                    {h.grading && ` · ${h.grading.overall.score}/30`}
+                    {h.grading && ` · ${h.grading.overall.score}/25`}
                   </div>
                 </div>
                 <button
-                  onClick={e => {
-                    e.stopPropagation()
-                    onDelete(h.id)
-                  }}
+                  onClick={e => { e.stopPropagation(); onDelete(h.id) }}
                   className="opacity-0 group-hover:opacity-100 p-1 text-[var(--text-muted)] hover:text-rose-500 transition-opacity"
                   aria-label="Supprimer"
                 >

@@ -17,7 +17,7 @@ const TABS: TabDef[] = [
   { to: '/legal', label: 'Chat', icon: MessageSquare, end: true },
   { to: '/legal/syllogisme', label: 'Syllogisme', icon: PenSquare },
   { to: '/legal/plan', label: 'Plan détaillé', icon: ListTree },
-  { label: 'Fiche d\'arrêt', icon: FileText, disabled: true },
+  { to: '/legal/fiche', label: 'Fiche d\'arrêt', icon: FileText },
 ]
 
 export function LegalPageTabs() {

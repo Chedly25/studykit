@@ -7,6 +7,7 @@ import {
   BookOpen, Shield, Zap, FolderOpen,
   PanelLeftClose, PanelLeftOpen, Search, Settings,
   ClipboardCheck, CalendarDays, Scale,
+  Home, PenSquare, History,
 } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 import { ExamProfileSelector } from './knowledge/ExamProfileSelector'
@@ -19,6 +20,7 @@ import { ProBadge } from './subscription/ProBadge'
 import { useSubscription } from '../hooks/useSubscription'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileMode } from '../hooks/useProfileMode'
+import { useProfileVertical } from '../hooks/useProfileVertical'
 import { BackgroundJobsIndicator } from './BackgroundJobsIndicator'
 import { BottomNav } from './BottomNav'
 import { ErrorBoundary } from './ErrorBoundary'
@@ -48,10 +50,16 @@ export function Layout() {
   const { isPro } = useSubscription()
   const { activeProfile } = useExamProfile()
   const { isResearch } = useProfileMode()
+  const { isCRFPA } = useProfileVertical()
   const { t } = useTranslation()
   const location = useLocation()
   const isOnline = useOnlineStatus()
-  const isChatPage = location.pathname === '/session' || location.pathname.startsWith('/read/') || location.pathname.startsWith('/legal')
+  const isChatPage =
+    location.pathname === '/session' ||
+    location.pathname.startsWith('/read/') ||
+    location.pathname.startsWith('/legal') ||
+    location.pathname === '/accueil' ||
+    location.pathname === '/historique'
 
   // Streak risk detection for banner
   const { streak, dailyLogs } = useKnowledgeGraph(activeProfile?.id)
@@ -230,15 +238,26 @@ export function Layout() {
               </button>
             </div>
 
-            {/* Nav links — 6 core items */}
+            {/* Nav links — branched per vertical */}
             <nav className="flex-1 px-2 py-2 space-y-0.5">
-              <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} collapsed={collapsed} dataTour="queue" />
-              <SidebarLink to="/practice-exam" icon={ClipboardCheck} label="Exams" active={location.pathname === '/practice-exam'} collapsed={collapsed} dataTour="exams" />
-              <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} collapsed={collapsed} dataTour="study" />
-              <SidebarLink to="/sources" icon={FolderOpen} label="Library" active={location.pathname === '/sources'} collapsed={collapsed} dataTour="library" />
-              <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} collapsed={collapsed} dataTour="progress" />
-              <SidebarLink to="/study-plan" icon={CalendarDays} label="Plan" active={location.pathname === '/study-plan'} collapsed={collapsed} />
-              <SidebarLink to="/legal" icon={Scale} label="Codes" active={location.pathname === '/legal'} collapsed={collapsed} />
+              {isCRFPA ? (
+                <>
+                  <SidebarLink to="/accueil" icon={Home} label="Accueil" active={location.pathname === '/accueil' || location.pathname === '/'} collapsed={collapsed} />
+                  <SidebarLink to="/legal/syllogisme" icon={PenSquare} label="Entraînement" active={location.pathname.startsWith('/legal/syllogisme') || location.pathname.startsWith('/legal/plan') || location.pathname.startsWith('/legal/fiche')} collapsed={collapsed} />
+                  <SidebarLink to="/legal" icon={Scale} label="Oracle" active={location.pathname === '/legal'} collapsed={collapsed} />
+                  <SidebarLink to="/historique" icon={History} label="Historique" active={location.pathname === '/historique'} collapsed={collapsed} />
+                </>
+              ) : (
+                <>
+                  <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} collapsed={collapsed} dataTour="queue" />
+                  <SidebarLink to="/practice-exam" icon={ClipboardCheck} label="Exams" active={location.pathname === '/practice-exam'} collapsed={collapsed} dataTour="exams" />
+                  <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} collapsed={collapsed} dataTour="study" />
+                  <SidebarLink to="/sources" icon={FolderOpen} label="Library" active={location.pathname === '/sources'} collapsed={collapsed} dataTour="library" />
+                  <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} collapsed={collapsed} dataTour="progress" />
+                  <SidebarLink to="/study-plan" icon={CalendarDays} label="Plan" active={location.pathname === '/study-plan'} collapsed={collapsed} />
+                  <SidebarLink to="/legal" icon={Scale} label="Codes" active={location.pathname === '/legal'} collapsed={collapsed} />
+                </>
+              )}
             </nav>
 
             {/* Settings at bottom */}
@@ -289,15 +308,26 @@ export function Layout() {
                 </button>
               </div>
 
-              {/* Nav links — 6 core items */}
+              {/* Nav links — branched per vertical */}
               <nav className="flex-1 px-3 py-4 space-y-1">
-                <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/practice-exam" icon={ClipboardCheck} label="Exams" active={location.pathname === '/practice-exam'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/sources" icon={FolderOpen} label="Library" active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/study-plan" icon={CalendarDays} label="Plan" active={location.pathname === '/study-plan'} onClick={closeSidebar} collapsed={false} />
-                <SidebarLink to="/legal" icon={Scale} label="Codes" active={location.pathname === '/legal'} onClick={closeSidebar} collapsed={false} />
+                {isCRFPA ? (
+                  <>
+                    <SidebarLink to="/accueil" icon={Home} label="Accueil" active={location.pathname === '/accueil' || location.pathname === '/'} onClick={closeSidebar} collapsed={false} />
+                    <SidebarLink to="/legal/syllogisme" icon={PenSquare} label="Entraînement" active={location.pathname.startsWith('/legal/syllogisme') || location.pathname.startsWith('/legal/plan') || location.pathname.startsWith('/legal/fiche')} onClick={closeSidebar} collapsed={false} />
+                    <SidebarLink to="/legal" icon={Scale} label="Oracle" active={location.pathname === '/legal'} onClick={closeSidebar} collapsed={false} />
+                    <SidebarLink to="/historique" icon={History} label="Historique" active={location.pathname === '/historique'} onClick={closeSidebar} collapsed={false} />
+                  </>
+                ) : (
+                  <>
+                    <SidebarLink to="/queue" icon={Zap} label={isResearch ? 'Tasks' : 'Today'} active={location.pathname === '/queue'} onClick={closeSidebar} collapsed={false} />
+                    <SidebarLink to="/practice-exam" icon={ClipboardCheck} label="Exams" active={location.pathname === '/practice-exam'} onClick={closeSidebar} collapsed={false} />
+                    <SidebarLink to="/dashboard" icon={BookOpen} label={isResearch ? 'Research' : 'Study'} active={location.pathname === '/dashboard' || location.pathname === '/'} onClick={closeSidebar} collapsed={false} />
+                    <SidebarLink to="/sources" icon={FolderOpen} label="Library" active={location.pathname === '/sources'} onClick={closeSidebar} collapsed={false} />
+                    <SidebarLink to="/analytics" icon={BarChart3} label="Progress" active={location.pathname === '/analytics'} onClick={closeSidebar} collapsed={false} />
+                    <SidebarLink to="/study-plan" icon={CalendarDays} label="Plan" active={location.pathname === '/study-plan'} onClick={closeSidebar} collapsed={false} />
+                    <SidebarLink to="/legal" icon={Scale} label="Codes" active={location.pathname === '/legal'} onClick={closeSidebar} collapsed={false} />
+                  </>
+                )}
 
                 <div className="pt-3 mt-3 border-t border-[var(--border-card)]">
                   <SidebarLink to="/settings" icon={Settings} label="Settings" active={location.pathname === '/settings'} onClick={closeSidebar} collapsed={false} />

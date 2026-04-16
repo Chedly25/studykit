@@ -1,101 +1,99 @@
 /**
- * State machine for the Plan Détaillé Coach.
- * Mirrors useSyllogismeCoach: idle → generating → editing → grading → graded.
+ * State machine for the Fiche d'arrêt Trainer.
+ * Mirrors useSyllogismeCoach / usePlanCoach:
+ * idle → generating → editing → grading → graded.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { useExamProfile } from './useExamProfile'
-import { generatePlanQuestion, gradePlanSubmission } from '../ai/coaching/planCoach'
-import { classifyCoachingError, formatCoachingError } from '../ai/coaching/coachingErrors'
+import { pickFicheDecision, gradeFicheSubmission } from '../ai/coaching/ficheArretCoach'
 import {
-  createPlanSession,
-  deletePlanSession,
-  listPlanSessions,
-  loadPlanSession,
-  savePlanGrading,
-  savePlanSubmission,
-  type PlanSessionView,
-} from '../ai/coaching/planStore'
-import type { PlanGrading, PlanSubmission, PlanTask } from '../ai/coaching/types'
+  createFicheSession,
+  deleteFicheSession,
+  listFicheSessions,
+  loadFicheSession,
+  saveFicheGrading,
+  saveFicheSubmission,
+  type FicheSessionView,
+} from '../ai/coaching/ficheArretStore'
+import { classifyCoachingError, formatCoachingError } from '../ai/coaching/coachingErrors'
+import type { FicheGrading, FicheSubmission, FicheTask } from '../ai/coaching/types'
 
 const FALLBACK_PROFILE_ID = 'legal-chat'
 
-export type PlanPhase = 'idle' | 'generating' | 'editing' | 'grading' | 'graded'
+export type FichePhase = 'idle' | 'generating' | 'editing' | 'grading' | 'graded'
 
-export interface PlanDraft {
-  problematique: string
-  I: { title: string; IA: string; IB: string }
-  II: { title: string; IIA: string; IIB: string }
+export interface FicheDraft {
+  faits: string
+  procedure: string
+  moyens: string
+  questionDeDroit: string
+  solutionEtPortee: string
 }
 
-const EMPTY_DRAFT: PlanDraft = {
-  problematique: '',
-  I: { title: '', IA: '', IB: '' },
-  II: { title: '', IIA: '', IIB: '' },
+const EMPTY_DRAFT: FicheDraft = {
+  faits: '',
+  procedure: '',
+  moyens: '',
+  questionDeDroit: '',
+  solutionEtPortee: '',
 }
 
 // ─── Draft persistence (localStorage) ─────────────────────────────
-const DRAFT_KEY = (id: string) => `studyskit.draft.plan.${id}`
+const DRAFT_KEY = (id: string) => `studyskit.draft.fiche.${id}`
 
-function readDraft(id: string): PlanDraft | null {
+function readDraft(id: string): FicheDraft | null {
   try {
     const raw = localStorage.getItem(DRAFT_KEY(id))
     if (!raw) return null
-    const parsed = JSON.parse(raw) as Partial<PlanDraft>
+    const parsed = JSON.parse(raw) as Partial<FicheDraft>
     return {
-      problematique: parsed.problematique ?? '',
-      I: {
-        title: parsed.I?.title ?? '',
-        IA: parsed.I?.IA ?? '',
-        IB: parsed.I?.IB ?? '',
-      },
-      II: {
-        title: parsed.II?.title ?? '',
-        IIA: parsed.II?.IIA ?? '',
-        IIB: parsed.II?.IIB ?? '',
-      },
+      faits: parsed.faits ?? '',
+      procedure: parsed.procedure ?? '',
+      moyens: parsed.moyens ?? '',
+      questionDeDroit: parsed.questionDeDroit ?? '',
+      solutionEtPortee: parsed.solutionEtPortee ?? '',
     }
   } catch {
     return null
   }
 }
 
-function isEmptyDraft(d: PlanDraft): boolean {
-  return !d.problematique.trim()
-    && !d.I.title.trim() && !d.I.IA.trim() && !d.I.IB.trim()
-    && !d.II.title.trim() && !d.II.IIA.trim() && !d.II.IIB.trim()
+function isEmptyDraft(d: FicheDraft): boolean {
+  return !d.faits.trim() && !d.procedure.trim() && !d.moyens.trim()
+    && !d.questionDeDroit.trim() && !d.solutionEtPortee.trim()
 }
 
-function writeDraft(id: string, draft: PlanDraft): void {
+function writeDraft(id: string, draft: FicheDraft): void {
   try {
     if (isEmptyDraft(draft)) return
     localStorage.setItem(DRAFT_KEY(id), JSON.stringify(draft))
-  } catch { /* best-effort */ }
+  } catch { /* noop */ }
 }
 
 function clearDraft(id: string): void {
   try { localStorage.removeItem(DRAFT_KEY(id)) } catch { /* noop */ }
 }
 
-export function usePlanCoach() {
+export function useFicheArretCoach() {
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
   const examProfileId = activeProfile?.id ?? FALLBACK_PROFILE_ID
 
-  const [phase, setPhase] = useState<PlanPhase>('idle')
+  const [phase, setPhase] = useState<FichePhase>('idle')
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [task, setTask] = useState<PlanTask | null>(null)
-  const [draft, setDraft] = useState<PlanDraft>(EMPTY_DRAFT)
-  const [submission, setSubmission] = useState<PlanSubmission | null>(null)
-  const [grading, setGrading] = useState<PlanGrading | null>(null)
-  const [history, setHistory] = useState<PlanSessionView[]>([])
+  const [task, setTask] = useState<FicheTask | null>(null)
+  const [draft, setDraft] = useState<FicheDraft>(EMPTY_DRAFT)
+  const [submission, setSubmission] = useState<FicheSubmission | null>(null)
+  const [grading, setGrading] = useState<FicheGrading | null>(null)
+  const [history, setHistory] = useState<FicheSessionView[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const abortRef = useRef<AbortController | null>(null)
 
   const refreshHistory = useCallback(async () => {
-    const rows = await listPlanSessions(examProfileId)
+    const rows = await listFicheSessions(examProfileId)
     setHistory(rows)
   }, [examProfileId])
 
@@ -116,8 +114,8 @@ export function usePlanCoach() {
     setError(null)
   }, [sessionId])
 
-  const newQuestion = useCallback(
-    async (themeId: string) => {
+  const newDecision = useCallback(
+    async (chamberId: string) => {
       abortRef.current?.abort()
       const abort = new AbortController()
       abortRef.current = abort
@@ -133,17 +131,16 @@ export function usePlanCoach() {
         const token = await getToken()
         if (!token) throw new Error('Authentification requise')
 
-        const avoidQuestions = history.slice(0, 3).map(h => h.task.question.slice(0, 80))
+        const excludeIds = history.slice(0, 10).map(h => h.task.decision.id)
 
-        const generated = await generatePlanQuestion({
-          themeId,
-          avoidQuestions,
+        const generated = await pickFicheDecision({
+          chamberId,
+          excludeIds,
           authToken: token,
-          getToken: async () => getToken(),
           signal: abort.signal,
         })
 
-        const id = await createPlanSession(examProfileId, generated)
+        const id = await createFicheSession(examProfileId, generated)
         setSessionId(id)
         setTask(generated)
         setPhase('editing')
@@ -157,11 +154,9 @@ export function usePlanCoach() {
     [getToken, examProfileId, history, refreshHistory],
   )
 
-  const saveDraft = useCallback((partial: Partial<PlanDraft>) => {
+  const saveDraft = useCallback((partial: Partial<FicheDraft>) => {
     setDraft(prev => {
       const next = { ...prev, ...partial }
-      if (partial.I) next.I = { ...prev.I, ...partial.I }
-      if (partial.II) next.II = { ...prev.II, ...partial.II }
       if (sessionId) writeDraft(sessionId, next)
       return next
     })
@@ -174,19 +169,19 @@ export function usePlanCoach() {
     abortRef.current = abort
 
     const submittedAt = new Date().toISOString()
-    const built: PlanSubmission = { ...draft, submittedAt }
+    const built: FicheSubmission = { ...draft, submittedAt }
 
     setPhase('grading')
     setError(null)
     setSubmission(built)
 
     try {
-      await savePlanSubmission(sessionId, built)
+      await saveFicheSubmission(sessionId, built)
 
       const token = await getToken()
       if (!token) throw new Error('Authentification requise')
 
-      const result = await gradePlanSubmission({
+      const result = await gradeFicheSubmission({
         task,
         submission: built,
         authToken: token,
@@ -194,7 +189,7 @@ export function usePlanCoach() {
         signal: abort.signal,
       })
 
-      await savePlanGrading(sessionId, result)
+      await saveFicheGrading(sessionId, result)
       clearDraft(sessionId)
       setGrading(result)
       setPhase('graded')
@@ -207,19 +202,20 @@ export function usePlanCoach() {
   }, [task, sessionId, draft, getToken, refreshHistory])
 
   const loadSession = useCallback(async (id: string) => {
-    const view = await loadPlanSession(id)
+    const view = await loadFicheSession(id)
     if (!view) return
     setSessionId(view.id)
     setTask(view.task)
     if (view.submission) {
       setDraft({
-        problematique: view.submission.problematique,
-        I: { ...view.submission.I },
-        II: { ...view.submission.II },
+        faits: view.submission.faits,
+        procedure: view.submission.procedure,
+        moyens: view.submission.moyens,
+        questionDeDroit: view.submission.questionDeDroit,
+        solutionEtPortee: view.submission.solutionEtPortee,
       })
       setSubmission(view.submission)
     } else {
-      // Restore auto-saved draft if present
       const savedDraft = readDraft(view.id)
       setDraft(savedDraft ?? EMPTY_DRAFT)
       setSubmission(null)
@@ -230,7 +226,7 @@ export function usePlanCoach() {
   }, [])
 
   const removeSession = useCallback(async (id: string) => {
-    await deletePlanSession(id)
+    await deleteFicheSession(id)
     clearDraft(id)
     if (id === sessionId) reset()
     await refreshHistory()
@@ -249,7 +245,7 @@ export function usePlanCoach() {
     history,
     error,
     sessionId,
-    newQuestion,
+    newDecision,
     saveDraft,
     submit,
     loadSession,

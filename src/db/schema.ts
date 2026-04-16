@@ -8,6 +8,8 @@ export type ExamType = 'university-course' | 'professional-exam' | 'graduate-res
 
 export type ProfileMode = 'study' | 'research'
 
+export type ProfileVertical = 'crfpa' | 'cpge' | 'generic'
+
 export interface ExamProfile {
   id: string
   name: string
@@ -20,6 +22,8 @@ export interface ExamProfile {
   userId?: string
   examIntelligence?: string // JSON exam research data
   profileMode?: ProfileMode
+  /** Product vertical — drives shell, home page, sidebar. 'generic' = classic UI. */
+  profileVertical?: ProfileVertical
 }
 
 // ─── Knowledge Graph ────────────────────────────────────────────

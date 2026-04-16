@@ -344,6 +344,7 @@ export async function executeOnboardingTool(
         userId: ctx.userId,
         createdAt: new Date().toISOString(),
         profileMode: 'study',
+        profileVertical: 'generic',
       })
 
       // Seed empty blueprint subjects

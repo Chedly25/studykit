@@ -12,8 +12,11 @@ export default function Home() {
   const { isSignedIn } = useAuth()
   const { activeProfile, profiles, profilesLoaded } = useExamProfile()
 
-  // Signed in with profile → redirect to dashboard
+  // Signed in with profile → redirect by vertical
   if (isSignedIn && activeProfile) {
+    if (activeProfile.profileVertical === 'crfpa') {
+      return <Navigate to="/accueil" replace />
+    }
     return <Navigate to="/dashboard" replace />
   }
 

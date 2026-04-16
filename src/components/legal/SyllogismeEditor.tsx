@@ -5,6 +5,7 @@
 import { Send, Loader2 } from 'lucide-react'
 import type { SyllogismeTask } from '../../ai/coaching/types'
 import type { SubmissionDraft } from '../../hooks/useSyllogismeCoach'
+import { SyllogismeExample } from './SyllogismeExample'
 
 interface Props {
   task: SyllogismeTask
@@ -45,6 +46,9 @@ export function SyllogismeEditor({ task, draft, onChange, onSubmit, onCancel, bu
           {task.question}
         </p>
       </div>
+
+      {/* Worked example — collapsible pedagogical aid */}
+      <SyllogismeExample />
 
       {/* Three sections */}
       <Section

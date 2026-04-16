@@ -82,6 +82,11 @@ const Sources = lazyWithRetry(() => import('./pages/Sources'))
 const LegalChat = lazyWithRetry(() => import('./pages/LegalChat'))
 const SyllogismeCoach = lazyWithRetry(() => import('./pages/SyllogismeCoach'))
 const PlanCoach = lazyWithRetry(() => import('./pages/PlanCoach'))
+const FicheArretCoach = lazyWithRetry(() => import('./pages/FicheArretCoach'))
+
+// CRFPA Vertical
+const CRFPAAtelier = lazyWithRetry(() => import('./pages/CRFPAAtelier'))
+const CRFPAHistorique = lazyWithRetry(() => import('./pages/CRFPAHistorique'))
 
 // Article Review
 const ArticleReview = lazyWithRetry(() => import('./pages/ArticleReview'))
@@ -169,6 +174,11 @@ export default function App() {
           <Route path="legal" element={<ProtectedRoute><LegalChat /></ProtectedRoute>} />
           <Route path="legal/syllogisme" element={<ProtectedRoute><SyllogismeCoach /></ProtectedRoute>} />
           <Route path="legal/plan" element={<ProtectedRoute><PlanCoach /></ProtectedRoute>} />
+          <Route path="legal/fiche" element={<ProtectedRoute><FicheArretCoach /></ProtectedRoute>} />
+
+          {/* CRFPA Vertical */}
+          <Route path="accueil" element={<ProtectedRoute><CRFPAAtelier /></ProtectedRoute>} />
+          <Route path="historique" element={<ProtectedRoute><CRFPAHistorique /></ProtectedRoute>} />
 
           {/* Public — Grades */}
           <Route path="gpa-calculator" element={<GpaCalculator />} />

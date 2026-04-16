@@ -127,3 +127,51 @@ export interface PlanGrading {
   }
   gradedAt: string
 }
+
+// ─── Fiche d'arrêt Trainer ────────────────────────────────────────
+
+export type FicheAxis =
+  | 'faits'
+  | 'procedure'
+  | 'moyens'
+  | 'questionDeDroit'
+  | 'solutionEtPortee'
+
+export interface FicheDecision {
+  id: string              // Vectorize ID
+  chamber: string         // "Chambre sociale", derived from codeName
+  reference: string       // ECLI or pourvoi number
+  breadcrumb?: string     // often contains the date
+  text: string            // decision text (from Vectorize metadata)
+}
+
+export interface FicheTask {
+  decision: FicheDecision
+  generatedAt: string
+}
+
+export interface FicheSubmission {
+  faits: string
+  procedure: string
+  moyens: string
+  questionDeDroit: string
+  solutionEtPortee: string
+  submittedAt: string
+}
+
+export interface FicheAxisScore {
+  axis: FicheAxis
+  label: string
+  score: number         // 0-5
+  feedback: string
+}
+
+export interface FicheGrading {
+  axes: FicheAxisScore[]  // 5 entries, one per FicheAxis
+  overall: {
+    score: number         // 0-25
+    topMistake: string
+    strength: string
+  }
+  gradedAt: string
+}

@@ -390,6 +390,13 @@ export class StudiesKitDB extends Dexie {
     this.version(36).stores({
       coachingSessions: 'id, examProfileId, type, [examProfileId+type], createdAt',
     })
+
+    // v37: Backfill profileVertical='generic' on existing ExamProfile rows (no schema change)
+    this.version(37).stores({}).upgrade(tx =>
+      tx.table('examProfiles').toCollection().modify(p => {
+        if (p.profileVertical === undefined) p.profileVertical = 'generic'
+      })
+    )
   }
 }
 

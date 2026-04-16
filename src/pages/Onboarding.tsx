@@ -17,6 +17,10 @@ import remarkGfm from 'remark-gfm'
 import { useOnboarding } from '../hooks/useOnboarding'
 import type { DisplayMessage, PendingWidget } from '../ai/workflows/onboardingAgent'
 import type { ExtractedSubject } from '../ai/topicExtractor'
+import type { ProfileVertical } from '../db/schema'
+import { VerticalPicker } from '../components/onboarding/VerticalPicker'
+import { CRFPAOnboardingForm } from '../components/onboarding/CRFPAOnboardingForm'
+import { CPGEOnboardingForm } from '../components/onboarding/CPGEOnboardingForm'
 
 // ─── Progress milestones ─────────────────────────────────
 
@@ -727,6 +731,12 @@ export default function Onboarding() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showManualSetup, setShowManualSetup] = useState(false)
 
+  // Vertical fork: null = picker visible. Once set, we proceed with that flow.
+  // If the LLM chat has already produced messages (returning user), skip the picker.
+  const [vertical, setVertical] = useState<ProfileVertical | null>(
+    () => (state.displayMessages.length > 0 ? 'generic' : null),
+  )
+
   // Show welcome screen only for fresh onboarding (no messages yet)
   const [showWelcome, setShowWelcome] = useState(
     () => state.displayMessages.length === 0 && !state.completed
@@ -756,7 +766,22 @@ export default function Onboarding() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [state.displayMessages.length, state.streamingText])
 
-  // ── Welcome screen ───────────────────────────────────
+  // ── Vertical picker (first screen for fresh onboarding) ─────
+  if (vertical === null) {
+    return <VerticalPicker onPick={setVertical} />
+  }
+
+  // ── CRFPA structured form ──────────────────────────────
+  if (vertical === 'crfpa') {
+    return <CRFPAOnboardingForm onBack={() => setVertical(null)} />
+  }
+
+  // ── CPGE structured form ───────────────────────────────
+  if (vertical === 'cpge') {
+    return <CPGEOnboardingForm onBack={() => setVertical(null)} />
+  }
+
+  // ── Generic flow: existing welcome screen + LLM chat ───
   if (showManualSetup) {
     return <ManualSetupForm navigate={navigate} userId={userId ?? undefined} />
   }
