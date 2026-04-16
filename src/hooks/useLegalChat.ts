@@ -1,14 +1,25 @@
 /**
  * Minimal agent loop hook for the /legal chat page.
  * Uses only searchLegalCodes + createFlashcardDeck tools.
- * Not coupled to ExamProfile — works independently.
+ * Persists conversations to IndexedDB so history survives refresh.
  */
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { runAgentLoop } from '../ai/agentLoop'
 import { LEGAL_CHAT_SYSTEM_PROMPT } from '../ai/prompts/legalChatPrompt'
 import { useExamProfile } from './useExamProfile'
+import {
+  createConversation,
+  getConversations,
+  loadMessages,
+  saveMessages,
+  updateConversationTitle,
+  deleteConversation,
+} from '../ai/messageStore'
 import type { Message } from '../ai/types'
+import type { Conversation } from '../db/schema'
+
+const LEGAL_PROFILE_ID = 'legal-chat' // Virtual profile ID for legal conversations
 
 export interface LegalArticle {
   articleNum: string
@@ -19,7 +30,6 @@ export interface LegalArticle {
 }
 
 function extractLastArticles(messages: Message[]): LegalArticle[] {
-  // Scan messages in reverse to find the last searchLegalCodes tool result
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]
     if (msg.role !== 'user' || !Array.isArray(msg.content)) continue
@@ -28,7 +38,6 @@ function extractLastArticles(messages: Message[]): LegalArticle[] {
         try {
           const parsed = JSON.parse(block.content)
           if (parsed.resultCount !== undefined && parsed.results) {
-            // Parse the formatted results string back into structured data
             const lines = String(parsed.results).split(/\n\n/)
             return lines.map(line => {
               const match = line.match(/^\d+\.\s*(.+?),\s*Art\.\s*(.+?)\s*(?:\((.+?)\))?\s*\n\s*(.+)$/s)
@@ -49,8 +58,16 @@ function extractLastArticles(messages: Message[]): LegalArticle[] {
   return []
 }
 
+function deriveTitle(firstUserMessage: string): string {
+  // Strip the attached documents context
+  const clean = firstUserMessage.split('\n\n## Contexte')[0].trim()
+  return clean.slice(0, 80) + (clean.length > 80 ? '...' : '')
+}
+
 export function useLegalChat() {
+  const [conversationId, setConversationId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [streamingText, setStreamingText] = useState('')
   const [currentToolCall, setCurrentToolCall] = useState<string | null>(null)
@@ -60,8 +77,66 @@ export function useLegalChat() {
 
   const lastArticles = extractLastArticles(messages)
 
+  // Load conversation list on mount
+  const refreshConversations = useCallback(async () => {
+    const convs = await getConversations(LEGAL_PROFILE_ID)
+    setConversations(convs)
+  }, [])
+
+  useEffect(() => {
+    refreshConversations()
+  }, [refreshConversations])
+
+  // Load most recent conversation on mount (or leave empty for new chat)
+  useEffect(() => {
+    let cancelled = false
+    getConversations(LEGAL_PROFILE_ID).then(async (convs) => {
+      if (cancelled) return
+      if (convs.length > 0 && !conversationId) {
+        const mostRecent = convs[0]
+        setConversationId(mostRecent.id)
+        const msgs = await loadMessages(mostRecent.id)
+        if (!cancelled) setMessages(msgs)
+      }
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const selectConversation = useCallback(async (id: string) => {
+    setConversationId(id)
+    const msgs = await loadMessages(id)
+    setMessages(msgs)
+    setStreamingText('')
+    setCurrentToolCall(null)
+  }, [])
+
+  const newConversation = useCallback(() => {
+    setConversationId(null)
+    setMessages([])
+    setStreamingText('')
+    setCurrentToolCall(null)
+  }, [])
+
+  const removeConversation = useCallback(async (id: string) => {
+    await deleteConversation(id)
+    if (id === conversationId) {
+      setConversationId(null)
+      setMessages([])
+    }
+    await refreshConversations()
+  }, [conversationId, refreshConversations])
+
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isLoading) return
+
+    // Create conversation on first message
+    let convId = conversationId
+    if (!convId) {
+      convId = await createConversation(LEGAL_PROFILE_ID, deriveTitle(text))
+      setConversationId(convId)
+      await refreshConversations()
+    }
 
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text }
     const updatedMessages = [...messages, userMsg]
@@ -89,6 +164,9 @@ export function useLegalChat() {
       })
 
       setMessages(result.messages)
+      // Persist to IndexedDB
+      await saveMessages(convId, result.messages)
+      await refreshConversations()
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
         const errorMsg: Message = {
@@ -104,17 +182,30 @@ export function useLegalChat() {
       setCurrentToolCall(null)
       abortRef.current = null
     }
-  }, [messages, isLoading, getToken, activeProfile?.id])
+  }, [messages, isLoading, getToken, activeProfile?.id, conversationId, refreshConversations])
 
   const cancel = useCallback(() => {
     abortRef.current?.abort()
   }, [])
 
-  const clear = useCallback(() => {
-    setMessages([])
-    setStreamingText('')
-    setCurrentToolCall(null)
-  }, [])
+  const renameConversation = useCallback(async (id: string, title: string) => {
+    await updateConversationTitle(id, title)
+    await refreshConversations()
+  }, [refreshConversations])
 
-  return { messages, isLoading, streamingText, currentToolCall, lastArticles, sendMessage, cancel, clear }
+  return {
+    messages,
+    conversations,
+    conversationId,
+    isLoading,
+    streamingText,
+    currentToolCall,
+    lastArticles,
+    sendMessage,
+    cancel,
+    selectConversation,
+    newConversation,
+    removeConversation,
+    renameConversation,
+  }
 }

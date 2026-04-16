@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { Scale, Send, Trash2, Paperclip, X, FileText } from 'lucide-react'
+import { Scale, Send, Paperclip, X, FileText, Menu } from 'lucide-react'
 import { useLegalChat } from '../hooks/useLegalChat'
 import { LegalMessageBubble } from '../components/legal/LegalMessageBubble'
 import { LegalArticlesPanel } from '../components/legal/LegalArticlesPanel'
+import { LegalConversationList } from '../components/legal/LegalConversationList'
 
 const SUGGESTIONS = [
   'Quelles sont les conditions de validité d\'un contrat ?',
@@ -20,19 +21,25 @@ interface Attachment {
 export default function LegalChat() {
   const [input, setInput] = useState('')
   const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [historyOpen, setHistoryOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const {
     messages,
+    conversations,
+    conversationId,
     isLoading,
     streamingText,
     currentToolCall,
     lastArticles,
     sendMessage,
     cancel,
-    clear,
+    selectConversation,
+    newConversation,
+    removeConversation,
+    renameConversation,
   } = useLegalChat()
 
   useEffect(() => {
@@ -98,22 +105,61 @@ export default function LegalChat() {
 
   return (
     <div className="flex h-[calc(100vh-4rem)] max-w-7xl mx-auto">
+      {/* History sidebar (desktop) */}
+      <aside className="hidden md:flex flex-col w-64 border-r border-[var(--border-card)] shrink-0">
+        <LegalConversationList
+          conversations={conversations}
+          activeId={conversationId}
+          onSelect={selectConversation}
+          onNew={newConversation}
+          onDelete={removeConversation}
+          onRename={renameConversation}
+        />
+      </aside>
+
+      {/* History drawer (mobile) */}
+      {historyOpen && (
+        <div className="md:hidden fixed inset-0 z-40 flex">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setHistoryOpen(false)} />
+          <div className="relative w-72 bg-[var(--bg-main)] h-full flex flex-col">
+            <div className="flex items-center justify-between p-3 border-b border-[var(--border-card)]">
+              <span className="text-sm font-semibold">Historique</span>
+              <button onClick={() => setHistoryOpen(false)} className="p-1.5 rounded hover:bg-[var(--bg-hover)]">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <LegalConversationList
+                conversations={conversations}
+                activeId={conversationId}
+                onSelect={(id) => { selectConversation(id); setHistoryOpen(false) }}
+                onNew={() => { newConversation(); setHistoryOpen(false) }}
+                onDelete={removeConversation}
+                onRename={renameConversation}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main chat column */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-card)]">
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setHistoryOpen(true)}
+              className="md:hidden p-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)]"
+              title="Historique"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <Scale className="w-5 h-5 text-[var(--accent-text)]" />
             <div>
               <h1 className="text-lg font-semibold text-[var(--text-heading)]">Recherche juridique</h1>
               <p className="text-xs text-[var(--text-muted)]">Codes + jurisprudence + Constitution + CEDH + RGPD</p>
             </div>
           </div>
-          {hasMessages && (
-            <button onClick={clear} className="p-2 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)]" title="Nouvelle recherche">
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
         </div>
 
         {/* Messages */}
