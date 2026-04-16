@@ -61,6 +61,7 @@ import type {
   ExamDNA,
   ChatFeedback,
   MacroRoadmap,
+  CoachingSession,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -123,6 +124,7 @@ export class StudiesKitDB extends Dexie {
   macroRoadmaps!: Table<MacroRoadmap>
   revisionFiches!: Table<RevisionFiche>
   examDNA!: Table<ExamDNA>
+  coachingSessions!: Table<CoachingSession>
   _syncQueue!: Table<SyncQueueEntry>
   _syncMeta!: Table<SyncMeta>
 
@@ -382,6 +384,11 @@ export class StudiesKitDB extends Dexie {
     // v35: Add standalone examProfileId index on agentInsights for efficient profile-scoped queries
     this.version(35).stores({
       agentInsights: 'id, examProfileId, [examProfileId+agentId]',
+    })
+
+    // v36: CRFPA coaching sessions (syllogisme / fiche d'arrêt / plan détaillé)
+    this.version(36).stores({
+      coachingSessions: 'id, examProfileId, type, [examProfileId+type], createdAt',
     })
   }
 }

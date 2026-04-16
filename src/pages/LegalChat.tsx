@@ -4,6 +4,7 @@ import { useLegalChat } from '../hooks/useLegalChat'
 import { LegalMessageBubble } from '../components/legal/LegalMessageBubble'
 import { LegalArticlesPanel } from '../components/legal/LegalArticlesPanel'
 import { LegalConversationList } from '../components/legal/LegalConversationList'
+import { LegalPageTabs } from '../components/legal/LegalPageTabs'
 
 const SUGGESTIONS = [
   'Quelles sont les conditions de validité d\'un contrat ?',
@@ -104,7 +105,9 @@ export default function LegalChat() {
   const hasMessages = displayMessages.length > 0 || streamingText
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] max-w-7xl mx-auto">
+    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-7xl mx-auto">
+      <LegalPageTabs />
+      <div className="flex flex-1 min-h-0">
       {/* History sidebar (desktop) */}
       <aside className="hidden md:flex flex-col w-64 border-r border-[var(--border-card)] shrink-0">
         <LegalConversationList
@@ -277,6 +280,7 @@ export default function LegalChat() {
           <LegalArticlesPanel articles={lastArticles} />
         </aside>
       )}
+      </div>
     </div>
   )
 }

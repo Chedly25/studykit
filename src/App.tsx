@@ -80,6 +80,8 @@ const Sources = lazyWithRetry(() => import('./pages/Sources'))
 
 // Legal Search
 const LegalChat = lazyWithRetry(() => import('./pages/LegalChat'))
+const SyllogismeCoach = lazyWithRetry(() => import('./pages/SyllogismeCoach'))
+const PlanCoach = lazyWithRetry(() => import('./pages/PlanCoach'))
 
 // Article Review
 const ArticleReview = lazyWithRetry(() => import('./pages/ArticleReview'))
@@ -165,6 +167,8 @@ export default function App() {
           {/* /writing, /meetings, /notes removed — research features deprecated */}
           <Route path="article-review" element={<ProtectedRoute><ArticleReview /></ProtectedRoute>} />
           <Route path="legal" element={<ProtectedRoute><LegalChat /></ProtectedRoute>} />
+          <Route path="legal/syllogisme" element={<ProtectedRoute><SyllogismeCoach /></ProtectedRoute>} />
+          <Route path="legal/plan" element={<ProtectedRoute><PlanCoach /></ProtectedRoute>} />
 
           {/* Public — Grades */}
           <Route path="gpa-calculator" element={<GpaCalculator />} />

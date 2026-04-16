@@ -51,7 +51,7 @@ export function Layout() {
   const { t } = useTranslation()
   const location = useLocation()
   const isOnline = useOnlineStatus()
-  const isChatPage = location.pathname === '/session' || location.pathname.startsWith('/read/') || location.pathname === '/legal'
+  const isChatPage = location.pathname === '/session' || location.pathname.startsWith('/read/') || location.pathname.startsWith('/legal')
 
   // Streak risk detection for banner
   const { streak, dailyLogs } = useKnowledgeGraph(activeProfile?.id)

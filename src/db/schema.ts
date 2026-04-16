@@ -895,6 +895,25 @@ export interface MacroRoadmap {
   updatedAt: string
 }
 
+// ─── CRFPA Coaching Sessions ────────────────────────────────────
+export type CoachingType = 'syllogisme' | 'fiche-arret' | 'plan-detaille'
+
+/**
+ * A coaching attempt: one task generated for the student, optionally submitted and graded.
+ * `task`, `submission`, and `grading` hold type-specific JSON payloads — their shape is
+ * defined by each coach's workflow (see src/ai/coaching/).
+ */
+export interface CoachingSession {
+  id: string
+  examProfileId: string
+  type: CoachingType
+  task: string             // JSON — scenario / decision / question + hidden model answer
+  submission?: string      // JSON — student's 3/5/plan sections
+  grading?: string         // JSON — rubric result
+  createdAt: string
+  completedAt?: string
+}
+
 // ─── Chat Feedback ──────────────────────────────────────────────
 export interface ChatFeedback {
   id: string
