@@ -89,16 +89,48 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         return b
       })
       anthropicMessages.push({ role: 'user', content: blocks })
-    } else if (msg.role === 'assistant' && Array.isArray(msg.content)) {
-      // Convert OpenAI tool_use blocks to Anthropic format
-      const blocks = (msg.content as Array<Record<string, unknown>>).map(b => {
-        if (b.type === 'tool_use') {
-          return { type: 'tool_use', id: b.id, name: b.name, input: b.input }
+    } else if (msg.role === 'assistant') {
+      // Assistant messages: may be OpenAI format (content:string + tool_calls:[]) OR array format
+      const rawMsg = msg as Record<string, unknown>
+      const toolCalls = rawMsg.tool_calls as Array<{ id: string; function: { name: string; arguments: string } }> | undefined
+      const blocks: unknown[] = []
+
+      if (Array.isArray(msg.content)) {
+        // Array format (from first-round agent output)
+        for (const b of msg.content as Array<Record<string, unknown>>) {
+          if (b.type === 'tool_use') blocks.push({ type: 'tool_use', id: b.id, name: b.name, input: b.input })
+          else if (b.type === 'text') blocks.push({ type: 'text', text: b.text })
         }
-        if (b.type === 'text') return { type: 'text', text: b.text }
-        return b
-      })
-      anthropicMessages.push({ role: 'assistant', content: blocks })
+      } else if (typeof msg.content === 'string' && msg.content.trim()) {
+        blocks.push({ type: 'text', text: msg.content })
+      }
+
+      // OpenAI tool_calls → Anthropic tool_use blocks
+      if (toolCalls?.length) {
+        for (const tc of toolCalls) {
+          let input: Record<string, unknown> = {}
+          try { input = JSON.parse(tc.function.arguments || '{}') } catch { /* empty */ }
+          blocks.push({ type: 'tool_use', id: tc.id, name: tc.function.name, input })
+        }
+      }
+
+      if (blocks.length > 0) {
+        anthropicMessages.push({ role: 'assistant', content: blocks })
+      }
+    } else if (msg.role === 'tool') {
+      // OpenAI sends tool results as role:'tool' — convert to Anthropic role:'user' with tool_result block
+      const toolResult = {
+        type: 'tool_result' as const,
+        tool_use_id: (msg as Record<string, unknown>).tool_call_id as string,
+        content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
+      }
+      // Merge with previous user message if it's also a tool_result, or create new
+      const last = anthropicMessages[anthropicMessages.length - 1]
+      if (last?.role === 'user' && Array.isArray(last.content)) {
+        (last.content as unknown[]).push(toolResult)
+      } else {
+        anthropicMessages.push({ role: 'user', content: [toolResult] })
+      }
     } else {
       anthropicMessages.push(msg)
     }
