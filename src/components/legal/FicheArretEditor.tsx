@@ -6,6 +6,8 @@ import { useState } from 'react'
 import { Send, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import type { FicheTask } from '../../ai/coaching/types'
 import type { FicheDraft } from '../../hooks/useFicheArretCoach'
+import { CoachTimer } from './CoachTimer'
+import { TIMER_DEFAULTS } from './coachTimerDefaults'
 
 interface Props {
   task: FicheTask
@@ -34,6 +36,9 @@ export function FicheArretEditor({ task, draft, onChange, onSubmit, onCancel, bu
   return (
     <div className="max-w-4xl mx-auto w-full flex flex-col gap-4 p-4">
       <DecisionViewer task={task} />
+
+      {/* Optional timer */}
+      <CoachTimer sessionKey={`fiche-${task.generatedAt}`} defaultSeconds={TIMER_DEFAULTS.fiche} />
 
       <Field
         label="Faits"

@@ -8,17 +8,21 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useUser } from '@clerk/clerk-react'
-import { PenSquare, ListTree, FileText, Scale, FolderOpen, RotateCcw, ArrowRight } from 'lucide-react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { PenSquare, ListTree, FileText, BookMarked, Scale, FolderOpen, RotateCcw, ArrowRight, Upload } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileVertical } from '../hooks/useProfileVertical'
 import { listSyllogismeSessions, type SyllogismeSessionView } from '../ai/coaching/syllogismeStore'
 import { listPlanSessions, type PlanSessionView } from '../ai/coaching/planStore'
 import { listFicheSessions, type FicheSessionView } from '../ai/coaching/ficheArretStore'
+import { listCommentaireSessions, type CommentaireSessionView } from '../ai/coaching/commentaireStore'
+import { db } from '../db'
 
 type RecentItem =
   | { kind: 'syllogisme'; id: string; title: string; score?: number; createdAt: string }
   | { kind: 'plan'; id: string; title: string; score?: number; createdAt: string }
   | { kind: 'fiche'; id: string; title: string; score?: number; createdAt: string }
+  | { kind: 'commentaire'; id: string; title: string; score?: number; createdAt: string }
 
 const FALLBACK_PROFILE_ID = 'legal-chat'
 
@@ -32,6 +36,7 @@ export default function CRFPAAtelier() {
   const [syllogismes, setSyllogismes] = useState<SyllogismeSessionView[]>([])
   const [plans, setPlans] = useState<PlanSessionView[]>([])
   const [fiches, setFiches] = useState<FicheSessionView[]>([])
+  const [commentaires, setCommentaires] = useState<CommentaireSessionView[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -39,11 +44,13 @@ export default function CRFPAAtelier() {
       listSyllogismeSessions(examProfileId),
       listPlanSessions(examProfileId),
       listFicheSessions(examProfileId),
-    ]).then(([s, p, f]) => {
+      listCommentaireSessions(examProfileId),
+    ]).then(([s, p, f, c]) => {
       if (cancelled) return
       setSyllogismes(s)
       setPlans(p)
       setFiches(f)
+      setCommentaires(c)
     })
     return () => { cancelled = true }
   }, [examProfileId])
@@ -56,6 +63,19 @@ export default function CRFPAAtelier() {
     return Math.max(0, Math.ceil(diff / 86400000))
   }, [activeProfile?.examDate])
 
+  // Recent documents — live query so uploads appear without a manual refresh
+  const recentDocs = useLiveQuery(
+    async () => {
+      if (!activeProfile?.id) return []
+      const docs = await db.documents
+        .where('examProfileId').equals(activeProfile.id)
+        .reverse()
+        .sortBy('createdAt')
+      return docs.slice(0, 4)
+    },
+    [activeProfile?.id],
+  ) ?? []
+
   // Non-CRFPA users should not land here
   if (!isCRFPA) return <Navigate to="/dashboard" replace />
 
@@ -66,12 +86,15 @@ export default function CRFPAAtelier() {
   const inProgressSyllogisme = syllogismes.find(s => s.submission && !s.grading)
   const inProgressPlan = plans.find(p => p.submission && !p.grading)
   const inProgressFiche = fiches.find(f => f.submission && !f.grading)
+  const inProgressCommentaire = commentaires.find(c => c.submission && !c.grading)
   const inProgress = inProgressSyllogisme
     ? { kind: 'syllogisme' as const, id: inProgressSyllogisme.id, title: inProgressSyllogisme.task.theme }
     : inProgressPlan
     ? { kind: 'plan' as const, id: inProgressPlan.id, title: inProgressPlan.task.themeLabel }
     : inProgressFiche
     ? { kind: 'fiche' as const, id: inProgressFiche.id, title: inProgressFiche.task.decision.chamber }
+    : inProgressCommentaire
+    ? { kind: 'commentaire' as const, id: inProgressCommentaire.id, title: inProgressCommentaire.task.decision.chamber }
     : null
 
   // Recent 3 graded
@@ -103,6 +126,15 @@ export default function CRFPAAtelier() {
         score: f.grading!.overall.score,
         createdAt: f.createdAt,
       })),
+    ...commentaires
+      .filter(c => c.grading)
+      .map(c => ({
+        kind: 'commentaire' as const,
+        id: c.id,
+        title: c.task.decision.chamber,
+        score: c.grading!.overall.score,
+        createdAt: c.createdAt,
+      })),
   ]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 3)
@@ -111,7 +143,8 @@ export default function CRFPAAtelier() {
     if (!inProgress) return
     const base = inProgress.kind === 'syllogisme' ? '/legal/syllogisme'
       : inProgress.kind === 'plan' ? '/legal/plan'
-      : '/legal/fiche'
+      : inProgress.kind === 'fiche' ? '/legal/fiche'
+      : '/legal/commentaire'
     navigate(`${base}?session=${inProgress.id}`)
   }
 
@@ -150,7 +183,8 @@ export default function CRFPAAtelier() {
             <div className="text-sm text-[var(--text-heading)] font-medium truncate">
               {inProgress.kind === 'syllogisme' ? 'Syllogisme'
                 : inProgress.kind === 'plan' ? 'Plan détaillé'
-                : 'Fiche d\'arrêt'} — {inProgress.title}
+                : inProgress.kind === 'fiche' ? 'Fiche d\'arrêt'
+                : 'Commentaire d\'arrêt'} — {inProgress.title}
             </div>
           </div>
           <ArrowRight className="w-5 h-5 text-[var(--accent-text)] group-hover:translate-x-1 transition-transform shrink-0" />
@@ -178,6 +212,12 @@ export default function CRFPAAtelier() {
           hint="Entraîne-toi sur une décision réelle de la Cour de cassation."
         />
         <ActionCard
+          to="/legal/commentaire"
+          icon={BookMarked}
+          title="Commentaire d'arrêt"
+          hint="Introduction et plan d'un commentaire sur décision réelle."
+        />
+        <ActionCard
           to="/legal"
           icon={Scale}
           title="Oracle"
@@ -197,6 +237,48 @@ export default function CRFPAAtelier() {
         />
       </div>
 
+      {/* Documents strip — visible once she has uploaded at least one doc */}
+      {recentDocs.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs uppercase tracking-wider font-semibold text-[var(--text-muted)]">
+              Tes documents récents
+            </h2>
+            <Link
+              to="/sources"
+              className="flex items-center gap-1 text-xs text-[var(--accent-text)] hover:underline"
+            >
+              <Upload className="w-3 h-3" />
+              En ajouter
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {recentDocs.map(doc => (
+              <Link
+                key={doc.id}
+                to={`/read/${doc.id}`}
+                className="glass-card p-3 hover:bg-[var(--bg-hover)] transition-colors group"
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <FolderOpen className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
+                  <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] font-semibold">
+                    {doc.sourceType}
+                  </span>
+                </div>
+                <div className="text-sm font-medium text-[var(--text-heading)] line-clamp-2 leading-snug">
+                  {doc.title}
+                </div>
+                {doc.wordCount > 0 && (
+                  <div className="text-[11px] text-[var(--text-muted)] mt-2 tabular-nums">
+                    {doc.wordCount.toLocaleString('fr')} mots
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Recent strip */}
       {recent.length > 0 && (
         <div className="mt-10">
@@ -207,12 +289,14 @@ export default function CRFPAAtelier() {
             {recent.map(r => {
               const base = r.kind === 'syllogisme' ? '/legal/syllogisme'
                 : r.kind === 'plan' ? '/legal/plan'
-                : '/legal/fiche'
+                : r.kind === 'fiche' ? '/legal/fiche'
+                : '/legal/commentaire'
               const href = `${base}?session=${r.id}`
               const kindLabel = r.kind === 'syllogisme' ? 'Syllogisme'
                 : r.kind === 'plan' ? 'Plan'
-                : 'Fiche d\'arrêt'
-              const scoreMax = r.kind === 'fiche' ? 25 : 30
+                : r.kind === 'fiche' ? 'Fiche d\'arrêt'
+                : 'Commentaire'
+              const scoreMax = (r.kind === 'fiche' || r.kind === 'commentaire') ? 25 : 30
               return (
                 <Link
                   key={r.id}

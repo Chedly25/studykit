@@ -175,3 +175,41 @@ export interface FicheGrading {
   }
   gradedAt: string
 }
+
+// ─── Commentaire d'arrêt Coach ───────────────────────────────────
+
+export type CommentaireAxis =
+  | 'accroche'
+  | 'interet'
+  | 'problematique'
+  | 'plan'
+  | 'articulation'
+
+export interface CommentaireTask {
+  decision: FicheDecision           // reuses the same decision shape
+  generatedAt: string
+}
+
+export interface CommentaireSubmission {
+  introduction: string              // accroche + présentation + intérêt + problématique + annonce
+  I: { title: string; IA: string; IB: string }
+  II: { title: string; IIA: string; IIB: string }
+  submittedAt: string
+}
+
+export interface CommentaireAxisScore {
+  axis: CommentaireAxis
+  label: string
+  score: number                     // 0-5
+  feedback: string
+}
+
+export interface CommentaireGrading {
+  axes: CommentaireAxisScore[]      // 5 entries
+  overall: {
+    score: number                   // 0-25
+    topMistake: string
+    strength: string
+  }
+  gradedAt: string
+}

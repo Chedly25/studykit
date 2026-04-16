@@ -3,7 +3,7 @@
  * Currently active: Chat, Syllogisme. Disabled placeholders telegraph future features.
  */
 import { NavLink } from 'react-router-dom'
-import { MessageSquare, PenSquare, FileText, ListTree } from 'lucide-react'
+import { MessageSquare, PenSquare, FileText, ListTree, BookMarked } from 'lucide-react'
 
 interface TabDef {
   to?: string
@@ -18,6 +18,7 @@ const TABS: TabDef[] = [
   { to: '/legal/syllogisme', label: 'Syllogisme', icon: PenSquare },
   { to: '/legal/plan', label: 'Plan détaillé', icon: ListTree },
   { to: '/legal/fiche', label: 'Fiche d\'arrêt', icon: FileText },
+  { to: '/legal/commentaire', label: 'Commentaire', icon: BookMarked },
 ]
 
 export function LegalPageTabs() {

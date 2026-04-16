@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-import { History, ArrowRight, PenSquare, ListTree, FileText } from 'lucide-react'
+import { History, ArrowRight, PenSquare, ListTree, FileText, BookMarked } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileVertical } from '../hooks/useProfileVertical'
 import {
@@ -15,16 +15,17 @@ import {
 } from '../ai/coaching/syllogismeStore'
 import { listPlanSessions, type PlanSessionView } from '../ai/coaching/planStore'
 import { listFicheSessions, type FicheSessionView } from '../ai/coaching/ficheArretStore'
+import { listCommentaireSessions, type CommentaireSessionView } from '../ai/coaching/commentaireStore'
 
-type Filter = 'all' | 'syllogisme' | 'plan' | 'fiche'
+type Filter = 'all' | 'syllogisme' | 'plan' | 'fiche' | 'commentaire'
 
 interface Row {
-  kind: 'syllogisme' | 'plan' | 'fiche'
+  kind: 'syllogisme' | 'plan' | 'fiche' | 'commentaire'
   id: string
   primary: string       // theme / question / chamber
   secondary?: string    // difficulty / themeLabel / reference
   score?: number
-  maxScore: number      // 30 for syllogisme+plan, 25 for fiche
+  maxScore: number      // 30 for syllogisme+plan, 25 for fiche+commentaire
   status: 'en-cours' | 'soumis' | 'corrigé'
   createdAt: string
 }
@@ -80,6 +81,19 @@ function toRowFiche(f: FicheSessionView): Row {
   }
 }
 
+function toRowCommentaire(c: CommentaireSessionView): Row {
+  return {
+    kind: 'commentaire',
+    id: c.id,
+    primary: c.task.decision.chamber,
+    secondary: c.task.decision.reference,
+    score: c.grading?.overall.score,
+    maxScore: 25,
+    status: c.grading ? 'corrigé' : c.submission ? 'soumis' : 'en-cours',
+    createdAt: c.createdAt,
+  }
+}
+
 export default function CRFPAHistorique() {
   const { activeProfile } = useExamProfile()
   const { isCRFPA } = useProfileVertical()
@@ -88,6 +102,7 @@ export default function CRFPAHistorique() {
   const [syllogismes, setSyllogismes] = useState<SyllogismeSessionView[]>([])
   const [plans, setPlans] = useState<PlanSessionView[]>([])
   const [fiches, setFiches] = useState<FicheSessionView[]>([])
+  const [commentaires, setCommentaires] = useState<CommentaireSessionView[]>([])
   const [filter, setFilter] = useState<Filter>('all')
 
   useEffect(() => {
@@ -96,11 +111,13 @@ export default function CRFPAHistorique() {
       listSyllogismeSessions(examProfileId),
       listPlanSessions(examProfileId),
       listFicheSessions(examProfileId),
-    ]).then(([s, p, f]) => {
+      listCommentaireSessions(examProfileId),
+    ]).then(([s, p, f, c]) => {
       if (cancelled) return
       setSyllogismes(s)
       setPlans(p)
       setFiches(f)
+      setCommentaires(c)
     })
     return () => { cancelled = true }
   }, [examProfileId])
@@ -110,10 +127,11 @@ export default function CRFPAHistorique() {
       ...syllogismes.map(toRow),
       ...plans.map(toRowPlan),
       ...fiches.map(toRowFiche),
+      ...commentaires.map(toRowCommentaire),
     ]
     const filtered = filter === 'all' ? all : all.filter(r => r.kind === filter)
     return filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  }, [syllogismes, plans, fiches, filter])
+  }, [syllogismes, plans, fiches, commentaires, filter])
 
   if (!isCRFPA) return <Navigate to="/dashboard" replace />
 
@@ -139,11 +157,12 @@ export default function CRFPAHistorique() {
 
       {/* Filter tabs */}
       <div className="flex gap-1 mb-4 border-b border-[var(--border-card)]">
-        {(['all', 'syllogisme', 'plan', 'fiche'] as Filter[]).map(f => {
+        {(['all', 'syllogisme', 'plan', 'fiche', 'commentaire'] as Filter[]).map(f => {
           const label = f === 'all' ? 'Tous'
             : f === 'syllogisme' ? 'Syllogismes'
             : f === 'plan' ? 'Plans'
-            : 'Fiches'
+            : f === 'fiche' ? 'Fiches'
+            : 'Commentaires'
           const count = f === 'all' ? rows.length : 0  // count shown only on "all"
           const active = filter === f
           return (
@@ -182,14 +201,17 @@ export default function CRFPAHistorique() {
           {rows.map(r => {
             const base = r.kind === 'syllogisme' ? '/legal/syllogisme'
               : r.kind === 'plan' ? '/legal/plan'
-              : '/legal/fiche'
+              : r.kind === 'fiche' ? '/legal/fiche'
+              : '/legal/commentaire'
             const href = `${base}?session=${r.id}`
             const Icon = r.kind === 'syllogisme' ? PenSquare
               : r.kind === 'plan' ? ListTree
-              : FileText
+              : r.kind === 'fiche' ? FileText
+              : BookMarked
             const kindLabel = r.kind === 'syllogisme' ? 'Syllogisme'
               : r.kind === 'plan' ? 'Plan'
-              : 'Fiche d\'arrêt'
+              : r.kind === 'fiche' ? 'Fiche d\'arrêt'
+              : 'Commentaire'
             return (
               <Link
                 key={r.id}

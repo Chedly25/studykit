@@ -6,8 +6,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useAuth } from '@clerk/clerk-react'
 import { runAgentLoop } from '../ai/agentLoop'
-import { LEGAL_CHAT_SYSTEM_PROMPT } from '../ai/prompts/legalChatPrompt'
+import { buildLegalChatSystemPrompt } from '../ai/prompts/legalChatPrompt'
 import { useExamProfile } from './useExamProfile'
+import { useProfileVertical } from './useProfileVertical'
 import {
   createConversation,
   getConversations,
@@ -74,6 +75,7 @@ export function useLegalChat() {
   const abortRef = useRef<AbortController | null>(null)
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
+  const { isCRFPA } = useProfileVertical()
 
   const lastArticles = extractLastArticles(messages)
 
@@ -152,7 +154,7 @@ export function useLegalChat() {
       const token = await getToken()
       const result = await runAgentLoop({
         messages: updatedMessages,
-        systemPrompt: LEGAL_CHAT_SYSTEM_PROMPT,
+        systemPrompt: buildLegalChatSystemPrompt(isCRFPA),
         examProfileId: activeProfile?.id ?? 'legal-chat',
         authToken: token ?? undefined,
         getToken: async () => getToken(),
@@ -182,7 +184,7 @@ export function useLegalChat() {
       setCurrentToolCall(null)
       abortRef.current = null
     }
-  }, [messages, isLoading, getToken, activeProfile?.id, conversationId, refreshConversations])
+  }, [messages, isLoading, getToken, activeProfile?.id, conversationId, refreshConversations, isCRFPA])
 
   const cancel = useCallback(() => {
     abortRef.current?.abort()

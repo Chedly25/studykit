@@ -5,6 +5,8 @@
 import { Send, Loader2 } from 'lucide-react'
 import type { PlanTask } from '../../ai/coaching/types'
 import type { PlanDraft } from '../../hooks/usePlanCoach'
+import { CoachTimer } from './CoachTimer'
+import { TIMER_DEFAULTS } from './coachTimerDefaults'
 
 interface Props {
   task: PlanTask
@@ -50,6 +52,9 @@ export function PlanEditor({ task, draft, onChange, onSubmit, onCancel, busy, er
           {task.question}
         </p>
       </div>
+
+      {/* Optional timer */}
+      <CoachTimer sessionKey={`plan-${task.generatedAt}`} defaultSeconds={TIMER_DEFAULTS.plan} />
 
       {/* Problématique */}
       <Field

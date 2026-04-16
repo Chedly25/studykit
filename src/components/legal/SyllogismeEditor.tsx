@@ -6,6 +6,8 @@ import { Send, Loader2 } from 'lucide-react'
 import type { SyllogismeTask } from '../../ai/coaching/types'
 import type { SubmissionDraft } from '../../hooks/useSyllogismeCoach'
 import { SyllogismeExample } from './SyllogismeExample'
+import { CoachTimer } from './CoachTimer'
+import { TIMER_DEFAULTS } from './coachTimerDefaults'
 
 interface Props {
   task: SyllogismeTask
@@ -46,6 +48,9 @@ export function SyllogismeEditor({ task, draft, onChange, onSubmit, onCancel, bu
           {task.question}
         </p>
       </div>
+
+      {/* Optional timer — exam-realism */}
+      <CoachTimer sessionKey={`syllogisme-${task.generatedAt}`} defaultSeconds={TIMER_DEFAULTS.syllogisme} />
 
       {/* Worked example — collapsible pedagogical aid */}
       <SyllogismeExample />
