@@ -1,48 +1,61 @@
-import { ChevronDown, ChevronUp, BookOpen } from 'lucide-react'
+import { useState } from 'react'
+import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react'
 import type { LegalArticle } from '../../hooks/useLegalChat'
 
 interface Props {
   articles: LegalArticle[]
-  open: boolean
-  onToggle: () => void
 }
 
-export function LegalArticlesPanel({ articles, open, onToggle }: Props) {
+export function LegalArticlesPanel({ articles }: Props) {
+  const [expanded, setExpanded] = useState<Set<number>>(new Set())
   if (articles.length === 0) return null
 
-  return (
-    <div className="glass-card overflow-hidden">
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between p-4 hover:bg-[var(--bg-hover)] transition-colors"
-      >
-        <span className="flex items-center gap-2 text-sm font-medium text-[var(--text-heading)]">
-          <BookOpen className="w-4 h-4" />
-          {articles.length} article{articles.length > 1 ? 's' : ''} trouvé{articles.length > 1 ? 's' : ''}
-        </span>
-        {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-      </button>
+  const toggle = (i: number) => {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i); else next.add(i)
+      return next
+    })
+  }
 
-      {open && (
-        <div className="border-t border-[var(--border-card)] max-h-80 overflow-y-auto">
-          {articles.map((article, i) => (
-            <div key={i} className="p-4 border-b border-[var(--border-card)] last:border-b-0">
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[var(--accent-bg)] text-[var(--accent-text)]">
-                  Art. {article.articleNum}
-                </span>
-                <span className="text-xs text-[var(--text-muted)]">{article.codeName}</span>
-              </div>
-              {article.breadcrumb && (
-                <p className="text-xs text-[var(--text-muted)] mb-2">{article.breadcrumb}</p>
-              )}
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed line-clamp-4">
-                {article.text}
-              </p>
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+        <BookOpen className="w-3.5 h-3.5" />
+        Sources citées ({articles.length})
+      </div>
+      <div className="space-y-2">
+        {articles.map((article, i) => {
+          const isOpen = expanded.has(i)
+          const isLong = article.text.length > 300
+          return (
+            <div key={i} className="glass-card overflow-hidden">
+              <button
+                onClick={() => isLong && toggle(i)}
+                className={`w-full text-left p-3 ${isLong ? 'cursor-pointer hover:bg-[var(--bg-hover)]' : 'cursor-default'} transition-colors`}
+              >
+                <div className="flex items-start gap-2 mb-1.5">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[var(--accent-bg)] text-[var(--accent-text)] shrink-0">
+                    Art. {article.articleNum}
+                  </span>
+                  <span className="text-xs text-[var(--text-muted)] font-medium pt-0.5">{article.codeName}</span>
+                  {isLong && (
+                    <span className="ml-auto text-[var(--text-muted)]">
+                      {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </span>
+                  )}
+                </div>
+                {article.breadcrumb && (
+                  <p className="text-xs text-[var(--text-muted)] mb-1.5 pl-1">{article.breadcrumb}</p>
+                )}
+                <p className={`text-sm text-[var(--text-secondary)] leading-relaxed pl-1 ${!isOpen && isLong ? 'line-clamp-3' : ''}`}>
+                  {article.text}
+                </p>
+              </button>
             </div>
-          ))}
-        </div>
-      )}
+          )
+        })}
+      </div>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Scale, Send, Loader2, Trash2 } from 'lucide-react'
+import { Scale, Send, Loader2, Trash2, Paperclip, X, FileText } from 'lucide-react'
 import { useLegalChat } from '../hooks/useLegalChat'
 import { LegalMessageBubble } from '../components/legal/LegalMessageBubble'
 import { LegalArticlesPanel } from '../components/legal/LegalArticlesPanel'
@@ -11,11 +11,18 @@ const SUGGESTIONS = [
   'Quels sont les droits du locataire en cas de logement insalubre ?',
 ]
 
+interface Attachment {
+  name: string
+  content: string
+  size: number
+}
+
 export default function LegalChat() {
   const [input, setInput] = useState('')
-  const [articlesOpen, setArticlesOpen] = useState(false)
+  const [attachments, setAttachments] = useState<Attachment[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const {
     messages,
@@ -28,150 +35,224 @@ export default function LegalChat() {
     clear,
   } = useLegalChat()
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingText])
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    for (const file of files) {
+      if (file.size > 1024 * 1024 * 2) { // 2MB limit
+        alert(`${file.name} est trop volumineux (max 2 Mo)`)
+        continue
+      }
+      const content = await file.text()
+      setAttachments(prev => [...prev, { name: file.name, content, size: file.size }])
+    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const removeAttachment = (i: number) => {
+    setAttachments(prev => prev.filter((_, idx) => idx !== i))
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || isLoading) return
-    sendMessage(input.trim())
+    if ((!input.trim() && attachments.length === 0) || isLoading) return
+
+    // Build message with attachments
+    let fullMessage = input.trim()
+    if (attachments.length > 0) {
+      const ctx = attachments.map(a => `--- Document joint : ${a.name} ---\n${a.content.slice(0, 10000)}`).join('\n\n')
+      fullMessage = `${fullMessage}\n\n## Contexte (documents fournis par l'utilisateur)\n\n${ctx}`
+    }
+
+    sendMessage(fullMessage)
     setInput('')
-    setArticlesOpen(false)
+    setAttachments([])
   }
 
   const handleSuggestion = (text: string) => {
     sendMessage(text)
-    setArticlesOpen(false)
   }
 
-  // Extract displayable messages (skip tool_use/tool_result blocks)
-  const displayMessages = messages.filter(m => {
-    if (typeof m.content === 'string') return true
-    if (Array.isArray(m.content)) {
-      return m.content.some(b => b.type === 'text')
+  // Extract displayable messages — preserve assistant text between tool calls
+  const displayMessages: Array<{ role: 'user' | 'assistant'; text: string }> = []
+  for (const m of messages) {
+    if (m.role === 'user') {
+      const text = typeof m.content === 'string'
+        ? m.content
+        : (m.content as Array<{ type: string; text?: string }>).filter(b => b.type === 'text').map(b => b.text ?? '').join('')
+      // Hide the raw context dump from display
+      const userVisible = text.split('\n\n## Contexte (documents fournis par l\'utilisateur)')[0]
+      if (userVisible.trim()) displayMessages.push({ role: 'user', text: userVisible })
+    } else if (m.role === 'assistant') {
+      const text = typeof m.content === 'string'
+        ? m.content
+        : (m.content as Array<{ type: string; text?: string }>).filter(b => b.type === 'text').map(b => b.text ?? '').join('')
+      if (text.trim()) displayMessages.push({ role: 'assistant', text })
     }
-    return false
-  }).map(m => {
-    const text = typeof m.content === 'string'
-      ? m.content
-      : (m.content as Array<{ type: string; text?: string }>).filter(b => b.type === 'text').map(b => b.text ?? '').join('')
-    return { role: m.role as 'user' | 'assistant', text }
-  }).filter(m => m.text.trim())
+  }
 
   const hasMessages = displayMessages.length > 0 || streamingText
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-card)]">
-        <div className="flex items-center gap-3">
-          <Scale className="w-5 h-5 text-[var(--accent-text)]" />
-          <div>
-            <h1 className="text-lg font-semibold text-[var(--text-heading)]">Recherche juridique</h1>
-            <p className="text-xs text-[var(--text-muted)]">15 codes français — 65 000 articles</p>
-          </div>
-        </div>
-        {hasMessages && (
-          <button onClick={clear} className="p-2 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)]" title="Nouvelle recherche">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        {!hasMessages ? (
-          <div className="flex flex-col items-center justify-center h-full gap-8">
-            <div className="text-center">
-              <Scale className="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)] opacity-40" />
-              <h2 className="text-xl font-semibold text-[var(--text-heading)] mb-2">Posez votre question de droit</h2>
-              <p className="text-sm text-[var(--text-muted)] max-w-md">
-                Recherche sémantique dans le Code civil, Code pénal, Code du travail, Code de commerce et 11 autres codes français.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
-              {SUGGESTIONS.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSuggestion(s)}
-                  className="text-left text-sm px-4 py-3 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] transition-colors"
-                >
-                  {s}
-                </button>
-              ))}
+    <div className="flex h-[calc(100vh-4rem)] max-w-7xl mx-auto">
+      {/* Main chat column */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-card)]">
+          <div className="flex items-center gap-3">
+            <Scale className="w-5 h-5 text-[var(--accent-text)]" />
+            <div>
+              <h1 className="text-lg font-semibold text-[var(--text-heading)]">Recherche juridique</h1>
+              <p className="text-xs text-[var(--text-muted)]">Codes + jurisprudence + Constitution + CEDH + RGPD</p>
             </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {displayMessages.map((m, i) => (
-              <LegalMessageBubble key={i} role={m.role} content={m.text} />
-            ))}
-            {streamingText && (
-              <LegalMessageBubble role="assistant" content={streamingText} />
-            )}
-            {isLoading && !streamingText && currentToolCall && (
-              <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] px-4 py-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {currentToolCall === 'searchLegalCodes'
-                  ? 'Recherche dans les codes français...'
-                  : currentToolCall === 'createFlashcardDeck'
-                    ? 'Création des flashcards...'
-                    : 'Traitement...'}
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
-
-      {/* Articles panel */}
-      {lastArticles.length > 0 && !isLoading && (
-        <div className="px-4 pb-2">
-          <LegalArticlesPanel
-            articles={lastArticles}
-            open={articlesOpen}
-            onToggle={() => setArticlesOpen(!articlesOpen)}
-          />
-        </div>
-      )}
-
-      {/* Input */}
-      <form onSubmit={handleSubmit} className="px-4 pb-4 pt-2">
-        <div className="flex items-center gap-2 p-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] focus-within:border-[var(--accent-text)] transition-colors">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ex : Quelles sont les conditions de validité d'un contrat ?"
-            className="flex-1 bg-transparent px-2 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none"
-            disabled={isLoading}
-          />
-          {isLoading ? (
-            <button type="button" onClick={cancel} className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20">
-              <X className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={!input.trim()}
-              className="p-2 rounded-lg bg-[var(--accent-bg)] text-[var(--accent-text)] disabled:opacity-30 hover:opacity-90 transition-opacity"
-            >
-              <Send className="w-4 h-4" />
+          {hasMessages && (
+            <button onClick={clear} className="p-2 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)]" title="Nouvelle recherche">
+              <Trash2 className="w-4 h-4" />
             </button>
           )}
         </div>
-      </form>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-6">
+          {!hasMessages ? (
+            <div className="flex flex-col items-center justify-center h-full gap-8">
+              <div className="text-center">
+                <Scale className="w-12 h-12 mx-auto mb-4 text-[var(--text-muted)] opacity-40" />
+                <h2 className="text-xl font-semibold text-[var(--text-heading)] mb-2">Posez votre question de droit</h2>
+                <p className="text-sm text-[var(--text-muted)] max-w-md">
+                  Recherche sémantique dans 60 000+ sources : 15 codes français, jurisprudence de la Cour de cassation, bloc de constitutionnalité, CEDH, RGPD.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+                {SUGGESTIONS.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSuggestion(s)}
+                    className="text-left text-sm px-4 py-3 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] transition-colors"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {displayMessages.map((m, i) => (
+                <LegalMessageBubble key={i} role={m.role} content={m.text} />
+              ))}
+              {streamingText && (
+                <LegalMessageBubble role="assistant" content={streamingText} />
+              )}
+              {isLoading && (
+                <LoadingIndicator toolCall={currentToolCall} hasStreamingText={!!streamingText} />
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+
+        {/* Input */}
+        <form onSubmit={handleSubmit} className="px-4 pb-4 pt-2">
+          {/* Attachments preview */}
+          {attachments.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {attachments.map((att, i) => (
+                <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-card)] text-sm">
+                  <FileText className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                  <span className="text-[var(--text-secondary)] max-w-[180px] truncate">{att.name}</span>
+                  <span className="text-xs text-[var(--text-muted)]">{(att.size / 1024).toFixed(0)}ko</span>
+                  <button type="button" onClick={() => removeAttachment(i)} className="text-[var(--text-muted)] hover:text-red-500">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-end gap-2 p-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] focus-within:border-[var(--accent-text)] transition-colors">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.md,.pdf,.docx"
+              multiple
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)] shrink-0"
+              title="Joindre un document (contrat, courrier, etc.)"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSubmit(e)
+                }
+              }}
+              placeholder="Ex : Quelles sont les conditions de validité d'un contrat ?"
+              rows={1}
+              className="flex-1 bg-transparent px-2 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none resize-none max-h-40"
+              disabled={isLoading}
+            />
+            {isLoading ? (
+              <button type="button" onClick={cancel} className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim() && attachments.length === 0}
+                className="p-2 rounded-lg bg-[var(--accent-bg)] text-[var(--accent-text)] disabled:opacity-30 hover:opacity-90 transition-opacity shrink-0"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-[var(--text-muted)] mt-2 px-1">
+            Vous pouvez joindre des documents (contrat, courrier) pour contextualiser votre question.
+          </p>
+        </form>
+      </div>
+
+      {/* Articles sidebar (desktop) */}
+      {lastArticles.length > 0 && (
+        <aside className="hidden lg:block w-96 border-l border-[var(--border-card)] overflow-y-auto p-4">
+          <LegalArticlesPanel articles={lastArticles} />
+        </aside>
+      )}
     </div>
   )
 }
 
-function X({ className }: { className?: string }) {
+function LoadingIndicator({ toolCall, hasStreamingText }: { toolCall: string | null; hasStreamingText: boolean }) {
+  // Don't show indicator if we're streaming text (user already sees response)
+  if (hasStreamingText) return null
+
+  const label = toolCall === 'searchLegalCodes'
+    ? 'Recherche dans les codes et la jurisprudence'
+    : toolCall === 'createFlashcardDeck'
+      ? 'Création des fiches'
+      : 'Analyse de la question'
+
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-    </svg>
+    <div className="flex items-center gap-3 px-4 py-3">
+      <div className="flex gap-1">
+        <span className="w-2 h-2 rounded-full bg-[var(--accent-text)] animate-bounce" style={{ animationDelay: '0ms' }} />
+        <span className="w-2 h-2 rounded-full bg-[var(--accent-text)] animate-bounce" style={{ animationDelay: '150ms' }} />
+        <span className="w-2 h-2 rounded-full bg-[var(--accent-text)] animate-bounce" style={{ animationDelay: '300ms' }} />
+      </div>
+      <span className="text-sm text-[var(--text-muted)]">{label}...</span>
+    </div>
   )
 }
