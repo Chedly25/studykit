@@ -900,7 +900,7 @@ export interface MacroRoadmap {
 }
 
 // ─── CRFPA Coaching Sessions ────────────────────────────────────
-export type CoachingType = 'syllogisme' | 'fiche-arret' | 'plan-detaille' | 'commentaire-arret'
+export type CoachingType = 'syllogisme' | 'fiche-arret' | 'plan-detaille' | 'commentaire-arret' | 'note-synthese'
 
 /**
  * A coaching attempt: one task generated for the student, optionally submitted and graded.

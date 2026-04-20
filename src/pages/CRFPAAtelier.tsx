@@ -9,13 +9,14 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useUser } from '@clerk/clerk-react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { PenSquare, ListTree, FileText, BookMarked, Scale, FolderOpen, RotateCcw, ArrowRight, Upload } from 'lucide-react'
+import { PenSquare, ListTree, FileText, BookMarked, Scale, FolderOpen, RotateCcw, ArrowRight, Upload, FileCheck } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileVertical } from '../hooks/useProfileVertical'
 import { listSyllogismeSessions, type SyllogismeSessionView } from '../ai/coaching/syllogismeStore'
 import { listPlanSessions, type PlanSessionView } from '../ai/coaching/planStore'
 import { listFicheSessions, type FicheSessionView } from '../ai/coaching/ficheArretStore'
 import { listCommentaireSessions, type CommentaireSessionView } from '../ai/coaching/commentaireStore'
+import { listNoteSyntheseSessions, type NoteSyntheseSessionView } from '../ai/coaching/noteSyntheseStore'
 import { db } from '../db'
 
 type RecentItem =
@@ -23,6 +24,7 @@ type RecentItem =
   | { kind: 'plan'; id: string; title: string; score?: number; createdAt: string }
   | { kind: 'fiche'; id: string; title: string; score?: number; createdAt: string }
   | { kind: 'commentaire'; id: string; title: string; score?: number; createdAt: string }
+  | { kind: 'note-synthese'; id: string; title: string; score?: number; createdAt: string }
 
 const FALLBACK_PROFILE_ID = 'legal-chat'
 
@@ -37,6 +39,7 @@ export default function CRFPAAtelier() {
   const [plans, setPlans] = useState<PlanSessionView[]>([])
   const [fiches, setFiches] = useState<FicheSessionView[]>([])
   const [commentaires, setCommentaires] = useState<CommentaireSessionView[]>([])
+  const [notesSynthese, setNotesSynthese] = useState<NoteSyntheseSessionView[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -45,12 +48,14 @@ export default function CRFPAAtelier() {
       listPlanSessions(examProfileId),
       listFicheSessions(examProfileId),
       listCommentaireSessions(examProfileId),
-    ]).then(([s, p, f, c]) => {
+      listNoteSyntheseSessions(examProfileId),
+    ]).then(([s, p, f, c, ns]) => {
       if (cancelled) return
       setSyllogismes(s)
       setPlans(p)
       setFiches(f)
       setCommentaires(c)
+      setNotesSynthese(ns)
     })
     return () => { cancelled = true }
   }, [examProfileId])
@@ -87,6 +92,7 @@ export default function CRFPAAtelier() {
   const inProgressPlan = plans.find(p => p.submission && !p.grading)
   const inProgressFiche = fiches.find(f => f.submission && !f.grading)
   const inProgressCommentaire = commentaires.find(c => c.submission && !c.grading)
+  const inProgressSynthese = notesSynthese.find(n => n.task && !n.generating && n.submission && !n.grading)
   const inProgress = inProgressSyllogisme
     ? { kind: 'syllogisme' as const, id: inProgressSyllogisme.id, title: inProgressSyllogisme.task.theme }
     : inProgressPlan
@@ -95,6 +101,8 @@ export default function CRFPAAtelier() {
     ? { kind: 'fiche' as const, id: inProgressFiche.id, title: inProgressFiche.task.decision.chamber }
     : inProgressCommentaire
     ? { kind: 'commentaire' as const, id: inProgressCommentaire.id, title: inProgressCommentaire.task.decision.chamber }
+    : inProgressSynthese
+    ? { kind: 'note-synthese' as const, id: inProgressSynthese.id, title: inProgressSynthese.task!.dossierTitle }
     : null
 
   // Recent 3 graded
@@ -135,6 +143,15 @@ export default function CRFPAAtelier() {
         score: c.grading!.overall.score,
         createdAt: c.createdAt,
       })),
+    ...notesSynthese
+      .filter(n => n.grading)
+      .map(n => ({
+        kind: 'note-synthese' as const,
+        id: n.id,
+        title: n.task?.dossierTitle ?? 'Note de synthèse',
+        score: n.grading!.overall.score,
+        createdAt: n.createdAt,
+      })),
   ]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 3)
@@ -144,7 +161,8 @@ export default function CRFPAAtelier() {
     const base = inProgress.kind === 'syllogisme' ? '/legal/syllogisme'
       : inProgress.kind === 'plan' ? '/legal/plan'
       : inProgress.kind === 'fiche' ? '/legal/fiche'
-      : '/legal/commentaire'
+      : inProgress.kind === 'commentaire' ? '/legal/commentaire'
+      : '/legal/synthese'
     navigate(`${base}?session=${inProgress.id}`)
   }
 
@@ -184,7 +202,8 @@ export default function CRFPAAtelier() {
               {inProgress.kind === 'syllogisme' ? 'Syllogisme'
                 : inProgress.kind === 'plan' ? 'Plan détaillé'
                 : inProgress.kind === 'fiche' ? 'Fiche d\'arrêt'
-                : 'Commentaire d\'arrêt'} — {inProgress.title}
+                : inProgress.kind === 'commentaire' ? 'Commentaire d\'arrêt'
+                : 'Note de synthèse'} — {inProgress.title}
             </div>
           </div>
           <ArrowRight className="w-5 h-5 text-[var(--accent-text)] group-hover:translate-x-1 transition-transform shrink-0" />
@@ -216,6 +235,12 @@ export default function CRFPAAtelier() {
           icon={BookMarked}
           title="Commentaire d'arrêt"
           hint="Introduction et plan d'un commentaire sur décision réelle."
+        />
+        <ActionCard
+          to="/legal/synthese"
+          icon={FileCheck}
+          title="Note de synthèse"
+          hint="Dossier de documents réels — rédige ta synthèse en 4 pages."
         />
         <ActionCard
           to="/legal"
@@ -290,13 +315,16 @@ export default function CRFPAAtelier() {
               const base = r.kind === 'syllogisme' ? '/legal/syllogisme'
                 : r.kind === 'plan' ? '/legal/plan'
                 : r.kind === 'fiche' ? '/legal/fiche'
-                : '/legal/commentaire'
+                : r.kind === 'commentaire' ? '/legal/commentaire'
+                : '/legal/synthese'
               const href = `${base}?session=${r.id}`
               const kindLabel = r.kind === 'syllogisme' ? 'Syllogisme'
                 : r.kind === 'plan' ? 'Plan'
                 : r.kind === 'fiche' ? 'Fiche d\'arrêt'
-                : 'Commentaire'
-              const scoreMax = (r.kind === 'fiche' || r.kind === 'commentaire') ? 25 : 30
+                : r.kind === 'commentaire' ? 'Commentaire'
+                : 'Synthèse'
+              const scoreMax = r.kind === 'note-synthese' ? 20
+                : (r.kind === 'fiche' || r.kind === 'commentaire') ? 25 : 30
               return (
                 <Link
                   key={r.id}

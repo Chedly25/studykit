@@ -213,3 +213,69 @@ export interface CommentaireGrading {
   }
   gradedAt: string
 }
+
+// ─── Note de synthèse Coach ──────────────────────────────────────
+
+export interface NoteSyntheseDossierDocument {
+  docNumber: number
+  type: string                     // 'legislation' | 'jurisprudence-cass' | etc.
+  title: string
+  sourceUrl: string
+  content: string                  // curated excerpt (600-1200 words)
+}
+
+export interface NoteSyntheseRubricCriterion {
+  criterion: string
+  points: number
+  details?: string
+}
+
+export interface NoteSyntheseTask {
+  dossierTitle: string
+  problematique: string
+  planSuggere: { I: string; IA: string; IB: string; II: string; IIA: string; IIB: string }
+  documents: NoteSyntheseDossierDocument[]
+  modelSynthesis: string
+  rubric: {
+    criteria: NoteSyntheseRubricCriterion[]
+    totalPoints: number
+    documentCoverageMap: Record<string, string>
+  }
+  generatedAt: string
+  practiceExamSessionId: string
+}
+
+export interface NoteSyntheseSubmission {
+  text: string
+  submittedAt: string
+}
+
+export type NoteSyntheseAxis =
+  | 'documents'
+  | 'plan'
+  | 'problematique'
+  | 'qualite'
+  | 'neutralite'
+  | 'longueur'
+  | 'redaction'
+  | 'equilibre'
+
+export interface NoteSyntheseAxisScore {
+  axis: NoteSyntheseAxis
+  label: string
+  score: number
+  max: number
+  feedback: string
+}
+
+export interface NoteSyntheseGrading {
+  axes: NoteSyntheseAxisScore[]     // 8 entries
+  overall: {
+    score: number                   // 0-20
+    topMistake: string
+    strength: string
+  }
+  documentsCited: number[]
+  documentsMissed: number[]
+  gradedAt: string
+}

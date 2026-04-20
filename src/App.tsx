@@ -84,6 +84,7 @@ const SyllogismeCoach = lazyWithRetry(() => import('./pages/SyllogismeCoach'))
 const PlanCoach = lazyWithRetry(() => import('./pages/PlanCoach'))
 const FicheArretCoach = lazyWithRetry(() => import('./pages/FicheArretCoach'))
 const CommentaireCoach = lazyWithRetry(() => import('./pages/CommentaireCoach'))
+const NoteSyntheseCoach = lazyWithRetry(() => import('./pages/NoteSyntheseCoach'))
 
 // CRFPA Vertical
 const CRFPAAtelier = lazyWithRetry(() => import('./pages/CRFPAAtelier'))
@@ -177,6 +178,7 @@ export default function App() {
           <Route path="legal/plan" element={<ProtectedRoute><PlanCoach /></ProtectedRoute>} />
           <Route path="legal/fiche" element={<ProtectedRoute><FicheArretCoach /></ProtectedRoute>} />
           <Route path="legal/commentaire" element={<ProtectedRoute><CommentaireCoach /></ProtectedRoute>} />
+          <Route path="legal/synthese" element={<ProtectedRoute><NoteSyntheseCoach /></ProtectedRoute>} />
 
           {/* CRFPA Vertical */}
           <Route path="accueil" element={<ProtectedRoute><CRFPAAtelier /></ProtectedRoute>} />

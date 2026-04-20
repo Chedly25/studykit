@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-import { History, ArrowRight, PenSquare, ListTree, FileText, BookMarked } from 'lucide-react'
+import { History, ArrowRight, PenSquare, ListTree, FileText, BookMarked, FileCheck } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileVertical } from '../hooks/useProfileVertical'
 import {
@@ -16,11 +16,12 @@ import {
 import { listPlanSessions, type PlanSessionView } from '../ai/coaching/planStore'
 import { listFicheSessions, type FicheSessionView } from '../ai/coaching/ficheArretStore'
 import { listCommentaireSessions, type CommentaireSessionView } from '../ai/coaching/commentaireStore'
+import { listNoteSyntheseSessions, type NoteSyntheseSessionView } from '../ai/coaching/noteSyntheseStore'
 
-type Filter = 'all' | 'syllogisme' | 'plan' | 'fiche' | 'commentaire'
+type Filter = 'all' | 'syllogisme' | 'plan' | 'fiche' | 'commentaire' | 'note-synthese'
 
 interface Row {
-  kind: 'syllogisme' | 'plan' | 'fiche' | 'commentaire'
+  kind: 'syllogisme' | 'plan' | 'fiche' | 'commentaire' | 'note-synthese'
   id: string
   primary: string       // theme / question / chamber
   secondary?: string    // difficulty / themeLabel / reference
@@ -94,6 +95,19 @@ function toRowCommentaire(c: CommentaireSessionView): Row {
   }
 }
 
+function toRowNoteSynthese(n: NoteSyntheseSessionView): Row {
+  return {
+    kind: 'note-synthese',
+    id: n.id,
+    primary: n.task?.dossierTitle ?? 'Dossier en cours...',
+    secondary: n.task?.problematique,
+    score: n.grading?.overall.score,
+    maxScore: 20,
+    status: n.generating ? 'en-cours' : n.grading ? 'corrigé' : n.submission ? 'soumis' : 'en-cours',
+    createdAt: n.createdAt,
+  }
+}
+
 export default function CRFPAHistorique() {
   const { activeProfile } = useExamProfile()
   const { isCRFPA } = useProfileVertical()
@@ -103,6 +117,7 @@ export default function CRFPAHistorique() {
   const [plans, setPlans] = useState<PlanSessionView[]>([])
   const [fiches, setFiches] = useState<FicheSessionView[]>([])
   const [commentaires, setCommentaires] = useState<CommentaireSessionView[]>([])
+  const [notesSynthese, setNotesSynthese] = useState<NoteSyntheseSessionView[]>([])
   const [filter, setFilter] = useState<Filter>('all')
 
   useEffect(() => {
@@ -112,12 +127,14 @@ export default function CRFPAHistorique() {
       listPlanSessions(examProfileId),
       listFicheSessions(examProfileId),
       listCommentaireSessions(examProfileId),
-    ]).then(([s, p, f, c]) => {
+      listNoteSyntheseSessions(examProfileId),
+    ]).then(([s, p, f, c, ns]) => {
       if (cancelled) return
       setSyllogismes(s)
       setPlans(p)
       setFiches(f)
       setCommentaires(c)
+      setNotesSynthese(ns)
     })
     return () => { cancelled = true }
   }, [examProfileId])
@@ -128,10 +145,11 @@ export default function CRFPAHistorique() {
       ...plans.map(toRowPlan),
       ...fiches.map(toRowFiche),
       ...commentaires.map(toRowCommentaire),
+      ...notesSynthese.map(toRowNoteSynthese),
     ]
     const filtered = filter === 'all' ? all : all.filter(r => r.kind === filter)
     return filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  }, [syllogismes, plans, fiches, commentaires, filter])
+  }, [syllogismes, plans, fiches, commentaires, notesSynthese, filter])
 
   if (!isCRFPA) return <Navigate to="/dashboard" replace />
 
@@ -157,12 +175,13 @@ export default function CRFPAHistorique() {
 
       {/* Filter tabs */}
       <div className="flex gap-1 mb-4 border-b border-[var(--border-card)]">
-        {(['all', 'syllogisme', 'plan', 'fiche', 'commentaire'] as Filter[]).map(f => {
+        {(['all', 'syllogisme', 'plan', 'fiche', 'commentaire', 'note-synthese'] as Filter[]).map(f => {
           const label = f === 'all' ? 'Tous'
             : f === 'syllogisme' ? 'Syllogismes'
             : f === 'plan' ? 'Plans'
             : f === 'fiche' ? 'Fiches'
-            : 'Commentaires'
+            : f === 'commentaire' ? 'Commentaires'
+            : 'Synthèses'
           const count = f === 'all' ? rows.length : 0  // count shown only on "all"
           const active = filter === f
           return (
@@ -202,16 +221,19 @@ export default function CRFPAHistorique() {
             const base = r.kind === 'syllogisme' ? '/legal/syllogisme'
               : r.kind === 'plan' ? '/legal/plan'
               : r.kind === 'fiche' ? '/legal/fiche'
-              : '/legal/commentaire'
+              : r.kind === 'commentaire' ? '/legal/commentaire'
+              : '/legal/synthese'
             const href = `${base}?session=${r.id}`
             const Icon = r.kind === 'syllogisme' ? PenSquare
               : r.kind === 'plan' ? ListTree
               : r.kind === 'fiche' ? FileText
-              : BookMarked
+              : r.kind === 'commentaire' ? BookMarked
+              : FileCheck
             const kindLabel = r.kind === 'syllogisme' ? 'Syllogisme'
               : r.kind === 'plan' ? 'Plan'
               : r.kind === 'fiche' ? 'Fiche d\'arrêt'
-              : 'Commentaire'
+              : r.kind === 'commentaire' ? 'Commentaire'
+              : 'Note de synthèse'
             return (
               <Link
                 key={r.id}

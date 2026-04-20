@@ -243,7 +243,7 @@ export function Layout() {
               {isCRFPA ? (
                 <>
                   <SidebarLink to="/accueil" icon={Home} label="Accueil" active={location.pathname === '/accueil' || location.pathname === '/'} collapsed={collapsed} />
-                  <SidebarLink to="/legal/syllogisme" icon={PenSquare} label="Entraînement" active={location.pathname.startsWith('/legal/syllogisme') || location.pathname.startsWith('/legal/plan') || location.pathname.startsWith('/legal/fiche') || location.pathname.startsWith('/legal/commentaire')} collapsed={collapsed} />
+                  <SidebarLink to="/legal/syllogisme" icon={PenSquare} label="Entraînement" active={location.pathname.startsWith('/legal/syllogisme') || location.pathname.startsWith('/legal/plan') || location.pathname.startsWith('/legal/fiche') || location.pathname.startsWith('/legal/commentaire') || location.pathname.startsWith('/legal/synthese')} collapsed={collapsed} />
                   <SidebarLink to="/legal" icon={Scale} label="Oracle" active={location.pathname === '/legal'} collapsed={collapsed} />
                   <SidebarLink to="/historique" icon={History} label="Historique" active={location.pathname === '/historique'} collapsed={collapsed} />
                 </>
@@ -313,7 +313,7 @@ export function Layout() {
                 {isCRFPA ? (
                   <>
                     <SidebarLink to="/accueil" icon={Home} label="Accueil" active={location.pathname === '/accueil' || location.pathname === '/'} onClick={closeSidebar} collapsed={false} />
-                    <SidebarLink to="/legal/syllogisme" icon={PenSquare} label="Entraînement" active={location.pathname.startsWith('/legal/syllogisme') || location.pathname.startsWith('/legal/plan') || location.pathname.startsWith('/legal/fiche') || location.pathname.startsWith('/legal/commentaire')} onClick={closeSidebar} collapsed={false} />
+                    <SidebarLink to="/legal/syllogisme" icon={PenSquare} label="Entraînement" active={location.pathname.startsWith('/legal/syllogisme') || location.pathname.startsWith('/legal/plan') || location.pathname.startsWith('/legal/fiche') || location.pathname.startsWith('/legal/commentaire') || location.pathname.startsWith('/legal/synthese')} onClick={closeSidebar} collapsed={false} />
                     <SidebarLink to="/legal" icon={Scale} label="Oracle" active={location.pathname === '/legal'} onClick={closeSidebar} collapsed={false} />
                     <SidebarLink to="/historique" icon={History} label="Historique" active={location.pathname === '/historique'} onClick={closeSidebar} collapsed={false} />
                   </>
