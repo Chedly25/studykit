@@ -9,7 +9,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useUser } from '@clerk/clerk-react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { PenSquare, ListTree, FileText, BookMarked, Scale, FolderOpen, RotateCcw, ArrowRight, Upload, FileCheck } from 'lucide-react'
+import { PenSquare, ListTree, FileText, BookMarked, Scale, FolderOpen, RotateCcw, ArrowRight, Upload, FileCheck, Mic2 } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileVertical } from '../hooks/useProfileVertical'
 import { listSyllogismeSessions, type SyllogismeSessionView } from '../ai/coaching/syllogismeStore'
@@ -241,6 +241,12 @@ export default function CRFPAAtelier() {
           icon={FileCheck}
           title="Note de synthèse"
           hint="Dossier de documents réels — rédige ta synthèse en 4 pages."
+        />
+        <ActionCard
+          to="/legal/grand-oral"
+          icon={Mic2}
+          title="Grand Oral"
+          hint="Simulation vocale avec jury IA — 15 min d'exposé + 30 min de questions."
         />
         <ActionCard
           to="/legal"

@@ -1,0 +1,846 @@
+{
+  "$schema": "./grandOralSujets.schema — see GrandOralSujet in src/ai/prompts/grandOralPrompts.ts",
+  "generatedAt": "2026-04-20",
+  "corpusVersion": "0.2.0",
+  "notes": "50 hand-curated real Grand Oral CRFPA sujets spanning 2019–2025, from IEJ annales (1anpourlecrfpa.com, rdavocats.com, pamplemousse-magazine.co). Mix of question ouverte / case commentary / article commentary. Refs: RAG queries (existing Vectorize legal-codes) + preResolved for canonical decisions (CE/CC/CEDH/CJUE not yet embedded). PreResolved migrates to query as Stages 2-4 ingestion lands.",
+  "sujets": [
+    {
+      "id": "go-2023-limoges-dignite",
+      "text": "La dignité humaine",
+      "type": "question",
+      "theme": "dignité",
+      "year": 2023,
+      "iej": "Limoges",
+      "refs": [
+        { "kind": "article", "hint": "Préambule 1946, al. 1 — dignité inaliénable", "query": "Préambule 1946 alinéa 1 dignité personne humaine" },
+        { "kind": "article", "hint": "Article 16 Code civil — primauté de la personne", "query": "article 16 code civil dignité personne humaine" },
+        { "kind": "article", "hint": "Article 1 DDHC — hommes naissent libres et égaux", "query": "DDHC article 1 hommes naissent libres égaux" },
+        { "kind": "decision", "hint": "CE Ass. 27 oct. 1995 Morsang-sur-Orge n° 136727 — dignité composante de l'ordre public", "preResolved": { "source": "CE, Ass., 27 octobre 1995, Commune de Morsang-sur-Orge, n° 136727", "text": "Le respect de la dignité de la personne humaine est une composante de l'ordre public. L'autorité investie du pouvoir de police municipale peut, même en l'absence de circonstances locales particulières, interdire une attraction (lancer de nain) portant atteinte à la dignité. Principe objectif, indisponible, ne cédant pas au consentement.", "sourceUrl": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000007877723/" } }
+      ],
+      "curatorNotes": "Classique. Plan : I. Consécration (constit, civ, pénal) / II. Tensions (indisponibilité vs autonomie, universalité vs relativisme)."
+    },
+    {
+      "id": "go-article-9-cciv",
+      "text": "Article 9 du Code civil",
+      "type": "article",
+      "theme": "vie-privee",
+      "refs": [
+        { "kind": "article", "hint": "Article 9 Code civil — respect de la vie privée", "query": "article 9 code civil respect vie privée" },
+        { "kind": "article", "hint": "Article 8 CEDH", "query": "CEDH article 8 vie privée familiale correspondance" },
+        { "kind": "article", "hint": "Article 2 DDHC — liberté droits naturels", "query": "DDHC article 2 liberté droits naturels" },
+        { "kind": "article", "hint": "Article 17 RGPD — droit à l'effacement", "query": "RGPD article 17 droit effacement oubli" }
+      ],
+      "curatorNotes": "Plan : I. Consécration (DDHC 2 + CEDH 8 + Cciv 9) / II. Extensions numériques (preuve déloyale, oubli, données). Ass. plén. 22 déc. 2023 sur preuve déloyale recevable si proportionnée."
+    },
+    {
+      "id": "go-article-10-ddhc",
+      "text": "Article 10 de la DDHC",
+      "type": "article",
+      "theme": "liberte-religion",
+      "refs": [
+        { "kind": "article", "hint": "Article 10 DDHC — opinions religieuses", "query": "DDHC article 10 opinions religieuses" },
+        { "kind": "article", "hint": "Article 9 CEDH — pensée, conscience, religion", "query": "CEDH article 9 pensée conscience religion" },
+        { "kind": "article", "hint": "Article 1 Constitution 1958 — République laïque", "query": "Constitution 1958 article 1 République laïque" },
+        { "kind": "decision", "hint": "CEDH GC 1 juill. 2014 SAS c. France n° 43835/11 — dissimulation du visage", "preResolved": { "source": "CEDH, GC, 1er juillet 2014, S.A.S. c. France, n° 43835/11", "text": "Validation de l'interdiction française de dissimulation du visage (loi 11 oct. 2010). « Vivre ensemble » comme but légitime au regard des art. 8 et 9 CEDH. Marge nationale d'appréciation large. Non-violation.", "sourceUrl": "https://hudoc.echr.coe.int/fre?i=001-145240" } }
+      ],
+      "curatorNotes": "Ne pas confondre DDHC 10 (opinions, même religieuses) et DDHC 11 (communication des pensées). Plan : I. Portée (bloc de constit) / II. Limites (ordre public, laïcité)."
+    },
+    {
+      "id": "go-2023-aix-ce-fff",
+      "text": "CE, 29 juin 2023, Alliance citoyenne, n° 458088 — FFF et port de signes religieux",
+      "type": "case",
+      "theme": "laicite",
+      "year": 2023,
+      "iej": "Aix / Paris II",
+      "refs": [
+        { "kind": "decision", "hint": "CE 29 juin 2023 Alliance citoyenne n° 458088", "preResolved": { "source": "CE, 29 juin 2023, Alliance citoyenne, n° 458088", "text": "Le CE valide l'interdiction du port de signes religieux ostensibles par les joueuses lors des matchs de la FFF. La fédération, délégataire de service public, peut imposer une telle neutralité au nom du bon déroulement des compétitions. Atteinte à la liberté religieuse (CEDH 9, DDHC 10) justifiée et proportionnée.", "sourceUrl": "https://www.legifrance.gouv.fr/ceta/id/CETATEXT000047781054" } },
+        { "kind": "article", "hint": "Article 9 CEDH", "query": "CEDH article 9 liberté religion manifester culte" },
+        { "kind": "article", "hint": "Article 1 Constitution 1958 — laïcité", "query": "Constitution 1958 laïcité République" },
+        { "kind": "decision", "hint": "CEDH 15 févr. 2001 Dahlab c. Suisse n° 42393/98", "preResolved": { "source": "CEDH, 15 février 2001, Dahlab c. Suisse, n° 42393/98", "text": "Enseignante genevoise, foulard islamique interdit pendant les cours. Requête irrecevable : interdiction justifiée par la protection des droits d'autrui et de l'ordre public (art. 9 §2). Foulard qualifié de « signe extérieur fort ». Marge nationale d'appréciation, jeune âge des élèves.", "sourceUrl": "https://hudoc.echr.coe.int/fre?i=001-22643" } }
+      ],
+      "curatorNotes": "Actualité brûlante (JO 2024, loi abaya 2023). Plan : I. Extension de la neutralité (agent → délégataire → participant) / II. Contrôle de proportionnalité européen (Dogru, SAS, Dahlab)."
+    },
+    {
+      "id": "go-oubli-numerique",
+      "text": "Le droit à l'oubli numérique",
+      "type": "question",
+      "theme": "vie-privee",
+      "year": 2023,
+      "iej": "Bordeaux / Nantes",
+      "refs": [
+        { "kind": "article", "hint": "Article 17 RGPD — effacement", "query": "RGPD article 17 droit effacement" },
+        { "kind": "article", "hint": "Article 9 Code civil", "query": "article 9 code civil vie privée" },
+        { "kind": "article", "hint": "Article 8 CEDH", "query": "CEDH article 8 vie privée données" },
+        { "kind": "decision", "hint": "CJUE GC 13 mai 2014 Google Spain C-131/12", "preResolved": { "source": "CJUE, GC, 13 mai 2014, Google Spain, C-131/12", "text": "Consécration du droit au déréférencement. Le moteur de recherche est responsable du traitement. Le droit à la vie privée prévaut en principe sur l'intérêt économique et sur l'intérêt du public à l'information, sauf rôle public de la personne. Fondement : directive 95/46 (aujourd'hui RGPD 17).", "sourceUrl": "https://curia.europa.eu/juris/document/document.jsf?docid=152065" } },
+        { "kind": "decision", "hint": "CE Ass. 6 déc. 2019 n° 393769 — déréférencement", "preResolved": { "source": "CE, Ass., 6 décembre 2019, n° 393769", "text": "Application de Google Spain en droit interne. Mise en balance vie privée / intérêt d'information selon nature des données, sensibilité, actualité, rôle public.", "sourceUrl": "https://www.conseil-etat.fr/fr/arianeweb/CE/decision/2019-12-06/393769" } }
+      ],
+      "curatorNotes": "Distinguer oubli / effacement / déréférencement / anonymisation. Plan : I. Émergence (RGPD, Google Spain, CE 2019) / II. Limites face à l'intérêt public et la mémoire collective."
+    },
+    {
+      "id": "go-2019-lyon-humour",
+      "text": "Peut-on rire de tout ?",
+      "type": "question",
+      "theme": "expression",
+      "year": 2019,
+      "iej": "Lyon",
+      "refs": [
+        { "kind": "article", "hint": "Article 11 DDHC — libre communication des pensées", "query": "DDHC article 11 libre communication pensées opinions" },
+        { "kind": "article", "hint": "Article 10 CEDH — liberté d'expression", "query": "CEDH article 10 liberté expression information" },
+        { "kind": "article", "hint": "Loi 29 juillet 1881 — liberté de la presse (injure, diffamation, provocation)", "query": "loi 1881 presse injure diffamation provocation" },
+        { "kind": "decision", "hint": "Cass. ass. plén. 25 oct. 2019 n° 17-86.605 — caricature Le Pen et liberté d'expression", "query": "Cass ass plén caricature liberté expression Le Pen" }
+      ],
+      "curatorNotes": "Sujet récurrent (Nancy 2022, Clermont 2023). Plan : I. L'humour protégé (Desproges, Charlie Hebdo, Dieudonné) / II. Les limites (provocation à la haine, dignité, personnes vulnérables)."
+    },
+    {
+      "id": "go-securite-libertes",
+      "text": "La sécurité, première des libertés ?",
+      "type": "question",
+      "theme": "securite-libertes",
+      "year": 2023,
+      "iej": "Bordeaux / Nantes / Paris XI",
+      "refs": [
+        { "kind": "article", "hint": "Article 2 DDHC — sûreté", "query": "DDHC article 2 liberté sûreté résistance" },
+        { "kind": "article", "hint": "Article 5 CEDH — droit à la liberté et à la sûreté", "query": "CEDH article 5 liberté sûreté arrestation détention" },
+        { "kind": "article", "hint": "Article 66 Constitution 1958 — juge judiciaire gardien", "query": "Constitution article 66 juge judiciaire gardien liberté individuelle" },
+        { "kind": "decision", "hint": "CC 22 déc. 2015 n° 2015-527 QPC — assignation à résidence état d'urgence", "query": "Conseil constitutionnel QPC 2015 état urgence assignation résidence" }
+      ],
+      "curatorNotes": "Plan : I. La sûreté comme fondement des libertés / II. Le glissement vers une « sécurité » englobante (état d'urgence, dérives). Citation classique : « La sécurité est la première des libertés » (Peyrefitte 1977)."
+    },
+    {
+      "id": "go-blaspheme",
+      "text": "Le droit au blasphème",
+      "type": "question",
+      "theme": "expression",
+      "year": 2023,
+      "iej": "Nantes / Lyon / Strasbourg",
+      "refs": [
+        { "kind": "article", "hint": "Article 10 DDHC", "query": "DDHC article 10 opinions religieuses" },
+        { "kind": "article", "hint": "Article 10 CEDH", "query": "CEDH article 10 expression" },
+        { "kind": "article", "hint": "Loi 1881 — absence de délit de blasphème depuis 1881", "query": "loi 1881 presse blasphème abrogation" },
+        { "kind": "decision", "hint": "CEDH 25 oct. 2018 E.S. c. Autriche n° 38450/12 — propos blasphématoires et ordre public", "query": "CEDH ES Autriche blasphème liberté expression" }
+      ],
+      "curatorNotes": "Plan : I. L'absence de délit en France (1881, loi séparation 1905) / II. Les limites contemporaines (provocation haine, CEDH marge nationale, Mila)."
+    },
+    {
+      "id": "go-liberte-reseaux-sociaux",
+      "text": "La liberté d'expression à l'heure des réseaux sociaux",
+      "type": "question",
+      "theme": "expression",
+      "year": 2022,
+      "iej": "Lille / Besançon",
+      "refs": [
+        { "kind": "article", "hint": "Article 11 DDHC", "query": "DDHC article 11 communication pensées" },
+        { "kind": "article", "hint": "Article 10 CEDH", "query": "CEDH article 10 expression" },
+        { "kind": "article", "hint": "Loi 21 juin 2004 LCEN — responsabilité des hébergeurs", "query": "LCEN 2004 hébergeurs responsabilité contenus illicites" },
+        { "kind": "decision", "hint": "CC 2020-801 DC 18 juin 2020 — loi Avia censurée", "query": "Conseil constitutionnel 2020-801 DC Avia haine en ligne" },
+        { "kind": "article", "hint": "DSA Règl. UE 2022/2065", "query": "Digital Services Act DSA modération contenus" }
+      ],
+      "curatorNotes": "Plan : I. Une liberté étendue en ligne (LCEN, CC Avia) / II. Les nouvelles régulations (DSA, statut éditorial, modération algorithmique)."
+    },
+    {
+      "id": "go-2023-dijon-droit-enfant",
+      "text": "Le droit à l'enfant est-il compatible avec les droits de l'enfant ?",
+      "type": "question",
+      "theme": "bioethique",
+      "year": 2023,
+      "iej": "Dijon / Paris XI",
+      "refs": [
+        { "kind": "article", "hint": "Article 16-7 Code civil — nullité GPA", "query": "article 16-7 code civil gestation pour autrui nullité" },
+        { "kind": "article", "hint": "Article 3 Convention internationale droits enfant — intérêt supérieur", "query": "convention internationale droits enfant intérêt supérieur" },
+        { "kind": "article", "hint": "Articles 311-19 à 311-20 Code civil — PMA", "query": "code civil PMA filiation don gamètes" },
+        { "kind": "decision", "hint": "Cass. ass. plén. 4 oct. 2019 n° 10-19.053 — transcription acte naissance GPA", "query": "Cass ass plén 2019 GPA transcription acte naissance filiation" }
+      ],
+      "curatorNotes": "Sujet clef. Plan : I. L'émergence d'un « droit à l'enfant » (PMA 2021, GPA) / II. Le retournement par les droits DE l'enfant (filiation, intérêt supérieur)."
+    },
+    {
+      "id": "go-euthanasie-vie",
+      "text": "Le droit à la vie s'oppose-t-il à la légalisation de l'euthanasie ?",
+      "type": "question",
+      "theme": "bioethique",
+      "year": 2023,
+      "iej": "Nanterre / Paris X",
+      "refs": [
+        { "kind": "article", "hint": "Article 2 CEDH — droit à la vie", "query": "CEDH article 2 droit à la vie" },
+        { "kind": "article", "hint": "Loi Leonetti-Claeys 2 févr. 2016", "query": "loi Leonetti Claeys fin de vie sédation profonde" },
+        { "kind": "article", "hint": "Article 8 CEDH — vie privée", "query": "CEDH article 8 autonomie personnelle fin de vie" },
+        { "kind": "decision", "hint": "CEDH 29 avril 2002 Pretty c. Royaume-Uni n° 2346/02", "query": "CEDH Pretty Royaume-Uni euthanasie article 2 article 8" }
+      ],
+      "curatorNotes": "Actualité : projet loi fin de vie 2024-2025. Plan : I. L'article 2 CEDH n'impose pas l'interdiction (Pretty, Haas) / II. L'encadrement français (Leonetti, Claeys-Leonetti, débat constitutionnel)."
+    },
+    {
+      "id": "go-desobeissance-civile",
+      "text": "La désobéissance civile",
+      "type": "question",
+      "theme": "expression",
+      "year": 2023,
+      "iej": "Amiens / Lille",
+      "refs": [
+        { "kind": "article", "hint": "Article 2 DDHC — résistance à l'oppression", "query": "DDHC article 2 résistance oppression" },
+        { "kind": "article", "hint": "Article 11 DDHC", "query": "DDHC article 11 expression" },
+        { "kind": "decision", "hint": "CE 9 nov. 2023 Les Soulèvements de la Terre n° 476385 — dissolution", "preResolved": { "source": "CE, 9 novembre 2023, Les Soulèvements de la Terre, n° 476385", "text": "Le CE annule le décret de dissolution du groupement Les Soulèvements de la Terre. Appels à la désobéissance civile et dégradations matérielles ne constituent pas à eux seuls une provocation à des agissements violents au sens du code de la sécurité intérieure.", "sourceUrl": "https://www.conseil-etat.fr/fr/arianeweb/CE/decision/2023-11-09/476385" } },
+        { "kind": "decision", "hint": "Cass. crim. 28 avril 2021 — faucheurs OGM et état de nécessité", "query": "Cass crim faucheurs OGM état de nécessité justification" }
+      ],
+      "curatorNotes": "Plan : I. Fondement philosophique et juridique indirect (DDHC 2, Thoreau, Gandhi) / II. Les limites pénales (voie de fait, provocation, état de nécessité rarement admis)."
+    },
+    {
+      "id": "go-nature-droits",
+      "text": "La nature peut-elle avoir des droits ?",
+      "type": "question",
+      "theme": "environnement",
+      "year": 2025,
+      "iej": "Besançon / Nancy",
+      "refs": [
+        { "kind": "article", "hint": "Article 1 Charte de l'environnement", "query": "Charte environnement article 1 droit vivre environnement équilibré" },
+        { "kind": "article", "hint": "Article 2 Charte de l'environnement — devoir", "query": "Charte environnement article 2 devoir préservation" },
+        { "kind": "article", "hint": "Article 515-14 Code civil — animal être sensible", "query": "article 515-14 code civil animal être sensible" },
+        { "kind": "decision", "hint": "CC 2020-843 QPC 28 mai 2020 — Charte environnement, principe de précaution", "query": "Conseil constitutionnel Charte environnement précaution prévention" }
+      ],
+      "curatorNotes": "Plan : I. Les outils existants (animal Cciv 515-14, Charte env, responsabilité écologique) / II. Vers une personnalité juridique ? (Whanganui, cas comparés, limites anthropocentrisme)."
+    },
+    {
+      "id": "go-ia-droits-fondamentaux",
+      "text": "L'intelligence artificielle est-elle une menace pour les droits fondamentaux ?",
+      "type": "question",
+      "theme": "numerique",
+      "year": 2023,
+      "iej": "Bordeaux",
+      "refs": [
+        { "kind": "article", "hint": "Article 22 RGPD — décision automatisée", "query": "RGPD article 22 décision automatisée profilage" },
+        { "kind": "article", "hint": "Règlement UE 2024/1689 — AI Act", "query": "AI Act règlement européen intelligence artificielle risque" },
+        { "kind": "article", "hint": "Article 8 CEDH — données personnelles", "query": "CEDH article 8 données personnelles" },
+        { "kind": "decision", "hint": "CC 2018-765 DC 12 juin 2018 — loi protection données", "query": "Conseil constitutionnel 2018-765 DC protection données décision automatisée" }
+      ],
+      "curatorNotes": "Plan : I. Les risques (biais, surveillance, opacité) / II. La régulation naissante (RGPD 22, AI Act 2024, gouvernance)."
+    },
+    {
+      "id": "go-liberte-manifestation",
+      "text": "La liberté de manifestation",
+      "type": "question",
+      "theme": "expression",
+      "year": 2023,
+      "iej": "Rennes / Paris X",
+      "refs": [
+        { "kind": "article", "hint": "Article 11 CEDH — liberté de réunion", "query": "CEDH article 11 réunion association" },
+        { "kind": "article", "hint": "Article L. 211-1 Code sécurité intérieure — régime déclaratif", "query": "code sécurité intérieure manifestation déclaration préfet" },
+        { "kind": "article", "hint": "Préambule 1946 al. 7 — droit de grève (par analogie)", "query": "Préambule 1946 alinéa 7 droit grève" },
+        { "kind": "decision", "hint": "CC 2019-780 DC 4 avril 2019 — loi anti-casseurs", "query": "Conseil constitutionnel anti-casseurs interdiction manifestation" },
+        { "kind": "decision", "hint": "CE 10 juin 2021 n° 444849 — schéma maintien de l'ordre", "preResolved": { "source": "CE, 10 juin 2021, Syndicat des journalistes, n° 444849", "text": "Le CE annule partiellement le Schéma national du maintien de l'ordre (SNMO). Les mesures de contrôle d'identité avant dispersion, d'encerclement et les restrictions à la couverture médiatique doivent respecter la liberté d'aller et venir, la liberté de manifester et la liberté de la presse.", "sourceUrl": "https://www.conseil-etat.fr/fr/arianeweb/CE/decision/2021-06-10/444849" } }
+      ],
+      "curatorNotes": "Actualité : retraites 2023, écologie, Sainte-Soline. Plan : I. Un régime déclaratif protecteur / II. Les restrictions contemporaines (interdictions préventives, nasse, BRAV-M)."
+    },
+    {
+      "id": "go-droit-travail",
+      "text": "Le droit au travail",
+      "type": "question",
+      "theme": "droits-sociaux",
+      "year": 2023,
+      "iej": "Nantes",
+      "refs": [
+        { "kind": "article", "hint": "Préambule 1946 al. 5 — devoir de travailler et droit d'obtenir un emploi", "query": "Préambule 1946 alinéa 5 droit obtenir emploi" },
+        { "kind": "article", "hint": "Article 4 DUDH", "query": "DUDH article 4 travail" },
+        { "kind": "article", "hint": "Article 15 Charte droits fondamentaux UE", "query": "Charte UE article 15 liberté professionnelle" },
+        { "kind": "decision", "hint": "CC 16 janv. 1982 — nationalisations et liberté d'entreprendre", "query": "Conseil constitutionnel 1982 nationalisations liberté entreprendre" }
+      ],
+      "curatorNotes": "Plan : I. Un droit-créance plutôt qu'un droit-liberté (Préambule 1946 al. 5) / II. Les tensions avec la liberté d'entreprendre et les politiques d'emploi."
+    },
+    {
+      "id": "go-humour",
+      "text": "L'humour et la liberté d'expression",
+      "type": "question",
+      "theme": "expression",
+      "year": 2023,
+      "iej": "Clermont-Ferrand",
+      "refs": [
+        { "kind": "article", "hint": "Article 11 DDHC", "query": "DDHC article 11 communication pensées" },
+        { "kind": "article", "hint": "Article 10 CEDH", "query": "CEDH article 10 expression" },
+        { "kind": "decision", "hint": "CEDH 10 nov. 2015 M'Bala M'Bala c. France — Dieudonné", "query": "CEDH Dieudonné M'Bala France antisémitisme humour" }
+      ],
+      "curatorNotes": "Même sujet que « Peut-on rire de tout ». Plan : I. Un espace protégé (satire, liberté artistique) / II. Les bornes (haine, négationnisme, Dieudonné)."
+    },
+    {
+      "id": "go-videosurveillance",
+      "text": "La vidéosurveillance",
+      "type": "question",
+      "theme": "vie-privee",
+      "year": 2023,
+      "iej": "Poitiers / Bordeaux",
+      "refs": [
+        { "kind": "article", "hint": "Article 9 Code civil", "query": "article 9 code civil vie privée" },
+        { "kind": "article", "hint": "Article 8 CEDH", "query": "CEDH article 8 vie privée surveillance" },
+        { "kind": "article", "hint": "Loi 95-73 du 21 janv. 1995 et code sécurité intérieure L. 251-1 s.", "query": "code sécurité intérieure vidéoprotection espace public autorisation" },
+        { "kind": "decision", "hint": "CC 2021-817 DC 20 mai 2021 — sécurité globale, vidéosurveillance augmentée", "query": "Conseil constitutionnel sécurité globale vidéosurveillance drones" }
+      ],
+      "curatorNotes": "Actualité : JO 2024, algorithme détection. Plan : I. L'encadrement (autorisation préfectorale, CNIL, finalités) / II. L'extension contestée (IA, reconnaissance faciale, drones)."
+    },
+    {
+      "id": "go-ivg",
+      "text": "Le droit à l'IVG",
+      "type": "question",
+      "theme": "bioethique",
+      "year": 2023,
+      "iej": "Limoges / Brest",
+      "refs": [
+        { "kind": "article", "hint": "Article 34 Constitution 1958 — liberté garantie depuis LC 8 mars 2024", "query": "Constitution article 34 liberté interruption grossesse 2024" },
+        { "kind": "article", "hint": "Article L. 2212-1 Code santé publique", "query": "code santé publique IVG interruption volontaire grossesse" },
+        { "kind": "decision", "hint": "CC 15 janv. 1975 n° 74-54 DC — loi IVG conforme", "query": "Conseil constitutionnel 1975 74-54 DC IVG loi Veil" },
+        { "kind": "decision", "hint": "CEDH 8 juill. 2004 Vo c. France n° 53924/00 — statut fœtus", "query": "CEDH Vo France statut fœtus article 2" }
+      ],
+      "curatorNotes": "Actualité forte : constitutionnalisation 8 mars 2024 (3e Congrès). Plan : I. De la loi Veil à la constitutionnalisation (1975-2024) / II. Les débats subsistants (clause de conscience, délais, CEDH statut fœtus)."
+    },
+    {
+      "id": "go-france-terre-asile",
+      "text": "La France est-elle toujours une terre d'asile ?",
+      "type": "question",
+      "theme": "etrangers",
+      "year": 2020,
+      "iej": "Lyon / Dijon",
+      "refs": [
+        { "kind": "article", "hint": "Préambule 1946 al. 4 — droit d'asile", "query": "Préambule 1946 alinéa 4 droit asile persécution" },
+        { "kind": "article", "hint": "Convention de Genève 1951 art. 1A", "query": "convention Genève 1951 réfugié statut persécution" },
+        { "kind": "article", "hint": "CESEDA L. 511-1 et s.", "query": "CESEDA asile demande statut réfugié OFPRA" },
+        { "kind": "decision", "hint": "CC 13 août 1993 n° 93-325 DC — droit d'asile, valeur constitutionnelle", "query": "Conseil constitutionnel 1993 93-325 DC asile maîtrise immigration" }
+      ],
+      "curatorNotes": "Plan : I. Un principe constitutionnel ancré (Préambule 1946 al. 4, CC 1993) / II. Les reculs contemporains (Dublin, loi immigration 2024, taux de reconnaissance)."
+    },
+    {
+      "id": "go-conditions-detention",
+      "text": "Les conditions de détention indignes",
+      "type": "question",
+      "theme": "detention",
+      "year": 2023,
+      "iej": "Strasbourg / Lille",
+      "refs": [
+        { "kind": "article", "hint": "Article 3 CEDH — traitements inhumains ou dégradants", "query": "CEDH article 3 traitements inhumains dégradants" },
+        { "kind": "article", "hint": "Article 16 Code civil — dignité", "query": "article 16 code civil dignité" },
+        { "kind": "article", "hint": "Article 22 loi pénitentiaire 2009", "query": "loi pénitentiaire 2009 dignité condition détention" },
+        { "kind": "decision", "hint": "CEDH GC 30 janv. 2020 J.M.B. et autres c. France n° 9671/15 — surpopulation", "query": "CEDH JMB France surpopulation carcérale article 3" },
+        { "kind": "decision", "hint": "CC 2 oct. 2020 n° 2020-858/859 QPC — recours effectif conditions détention", "query": "Conseil constitutionnel QPC 2020 858 859 conditions détention recours" }
+      ],
+      "curatorNotes": "Plan : I. Une exigence de dignité reconnue (CEDH JMB, QPC 2020) / II. Les réponses législatives (art. 803-8 CPP, plan prisons) et leurs insuffisances."
+    },
+    {
+      "id": "go-lanceurs-alerte",
+      "text": "Les lanceurs d'alerte",
+      "type": "question",
+      "theme": "expression",
+      "year": 2022,
+      "iej": "Nantes / Evry",
+      "refs": [
+        { "kind": "article", "hint": "Loi 9 déc. 2016 Sapin II + loi 21 mars 2022", "query": "loi Sapin II lanceur alerte protection 2016" },
+        { "kind": "article", "hint": "Directive UE 2019/1937", "query": "directive UE 1937 2019 lanceurs alerte" },
+        { "kind": "article", "hint": "Article 10 CEDH", "query": "CEDH article 10 expression salarié lanceur alerte" },
+        { "kind": "decision", "hint": "CEDH 12 févr. 2008 Guja c. Moldova n° 14277/04 — critères", "query": "CEDH Guja Moldova lanceur alerte fonctionnaire critères" }
+      ],
+      "curatorNotes": "Plan : I. Consécration et protection (Sapin II, loi 2022 transposant directive UE) / II. Cas d'application et limites (LuxLeaks, Halet, périmètre des signalements)."
+    },
+    {
+      "id": "go-tweet",
+      "text": "Peut-on tout tweeter ?",
+      "type": "question",
+      "theme": "expression",
+      "year": 2022,
+      "iej": "Brest / Lyon",
+      "refs": [
+        { "kind": "article", "hint": "Article 11 DDHC", "query": "DDHC article 11 expression" },
+        { "kind": "article", "hint": "Article 10 CEDH", "query": "CEDH article 10 expression internet" },
+        { "kind": "article", "hint": "Loi 1881 — abus liberté expression", "query": "loi 1881 injure diffamation provocation" },
+        { "kind": "article", "hint": "DSA Règl. UE 2022/2065", "query": "Digital Services Act modération plateformes" }
+      ],
+      "curatorNotes": "Voisin de « réseaux sociaux ». Plan : I. Une liberté étendue / II. Les limites (injure, haine, harcèlement, modération privée)."
+    },
+    {
+      "id": "go-2022-rouen-ivg-constit",
+      "text": "Faut-il constitutionnaliser le droit à l'IVG ?",
+      "type": "question",
+      "theme": "bioethique",
+      "year": 2022,
+      "iej": "Rouen / Chambéry",
+      "refs": [
+        { "kind": "decision", "hint": "CC 15 janv. 1975 n° 74-54 DC", "query": "Conseil constitutionnel 1975 IVG loi Veil" },
+        { "kind": "article", "hint": "Loi constitutionnelle 8 mars 2024 — liberté garantie", "query": "LC 8 mars 2024 Constitution article 34 IVG" },
+        { "kind": "decision", "hint": "Cour suprême USA 24 juin 2022 Dobbs v. Jackson — contexte déclencheur", "query": "Dobbs Jackson Roe Wade droit avortement Etats-Unis" }
+      ],
+      "curatorNotes": "Sujet clos par la LC 8 mars 2024. Plan : I. Le déclencheur Dobbs (2022) et le signal politique / II. Le débat juridique (nécessité ? symbolique ? effets de l'article 34 modifié)."
+    },
+    {
+      "id": "go-2023-aix-stratagemes-preuve",
+      "text": "Cass. crim., 21 juin 2023, n° 20-81.164 — stratagèmes dans le recueil de preuves",
+      "type": "case",
+      "theme": "procedure-penale",
+      "year": 2023,
+      "iej": "Aix",
+      "refs": [
+        { "kind": "decision", "hint": "Cass. crim. 21 juin 2023 n° 20-81.164", "query": "Cass criminelle 21 juin 2023 stratagème preuve loyauté" },
+        { "kind": "article", "hint": "Article 6 CEDH — procès équitable", "query": "CEDH article 6 procès équitable loyauté preuve" },
+        { "kind": "article", "hint": "Article préliminaire Code procédure pénale", "query": "code procédure pénale article préliminaire loyauté" },
+        { "kind": "decision", "hint": "Cass. ass. plén. 10 nov. 2017 n° 17-82.028 — loyauté probatoire", "query": "Cass ass plén 2017 loyauté preuve enquête déloyale" }
+      ],
+      "curatorNotes": "Plan : I. Le principe de loyauté (ass. plén. 2017) / II. L'exception du 21 juin 2023 (stratagème interne vs provocation)."
+    },
+    {
+      "id": "go-2023-grenoble-soulevements-terre",
+      "text": "CE, 11 août 2023 et 9 nov. 2023 — dissolution des Soulèvements de la Terre",
+      "type": "case",
+      "theme": "expression",
+      "year": 2023,
+      "iej": "Grenoble",
+      "refs": [
+        { "kind": "decision", "hint": "CE 9 nov. 2023 n° 476385 — annulation", "preResolved": { "source": "CE, 9 nov. 2023, Les Soulèvements de la Terre, n° 476385", "text": "Le CE annule le décret de dissolution. Appels à désobéissance civile et dégradations matérielles ne constituent pas, à eux seuls, une provocation à des agissements violents au sens de L. 212-1 CSI.", "sourceUrl": "https://www.conseil-etat.fr/fr/arianeweb/CE/decision/2023-11-09/476385" } },
+        { "kind": "article", "hint": "Article L. 212-1 Code sécurité intérieure", "query": "code sécurité intérieure L212-1 dissolution groupement provocation" },
+        { "kind": "article", "hint": "Article 11 CEDH — liberté d'association", "query": "CEDH article 11 association" },
+        { "kind": "decision", "hint": "CEDH GC 8 oct. 2020 Ayoub c. France — dissolution groupements d'extrême droite", "query": "CEDH Ayoub France dissolution groupement" }
+      ],
+      "curatorNotes": "Plan : I. Le régime des dissolutions de groupements (L. 212-1 CSI, élargi en 2021) / II. Le contrôle juridictionnel (nécessité, proportionnalité, CE 2023)."
+    },
+    {
+      "id": "go-2023-aix-qpc-cour-criminelle",
+      "text": "CC 24 nov. 2023, n° 2023-1069/70 QPC — cour criminelle départementale",
+      "type": "case",
+      "theme": "procedure-penale",
+      "year": 2023,
+      "iej": "Aix",
+      "refs": [
+        { "kind": "decision", "hint": "CC 2023-1069/1070 QPC 24 nov. 2023", "query": "Conseil constitutionnel QPC 2023 1069 1070 cour criminelle départementale" },
+        { "kind": "article", "hint": "Loi 22 déc. 2021 — généralisation cour criminelle", "query": "loi 2021 1729 généralisation cour criminelle magistrats professionnels" },
+        { "kind": "article", "hint": "Article 6 CEDH — procès équitable", "query": "CEDH article 6 procès équitable" },
+        { "kind": "article", "hint": "Article 7 DDHC — juge naturel / légalité pénale", "query": "DDHC article 7 juge légalité pénale" }
+      ],
+      "curatorNotes": "Plan : I. La cour criminelle, réforme de rationalisation (2019 → 2023) / II. La conformité aux exigences constitutionnelles (droit au juge, égalité)."
+    },
+    {
+      "id": "go-2025-aix-seydi",
+      "text": "CEDH 26 juin 2025 Seydi et autres c. France — contrôle d'identité au faciès",
+      "type": "case",
+      "theme": "egalite",
+      "year": 2025,
+      "iej": "Aix",
+      "refs": [
+        { "kind": "decision", "hint": "CEDH 26 juin 2025 Seydi et autres c. France n° 35844/17", "query": "CEDH Seydi France contrôle identité faciès discrimination" },
+        { "kind": "article", "hint": "Article 14 CEDH — non-discrimination", "query": "CEDH article 14 discrimination origine ethnique" },
+        { "kind": "article", "hint": "Article 78-2 Code procédure pénale", "query": "code procédure pénale article 78-2 contrôle identité" },
+        { "kind": "decision", "hint": "Cass. 1re civ. 9 nov. 2016 — contrôles discriminatoires", "query": "Cass civile 2016 contrôle identité discriminatoire preuve" }
+      ],
+      "curatorNotes": "Très récent et brûlant. Plan : I. L'encadrement lacunaire (art. 78-2, indicateurs) / II. La condamnation européenne et les réformes attendues."
+    },
+    {
+      "id": "go-2022-apparence-travail",
+      "text": "Cass. soc. 23 nov. 2022 n° 21-14.060 — apparence et tenue au travail (steward)",
+      "type": "case",
+      "theme": "travail-libertes",
+      "year": 2023,
+      "iej": "Montpellier",
+      "refs": [
+        { "kind": "decision", "hint": "Cass. soc. 23 nov. 2022 n° 21-14.060", "query": "Cass sociale 23 novembre 2022 steward apparence coiffure discrimination" },
+        { "kind": "article", "hint": "Article L. 1121-1 Code travail — restrictions aux libertés justifiées et proportionnées", "query": "article L1121-1 code travail libertés proportionnalité" },
+        { "kind": "article", "hint": "Article L. 1132-1 Code travail — non-discrimination", "query": "article L1132-1 code travail discrimination" },
+        { "kind": "article", "hint": "Article 14 CEDH", "query": "CEDH article 14 discrimination" }
+      ],
+      "curatorNotes": "Plan : I. Le principe de proportionnalité des restrictions (L. 1121-1) / II. La protection contre les discriminations de genre dans l'apparence."
+    },
+    {
+      "id": "go-2019-tours-caricature-lepen",
+      "text": "Cass. ass. plén. 25 oct. 2019 n° 17-86.605 — caricature politique",
+      "type": "case",
+      "theme": "expression",
+      "year": 2019,
+      "iej": "Tours",
+      "refs": [
+        { "kind": "decision", "hint": "Cass. ass. plén. 25 oct. 2019 n° 17-86.605", "query": "Cass assemblée plénière 2019 caricature Le Pen injure diffamation liberté expression" },
+        { "kind": "article", "hint": "Article 10 CEDH", "query": "CEDH article 10 caricature politique" },
+        { "kind": "article", "hint": "Loi 1881 articles 29 et 32", "query": "loi 1881 injure publique diffamation" },
+        { "kind": "decision", "hint": "CEDH 7 juin 2007 Smolarek c. Pologne — caricature politique", "query": "CEDH caricature politique femme marge appréciation" }
+      ],
+      "curatorNotes": "Plan : I. Liberté artistique et satire politique (CEDH favorable) / II. Limites (injure personnelle, déshumanisation)."
+    },
+    {
+      "id": "go-2020-cc-avia",
+      "text": "CC 18 juin 2020 n° 2020-801 DC — loi Avia contre la haine en ligne",
+      "type": "case",
+      "theme": "expression",
+      "year": 2020,
+      "iej": "Avignon",
+      "refs": [
+        { "kind": "decision", "hint": "CC 2020-801 DC 18 juin 2020", "query": "Conseil constitutionnel 2020 801 DC Avia haine en ligne censure" },
+        { "kind": "article", "hint": "Article 11 DDHC", "query": "DDHC article 11 expression limites" },
+        { "kind": "article", "hint": "LCEN 2004 — responsabilité des hébergeurs", "query": "LCEN hébergeurs retrait contenus 24 heures" },
+        { "kind": "article", "hint": "DSA Règl. UE 2022/2065", "query": "Digital Services Act modération" }
+      ],
+      "curatorNotes": "Plan : I. La censure du CC (retrait 24h insuffisamment encadré) / II. Le relais européen (DSA, modération sous contrôle)."
+    },
+    {
+      "id": "go-2021-paris1-cc-dissimulation",
+      "text": "CC 7 oct. 2010 n° 2010-613 DC — loi dissimulation du visage",
+      "type": "case",
+      "theme": "laicite",
+      "year": 2021,
+      "iej": "Paris I",
+      "refs": [
+        { "kind": "decision", "hint": "CC 2010-613 DC 7 oct. 2010", "query": "Conseil constitutionnel 2010 613 DC dissimulation visage burqa ordre public" },
+        { "kind": "article", "hint": "Loi 11 oct. 2010 — interdiction dissimulation visage espace public", "query": "loi 2010 1192 dissimulation visage interdiction espace public" },
+        { "kind": "decision", "hint": "CEDH GC 1 juill. 2014 SAS c. France n° 43835/11", "preResolved": { "source": "CEDH, GC, 1er juillet 2014, S.A.S. c. France, n° 43835/11", "text": "Validation de l'interdiction française. « Vivre ensemble » comme but légitime. Non-violation 8 et 9 CEDH.", "sourceUrl": "https://hudoc.echr.coe.int/fre?i=001-145240" } },
+        { "kind": "article", "hint": "Article 9 CEDH", "query": "CEDH article 9 liberté religion manifestation" }
+      ],
+      "curatorNotes": "Plan : I. Fondements de l'interdiction (ordre public matériel et immatériel) / II. La tension avec la liberté de conscience et l'évolution CEDH."
+    },
+    {
+      "id": "go-article-charte-env-1",
+      "text": "Article 1er de la Charte de l'environnement",
+      "type": "article",
+      "theme": "environnement",
+      "year": 2023,
+      "iej": "Amiens / Paris I",
+      "refs": [
+        { "kind": "article", "hint": "Article 1 Charte environnement — droit à un environnement équilibré et respectueux de la santé", "query": "Charte environnement article 1 environnement équilibré santé" },
+        { "kind": "article", "hint": "Préambule Constitution 1958 — renvoi à la Charte", "query": "Préambule Constitution 1958 Charte environnement bloc constitutionnalité" },
+        { "kind": "decision", "hint": "CC 2020-843 QPC 28 mai 2020 — valeur constitutionnelle", "query": "Conseil constitutionnel 2020 843 QPC Charte environnement invocabilité" },
+        { "kind": "decision", "hint": "CE 10 mai 2023 Commune de Grande-Synthe n° 467982 — carence climatique", "query": "CE Grande-Synthe carence climatique gaz effet de serre" }
+      ],
+      "curatorNotes": "Plan : I. Intégration au bloc de constitutionnalité (2005, QPC 2020) / II. Effectivité contentieuse (Grande-Synthe, Affaire du siècle)."
+    },
+    {
+      "id": "go-article-16-1-cciv",
+      "text": "Article 16-1 du Code civil",
+      "type": "article",
+      "theme": "dignité",
+      "year": 2022,
+      "iej": "Rennes",
+      "refs": [
+        { "kind": "article", "hint": "Article 16-1 Code civil — corps humain inviolable", "query": "article 16-1 code civil corps humain inviolabilité" },
+        { "kind": "article", "hint": "Article 16 Code civil — primauté de la personne", "query": "article 16 code civil primauté personne" },
+        { "kind": "article", "hint": "Préambule 1946 al. 1", "query": "Préambule 1946 dignité" },
+        { "kind": "article", "hint": "Article 16-3 Code civil — intégrité corps sauf nécessité médicale", "query": "article 16-3 code civil intégrité corps consentement" }
+      ],
+      "curatorNotes": "Plan : I. Principe fondateur (lois bioéthique 1994) / II. Applications contentieuses (IVG, GPA, modifications esthétiques, interventions forcées)."
+    },
+    {
+      "id": "go-2023-evry-article-2-constit",
+      "text": "Les langues régionales et l'article 2 de la Constitution de 1958",
+      "type": "question",
+      "theme": "identite",
+      "year": 2023,
+      "iej": "Evry",
+      "refs": [
+        { "kind": "article", "hint": "Article 2 Constitution 1958 — langue française", "query": "Constitution article 2 langue française" },
+        { "kind": "article", "hint": "Article 75-1 Constitution — patrimoine langues régionales", "query": "Constitution article 75-1 langues régionales patrimoine" },
+        { "kind": "decision", "hint": "CC 2021-818 DC 21 mai 2021 — loi Molac", "query": "Conseil constitutionnel 2021 818 DC Molac langues régionales enseignement immersif" },
+        { "kind": "article", "hint": "Charte européenne langues régionales (non ratifiée)", "query": "Charte européenne langues régionales minoritaires ratification France" }
+      ],
+      "curatorNotes": "Plan : I. La primauté du français constitutionnalisée / II. La reconnaissance progressive des langues régionales (75-1) et ses limites (Molac, enseignement)."
+    },
+    {
+      "id": "go-liberte-aller-venir",
+      "text": "La liberté d'aller et venir à l'épreuve de la crise sanitaire",
+      "type": "question",
+      "theme": "securite-libertes",
+      "year": 2021,
+      "iej": "Bordeaux",
+      "refs": [
+        { "kind": "article", "hint": "Article 2 DDHC — liberté", "query": "DDHC article 2 liberté sûreté" },
+        { "kind": "article", "hint": "Article 66 Constitution — juge judiciaire gardien", "query": "Constitution article 66 liberté individuelle juge judiciaire" },
+        { "kind": "decision", "hint": "CC 11 mai 2020 n° 2020-800 DC — loi prorogation état urgence sanitaire", "query": "Conseil constitutionnel 2020 800 DC état urgence sanitaire" },
+        { "kind": "decision", "hint": "CC 5 août 2021 n° 2021-824 DC — pass sanitaire", "query": "Conseil constitutionnel 2021 824 DC pass sanitaire vaccinal" }
+      ],
+      "curatorNotes": "Plan : I. Un cadre exceptionnel durci (état d'urgence sanitaire, confinement, pass) / II. Le contrôle du juge (CC, CE, proportionnalité au fil du temps)."
+    },
+    {
+      "id": "go-article-66-constit",
+      "text": "Article 66 de la Constitution",
+      "type": "article",
+      "theme": "procedure-penale",
+      "year": 2022,
+      "iej": "Besançon / Paris X",
+      "refs": [
+        { "kind": "article", "hint": "Article 66 Constitution 1958", "query": "Constitution article 66 juge judiciaire gardien liberté individuelle détention arbitraire" },
+        { "kind": "article", "hint": "Article 7 DDHC — légalité pénale", "query": "DDHC article 7 légalité pénale arrestation" },
+        { "kind": "article", "hint": "Article 5 CEDH — liberté et sûreté", "query": "CEDH article 5 liberté sûreté" },
+        { "kind": "decision", "hint": "CC 28 juil. 1989 — rétention administrative étrangers", "query": "Conseil constitutionnel 1989 rétention administrative étrangers juge judiciaire" }
+      ],
+      "curatorNotes": "Plan : I. Le juge judiciaire, gardien traditionnel / II. L'érosion contemporaine (référé-liberté devant le CE, rétention, assignations)."
+    },
+    {
+      "id": "go-secret-instruction",
+      "text": "Le secret de l'instruction et la liberté de la presse",
+      "type": "question",
+      "theme": "procedure-penale",
+      "year": 2022,
+      "iej": "Besançon / Lille",
+      "refs": [
+        { "kind": "article", "hint": "Article 11 Code procédure pénale — secret instruction", "query": "code procédure pénale article 11 secret instruction" },
+        { "kind": "article", "hint": "Article 10 CEDH — presse", "query": "CEDH article 10 liberté presse" },
+        { "kind": "decision", "hint": "CEDH 7 juin 2007 Dupuis c. France n° 1914/02 — presse et secret", "query": "CEDH Dupuis France secret instruction journalistes" },
+        { "kind": "article", "hint": "Loi 4 janv. 2010 — protection des sources", "query": "loi 2010 sources journalistes protection" }
+      ],
+      "curatorNotes": "Plan : I. Le secret protecteur (présomption d'innocence, enquête) / II. Les tensions avec le droit à l'information (CEDH Dupuis, Bettencourt, Cahuzac)."
+    },
+    {
+      "id": "go-liberte-entreprendre",
+      "text": "Que reste-t-il de la liberté d'entreprendre ?",
+      "type": "question",
+      "theme": "droits-sociaux",
+      "year": 2022,
+      "iej": "Strasbourg",
+      "refs": [
+        { "kind": "article", "hint": "Article 4 DDHC — liberté", "query": "DDHC article 4 liberté faire ce qui ne nuit pas" },
+        { "kind": "decision", "hint": "CC 16 janv. 1982 n° 81-132 DC — valeur constitutionnelle", "query": "Conseil constitutionnel 1982 nationalisations liberté entreprendre" },
+        { "kind": "article", "hint": "Article 16 Charte droits fondamentaux UE", "query": "Charte UE article 16 liberté entreprise" },
+        { "kind": "decision", "hint": "CC 2021-940 QPC 15 oct. 2021 — encadrement loyers", "query": "Conseil constitutionnel QPC encadrement loyers liberté entreprendre" }
+      ],
+      "curatorNotes": "Plan : I. Une liberté consacrée et conciliée (depuis 1982) / II. Les encadrements sectoriels (loyers, environnement, numérique, concurrence)."
+    },
+    {
+      "id": "go-2020-paris2-drone",
+      "text": "L'utilisation de drones par les forces de l'ordre",
+      "type": "question",
+      "theme": "vie-privee",
+      "year": 2020,
+      "iej": "Paris II",
+      "refs": [
+        { "kind": "decision", "hint": "CE ord. 18 mai 2020 n° 440442 La Quadrature du Net — drones confinement", "query": "CE La Quadrature Net drones référé confinement surveillance" },
+        { "kind": "decision", "hint": "CC 2021-817 DC 20 mai 2021 — sécurité globale", "query": "Conseil constitutionnel 2021 817 DC sécurité globale drones captation images" },
+        { "kind": "article", "hint": "Article 8 CEDH — vie privée", "query": "CEDH article 8 surveillance drones" },
+        { "kind": "article", "hint": "Article L. 242-5 CSI — dispositifs aéroportés", "query": "code sécurité intérieure L242 drones captation images" }
+      ],
+      "curatorNotes": "Plan : I. Les limites posées par le juge (CE QDN 2020, CC 2021) / II. Le nouveau cadre légal (loi sécurité globale, responsabilité pénale)."
+    },
+    {
+      "id": "go-referendum-initiative-partagee",
+      "text": "Le référendum d'initiative partagée",
+      "type": "question",
+      "theme": "institutions",
+      "year": 2019,
+      "iej": "Lille",
+      "refs": [
+        { "kind": "article", "hint": "Article 11 Constitution — RIP", "query": "Constitution article 11 référendum initiative partagée" },
+        { "kind": "article", "hint": "Loi organique 6 déc. 2013", "query": "loi organique 2013 RIP référendum initiative partagée" },
+        { "kind": "decision", "hint": "CC 9 mai 2019 n° 2019-1/2/3/4/5/6 RIP — ADP aéroports Paris", "query": "Conseil constitutionnel 2019 RIP ADP aéroports Paris recevabilité" }
+      ],
+      "curatorNotes": "Plan : I. Un outil démocratique encadré / II. Une efficacité réduite (seuil 4,7M, contrôle CC, ADP non abouti)."
+    },
+    {
+      "id": "go-2020-chambery-datajust",
+      "text": "Datajust et la justice prédictive",
+      "type": "question",
+      "theme": "numerique",
+      "year": 2020,
+      "iej": "Chambéry",
+      "refs": [
+        { "kind": "article", "hint": "Décret 27 mars 2020 Datajust", "query": "décret Datajust indemnisation préjudice corporel algorithme" },
+        { "kind": "article", "hint": "Article 22 RGPD", "query": "RGPD article 22 décision automatisée" },
+        { "kind": "article", "hint": "Article 6 CEDH — procès équitable", "query": "CEDH article 6 algorithme juge impartial" },
+        { "kind": "decision", "hint": "CE 30 déc. 2021 n° 441129 — maintien Datajust limité", "query": "CE 2021 Datajust validation partielle RGPD" }
+      ],
+      "curatorNotes": "Plan : I. Promesses de la justice algorithmique / II. Risques (biais, boîte noire, atteinte à l'individualisation, droits de la défense)."
+    },
+    {
+      "id": "go-preemption-culturel",
+      "text": "L'interdiction du port de signes religieux à l'école",
+      "type": "question",
+      "theme": "laicite",
+      "year": 2020,
+      "iej": "Paris I",
+      "refs": [
+        { "kind": "article", "hint": "Loi 15 mars 2004 — signes ostensibles école", "query": "loi 2004 signes ostensibles religieux école" },
+        { "kind": "article", "hint": "Article L. 141-5-1 Code éducation", "query": "code éducation signes religieux école publique" },
+        { "kind": "decision", "hint": "CEDH 30 juin 2009 Aktas c. France n° 43563/08", "query": "CEDH Aktas France signes religieux école foulard" },
+        { "kind": "decision", "hint": "CE 31 août 2023 — circulaire abaya", "query": "CE 2023 abaya circulaire Attal signes religieux" }
+      ],
+      "curatorNotes": "Plan : I. Le dispositif scolaire laïque (2004) / II. Les extensions (accompagnantes, abaya 2023) et le contrôle CEDH permissif."
+    },
+    {
+      "id": "go-animal-statut",
+      "text": "Quel statut juridique pour l'animal ?",
+      "type": "question",
+      "theme": "environnement",
+      "year": 2019,
+      "iej": "Paris II",
+      "refs": [
+        { "kind": "article", "hint": "Article 515-14 Code civil — animal être sensible", "query": "article 515-14 code civil animal être sensible" },
+        { "kind": "article", "hint": "Article 521-1 Code pénal — sévices graves", "query": "article 521-1 code pénal sévices animaux" },
+        { "kind": "article", "hint": "Loi 30 nov. 2021 — maltraitance animale", "query": "loi 2021 maltraitance animale cirques corrida" },
+        { "kind": "decision", "hint": "Cass. 1re civ. 9 déc. 2015 n° 14-25.910 — animal réparation", "query": "Cass civile animal bien attachement réparation" }
+      ],
+      "curatorNotes": "Plan : I. Évolution du statut (animal meuble → être sensible, 2015) / II. Limites persistantes (reste un bien, pas de personnalité)."
+    },
+    {
+      "id": "go-2020-paris2-mere-voilee",
+      "text": "Une mère voilée doit-elle pouvoir accompagner ses enfants en sortie scolaire ?",
+      "type": "question",
+      "theme": "laicite",
+      "year": 2020,
+      "iej": "Paris II",
+      "refs": [
+        { "kind": "article", "hint": "Loi 1905 art. 1 — liberté conscience", "query": "loi 1905 séparation église état liberté conscience" },
+        { "kind": "decision", "hint": "CE avis 19 déc. 2013 n° 387895 — parents accompagnateurs", "query": "CE avis 2013 accompagnateurs sorties scolaires signes religieux" },
+        { "kind": "article", "hint": "Article 9 CEDH", "query": "CEDH article 9 religion manifestation" },
+        { "kind": "decision", "hint": "TA Nice 9 juin 2015 — accompagnatrice voilée", "query": "tribunal administratif 2015 accompagnatrice voilée sortie" }
+      ],
+      "curatorNotes": "Plan : I. Les accompagnatrices ne sont pas des agents publics (CE 2013) / II. L'exigence contingente de neutralité (règlement intérieur, bon fonctionnement)."
+    },
+    {
+      "id": "go-droit-au-silence",
+      "text": "Le droit au silence",
+      "type": "question",
+      "theme": "procedure-penale",
+      "year": 2020,
+      "iej": "Lille / Strasbourg",
+      "refs": [
+        { "kind": "article", "hint": "Article 6 CEDH — procès équitable et droit de ne pas s'auto-incriminer", "query": "CEDH article 6 droit au silence auto-incrimination" },
+        { "kind": "article", "hint": "Article 9 DDHC — présomption d'innocence", "query": "DDHC article 9 présomption innocence" },
+        { "kind": "decision", "hint": "CEDH 25 févr. 1993 Funke c. France n° 10828/84", "query": "CEDH Funke France auto-incrimination douanes" },
+        { "kind": "article", "hint": "Article préliminaire CPP", "query": "code procédure pénale article préliminaire droits défense" },
+        { "kind": "decision", "hint": "CC 4 mars 2021 n° 2020-886 QPC — droit au silence fonctionnaires", "query": "Conseil constitutionnel 2020 886 QPC droit silence fonctionnaire" }
+      ],
+      "curatorNotes": "Plan : I. Consécration européenne et constitutionnelle / II. Applications (GAV, audition libre, enquêtes disciplinaires, fonctionnaires)."
+    },
+    {
+      "id": "go-droit-asile-etendre",
+      "text": "Faut-il étendre le droit d'asile aux réfugiés climatiques ?",
+      "type": "question",
+      "theme": "etrangers",
+      "year": 2025,
+      "iej": "Bordeaux / Nanterre",
+      "refs": [
+        { "kind": "article", "hint": "Préambule 1946 al. 4", "query": "Préambule 1946 droit asile" },
+        { "kind": "article", "hint": "Convention Genève 1951 — persécution", "query": "convention Genève 1951 réfugié persécution" },
+        { "kind": "article", "hint": "Article 1 Charte environnement", "query": "Charte environnement article 1 environnement sain" },
+        { "kind": "decision", "hint": "Comité DH ONU Teitiota c. Nouvelle-Zélande 24 oct. 2019", "query": "Comité droits homme ONU Teitiota climat réfugié" }
+      ],
+      "curatorNotes": "Plan : I. L'inadéquation du cadre actuel (Genève restrictive) / II. Les voies d'extension (statut sui generis, jurisprudence Teitiota, initiatives UE)."
+    },
+    {
+      "id": "go-vulnerabilite",
+      "text": "La vulnérabilité en droit",
+      "type": "question",
+      "theme": "egalite",
+      "year": 2023,
+      "iej": "Nantes",
+      "refs": [
+        { "kind": "article", "hint": "Article 1 DDHC — égalité", "query": "DDHC article 1 égalité" },
+        { "kind": "article", "hint": "Article 225-1 Code pénal — discrimination", "query": "article 225-1 code pénal discrimination vulnérabilité" },
+        { "kind": "article", "hint": "Article 8 CEDH — vie privée et obligations positives", "query": "CEDH article 8 obligations positives personnes vulnérables" },
+        { "kind": "decision", "hint": "CEDH GC 4 déc. 2015 Roman Zakharov c. Russie — protection groupe vulnérable", "query": "CEDH protection groupe vulnérable obligations positives" }
+      ],
+      "curatorNotes": "Plan : I. Émergence d'un concept transversal (âge, santé, précarité, dépendance) / II. Limites (risque paternaliste, tension avec égalité formelle)."
+    },
+    {
+      "id": "go-droit-asile-enfants-syrie",
+      "text": "Le rapatriement des femmes et enfants français détenus en Syrie",
+      "type": "question",
+      "theme": "etrangers",
+      "year": 2023,
+      "iej": "Paris I",
+      "refs": [
+        { "kind": "decision", "hint": "CEDH GC 14 sept. 2022 H.F. et autres c. France n° 24384/19", "query": "CEDH HF France Syrie rapatriement enfants femmes" },
+        { "kind": "decision", "hint": "CE 9 avril 2019 n° 429668 — refus rapatriement", "query": "CE 2019 Syrie rapatriement refus obligation positive" },
+        { "kind": "article", "hint": "Article 3 CEDH — traitements inhumains", "query": "CEDH article 3 traitements inhumains obligations" },
+        { "kind": "article", "hint": "Article 3 Convention internationale droits enfant", "query": "Convention internationale droits enfant intérêt supérieur rapatriement" }
+      ],
+      "curatorNotes": "Plan : I. Le refus initial français (CE 2019) / II. La condamnation CEDH HF c. France 2022 et l'évolution vers le rapatriement encadré."
+    },
+    {
+      "id": "go-egalite-armes",
+      "text": "L'égalité des armes dans le procès",
+      "type": "question",
+      "theme": "procedure-penale",
+      "year": 2020,
+      "iej": "Lille",
+      "refs": [
+        { "kind": "article", "hint": "Article 6 CEDH — procès équitable", "query": "CEDH article 6 égalité armes procès équitable" },
+        { "kind": "article", "hint": "Article préliminaire CPP", "query": "code procédure pénale article préliminaire équité armes" },
+        { "kind": "decision", "hint": "CEDH 6 juin 2000 Morel c. France n° 34130/96", "query": "CEDH Morel France égalité armes procédure" },
+        { "kind": "article", "hint": "Article 16 DDHC", "query": "DDHC article 16 garantie droits" }
+      ],
+      "curatorNotes": "Plan : I. Un principe structurant (CEDH 6, DDHC 16) / II. Les inégalités résiduelles (moyens parquet/défense, secret des sources, détention provisoire)."
+    },
+    {
+      "id": "go-pluralisme-medias",
+      "text": "Le pluralisme des médias, condition de la liberté d'expression ?",
+      "type": "question",
+      "theme": "expression",
+      "year": 2021,
+      "iej": "Evry",
+      "refs": [
+        { "kind": "article", "hint": "Article 11 DDHC", "query": "DDHC article 11 expression" },
+        { "kind": "decision", "hint": "CC 10-11 oct. 1984 n° 84-181 DC — loi presse pluralisme", "query": "Conseil constitutionnel 1984 181 DC pluralisme presse" },
+        { "kind": "article", "hint": "Loi 29 juil. 1982 — communication audiovisuelle", "query": "loi 1982 communication audiovisuelle pluralisme" },
+        { "kind": "article", "hint": "Article 10 CEDH", "query": "CEDH article 10 pluralisme information" }
+      ],
+      "curatorNotes": "Plan : I. Consécration constitutionnelle du pluralisme (CC 1984) / II. Les défis (concentration, réseaux sociaux, Arcom, modération)."
+    },
+    {
+      "id": "go-2024-caen-gpa",
+      "text": "Cass. civ. 1re 2 oct. 2024 — gestation pour autrui et filiation",
+      "type": "case",
+      "theme": "bioethique",
+      "year": 2024,
+      "iej": "Caen",
+      "refs": [
+        { "kind": "decision", "hint": "Cass. civ. 1re 2 oct. 2024", "query": "Cass civile octobre 2024 GPA gestation autrui filiation" },
+        { "kind": "article", "hint": "Article 16-7 Code civil", "query": "article 16-7 code civil GPA nullité convention" },
+        { "kind": "decision", "hint": "CEDH GC 10 avril 2019 Avis consultatif P16-2018-001 — GPA", "query": "CEDH avis consultatif GPA filiation mère intention" },
+        { "kind": "decision", "hint": "Cass. ass. plén. 4 oct. 2019 n° 10-19.053", "query": "Cass assemblée plénière 2019 GPA transcription acte naissance" }
+      ],
+      "curatorNotes": "Plan : I. L'interdiction de principe maintenue (16-7, ordre public) / II. Les aménagements pour l'enfant (transcription, adoption, intérêt supérieur)."
+    },
+    {
+      "id": "go-2024-ce-juge-admin",
+      "text": "CE 15 avril 2024 n° 469719 — indépendance du juge administratif",
+      "type": "case",
+      "theme": "institutions",
+      "year": 2024,
+      "iej": "Aix",
+      "refs": [
+        { "kind": "decision", "hint": "CE 15 avril 2024 n° 469719", "query": "CE avril 2024 469719 indépendance juge administratif" },
+        { "kind": "article", "hint": "Article 6 CEDH — tribunal indépendant et impartial", "query": "CEDH article 6 tribunal indépendant impartial" },
+        { "kind": "decision", "hint": "CEDH 9 nov. 2006 Sacilor-Lormines c. France n° 65411/01", "query": "CEDH Sacilor Lormines France juge administratif dualité" },
+        { "kind": "article", "hint": "Article 64 Constitution — indépendance judiciaire", "query": "Constitution article 64 indépendance magistrature" }
+      ],
+      "curatorNotes": "Plan : I. La dualité fonctionnelle du CE (Conseil + contentieux) / II. Les garanties progressives (Sacilor-Lormines, séparation, rôle du VPCE)."
+    },
+    {
+      "id": "go-2023-paris5-insemination-post-mortem",
+      "text": "CEDH 14 sept. 2023 Baret et Caballero c. France — insémination post-mortem",
+      "type": "case",
+      "theme": "bioethique",
+      "year": 2023,
+      "iej": "Paris V / Aix",
+      "refs": [
+        { "kind": "decision", "hint": "CEDH 14 sept. 2023 Baret et Caballero c. France n° 22296/20", "query": "CEDH Baret Caballero France insémination post-mortem article 8" },
+        { "kind": "article", "hint": "Article 8 CEDH — vie privée et familiale", "query": "CEDH article 8 vie privée familiale procréation" },
+        { "kind": "article", "hint": "Article L. 2141-2 Code santé publique — PMA", "query": "code santé publique PMA couple vivants interdiction post-mortem" },
+        { "kind": "decision", "hint": "CE 31 mai 2016 Gonzalez-Gomez n° 396848", "query": "CE Gonzalez Gomez insémination post-mortem exportation gamètes" }
+      ],
+      "curatorNotes": "Plan : I. L'interdiction française maintenue (CEDH admet marge nationale) / II. Les aménagements casuistiques (CE 2016, exportation de gamètes vers l'étranger)."
+    },
+    {
+      "id": "go-2022-paris-gisele-halimi",
+      "text": "Discours de Gisèle Halimi (Bobigny 1972) — procès du droit à l'IVG",
+      "type": "case",
+      "theme": "bioethique",
+      "year": 2022,
+      "iej": "Paris II / Strasbourg",
+      "refs": [
+        { "kind": "article", "hint": "Loi 17 janv. 1975 Veil", "query": "loi Veil 1975 IVG dépénalisation" },
+        { "kind": "article", "hint": "LC 8 mars 2024", "query": "loi constitutionnelle 2024 IVG article 34" },
+        { "kind": "decision", "hint": "CC 15 janv. 1975 n° 74-54 DC", "query": "Conseil constitutionnel 1975 IVG loi Veil" },
+        { "kind": "article", "hint": "Article 2 CEDH — vie", "query": "CEDH article 2 vie embryon" }
+      ],
+      "curatorNotes": "Plan : I. Un procès fondateur (Choisir, dépénalisation) / II. Postérité constitutionnelle (1975, 2024)."
+    },
+    {
+      "id": "go-etat-droit-demode",
+      "text": "L'État de droit : une valeur démodée ?",
+      "type": "question",
+      "theme": "institutions",
+      "year": 2025,
+      "iej": "Bordeaux",
+      "refs": [
+        { "kind": "article", "hint": "Article 2 TUE — valeurs de l'Union", "query": "TUE article 2 valeurs Union état droit démocratie" },
+        { "kind": "article", "hint": "Article 16 DDHC — garantie des droits, séparation des pouvoirs", "query": "DDHC article 16 garantie droits séparation pouvoirs constitution" },
+        { "kind": "decision", "hint": "CJUE 27 févr. 2018 Associação Sindical dos Juízes Portugueses C-64/16", "query": "CJUE ASJP Portugal indépendance juges état droit" },
+        { "kind": "decision", "hint": "CJUE 24 juin 2019 Commission c. Pologne C-619/18", "query": "CJUE Commission Pologne indépendance juges article 19 TUE" }
+      ],
+      "curatorNotes": "Actualité (crises Pologne, Hongrie, Roumanie, USA). Plan : I. Pilier du libéralisme juridique / II. Contestations (démocraties illibérales, érosion interne, articulation UE)."
+    }
+  ]
+}

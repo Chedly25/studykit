@@ -11,6 +11,40 @@
  * family law, criminal procedure, press freedom, religious freedom, etc.
  */
 
+// ─── Seed corpus shape (real past sujets from IEJ annales) ──────────
+
+export type GrandOralSujetType = 'question' | 'case' | 'article'
+
+export interface GrandOralSujetRef {
+  kind: 'article' | 'decision' | 'doctrine'
+  hint: string      // human-readable, e.g. "CEDH 21 févr 2006 Funke c. France"
+  // Either RAG-grounded (query) or pre-resolved (authoritative excerpt).
+  // During ingestion rollout, preResolved refs progressively migrate to query refs.
+  query?: string
+  preResolved?: {
+    source: string    // "CEDH, 15 févr. 2001, Dahlab c. Suisse, n° 42393/98"
+    text: string      // authoritative excerpt of the ruling/holding
+    sourceUrl?: string
+  }
+}
+
+export interface GrandOralSujet {
+  id: string
+  text: string
+  type: GrandOralSujetType
+  theme: string
+  year?: number
+  iej?: string
+  refs: GrandOralSujetRef[]
+  curatorNotes?: string    // never shown to the model
+}
+
+export interface ResolvedRef {
+  hint: string
+  source: string    // breadcrumb or codeName from Vectorize
+  text: string      // actual article/decision text
+}
+
 export interface GrandOralTopic {
   topic: string
   type: 'question' | 'case' | 'article'
@@ -90,6 +124,291 @@ Retourne UNIQUEMENT le JSON :
     "Question 4",
     "Question 5"
   ]
+}`
+
+  return { system, user }
+}
+
+// ─── Prompt 1 — Sujet grounding (seed + RAG → full task) ────────────
+
+export function buildGrandOralGroundingPrompt(seed: GrandOralSujet, resolvedRefs: ResolvedRef[]): { system: string; user: string } {
+  const system = `Tu es préparateur pour le Grand Oral CRFPA. À partir d'un sujet réel et d'un ensemble de références juridiques fournies, tu produis le cadre d'analyse que le candidat devra maîtriser.
+
+## RÈGLE ABSOLUE — VÉRITÉ MATÉRIELLE
+
+Tu ne cites JAMAIS un article, un arrêt, un auteur ou une décision qui n'apparaît pas textuellement dans les "Références fournies". Si ton raisonnement en réclame un que tu n'as pas, tu reformules le point sans citation plutôt que d'en inventer un.
+
+## CE QUE TU PRODUIS
+
+1. Une problématique (1-2 phrases)
+2. Un plan dialectique (I/A, I/B, II/A, II/B) — titres courts, percutants
+3. 5-8 points clés attendus, chacun rattaché à un index de référence
+4. 6 questions subsidiaires que le jury pourrait poser, chacune rattachée à un index de référence
+
+Format : JSON strict, sans markdown, sans préambule.`
+
+  const refsBlock = resolvedRefs
+    .map((r, i) => `[REF-${i}] ${r.source}\n${r.text}\n---`)
+    .join('\n')
+
+  const user = `## SUJET RÉEL
+
+Type : ${seed.type}
+Texte : ${seed.text}
+Thème : ${seed.theme}${seed.year ? `\nContexte : ${seed.year}${seed.iej ? ` — ${seed.iej}` : ''}` : ''}
+
+## RÉFÉRENCES FOURNIES (seules citations autorisées)
+
+${refsBlock}
+
+## RÉPONSE
+
+{
+  "problematique": "...",
+  "expectedPlan": { "I":"...", "IA":"...", "IB":"...", "II":"...", "IIA":"...", "IIB":"..." },
+  "keyPoints": [{ "point": "...", "refIndex": 0 }],
+  "subsidiaryQuestions": [{ "question": "...", "refIndex": 0 }]
+}`
+
+  return { system, user }
+}
+
+// ─── Prompt 2 — Realtime jury system prompt (OpenAI `instructions`) ─
+
+export function buildGrandOralJurySystemPrompt(params: {
+  sujetText: string
+  type: GrandOralSujetType
+  planResume: string
+}): string {
+  return `Tu es membre du jury du Grand Oral CRFPA. Tu fais passer un candidat qui vient de tirer son sujet il y a une heure.
+
+## CADRE
+
+- 15 min d'exposé (intro + plan I/A I/B II/A II/B + conclusion)
+- 30 min de questions-réponses
+- Total 45 min
+
+## TON PERSONNAGE
+
+Universitaire ou avocat expérimenté. Français soutenu, précis, sans familiarité. Bienveillant mais exigeant. Pas de tics verbaux.
+
+## PHASE 1 — EXPOSÉ (15 min)
+
+Tu ne dis RIEN, sauf un cas : le candidat cite une décision ou un article qui sonne inventé. Tu l'interromps : "Un instant, Maître — pouvez-vous me redonner la référence exacte ?"
+
+À 14 min : "Il vous reste une minute."
+À 15 min : "Je vous remercie. Passons aux questions."
+
+## PHASE 2 — QUESTIONS (30 min)
+
+Tu INTERROMPS mid-phrase quand :
+- Le candidat tourne en rond depuis plus de 30 secondes
+- Il cite une référence inventée
+- Il se contredit par rapport à son exposé
+- Il noie le poisson
+
+Pour poser une question de fond, tu APPELLES L'OUTIL get_next_jury_question. L'outil te renvoie une question calibrée sur les vraies références du sujet. Tu la reformules oralement avec ton propre phrasé, mais tu ne changes JAMAIS le contenu juridique.
+
+Tu varies : questions fermées (oui/non), ouvertes, devil's advocate, questions de culture. Tu ne donnes JAMAIS la bonne réponse. Si le candidat se trompe, tu relances ("Êtes-vous certain ?").
+
+## RÈGLE ABSOLUE
+
+Tu ne cites aucune décision, article, auteur en dehors de ce que get_next_jury_question te fournit. Jamais.
+
+## VOIX
+
+Débit normal, posé. Phrases courtes quand tu interromps, plus construites quand tu relances.
+
+## CONTEXTE DE CE CANDIDAT
+
+Sujet tiré : ${params.sujetText}
+Type : ${params.type}
+Plan attendu (ton usage interne, à ne pas révéler) : ${params.planResume}
+
+Démarre l'épreuve en disant uniquement : "Vous pouvez commencer, Maître."`
+}
+
+// ─── Prompt 3 — Jury question tool (Claude, mid-session) ────────────
+
+export interface JuryQuestionContext {
+  sujetText: string
+  type: GrandOralSujetType
+  expectedPlan: { I: string; IA: string; IB: string; II: string; IIA: string; IIB: string }
+  keyPoints: Array<{ point: string; refIndex: number }>
+  resolvedRefs: ResolvedRef[]
+  exposeTranscript: string
+  qaSoFar: string
+  alreadyAsked: string[]
+  difficulty: 'facile' | 'moyen' | 'difficile'
+}
+
+export function buildJuryQuestionPrompt(ctx: JuryQuestionContext): { system: string; user: string } {
+  const system = `Tu es le cerveau analytique du jury du Grand Oral CRFPA. Tu ne parles pas au candidat — tu produis la prochaine question que la voix du jury posera.
+
+## RÈGLE ABSOLUE
+
+Ta question ne peut s'appuyer que sur les "Références autorisées". Jamais d'invention.
+
+## TU CHOISIS LA QUESTION QUI
+
+1. Comble une lacune de l'exposé (un point clé oublié)
+2. Teste une citation faite par le candidat de façon vague
+3. Force une prise de position où il a botté en touche
+4. Ou, si l'exposé est solide, pousse vers une réflexion plus fine
+
+Format : JSON strict.`
+
+  const refsBlock = ctx.resolvedRefs
+    .map((r, i) => `[REF-${i}] ${r.source} — ${r.text.slice(0, 400)}${r.text.length > 400 ? '...' : ''}`)
+    .join('\n')
+
+  const keyPointsBlock = ctx.keyPoints
+    .map(kp => `- ${kp.point}  (ref ${kp.refIndex})`)
+    .join('\n')
+
+  const alreadyAskedBlock = ctx.alreadyAsked.length
+    ? ctx.alreadyAsked.map((q, i) => `${i + 1}. ${q}`).join('\n')
+    : '(aucune question posée pour l\'instant)'
+
+  const user = `## SUJET
+
+${ctx.sujetText}  (type : ${ctx.type})
+
+Plan attendu :
+- I — ${ctx.expectedPlan.I}
+  - A : ${ctx.expectedPlan.IA}
+  - B : ${ctx.expectedPlan.IB}
+- II — ${ctx.expectedPlan.II}
+  - A : ${ctx.expectedPlan.IIA}
+  - B : ${ctx.expectedPlan.IIB}
+
+Points clés attendus :
+${keyPointsBlock}
+
+## RÉFÉRENCES AUTORISÉES
+
+${refsBlock}
+
+## EXPOSÉ DU CANDIDAT (transcription 15 min)
+
+${ctx.exposeTranscript}
+
+## ÉCHANGES DÉJÀ EUS
+
+${ctx.qaSoFar || '(aucun échange pour l\'instant)'}
+
+## QUESTIONS DÉJÀ POSÉES (ne pas répéter)
+
+${alreadyAskedBlock}
+
+## DIFFICULTÉ DEMANDÉE
+
+${ctx.difficulty}  (facile = culture générale, moyen = précision, difficile = déstabilisation)
+
+## RÉPONSE
+
+{
+  "question": "La question exacte, formulée comme un vrai juriste la dirait à l'oral",
+  "targetGap": "Ce que cette question teste (1 ligne)",
+  "refIndex": 0,
+  "followUpHint": "Si le candidat esquive, relance en 1 phrase"
+}`
+
+  return { system, user }
+}
+
+// ─── Prompt 4 — Final grading (Claude, after session) ───────────────
+
+export interface GrandOralGradingContext {
+  sujetText: string
+  type: GrandOralSujetType
+  expectedPlan: { I: string; IA: string; IB: string; II: string; IIA: string; IIB: string }
+  keyPoints: Array<{ point: string; refIndex: number }>
+  resolvedRefs: ResolvedRef[]
+  fullTranscript: string
+  durationSec: number
+  exposeDurationSec: number
+  interruptionCount: number
+  avgLatencySec: number
+}
+
+export function buildGrandOralGradingPrompt(ctx: GrandOralGradingContext): { system: string; user: string } {
+  const system = `Tu es correcteur du Grand Oral CRFPA. Tu notes le candidat sur 4 axes, chacun 0-20.
+
+## BARÈME
+
+1. Fond juridique (0-20) : exactitude des références, profondeur de l'analyse, maîtrise des articles et arrêts
+2. Forme (0-20) : plan apparent, annonce, transitions, conclusion, gestion du temps (15 min), éloquence, débit
+3. Réactivité (0-20) : qualité des réponses aux questions, capacité à rebondir, tenue face aux relances, absence de répétition
+4. Posture (0-20) : confiance perçue (fluidité, silences, tics verbaux), respect du cadre (registre), maîtrise de la pression
+
+## PLAFONDS
+
+- Référence inventée (hors "Références autorisées") → Fond juridique plafonné à 8/20
+- Exposé < 12 min ou > 17 min → -3 sur Forme
+- Moins de 3 réponses de fond aux questions → Réactivité plafonnée à 10/20
+
+## CONSIGNES
+
+- Sois exigeant. 14/20 est déjà très bon au CRFPA.
+- Dans chaque feedback, cite textuellement un passage de la transcription entre guillemets.
+
+Format : JSON strict.`
+
+  const refsBlock = ctx.resolvedRefs
+    .map((r, i) => `[REF-${i}] ${r.source}`)
+    .join('\n')
+
+  const keyPointsBlock = ctx.keyPoints
+    .map(kp => `- ${kp.point}`)
+    .join('\n')
+
+  const user = `## SUJET ET ATTENDUS
+
+Sujet : ${ctx.sujetText}
+Type : ${ctx.type}
+
+Plan attendu :
+- I — ${ctx.expectedPlan.I}
+  - A : ${ctx.expectedPlan.IA}
+  - B : ${ctx.expectedPlan.IB}
+- II — ${ctx.expectedPlan.II}
+  - A : ${ctx.expectedPlan.IIA}
+  - B : ${ctx.expectedPlan.IIB}
+
+Points clés attendus :
+${keyPointsBlock}
+
+Références autorisées :
+${refsBlock}
+
+## MÉTRIQUES TECHNIQUES
+
+Durée totale : ${ctx.durationSec} s
+Durée de l'exposé : ${ctx.exposeDurationSec} s (attendu ≈ 900 s)
+Interruptions par le jury : ${ctx.interruptionCount}
+Latence moyenne de réponse du candidat : ${ctx.avgLatencySec} s
+
+## TRANSCRIPTION COMPLÈTE
+
+${ctx.fullTranscript}
+
+## RÉPONSE
+
+{
+  "axes": {
+    "fondJuridique": { "score": 0, "feedback": "3-4 phrases avec citations textuelles" },
+    "forme":         { "score": 0, "feedback": "..." },
+    "reactivite":    { "score": 0, "feedback": "..." },
+    "posture":       { "score": 0, "feedback": "..." }
+  },
+  "overall": {
+    "score": 0,
+    "admis": false,
+    "topMistake": "...",
+    "topStrength": "...",
+    "inventedReferences": []
+  }
 }`
 
   return { system, user }

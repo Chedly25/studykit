@@ -28,4 +28,7 @@ export interface Env {
   LEGAL_CODES_INDEX?: VectorizeIndex
   ADMIN_API_KEY?: string
   HF_API_TOKEN?: string
+  OPENAI_API_KEY?: string
+  OPENAI_REALTIME_MODEL?: string
+  GRAND_ORAL_ENABLED?: string
 }

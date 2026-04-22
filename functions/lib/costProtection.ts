@@ -20,6 +20,8 @@ const DAILY_CAPS: Record<string, { free: number; pro: number }> = {
   push:       { free: 10,  pro: 50 },
   transcribe: { free: 0,   pro: 10 },
   vision:     { free: 0,   pro: 8 },
+  // Grand Oral: ~$2-3 per 45-min session. Cap pro to 1/day (effectively 2/month via monthly cap in session.ts).
+  'grand-oral': { free: 0, pro: 1 },
 }
 
 // ─── Global kill switch threshold (all users combined) ───────────
@@ -30,6 +32,8 @@ const GLOBAL_DAILY_CAP: Record<string, number> = {
   search: 1000,
   transcribe: 500,
   vision: 500,
+  // Emergency kill switch — at ~$2.50/session, 50 sessions/day = ~$125/day ceiling.
+  'grand-oral': 50,
 }
 
 // ─── R2 free-tier protection ─────────────────────────────────────

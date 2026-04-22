@@ -279,3 +279,72 @@ export interface NoteSyntheseGrading {
   documentsMissed: number[]
   gradedAt: string
 }
+
+// ─── Grand Oral Coach (voice simulator) ──────────────────────────
+
+import type { GrandOralSujet, ResolvedRef, GrandOralSujetType } from '../prompts/grandOralPrompts'
+
+/**
+ * Task for one Grand Oral session. Produced by grounding a seed sujet through RAG:
+ * refs are resolved from Vectorize (or inline preResolved text), then Claude
+ * composes the expected plan + key points + subsidiary questions.
+ */
+export interface GrandOralTask {
+  sujet: GrandOralSujet
+  resolvedRefs: ResolvedRef[]
+  problematique: string
+  expectedPlan: { I: string; IA: string; IB: string; II: string; IIA: string; IIB: string }
+  keyPoints: Array<{ point: string; refIndex: number }>
+  subsidiaryQuestions: Array<{ question: string; refIndex: number }>
+  generatedAt: string
+}
+
+/**
+ * Student's completed session. Transcript is the concatenated student+jury
+ * turns from the WebRTC session. Metrics help grade forme/posture/réactivité.
+ */
+export interface GrandOralSubmission {
+  fullTranscript: string        // chronological student+jury turns
+  exposeTranscript: string      // student's opening 15 min only
+  durationSec: number
+  exposeDurationSec: number
+  interruptionCount: number     // how many times jury interrupted student
+  avgLatencySec: number         // avg student response delay after jury question
+  juryQuestions: string[]       // questions the jury asked during Q&A
+  submittedAt: string
+}
+
+export type GrandOralAxis = 'fondJuridique' | 'forme' | 'reactivite' | 'posture'
+
+export interface GrandOralAxisScore {
+  score: number        // 0-20
+  feedback: string
+}
+
+export interface GrandOralGrading {
+  axes: Record<GrandOralAxis, GrandOralAxisScore>
+  overall: {
+    score: number                       // moyenne 4 axes, 0-20, to 0.5
+    admis: boolean                      // score >= 10
+    topMistake: string
+    topStrength: string
+    inventedReferences: string[]        // refs cited but absent from resolvedRefs
+  }
+  gradedAt: string
+}
+
+/** Args emitted by the realtime agent when calling get_next_jury_question. */
+export interface JuryQuestionToolArgs {
+  exposeTranscript: string
+  qaSoFar: string
+  alreadyAsked: string[]
+  difficulty: 'facile' | 'moyen' | 'difficile'
+}
+
+/** Result returned to the realtime agent. */
+export interface JuryQuestionToolResult {
+  question: string
+  targetGap: string
+  refIndex: number | null
+  followUpHint: string
+}
