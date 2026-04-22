@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+/* eslint-disable no-console */
 /**
  * Ingest all non-code legal sources for CRFPA preparation:
  *   - Jurisprudence (Cour de Cassation via Judilibre)
@@ -68,15 +69,18 @@ interface Chunk {
 
 // ─── 1. JURISPRUDENCE (Judilibre) ───────────────────────
 
+// Judilibre chamber codes (verified against /search?chamber=... error message).
+// Note: commercial is `comm` (not `com`), criminal is `cr` (not `crim`).
+// Earlier incorrect codes produced silent 400 errors and empty cache files.
 const CHAMBERS = [
-  { code: 'soc', name: 'Chambre sociale' },
+  { code: 'soc',  name: 'Chambre sociale' },
   { code: 'civ1', name: 'Première chambre civile' },
   { code: 'civ2', name: 'Deuxième chambre civile' },
   { code: 'civ3', name: 'Troisième chambre civile' },
-  { code: 'com', name: 'Chambre commerciale' },
-  { code: 'crim', name: 'Chambre criminelle' },
-  { code: 'mi', name: 'Chambre mixte' },
-  { code: 'pl', name: 'Assemblée plénière' },
+  { code: 'comm', name: 'Chambre commerciale' },
+  { code: 'cr',   name: 'Chambre criminelle' },
+  { code: 'mi',   name: 'Chambre mixte' },
+  { code: 'pl',   name: 'Assemblée plénière' },
 ]
 
 async function crawlJurisprudence(): Promise<Chunk[]> {

@@ -37,3 +37,20 @@ dist-ssr
 *.sln
 *.sw?
 corrections/sujets-mines-ponts-mp/*.pdf
+
+# Legal corpus ingest pipeline (huge local artifacts, not repo data)
+legal-output/
+legal-sources-output/
+
+# Subject PDFs across corrections dirs
+corrections/sujets-*/*.pdf
+corrections/sujets-*/**/*.pdf
+
+# Scratch benchmarking scripts
+scripts/batch-size-test.mjs
+scripts/cpu-rate-test.mjs
+scripts/gpu-compat-test.mjs
+scripts/gpu-test.mjs
+
+# Claude scheduled tasks lock
+.claude/scheduled_tasks.lock

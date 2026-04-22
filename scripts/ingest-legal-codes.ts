@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+/* eslint-disable no-console */
 /**
  * Ingest all French legal codes from Legifrance into Vectorize-ready NDJSON.
  *
@@ -366,29 +367,6 @@ function chunkArticles(articles: FetchedArticle[], codeName: string, codeSlug: s
           text: `Art. ${art.num} — ${buffer}`,
         })
       }
-    } else if (art.wordCount < 50) {
-      // Group short articles together
-      let grouped = `Art. ${art.num} — ${art.text}`
-      let totalWords = art.wordCount
-      const nums = [art.num]
-      let j = i + 1
-      while (j < articles.length && totalWords < 100) {
-        const next = articles[j]
-        if (next.wordCount > 100) break // don't group with a longer article
-        grouped += `\n\nArt. ${next.num} — ${next.text}`
-        totalWords += next.wordCount
-        nums.push(next.num)
-        j++
-      }
-      chunks.push({
-        id: `${codeSlug}-art-${slugify(nums[0])}`,
-        codeName,
-        num: nums.join(', '),
-        breadcrumb,
-        text: grouped,
-      })
-      i = j
-      continue
     } else {
       // Normal article — one chunk
       chunks.push({
@@ -442,20 +420,6 @@ async function generateEmbeddings(texts: string[], _token: string): Promise<numb
   }
   console.log(`  Embedded ${texts.length}/${texts.length}`)
   return all
-}
-
-// ─── Step 6: Write NDJSON for Vectorize ─────────────────
-
-function writeVectorBatches(vectors: VectorEntry[], dir: string): number {
-  const MAX_PER_FILE = 5000
-  let fileIndex = 0
-  for (let i = 0; i < vectors.length; i += MAX_PER_FILE) {
-    const batch = vectors.slice(i, i + MAX_PER_FILE)
-    const lines = batch.map(v => JSON.stringify(v)).join('\n')
-    writeFileSync(join(dir, `batch-${String(fileIndex).padStart(3, '0')}.ndjson`), lines + '\n')
-    fileIndex++
-  }
-  return fileIndex
 }
 
 // ─── Main ───────────────────────────────────────────────
@@ -542,6 +506,12 @@ async function main() {
     const chunks = chunkArticles(fetchedArticles, code.title, codeSlug)
     console.log(`  Chunks: ${chunks.length}`)
     totalChunks += chunks.length
+
+    // Persist chunks JSON (for offline GPU embedding via scripts/embed-sources.ts).
+    // Written unconditionally so you can regenerate vectors later with any embedder.
+    const chunksDir = join(outputDir, 'chunks')
+    mkdirSync(chunksDir, { recursive: true })
+    writeFileSync(join(chunksDir, `${codeSlug}.json`), JSON.stringify(chunks))
 
     // Generate embeddings per-code (incremental)
     if ((authToken || adminKey) && !embeddingsFailed) {
