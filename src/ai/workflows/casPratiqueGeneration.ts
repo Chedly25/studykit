@@ -64,6 +64,11 @@ export function createCasPratiqueGenerationWorkflow(config: CasPratiqueGeneratio
             topics: context.topics,
             avoidThemes: context.avoidThemes,
             duration: config.duration,
+            // Legacy exam-engine path — no grounding pool wired here. The CRFPA
+            // vertical uses `src/ai/coaching/casPratiqueCoach.ts` which enforces
+            // a verified pool. This legacy caller remains only for non-CRFPA
+            // users accessing the old /practice-exam entry point.
+            groundingPool: [],
           })
 
           ctx.updateProgress?.('Generating case scenario...')

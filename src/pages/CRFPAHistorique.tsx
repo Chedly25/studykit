@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-import { History, ArrowRight, PenSquare, ListTree, FileText, BookMarked, FileCheck } from 'lucide-react'
+import { History, ArrowRight, PenSquare, ListTree, FileText, BookMarked, FileCheck, Scale, NotebookPen } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileVertical } from '../hooks/useProfileVertical'
 import {
@@ -16,18 +16,20 @@ import {
 import { listPlanSessions, type PlanSessionView } from '../ai/coaching/planStore'
 import { listFicheSessions, type FicheSessionView } from '../ai/coaching/ficheArretStore'
 import { listCommentaireSessions, type CommentaireSessionView } from '../ai/coaching/commentaireStore'
+import { listCasPratiqueSessions, type CasPratiqueSessionView } from '../ai/coaching/casPratiqueStore'
 import { listNoteSyntheseSessions, type NoteSyntheseSessionView } from '../ai/coaching/noteSyntheseStore'
+import { listLegalFiches, type LegalFicheView } from '../ai/coaching/legalFicheStore'
 
-type Filter = 'all' | 'syllogisme' | 'plan' | 'fiche' | 'commentaire' | 'note-synthese'
+type Filter = 'all' | 'syllogisme' | 'plan' | 'fiche' | 'commentaire' | 'cas-pratique' | 'note-synthese' | 'revision-fiche'
 
 interface Row {
-  kind: 'syllogisme' | 'plan' | 'fiche' | 'commentaire' | 'note-synthese'
+  kind: 'syllogisme' | 'plan' | 'fiche' | 'commentaire' | 'cas-pratique' | 'note-synthese' | 'revision-fiche'
   id: string
-  primary: string       // theme / question / chamber
-  secondary?: string    // difficulty / themeLabel / reference
+  primary: string       // theme / question / chamber / specialtyLabel / fiche title
+  secondary?: string    // difficulty / themeLabel / reference / scenario preview / matière
   score?: number
-  maxScore: number      // 30 for syllogisme+plan, 25 for fiche+commentaire
-  status: 'en-cours' | 'soumis' | 'corrigé'
+  maxScore: number      // 30/25/20 for coaches; 0 for fiches (no score)
+  status: 'en-cours' | 'soumis' | 'corrigé' | 'éditée'
   createdAt: string
 }
 
@@ -95,6 +97,31 @@ function toRowCommentaire(c: CommentaireSessionView): Row {
   }
 }
 
+function toRowLegalFiche(f: LegalFicheView): Row {
+  return {
+    kind: 'revision-fiche',
+    id: f.id,
+    primary: f.theme,
+    secondary: f.matiere ?? f.source,
+    maxScore: 0,
+    status: 'éditée',
+    createdAt: f.updatedAt,
+  }
+}
+
+function toRowCasPratique(c: CasPratiqueSessionView): Row {
+  return {
+    kind: 'cas-pratique',
+    id: c.id,
+    primary: c.task.specialtyLabel,
+    secondary: c.task.scenario.slice(0, 80).trim(),
+    score: c.grading?.overall.score,
+    maxScore: 20,
+    status: c.grading ? 'corrigé' : c.submission ? 'soumis' : 'en-cours',
+    createdAt: c.createdAt,
+  }
+}
+
 function toRowNoteSynthese(n: NoteSyntheseSessionView): Row {
   return {
     kind: 'note-synthese',
@@ -117,7 +144,9 @@ export default function CRFPAHistorique() {
   const [plans, setPlans] = useState<PlanSessionView[]>([])
   const [fiches, setFiches] = useState<FicheSessionView[]>([])
   const [commentaires, setCommentaires] = useState<CommentaireSessionView[]>([])
+  const [casPratiques, setCasPratiques] = useState<CasPratiqueSessionView[]>([])
   const [notesSynthese, setNotesSynthese] = useState<NoteSyntheseSessionView[]>([])
+  const [legalFichesList, setLegalFichesList] = useState<LegalFicheView[]>([])
   const [filter, setFilter] = useState<Filter>('all')
 
   useEffect(() => {
@@ -127,14 +156,18 @@ export default function CRFPAHistorique() {
       listPlanSessions(examProfileId),
       listFicheSessions(examProfileId),
       listCommentaireSessions(examProfileId),
+      listCasPratiqueSessions(examProfileId),
       listNoteSyntheseSessions(examProfileId),
-    ]).then(([s, p, f, c, ns]) => {
+      listLegalFiches(examProfileId),
+    ]).then(([s, p, f, c, cp, ns, lf]) => {
       if (cancelled) return
       setSyllogismes(s)
       setPlans(p)
       setFiches(f)
       setCommentaires(c)
+      setCasPratiques(cp)
       setNotesSynthese(ns)
+      setLegalFichesList(lf)
     })
     return () => { cancelled = true }
   }, [examProfileId])
@@ -145,11 +178,13 @@ export default function CRFPAHistorique() {
       ...plans.map(toRowPlan),
       ...fiches.map(toRowFiche),
       ...commentaires.map(toRowCommentaire),
+      ...casPratiques.map(toRowCasPratique),
       ...notesSynthese.map(toRowNoteSynthese),
+      ...legalFichesList.map(toRowLegalFiche),
     ]
     const filtered = filter === 'all' ? all : all.filter(r => r.kind === filter)
     return filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  }, [syllogismes, plans, fiches, commentaires, notesSynthese, filter])
+  }, [syllogismes, plans, fiches, commentaires, casPratiques, notesSynthese, legalFichesList, filter])
 
   if (!isCRFPA) return <Navigate to="/dashboard" replace />
 
@@ -175,13 +210,15 @@ export default function CRFPAHistorique() {
 
       {/* Filter tabs */}
       <div className="flex gap-1 mb-4 border-b border-[var(--border-card)]">
-        {(['all', 'syllogisme', 'plan', 'fiche', 'commentaire', 'note-synthese'] as Filter[]).map(f => {
+        {(['all', 'syllogisme', 'plan', 'fiche', 'commentaire', 'cas-pratique', 'note-synthese', 'revision-fiche'] as Filter[]).map(f => {
           const label = f === 'all' ? 'Tous'
             : f === 'syllogisme' ? 'Syllogismes'
             : f === 'plan' ? 'Plans'
-            : f === 'fiche' ? 'Fiches'
+            : f === 'fiche' ? 'Fiches d\'arrêt'
             : f === 'commentaire' ? 'Commentaires'
-            : 'Synthèses'
+            : f === 'cas-pratique' ? 'Cas pratiques'
+            : f === 'note-synthese' ? 'Synthèses'
+            : 'Fiches révision'
           const count = f === 'all' ? rows.length : 0  // count shown only on "all"
           const active = filter === f
           return (
@@ -222,17 +259,24 @@ export default function CRFPAHistorique() {
               : r.kind === 'plan' ? '/legal/plan'
               : r.kind === 'fiche' ? '/legal/fiche'
               : r.kind === 'commentaire' ? '/legal/commentaire'
+              : r.kind === 'cas-pratique' ? '/legal/cas-pratique'
+              : r.kind === 'revision-fiche' ? '/legal/fiches'
               : '/legal/synthese'
-            const href = `${base}?session=${r.id}`
+            const paramName = r.kind === 'revision-fiche' ? 'fiche' : 'session'
+            const href = `${base}?${paramName}=${r.id}`
             const Icon = r.kind === 'syllogisme' ? PenSquare
               : r.kind === 'plan' ? ListTree
               : r.kind === 'fiche' ? FileText
               : r.kind === 'commentaire' ? BookMarked
+              : r.kind === 'cas-pratique' ? Scale
+              : r.kind === 'revision-fiche' ? NotebookPen
               : FileCheck
             const kindLabel = r.kind === 'syllogisme' ? 'Syllogisme'
               : r.kind === 'plan' ? 'Plan'
               : r.kind === 'fiche' ? 'Fiche d\'arrêt'
               : r.kind === 'commentaire' ? 'Commentaire'
+              : r.kind === 'cas-pratique' ? 'Cas pratique'
+              : r.kind === 'revision-fiche' ? 'Fiche de révision'
               : 'Note de synthèse'
             return (
               <Link
@@ -273,6 +317,7 @@ function StatusBadge({ status }: { status: Row['status'] }) {
   const styles =
     status === 'corrigé' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
     : status === 'soumis' ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10'
+    : status === 'éditée' ? 'text-sky-600 dark:text-sky-400 bg-sky-500/10'
     : 'text-[var(--text-muted)] bg-[var(--bg-hover)]'
   return (
     <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded font-semibold ${styles}`}>

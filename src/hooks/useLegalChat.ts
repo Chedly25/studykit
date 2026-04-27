@@ -30,7 +30,58 @@ export interface LegalArticle {
   score: number
 }
 
-function extractLastArticles(messages: Message[]): LegalArticle[] {
+export interface CoursChunk {
+  documentTitle: string
+  chunkIndex: number
+  content: string
+  score: number
+}
+
+interface ExtractedSources {
+  articles: LegalArticle[]
+  coursChunks: CoursChunk[]
+}
+
+const COURS_LINE_RX = /^\d+\.\s*\[Cours:\s*(.+?)\]\s*\(extrait\s*(\d+),\s*score\s*([\d.]+)\)\s*\n\s*(.+)$/s
+const ARTICLE_LINE_RX = /^\d+\.\s*(.+?),\s*Art\.\s*(.+?)\s*(?:\((.+?)\))?\s*\n\s*(.+)$/s
+
+function parseToolResult(parsed: { results: unknown }): { articles: LegalArticle[]; coursChunks: CoursChunk[] } {
+  const articles: LegalArticle[] = []
+  const coursChunks: CoursChunk[] = []
+  const lines = String(parsed.results).split(/\n\n/)
+
+  for (const line of lines) {
+    const coursMatch = line.match(COURS_LINE_RX)
+    if (coursMatch) {
+      coursChunks.push({
+        documentTitle: coursMatch[1].trim(),
+        // Tool format prints `extrait {chunkIndex+1}` — store it 1-based to match what the model sees.
+        chunkIndex: parseInt(coursMatch[2], 10) - 1,
+        score: parseFloat(coursMatch[3]),
+        content: coursMatch[4].trim(),
+      })
+      continue
+    }
+    const articleMatch = line.match(ARTICLE_LINE_RX)
+    if (articleMatch) {
+      articles.push({
+        codeName: articleMatch[1].trim(),
+        articleNum: articleMatch[2].trim(),
+        breadcrumb: articleMatch[3]?.trim() ?? '',
+        text: articleMatch[4].trim(),
+        score: 0,
+      })
+    }
+  }
+  return { articles, coursChunks }
+}
+
+function extractLastSources(messages: Message[]): ExtractedSources {
+  // Walk backwards through messages, accumulating tool_results from the most recent
+  // turn. Stop at the previous user message so we only show citations from the
+  // current answer.
+  const articles: LegalArticle[] = []
+  const coursChunks: CoursChunk[] = []
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i]
     if (msg.role !== 'user' || !Array.isArray(msg.content)) continue
@@ -39,24 +90,17 @@ function extractLastArticles(messages: Message[]): LegalArticle[] {
         try {
           const parsed = JSON.parse(block.content)
           if (parsed.resultCount !== undefined && parsed.results) {
-            const lines = String(parsed.results).split(/\n\n/)
-            return lines.map(line => {
-              const match = line.match(/^\d+\.\s*(.+?),\s*Art\.\s*(.+?)\s*(?:\((.+?)\))?\s*\n\s*(.+)$/s)
-              if (!match) return null
-              return {
-                codeName: match[1].trim(),
-                articleNum: match[2].trim(),
-                breadcrumb: match[3]?.trim() ?? '',
-                text: match[4].trim(),
-                score: 0,
-              }
-            }).filter((a): a is LegalArticle => a !== null)
+            const got = parseToolResult(parsed)
+            articles.push(...got.articles)
+            coursChunks.push(...got.coursChunks)
           }
         } catch { /* not our tool result */ }
       }
     }
+    // If this user message had any tool_results, that's the latest turn — stop.
+    if (articles.length > 0 || coursChunks.length > 0) break
   }
-  return []
+  return { articles, coursChunks }
 }
 
 function deriveTitle(firstUserMessage: string): string {
@@ -77,7 +121,9 @@ export function useLegalChat() {
   const { activeProfile } = useExamProfile()
   const { isCRFPA } = useProfileVertical()
 
-  const lastArticles = extractLastArticles(messages)
+  const lastSources = extractLastSources(messages)
+  const lastArticles = lastSources.articles
+  const lastCoursChunks = lastSources.coursChunks
 
   // Load conversation list on mount
   const refreshConversations = useCallback(async () => {
@@ -203,6 +249,7 @@ export function useLegalChat() {
     streamingText,
     currentToolCall,
     lastArticles,
+    lastCoursChunks,
     sendMessage,
     cancel,
     selectConversation,

@@ -513,6 +513,18 @@ export const agentTools: ToolDefinition[] = [
       required: ['query'],
     },
   },
+  {
+    name: 'searchUserCours',
+    description: 'Search the student\'s own uploaded cours / lecture notes for content relevant to a question. Use this when the question references her cours, her professor\'s framing, "we covered", "le cours dit", or otherwise calls for pedagogical context. Cours extracts are her personal study material, NOT a source of law — cite them as cours, never as authoritative.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Natural language query in French (or English) keyed to the topic of interest' },
+        topK: { type: 'number', description: 'Number of extracts to return (default 8)' },
+      },
+      required: ['query'],
+    },
+  },
   // ─── Rich UI Rendering ─────────────────────────────────────
   {
     name: 'renderConceptCard',

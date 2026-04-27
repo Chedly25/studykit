@@ -214,6 +214,67 @@ export interface CommentaireGrading {
   gradedAt: string
 }
 
+// ─── Cas pratique Coach ──────────────────────────────────────────
+
+import type { CasPratiqueSpecialty } from '../prompts/casPratiquePrompts'
+
+export type CasPratiqueAxis =
+  | 'identification'
+  | 'syllogisme'
+  | 'regles'
+  | 'application'
+  | 'redaction'
+  | 'conseil'
+
+/**
+ * One entry in the grounding pool — a real code article OR jurisprudence decision
+ * retrieved from Vectorize. Generation is constrained to cite only from this pool;
+ * grading uses it to flag student citations outside the pool.
+ * Shape matches `SyllogismeArticleRef` for reuse with `parseSearchResults`.
+ */
+export interface CasPratiqueGroundingEntry {
+  articleNum: string
+  codeName: string
+  breadcrumb?: string
+  text: string
+}
+
+export interface CasPratiqueTask {
+  specialty: CasPratiqueSpecialty
+  specialtyLabel: string              // "Droit des obligations", "Procédure civile"
+  duration: number                     // minutes (180 for obligations/spécialité, 120 for procédure)
+  scenario: string                     // 1-2 pages of markdown, facts + consultation question
+  modelAnswer: string                  // consultation modèle (HIDDEN until graded)
+  legalIssues: string[]                // ordered list — grader references by 0-based index
+  groundingPool: CasPratiqueGroundingEntry[]  // retrieved references authorized for citation
+  generatedAt: string
+}
+
+export interface CasPratiqueSubmission {
+  answer: string                       // single prose consultation
+  submittedAt: string
+}
+
+export interface CasPratiqueAxisScore {
+  axis: CasPratiqueAxis
+  label: string
+  score: number
+  max: number                          // 4 | 5 | 4 | 3 | 2 | 2 respectively
+  feedback: string
+}
+
+export interface CasPratiqueGrading {
+  axes: CasPratiqueAxisScore[]         // 6 entries
+  overall: {
+    score: number                      // 0-20, sum of axis scores
+    topMistake: string
+    strength: string
+    identifiedIssues: number[]         // indices into task.legalIssues treated (even briefly)
+    missedIssues: number[]             // indices into task.legalIssues NOT treated
+  }
+  gradedAt: string
+}
+
 // ─── Note de synthèse Coach ──────────────────────────────────────
 
 export interface NoteSyntheseDossierDocument {
@@ -282,7 +343,7 @@ export interface NoteSyntheseGrading {
 
 // ─── Grand Oral Coach (voice simulator) ──────────────────────────
 
-import type { GrandOralSujet, ResolvedRef, GrandOralSujetType } from '../prompts/grandOralPrompts'
+import type { GrandOralSujet, ResolvedRef } from '../prompts/grandOralPrompts'
 
 /**
  * Task for one Grand Oral session. Produced by grounding a seed sujet through RAG:

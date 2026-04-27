@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
-import { Scale, Send, Paperclip, X, FileText, Menu } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Scale, Send, Paperclip, X, FileText, Menu, NotebookPen } from 'lucide-react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { useLegalChat } from '../hooks/useLegalChat'
+import { useExamProfile } from '../hooks/useExamProfile'
+import { db } from '../db'
 import { LegalMessageBubble } from '../components/legal/LegalMessageBubble'
 import { LegalArticlesPanel } from '../components/legal/LegalArticlesPanel'
 import { LegalConversationList } from '../components/legal/LegalConversationList'
@@ -35,6 +39,7 @@ export default function LegalChat() {
     streamingText,
     currentToolCall,
     lastArticles,
+    lastCoursChunks,
     sendMessage,
     cancel,
     selectConversation,
@@ -42,6 +47,20 @@ export default function LegalChat() {
     removeConversation,
     renameConversation,
   } = useLegalChat()
+
+  const { activeProfile } = useExamProfile()
+  const documentCount = useLiveQuery(
+    async () => (activeProfile?.id ? db.documents.where('examProfileId').equals(activeProfile.id).count() : 0),
+    [activeProfile?.id],
+  ) ?? 0
+  const [coursBannerDismissed, setCoursBannerDismissed] = useState(
+    () => typeof window !== 'undefined' && localStorage.getItem('legal-chat:cours-banner-dismissed') === '1',
+  )
+  const dismissCoursBanner = () => {
+    localStorage.setItem('legal-chat:cours-banner-dismissed', '1')
+    setCoursBannerDismissed(true)
+  }
+  const showCoursBanner = !coursBannerDismissed && documentCount === 0 && activeProfile?.id
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -176,6 +195,22 @@ export default function LegalChat() {
                   Recherche sémantique dans 60 000+ sources : 15 codes français, jurisprudence de la Cour de cassation, bloc de constitutionnalité, CEDH, RGPD.
                 </p>
               </div>
+              {showCoursBanner && (
+                <div className="w-full max-w-lg flex items-start gap-3 px-4 py-3 rounded-xl border border-[var(--border-card)] bg-[var(--accent-bg)]/30">
+                  <NotebookPen className="w-4 h-4 mt-0.5 text-[var(--accent-text)] shrink-0" />
+                  <div className="flex-1 text-sm text-[var(--text-secondary)]">
+                    Téléverse tes cours dans <Link to="/sources" className="font-semibold text-[var(--accent-text)] hover:underline">Sources</Link> pour qu'Oracle s'appuie aussi sur tes notes.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={dismissCoursBanner}
+                    className="text-[var(--text-muted)] hover:text-[var(--text-primary)] shrink-0"
+                    aria-label="Fermer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
                 {SUGGESTIONS.map((s, i) => (
                   <button
@@ -275,9 +310,9 @@ export default function LegalChat() {
       </div>
 
       {/* Articles sidebar (desktop) */}
-      {lastArticles.length > 0 && (
+      {(lastArticles.length > 0 || lastCoursChunks.length > 0) && (
         <aside className="hidden lg:block w-96 border-l border-[var(--border-card)] overflow-y-auto p-4">
-          <LegalArticlesPanel articles={lastArticles} />
+          <LegalArticlesPanel articles={lastArticles} coursChunks={lastCoursChunks} />
         </aside>
       )}
       </div>
@@ -291,9 +326,11 @@ function LoadingIndicator({ toolCall, hasStreamingText }: { toolCall: string | n
 
   const label = toolCall === 'searchLegalCodes'
     ? 'Recherche dans les codes et la jurisprudence'
-    : toolCall === 'createFlashcardDeck'
-      ? 'Création des fiches'
-      : 'Analyse de la question'
+    : toolCall === 'searchUserCours'
+      ? 'Recherche dans tes cours'
+      : toolCall === 'createFlashcardDeck'
+        ? 'Création des fiches'
+        : 'Analyse de la question'
 
   return (
     <div className="flex items-center gap-3 px-4 py-3">

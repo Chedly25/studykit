@@ -13,7 +13,7 @@ describe('buildGrandOralGenerationPrompt', () => {
     const result = buildGrandOralGenerationPrompt({})
     expect(result.system).toContain('Grand Oral')
     expect(result.system).toContain('CRFPA')
-    expect(result.system).toContain('libertés et droits fondamentaux')
+    expect(result.system).toContain('libertés et des droits fondamentaux')
   })
 
   it('mentions the three types of subjects', () => {

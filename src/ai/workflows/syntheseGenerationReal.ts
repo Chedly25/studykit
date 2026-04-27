@@ -25,11 +25,13 @@ import {
   buildRealModelSynthesisPrompt,
   buildRealGradingRubricPrompt,
   buildQualityPatchPrompt,
+  buildFaithfulnessCheckPrompt,
 } from '../prompts/syntheseRealPrompts'
 import type {
   RealDossierBlueprint,
   RealDossierDocument,
   DocumentSlot,
+  FaithfulnessReport,
 } from '../prompts/syntheseRealPrompts'
 
 // ─── Config ─────────────────────────────────────────────────────
@@ -277,9 +279,25 @@ export function createSyntheseRealGenerationWorkflow(config: SyntheseRealGenerat
               : 'Retrying blueprint generation...')
             try {
               const raw = await llmCall(user, system, ctx, 8192)
-              blueprint = extractJson<RealDossierBlueprint>(raw)
-              if (blueprint.theme && blueprint.documentSlots && blueprint.documentSlots.length >= 8) break
-              blueprint = null
+              const candidate = extractJson<RealDossierBlueprint>(raw)
+              if (!(candidate.theme && candidate.documentSlots && candidate.documentSlots.length >= 8)) {
+                continue
+              }
+              // Faithfulness check (pre-sourcing: docs=[] so only scope/theme/plan evaluated)
+              try {
+                const fc = buildFaithfulnessCheckPrompt(candidate, [])
+                const fcRaw = await llmCall(fc.user, fc.system, ctx, 1024)
+                const report = extractJson<FaithfulnessReport>(fcRaw)
+                const fails = !report.scopeMatchesArticle5 || !report.themeContemporaryNonDoctrinal || !report.planDialectical
+                if (fails && attempt === 0) {
+                  pipelineLog('warn', `faithfulness rejected blueprint: ${report.issues?.join('; ') || 'no issues listed'}`)
+                  continue
+                }
+              } catch (err) {
+                pipelineLog('warn', `faithfulness check errored: ${(err as Error).message}`)
+              }
+              blueprint = candidate
+              break
             } catch {
               if (attempt === 1) throw new Error('Failed to generate blueprint after 2 attempts.')
             }

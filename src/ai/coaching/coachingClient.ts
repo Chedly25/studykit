@@ -20,6 +20,8 @@ export interface CoachingCallOptions {
   getToken?: () => Promise<string | null>
   signal?: AbortSignal
   onToken?: (text: string) => void
+  /** Opt in to Opus 4.7 for the call. Default backend model is Sonnet 4.6. */
+  model?: 'sonnet' | 'opus'
 }
 
 /**
@@ -45,6 +47,7 @@ export async function coachingCall(opts: CoachingCallOptions): Promise<string> {
     onToken: opts.onToken,
     signal: opts.signal,
     url: LEGAL_CHAT_URL,
+    model: opts.model,
   })
 
   return response.content

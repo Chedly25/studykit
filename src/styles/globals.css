@@ -540,3 +540,36 @@ button:disabled,
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ─── Print styles for legal fiches ─── */
+@media print {
+  body * { visibility: hidden; }
+  .print-fiche, .print-fiche * { visibility: visible; }
+  .print-fiche {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 10.5pt;
+    line-height: 1.45;
+    color: #000;
+    background: #fff;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .print-fiche h1 { font-size: 16pt; margin: 0 0 0.4em; }
+  .print-fiche h2 { font-size: 13pt; margin-top: 1em; page-break-after: avoid; }
+  .print-fiche h3 { font-size: 11pt; margin-top: 0.6em; page-break-after: avoid; }
+  .print-fiche code,
+  .print-fiche .pourvoi {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 9.5pt;
+  }
+  .print-fiche ul, .print-fiche ol { page-break-inside: avoid; }
+  @page {
+    margin: 1.8cm 2cm;
+  }
+}

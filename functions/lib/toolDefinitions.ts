@@ -75,6 +75,10 @@ const TOOL_LIST: OpenAITool[] = [
     codeName: { type: 'string', description: 'Optional: filter to a specific code (e.g., "Code civil")' },
     topK: { type: 'number', description: 'Number of results (default 10)' },
   }, ['query'])),
+  tool('searchUserCours', 'Search the student\'s own uploaded cours / lecture notes for content relevant to a question. Use when the question references her cours or her professor\'s framing. Cours extracts are pedagogical material, NOT a source of law.', p({
+    query: { type: 'string', description: 'Natural language query keyed to the topic of interest' },
+    topK: { type: 'number', description: 'Number of extracts to return (default 8)' },
+  }, ['query'])),
 
   // Plans
   tool('generateStudyPlan', 'Generate a personalized multi-day study plan.', p({ daysAhead: { type: 'number' } })),

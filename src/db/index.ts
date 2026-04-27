@@ -62,6 +62,7 @@ import type {
   ChatFeedback,
   MacroRoadmap,
   CoachingSession,
+  LegalFiche,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -125,6 +126,7 @@ export class StudiesKitDB extends Dexie {
   revisionFiches!: Table<RevisionFiche>
   examDNA!: Table<ExamDNA>
   coachingSessions!: Table<CoachingSession>
+  legalFiches!: Table<LegalFiche>
   _syncQueue!: Table<SyncQueueEntry>
   _syncMeta!: Table<SyncMeta>
 
@@ -397,6 +399,11 @@ export class StudiesKitDB extends Dexie {
         if (p.profileVertical === undefined) p.profileVertical = 'generic'
       })
     )
+
+    // v38: CRFPA legal fiches (AI-generated revision sheets with Tavily enrichment)
+    this.version(38).stores({
+      legalFiches: 'id, examProfileId, [examProfileId+createdAt], themeId, source, parentId',
+    })
   }
 }
 

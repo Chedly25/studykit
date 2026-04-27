@@ -899,8 +899,51 @@ export interface MacroRoadmap {
   updatedAt: string
 }
 
+// ─── CRFPA Legal Fiches (AI-generated revision sheets) ─────────
+export type LegalFicheSource = 'theme' | 'cours' | 'custom'
+
+export type LegalFicheActualiteStatus =
+  | 'pending'
+  | 'auto-enriched'
+  | 'manually-enriched'
+  | 'failed'
+  | 'not-needed'
+
+export interface LegalFiche {
+  id: string
+  examProfileId: string
+  /** Display title — e.g. "Responsabilité contractuelle" */
+  theme: string
+  /** Canonical id from FICHE_THEMES when source='theme' */
+  themeId?: string
+  /** Matière kept on the row for Tavily allowlist lookup on manual re-enrich */
+  matiere?: string
+  source: LegalFicheSource
+  /** Raw user input for 'custom', theme label otherwise */
+  prompt: string
+  /** Markdown body — mutates as enrichment lands */
+  content: string
+  /** JSON CasPratiqueGroundingEntry[] — legal refs pool that grounded generation */
+  groundingPool: string
+  /** JSON { chunkId, documentId, score }[] — user-cours chunks that contributed */
+  userSourceChunks: string
+  /** JSON { [sectionKey: string]: string } — user annotations per section */
+  userAnnotations: string
+  /** ISO when the Tavily pass last ran; undefined means never ran */
+  actualiteEnrichedAt?: string
+  actualiteStatus: LegalFicheActualiteStatus
+  /** Last failure reason for UI display */
+  actualiteError?: string
+  /** Bumps on regenerate; older versions retained in history */
+  version: number
+  /** Points to the prior version (regenerate history); undefined for root */
+  parentId?: string
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── CRFPA Coaching Sessions ────────────────────────────────────
-export type CoachingType = 'syllogisme' | 'fiche-arret' | 'plan-detaille' | 'commentaire-arret' | 'note-synthese' | 'grand-oral'
+export type CoachingType = 'syllogisme' | 'fiche-arret' | 'plan-detaille' | 'commentaire-arret' | 'note-synthese' | 'grand-oral' | 'cas-pratique'
 
 /**
  * A coaching attempt: one task generated for the student, optionally submitted and graded.

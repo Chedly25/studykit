@@ -1,11 +1,63 @@
 import { describe, it, expect } from 'vitest'
-import { buildCasPratiqueGenerationPrompt, SPECIALTY_OPTIONS } from '../casPratiquePrompts'
-import type { CasPratiquePromptConfig, CasPratiqueSpecialty } from '../casPratiquePrompts'
+import {
+  buildCasPratiqueGenerationPrompt,
+  buildCasPratiqueGradingPrompt,
+  buildCasPratiqueVerificationPrompt,
+  SPECIALTY_OPTIONS,
+  SPECIALTY_SEARCH_SEEDS,
+} from '../casPratiquePrompts'
+import type {
+  CasPratiquePromptConfig,
+  CasPratiqueSpecialty,
+} from '../casPratiquePrompts'
+import type {
+  CasPratiqueGroundingEntry,
+  CasPratiqueSubmission,
+  CasPratiqueTask,
+} from '../../coaching/types'
+
+const SAMPLE_POOL: CasPratiqueGroundingEntry[] = [
+  {
+    articleNum: '1231-1',
+    codeName: 'Code civil',
+    breadcrumb: 'Livre III, Titre III',
+    text: 'Le débiteur est condamné, s\'il y a lieu, au paiement de dommages-intérêts...',
+  },
+  {
+    articleNum: '1240',
+    codeName: 'Code civil',
+    breadcrumb: 'Livre III, Titre III',
+    text: 'Tout fait quelconque de l\'homme, qui cause à autrui un dommage...',
+  },
+]
 
 function makeConfig(overrides: Partial<CasPratiquePromptConfig> = {}): CasPratiquePromptConfig {
   return {
     specialty: 'obligations',
     duration: 180,
+    groundingPool: SAMPLE_POOL,
+    ...overrides,
+  }
+}
+
+function makeTask(overrides: Partial<CasPratiqueTask> = {}): CasPratiqueTask {
+  return {
+    specialty: 'obligations',
+    specialtyLabel: 'Droit des obligations',
+    duration: 180,
+    scenario: 'M. Dupont vous consulte...',
+    modelAnswer: 'Sur le fondement de l\'article 1231-1 du code civil...',
+    legalIssues: ['Responsabilité contractuelle', 'Vice du consentement'],
+    groundingPool: SAMPLE_POOL,
+    generatedAt: '2026-04-23T10:00:00.000Z',
+    ...overrides,
+  }
+}
+
+function makeSubmission(overrides: Partial<CasPratiqueSubmission> = {}): CasPratiqueSubmission {
+  return {
+    answer: 'Je pense que...',
+    submittedAt: '2026-04-23T11:00:00.000Z',
     ...overrides,
   }
 }
@@ -45,6 +97,28 @@ describe('buildCasPratiqueGenerationPrompt', () => {
     expect(result.user).toBeTruthy()
   })
 
+  it('injects the grounding pool into the system prompt', () => {
+    const result = buildCasPratiqueGenerationPrompt(makeConfig())
+    expect(result.system).toContain('SOURCES AUTORISÉES')
+    expect(result.system).toContain('1231-1')
+    expect(result.system).toContain('1240')
+    expect(result.system).toContain('Code civil')
+  })
+
+  it('includes citation rules in the system prompt', () => {
+    const result = buildCasPratiqueGenerationPrompt(makeConfig())
+    expect(result.system).toContain('Règles de citation ABSOLUES')
+  })
+
+  it('surfaces previousFailures when provided', () => {
+    const result = buildCasPratiqueGenerationPrompt(makeConfig({
+      previousFailures: ['Art. 1131 inventé', 'Cass. 12 mars 2019 fictif'],
+    }))
+    expect(result.system).toContain('Art. 1131 inventé')
+    expect(result.system).toContain('Cass. 12 mars 2019 fictif')
+    expect(result.system).toContain('CORRECTIONS À APPORTER')
+  })
+
   const specialties: CasPratiqueSpecialty[] = [
     'obligations', 'civil', 'penal', 'affaires', 'social',
     'administratif', 'fiscal', 'immobilier',
@@ -56,16 +130,156 @@ describe('buildCasPratiqueGenerationPrompt', () => {
       const result = buildCasPratiqueGenerationPrompt(makeConfig({ specialty }))
       expect(result.system.length).toBeGreaterThan(100)
       expect(result.user.length).toBeGreaterThan(50)
-      // Each specialty should mention its domains
       expect(result.system).toContain('DOMAINES COUVERTS')
     })
   }
 
-  it('includes JSON structure for response', () => {
+  it('emits legalIssues shape in the output spec', () => {
     const result = buildCasPratiqueGenerationPrompt(makeConfig())
-    expect(result.system).toContain('scenario')
-    expect(result.system).toContain('modelAnswer')
-    expect(result.system).toContain('rubric')
+    expect(result.system).toContain('legalIssues')
+  })
+})
+
+describe('buildCasPratiqueGradingPrompt', () => {
+  it('returns system and user strings', () => {
+    const result = buildCasPratiqueGradingPrompt({
+      task: makeTask(),
+      submission: makeSubmission(),
+    })
+    expect(typeof result.system).toBe('string')
+    expect(typeof result.user).toBe('string')
+    expect(result.system.length).toBeGreaterThan(100)
+  })
+
+  it('includes the 6 axes with correct max scores', () => {
+    const result = buildCasPratiqueGradingPrompt({
+      task: makeTask(),
+      submission: makeSubmission(),
+    })
+    expect(result.user).toContain('identification (/4)')
+    expect(result.user).toContain('syllogisme (/5)')
+    expect(result.user).toContain('regles (/4)')
+    expect(result.user).toContain('application (/3)')
+    expect(result.user).toContain('redaction (/2)')
+    expect(result.user).toContain('conseil (/2)')
+  })
+
+  it('requires JSON-only output', () => {
+    const result = buildCasPratiqueGradingPrompt({
+      task: makeTask(),
+      submission: makeSubmission(),
+    })
+    expect(result.system).toContain('UNIQUEMENT du JSON')
+  })
+
+  it('forbids emojis', () => {
+    const result = buildCasPratiqueGradingPrompt({
+      task: makeTask(),
+      submission: makeSubmission(),
+    })
+    expect(result.system).toContain('Aucun emoji')
+  })
+
+  it('includes the scenario', () => {
+    const result = buildCasPratiqueGradingPrompt({
+      task: makeTask({ scenario: 'UNIQUE_SCENARIO_MARKER' }),
+      submission: makeSubmission(),
+    })
+    expect(result.user).toContain('UNIQUE_SCENARIO_MARKER')
+  })
+
+  it('includes the student submission', () => {
+    const result = buildCasPratiqueGradingPrompt({
+      task: makeTask(),
+      submission: makeSubmission({ answer: 'UNIQUE_SUBMISSION_MARKER' }),
+    })
+    expect(result.user).toContain('UNIQUE_SUBMISSION_MARKER')
+  })
+
+  it('replaces empty submission with placeholder', () => {
+    const result = buildCasPratiqueGradingPrompt({
+      task: makeTask(),
+      submission: makeSubmission({ answer: '   ' }),
+    })
+    expect(result.user).toContain('(vide)')
+  })
+
+  it('numbers the legal issues for index-based reference', () => {
+    const result = buildCasPratiqueGradingPrompt({
+      task: makeTask({ legalIssues: ['Premier problème', 'Deuxième problème', 'Troisième problème'] }),
+      submission: makeSubmission(),
+    })
+    expect(result.user).toContain('0. Premier problème')
+    expect(result.user).toContain('1. Deuxième problème')
+    expect(result.user).toContain('2. Troisième problème')
+  })
+
+  it('exposes the grounding pool to the grader', () => {
+    const result = buildCasPratiqueGradingPrompt({
+      task: makeTask(),
+      submission: makeSubmission(),
+    })
+    expect(result.user).toContain('POOL DE RÉFÉRENCES')
+    expect(result.user).toContain('1231-1')
+  })
+
+  it('requires identifiedIssues + missedIssues in overall', () => {
+    const result = buildCasPratiqueGradingPrompt({
+      task: makeTask(),
+      submission: makeSubmission(),
+    })
+    expect(result.user).toContain('identifiedIssues')
+    expect(result.user).toContain('missedIssues')
+  })
+
+  it('penalises invented references on the regles axis', () => {
+    const result = buildCasPratiqueGradingPrompt({
+      task: makeTask(),
+      submission: makeSubmission(),
+    })
+    expect(result.system).toContain('inventées')
+  })
+})
+
+describe('buildCasPratiqueVerificationPrompt', () => {
+  it('returns system and user strings', () => {
+    const result = buildCasPratiqueVerificationPrompt({
+      groundingPool: SAMPLE_POOL,
+      modelAnswer: 'Sur le fondement de l\'article 1231-1...',
+      scenario: 'M. Dupont...',
+    })
+    expect(typeof result.system).toBe('string')
+    expect(typeof result.user).toBe('string')
+  })
+
+  it('requires JSON-only output', () => {
+    const result = buildCasPratiqueVerificationPrompt({
+      groundingPool: SAMPLE_POOL,
+      modelAnswer: 'x',
+      scenario: 'y',
+    })
+    expect(result.system).toContain('UNIQUEMENT du JSON')
+  })
+
+  it('exposes the pool and the model answer to the verifier', () => {
+    const result = buildCasPratiqueVerificationPrompt({
+      groundingPool: SAMPLE_POOL,
+      modelAnswer: 'UNIQUE_MODEL_MARKER',
+      scenario: 'UNIQUE_SCENARIO_MARKER',
+    })
+    expect(result.user).toContain('UNIQUE_MODEL_MARKER')
+    expect(result.user).toContain('UNIQUE_SCENARIO_MARKER')
+    expect(result.user).toContain('1231-1')
+  })
+
+  it('defines both severity levels', () => {
+    const result = buildCasPratiqueVerificationPrompt({
+      groundingPool: SAMPLE_POOL,
+      modelAnswer: 'x',
+      scenario: 'y',
+    })
+    expect(result.system).toContain('FABRIQUÉ')
+    expect(result.system).toContain('DÉNATURÉE')
   })
 })
 
@@ -90,5 +304,23 @@ describe('SPECIALTY_OPTIONS', () => {
   it('has procedure categories', () => {
     const procedures = SPECIALTY_OPTIONS.filter(o => o.category === 'procedure')
     expect(procedures.length).toBeGreaterThanOrEqual(3)
+  })
+})
+
+describe('SPECIALTY_SEARCH_SEEDS', () => {
+  it('covers every specialty', () => {
+    for (const opt of SPECIALTY_OPTIONS) {
+      expect(SPECIALTY_SEARCH_SEEDS[opt.value]).toBeDefined()
+      expect(SPECIALTY_SEARCH_SEEDS[opt.value].length).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('seeds are non-empty strings', () => {
+    for (const seeds of Object.values(SPECIALTY_SEARCH_SEEDS)) {
+      for (const s of seeds) {
+        expect(typeof s).toBe('string')
+        expect(s.length).toBeGreaterThan(5)
+      }
+    }
   })
 })

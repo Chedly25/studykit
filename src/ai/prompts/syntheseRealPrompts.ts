@@ -38,6 +38,28 @@ export interface RealDossierDocument {
   content: string  // curated excerpt
 }
 
+// ─── Shared grounding constants (from arrêté 17/10/2016 + rapports CNB) ──
+
+/** Verbatim extract from the Arrêté 17 octobre 2016, article 5, 1°. */
+const NOTE_SYNTHESE_CADRE_REGLEMENTAIRE = `## CADRE RÉGLEMENTAIRE (Arrêté 17 octobre 2016, art. 5, 1°)
+
+« Une note de synthèse, rédigée en cinq heures, à partir de documents relatifs aux aspects juridiques des problèmes sociaux, politiques, économiques ou culturels du monde actuel. La note est affectée d'un coefficient 3. »
+
+Ton sujet DOIT rester dans ce cadre : un thème juridique rattaché à un problème SOCIAL, POLITIQUE, ÉCONOMIQUE ou CULTUREL contemporain — pas une question de droit pur ou une dissertation doctrinale.`
+
+/** Anti-patterns observed in the CNB commission rapports 2023-2024 and 2025. */
+const NOTE_SYNTHESE_ERREURS_TYPIQUES = `## ERREURS TYPIQUES DU CANDIDAT (rapports commission nationale 2023-2024, 2025)
+
+- Construire un raisonnement juridique personnel au lieu de restituer le dossier
+- Paraphraser sans reformuler (perte de points en rédaction)
+- Ne pas citer tous les documents (critère d'harmonisation nationale)
+- Déséquilibre entre parties (I trop long, II indigent)
+- Confusion note de synthèse ↔ commentaire ↔ dissertation
+- Plan plaqué sans lien avec la problématique
+- Absence de problématique claire dès l'introduction
+
+→ La grille pénalise explicitement chacune de ces erreurs.`
+
 // ─── Agent 1: Theme Architect (search-query version) ─────────
 
 export function buildRealThemeArchitectPrompt(config: {
@@ -55,17 +77,21 @@ export function buildRealThemeArchitectPrompt(config: {
 
 Tu dois concevoir un DOSSIER DOCUMENTAIRE basé sur des SOURCES RÉELLES. Tu ne génères PAS les documents — tu spécifies des REQUÊTES DE RECHERCHE PRÉCISES pour trouver de vrais textes juridiques dans les bases de données publiques.
 
-## CONTRAINTES
+${NOTE_SYNTHESE_CADRE_REGLEMENTAIRE}
+
+${NOTE_SYNTHESE_ERREURS_TYPIQUES}
+
+## CONTRAINTES DE DOSSIER
 
 - Thème d'actualité juridique avec des sources publiques abondantes
 - Plan en I/A, I/B, II/A, II/B — chaque sous-partie alimentée par 3+ documents
-- Mélange équilibré — OBLIGATOIREMENT :
-  - 3-4 arrêts Cour de cassation (API Judilibre — recherche plein texte)
-  - 2-3 textes législatifs (API Legifrance — articles de codes, lois)
-  - 2-3 rapports officiels (recherche web — Défenseur des droits, Sénat, vie-publique.fr)
-  - 2-3 analyses juridiques (recherche web — Village Justice, blogs juridiques, HAL)
-  - 1-2 articles de presse juridique (recherche web)
-- Total : 12 à 15 documents
+- Mélange équilibré observé sur les vraies sessions de la commission :
+  - plusieurs arrêts des juridictions suprêmes (Cass / CE / CEDH / CC) — API Judilibre / JADE
+  - plusieurs textes législatifs ou réglementaires — API Legifrance
+  - un ou plusieurs rapports officiels (Défenseur des droits, Sénat, études CE, vie-publique.fr)
+  - une ou plusieurs analyses doctrinales (Village Justice, HAL, blogs juridiques)
+  - un ou plusieurs articles de presse juridique
+- Total : 12 à 15 documents, avec un équilibre réaliste (aucune typologie ne doit dominer à plus de 40 %)
 
 ## QUALITÉ DES REQUÊTES DE RECHERCHE — CRUCIAL
 
@@ -277,6 +303,73 @@ Crée la grille de correction. Retourne UNIQUEMENT le JSON (pas de backticks, pa
 
 Critères obligatoires : citation de tous les documents, plan structuré, problématique, qualité de la synthèse (restitution neutre, pas dissertation), neutralité, respect de la limite, qualité rédactionnelle, équilibre des parties.
 Total : 20 points.`
+
+  return { system, user }
+}
+
+// ─── Faithfulness Checker (post-generation verification) ─────
+
+export interface FaithfulnessReport {
+  scopeMatchesArticle5: boolean
+  documentMixRealistic: boolean
+  themeContemporaryNonDoctrinal: boolean
+  planDialectical: boolean
+  issues: string[]
+  overallScore: number // 0-100
+}
+
+/**
+ * Verifies a generated dossier against the arrêté + rapport rules.
+ * Caller decides whether to retry generation based on overallScore.
+ */
+export function buildFaithfulnessCheckPrompt(
+  blueprint: RealDossierBlueprint,
+  documents: RealDossierDocument[],
+): { system: string; user: string } {
+  const system = `Tu es auditeur pour la Commission nationale de l'examen d'accès au CRFPA. Tu vérifies qu'un dossier de note de synthèse respecte strictement l'arrêté du 17 octobre 2016 et les observations des rapports de commission.
+
+${NOTE_SYNTHESE_CADRE_REGLEMENTAIRE}
+
+## CRITÈRES DE VÉRIFICATION
+
+1. **scopeMatchesArticle5** : le thème porte-t-il sur les "aspects juridiques des problèmes sociaux, politiques, économiques ou culturels du monde actuel" ? (pas une question de droit pur, pas une dissertation doctrinale)
+2. **documentMixRealistic** : le mélange 12-15 documents combine-t-il jurisprudence + législation + rapports + doctrine + presse, sans qu'une typologie dépasse 40 % du dossier ?
+3. **themeContemporaryNonDoctrinal** : le thème renvoie-t-il à une actualité juridique récente et à un enjeu sociétal — et non à un débat interne à la doctrine ?
+4. **planDialectical** : le plan I/II permet-il une dialectique (thèse/antithèse, constat/limites, principe/exception) ?
+
+Tu identifies les problèmes concrets, jamais inventés. Retourne UNIQUEMENT le JSON (pas de markdown, pas de préambule).`
+
+  const docsMix = documents.map(d => d.type).reduce<Record<string, number>>((acc, t) => {
+    acc[t] = (acc[t] ?? 0) + 1
+    return acc
+  }, {})
+  const mixSummary = Object.entries(docsMix).map(([t, n]) => `${t}: ${n}`).join(', ')
+
+  const user = `## THÈME
+${blueprint.theme}
+
+## PROBLÉMATIQUE
+${blueprint.problematique}
+
+## PLAN
+I — ${blueprint.planSuggere.I} (A: ${blueprint.planSuggere.IA} / B: ${blueprint.planSuggere.IB})
+II — ${blueprint.planSuggere.II} (A: ${blueprint.planSuggere.IIA} / B: ${blueprint.planSuggere.IIB})
+
+## DOSSIER : ${documents.length} documents
+${mixSummary}
+
+## RÉPONSE
+
+{
+  "scopeMatchesArticle5": true | false,
+  "documentMixRealistic": true | false,
+  "themeContemporaryNonDoctrinal": true | false,
+  "planDialectical": true | false,
+  "issues": ["Description concrète de chaque problème détecté"],
+  "overallScore": 0
+}
+
+overallScore : 25 points par critère rempli = score sur 100.`
 
   return { system, user }
 }

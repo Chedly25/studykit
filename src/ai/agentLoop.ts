@@ -137,6 +137,11 @@ async function executeToolLocally(
       const { searchLegalCodes } = await import('./tools/legalSearchTool')
       return searchLegalCodes(input.query as string, authToken, { topK: input.topK as number, codeName: input.codeName as string })
     }
+    case 'searchUserCours': {
+      if (!authToken) return JSON.stringify({ error: 'Authentication required for user cours search' })
+      const { searchUserCoursForLLM } = await import('./tools/userCoursSearchTool')
+      return searchUserCoursForLLM(input.query as string, examProfileId, authToken, { topK: input.topK as number })
+    }
     case 'getCalibrationData':
       return getCalibrationData(examProfileId, (input.threshold as number) ?? 0.2)
     case 'getErrorPatterns':

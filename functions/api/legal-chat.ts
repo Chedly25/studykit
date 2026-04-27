@@ -11,8 +11,14 @@ import { checkRateLimit } from '../lib/rateLimiter'
 import { checkCostLimits } from '../lib/costProtection'
 import { SERVER_TOOLS } from '../lib/toolDefinitions'
 
-const MODEL = 'claude-sonnet-4-6'
+const MODEL_SONNET = 'claude-sonnet-4-6'
+const MODEL_OPUS = 'claude-opus-4-7'
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
+
+type ModelChoice = 'sonnet' | 'opus'
+function resolveModel(choice: ModelChoice | undefined): string {
+  return choice === 'opus' ? MODEL_OPUS : MODEL_SONNET
+}
 
 export const onRequestOptions: PagesFunction<Env> = async (context) => {
   return new Response(null, { status: 204, headers: corsHeaders(context.env) })
@@ -63,6 +69,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     messages: Array<{ role: string; content: unknown }>
     max_tokens?: number
     tools?: Array<{ type: string; function: { name: string; description: string; parameters: unknown } }>
+    model?: ModelChoice
   }
   try {
     body = await request.json()
@@ -148,7 +155,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   // Call Anthropic Messages API with streaming
   const anthropicBody: Record<string, unknown> = {
-    model: MODEL,
+    model: resolveModel(body.model),
     max_tokens: Math.min(body.max_tokens ?? 4096, 8192),
     stream: true,
     messages: anthropicMessages,
