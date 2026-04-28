@@ -29,6 +29,11 @@ const CACHE = join(REPO, 'legal-sources-output', 'cache')
 const PUBLIC_LIB = join(REPO, 'public', 'library')
 const MANIFEST_OUT = join(REPO, 'src', 'lib', 'library', 'manifest.generated.ts')
 
+// Public R2 bucket hosting library assets (PDFs / code JSONs / CC HTMLs / textes JSONs).
+// Bucket: studieskit-library — public dev URL enabled via `wrangler r2 bucket dev-url enable`.
+// Override at build time with VITE_LIBRARY_BASE_URL if you ever migrate to a custom domain.
+const LIBRARY_BASE_URL = process.env.VITE_LIBRARY_BASE_URL ?? 'https://pub-9015cb5b28aa4d429a0f2f6f43838c1d.r2.dev'
+
 // ─── Display-title heuristics ────────────────────────────────────────────
 
 const MATIERE_LABELS: Record<string, string> = {
@@ -180,7 +185,7 @@ function copyPdfs(sourceDir: string, targetSubpath: string, category: LibraryCat
       category,
       title: meta.title,
       format: 'pdf',
-      path: `/library/${targetSubpath}/${f}`,
+      path: `${LIBRARY_BASE_URL}/${targetSubpath}/${f}`,
       sizeKb: kbOf(dstFile),
       year: meta.year,
       matiere: meta.matiere,
@@ -205,7 +210,7 @@ function copyHtmlCC(): BuildResult {
       category: 'cc',
       title: meta.title,
       format: 'html',
-      path: `/library/cc/${f}`,
+      path: `${LIBRARY_BASE_URL}/cc/${f}`,
       sizeKb: kbOf(dstFile),
       year: meta.year,
       tags: ['cc', meta.type, ...(meta.year ? [String(meta.year)] : [])],
@@ -247,7 +252,7 @@ function copyCodes(): BuildResult {
       title,
       subtitle: articleCount ? `${articleCount.toLocaleString('fr')} articles` : undefined,
       format: 'code-tree',
-      path: `/library/codes/${f}`,
+      path: `${LIBRARY_BASE_URL}/codes/${f}`,
       sizeKb: kbOf(dstFile),
       tags: ['codes'],
     })
@@ -288,7 +293,7 @@ function copyTextes(): BuildResult {
       title,
       subtitle: chunkCount ? `${chunkCount.toLocaleString('fr')} sections` : undefined,
       format: 'markdown',
-      path: `/library/textes/${f}`,
+      path: `${LIBRARY_BASE_URL}/textes/${f}`,
       sizeKb: kbOf(dstFile),
       tags: ['textes', slug],
     })

@@ -41,31 +41,35 @@ describe('LIBRARY_MANIFEST', () => {
     }
   })
 
-  it('PDF entries have a path under /library/pdfs/', () => {
+  it('PDF entries have an absolute URL containing /pdfs/', () => {
     for (const e of LIBRARY_MANIFEST) {
       if (e.format !== 'pdf') continue
-      expect(e.path.startsWith('/library/pdfs/')).toBe(true)
+      expect(e.path).toMatch(/^https?:\/\//)
+      expect(e.path).toContain('/pdfs/')
     }
   })
 
-  it('code-tree entries have a path under /library/codes/', () => {
+  it('code-tree entries have an absolute URL containing /codes/', () => {
     for (const e of LIBRARY_MANIFEST) {
       if (e.format !== 'code-tree') continue
-      expect(e.path.startsWith('/library/codes/')).toBe(true)
+      expect(e.path).toMatch(/^https?:\/\//)
+      expect(e.path).toContain('/codes/')
     }
   })
 
-  it('html entries have a path under /library/cc/', () => {
+  it('html entries have an absolute URL containing /cc/', () => {
     for (const e of LIBRARY_MANIFEST) {
       if (e.format !== 'html') continue
-      expect(e.path.startsWith('/library/cc/')).toBe(true)
+      expect(e.path).toMatch(/^https?:\/\//)
+      expect(e.path).toContain('/cc/')
     }
   })
 
-  it('markdown entries have a path under /library/textes/', () => {
+  it('markdown entries have an absolute URL containing /textes/', () => {
     for (const e of LIBRARY_MANIFEST) {
       if (e.format !== 'markdown') continue
-      expect(e.path.startsWith('/library/textes/')).toBe(true)
+      expect(e.path).toMatch(/^https?:\/\//)
+      expect(e.path).toContain('/textes/')
     }
   })
 
@@ -73,6 +77,7 @@ describe('LIBRARY_MANIFEST', () => {
     for (const e of LIBRARY_MANIFEST) {
       if (e.format !== 'grand-arret') continue
       expect(e.path.startsWith('/')).toBe(false)
+      expect(e.path.startsWith('http')).toBe(false)
       expect(e.path.length).toBeGreaterThan(0)
     }
   })

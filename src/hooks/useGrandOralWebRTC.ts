@@ -54,7 +54,7 @@ export interface UseGrandOralWebRTCApi {
   transcript: GrandOralTranscriptTurn[]
   metrics: GrandOralMetrics
   isMuted: boolean
-  audioRef: React.RefObject<HTMLAudioElement>
+  audioRef: React.RefObject<HTMLAudioElement | null>
   connect: () => Promise<void>
   disconnect: () => void
   toggleMute: () => void
