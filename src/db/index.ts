@@ -404,6 +404,20 @@ export class StudiesKitDB extends Dexie {
     this.version(38).stores({
       legalFiches: 'id, examProfileId, [examProfileId+createdAt], themeId, source, parentId',
     })
+
+    // v39: Backfill Misconception.severity from occurrenceCount.
+    // Severity drives interval modulation in spaced repetition (see
+    // modulateIntervalForMisconceptions). occurrenceCount is the only signal
+    // we can derive from on existing rows: 1 occurrence → severity 1,
+    // 8+ occurrences → severity 5. New writes set severity directly.
+    this.version(39).stores({}).upgrade(tx =>
+      tx.table('misconceptions').toCollection().modify(m => {
+        if (m.severity === undefined) {
+          const occ = typeof m.occurrenceCount === 'number' ? m.occurrenceCount : 1
+          m.severity = Math.max(1, Math.min(5, 1 + Math.floor(occ / 2)))
+        }
+      })
+    )
   }
 }
 

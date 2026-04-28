@@ -361,12 +361,21 @@ Return ONLY a JSON object:
                 .first()
 
               const now = new Date().toISOString()
+              // Severity from errorType: conceptual=5, application=4, recall=3,
+              // distractor=2, default=3. Ratchet up only — repeat misconceptions
+              // grow more severe, never less.
+              const errorSeverity = grade.errorType === 'conceptual' ? 5
+                : grade.errorType === 'application' ? 4
+                : grade.errorType === 'recall' ? 3
+                : grade.errorType === 'distractor' ? 2
+                : 3
               if (existing) {
                 const qIds: string[] = JSON.parse(existing.questionResultIds || '[]')
                 await db.misconceptions.update(existing.id, {
                   occurrenceCount: existing.occurrenceCount + 1,
                   lastSeenAt: now,
                   questionResultIds: JSON.stringify([...new Set([...qIds, q.id])].slice(-20)),
+                  severity: Math.max(existing.severity ?? 1, errorSeverity),
                 })
               } else {
                 await db.misconceptions.put({
@@ -375,6 +384,7 @@ Return ONLY a JSON object:
                   topicId: topic.id,
                   description: grade.misconception,
                   occurrenceCount: 1,
+                  severity: errorSeverity,
                   firstSeenAt: now,
                   lastSeenAt: now,
                   exerciseIds: '[]',

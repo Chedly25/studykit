@@ -4,7 +4,7 @@
  */
 import { db } from '../db'
 import { computeTopicMastery, computeSubjectMastery } from './knowledgeGraph'
-import { calculateSM2 } from './spacedRepetition'
+import { calculateSM2, modulateIntervalForMisconceptions } from './spacedRepetition'
 import { checkMasteryMilestone } from './notificationGenerator'
 
 /**
@@ -70,7 +70,7 @@ export async function advanceTopicSRS(topicId: string, quality: number): Promise
   const topic = await db.topics.get(topicId)
   if (!topic) return
 
-  const result = calculateSM2(quality, {
+  const baseResult = calculateSM2(quality, {
     id: topic.id,
     front: '',
     back: '',
@@ -80,6 +80,16 @@ export async function advanceTopicSRS(topicId: string, quality: number): Promise
     nextReviewDate: topic.nextReviewDate,
     lastRating: quality,
   })
+
+  // Tighten interval against fresh, unresolved misconceptions on this topic.
+  // Pre-Barreau / Dalloz fascicules can't do this — they have no per-candidate
+  // error data and no scheduling layer to modulate.
+  const misconceptions = await db.misconceptions
+    .where('[examProfileId+topicId]')
+    .equals([topic.examProfileId, topic.id])
+    .filter(m => !m.resolvedAt)
+    .toArray()
+  const result = modulateIntervalForMisconceptions(baseResult, quality, misconceptions)
 
   await db.topics.update(topicId, {
     easeFactor: result.easeFactor,

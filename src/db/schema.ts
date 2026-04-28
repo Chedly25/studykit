@@ -759,6 +759,13 @@ export interface Misconception {
   description: string
   rootCauseTopicId?: string
   occurrenceCount: number
+  /**
+   * 1 (mild) — 5 (severe). Drives interval modulation in spaced repetition:
+   * a topic with high-severity unresolved misconceptions has its SRS intervals
+   * tightened. See modulateIntervalForMisconceptions in src/lib/spacedRepetition.ts.
+   * Optional: pre-v39 rows have it backfilled from occurrenceCount.
+   */
+  severity?: number
   resolvedAt?: string
   firstSeenAt: string
   lastSeenAt: string

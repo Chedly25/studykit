@@ -8,6 +8,7 @@ import { recomputeTopicMastery, advanceTopicSRS } from '../../lib/topicMastery'
 import { computeFeedbackActions } from '../../lib/feedbackLoopEngine'
 import { computeErrorPatterns } from '../../lib/errorPatterns'
 import { getMiscalibratedTopicsFromRaw } from '../../lib/calibration'
+import { calculateSM2, modulateIntervalForMisconceptions } from '../../lib/spacedRepetition'
 
 export async function logQuestionResult(
   examProfileId: string,
@@ -353,7 +354,7 @@ export async function startQuickReview(
 }
 
 export async function rateFlashcard(
-  _examProfileId: string,
+  examProfileId: string,
   input: { cardId: string; rating: number }
 ): Promise<string> {
   const card = await db.flashcards.get(input.cardId)
@@ -361,43 +362,45 @@ export async function rateFlashcard(
 
   const rating = Math.max(0, Math.min(5, input.rating))
 
-  // SM-2 algorithm
-  let { easeFactor, interval, repetitions } = card
+  const baseResult = calculateSM2(rating, {
+    id: card.id,
+    front: card.front,
+    back: card.back,
+    easeFactor: card.easeFactor,
+    interval: card.interval,
+    repetitions: card.repetitions,
+    nextReviewDate: card.nextReviewDate,
+    lastRating: card.lastRating,
+  })
 
-  if (rating >= 3) {
-    if (repetitions === 0) {
-      interval = 1
-    } else if (repetitions === 1) {
-      interval = 6
-    } else {
-      interval = Math.round(interval * easeFactor)
-    }
-    repetitions++
-  } else {
-    repetitions = 0
-    interval = 1
+  // Tighten interval if the card's parent topic has fresh, unresolved
+  // misconceptions. See modulateIntervalForMisconceptions for the formula.
+  let result = baseResult
+  if (card.topicId) {
+    const misconceptions = await db.misconceptions
+      .where('[examProfileId+topicId]')
+      .equals([examProfileId, card.topicId])
+      .filter(m => !m.resolvedAt)
+      .toArray()
+    result = modulateIntervalForMisconceptions(baseResult, rating, misconceptions)
   }
 
-  easeFactor = easeFactor + (0.1 - (5 - rating) * (0.08 + (5 - rating) * 0.02))
-  easeFactor = Math.max(1.3, easeFactor)
-
-  const nextDate = new Date()
-  nextDate.setDate(nextDate.getDate() + interval)
-
   await db.flashcards.update(input.cardId, {
-    easeFactor,
-    interval,
-    repetitions,
+    easeFactor: result.easeFactor,
+    interval: result.interval,
+    repetitions: result.repetitions,
     lastRating: rating,
-    nextReviewDate: nextDate.toISOString().slice(0, 10),
+    nextReviewDate: result.nextReviewDate,
   })
 
   const ratingLabel = rating <= 2 ? 'Again' : rating === 3 ? 'Hard' : rating === 4 ? 'Good' : 'Easy'
+  const tightened = result.interval !== baseResult.interval
 
   return JSON.stringify({
     success: true,
     rating: ratingLabel,
-    nextReviewDate: nextDate.toISOString().slice(0, 10),
-    newInterval: interval,
+    nextReviewDate: result.nextReviewDate,
+    newInterval: result.interval,
+    misconceptionTightened: tightened,
   })
 }

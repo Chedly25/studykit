@@ -78,3 +78,80 @@ export function createNewCard(id: string, front: string, back: string): SM2Card 
     lastRating: 0,
   }
 }
+
+// ─── Misconception-driven interval modulation ────────────────────────────
+
+/** Narrow shape consumed by the modulator — decoupled from the Misconception db type. */
+export interface MisconceptionLite {
+  /** 1 (mild) — 5 (severe). Defaults to 1 if missing. */
+  severity?: number
+  /** ISO timestamp of last occurrence. */
+  lastSeenAt: string
+  /** ISO timestamp; presence means the misconception is no longer active. */
+  resolvedAt?: string
+}
+
+/** Days over which a misconception's freshness decays from 1.0 to 0.0. */
+const FRESHNESS_DECAY_DAYS = 30
+/** Maximum interval-shortening multiplier (0.5 = at most halve). */
+const MAX_TIGHTENING = 0.5
+
+/**
+ * Tighten the SM-2 interval when the parent topic has fresh, unresolved
+ * misconceptions. This is the moat over generic SRS: cards on conceptually-shaky
+ * topics return faster, calibrated by misconception severity and recency.
+ *
+ *   freshness  = clamp(1 - daysSinceLastSeen / 30, 0, 1)
+ *   weight     = max over unresolved misconceptions: freshness × (severity / 5)
+ *   multiplier = 1 - 0.5 × weight                       // 1.0 → 0.5
+ *   interval'  = max(1, round(interval × multiplier))
+ *
+ * Bypassed (returns base unchanged) when:
+ *   - quality === 5 (perfect recall): full SM-2 reward
+ *   - quality < 3 (failure): SM-2 already reset to interval=1
+ *   - no unresolved + fresh misconceptions on the topic
+ *
+ * Pure function; safe to unit-test.
+ */
+export function modulateIntervalForMisconceptions(
+  base: SM2Result,
+  quality: number,
+  misconceptions: readonly MisconceptionLite[],
+  now: Date = new Date(),
+): SM2Result {
+  const q = Math.max(0, Math.min(5, Math.round(quality)))
+  if (q === 5 || q < 3) return base
+  if (misconceptions.length === 0) return base
+
+  const nowMs = now.getTime()
+  let weight = 0
+  for (const m of misconceptions) {
+    if (m.resolvedAt) continue
+    const lastSeenMs = Date.parse(m.lastSeenAt)
+    if (Number.isNaN(lastSeenMs)) continue
+    const daysSinceLastSeen = Math.max(0, (nowMs - lastSeenMs) / (1000 * 60 * 60 * 24))
+    const freshness = Math.max(0, 1 - daysSinceLastSeen / FRESHNESS_DECAY_DAYS)
+    if (freshness === 0) continue
+    const severityNorm = Math.max(1, Math.min(5, m.severity ?? 1)) / 5
+    const w = freshness * severityNorm
+    if (w > weight) weight = w
+  }
+
+  if (weight === 0) return base
+
+  const multiplier = 1 - MAX_TIGHTENING * weight
+  const newInterval = Math.max(1, Math.round(base.interval * multiplier))
+  if (newInterval === base.interval) return base
+
+  // Recompute nextReviewDate from `now` so we stay calendar-day-aligned.
+  const next = new Date(now)
+  next.setDate(next.getDate() + newInterval)
+  const nextReviewDate = next.toISOString().slice(0, 10)
+
+  return {
+    easeFactor: base.easeFactor,
+    interval: newInterval,
+    repetitions: base.repetitions,
+    nextReviewDate,
+  }
+}

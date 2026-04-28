@@ -96,10 +96,17 @@ Only JSON.`,
 
         const now = new Date().toISOString()
 
+        // Severity is supplied by the LLM (1-5). Clamp + default to 3 if missing.
+        // Ratchet up only on repeats — never decrease severity.
+        const llmSeverity = typeof m.severity === 'number'
+          ? Math.max(1, Math.min(5, Math.round(m.severity)))
+          : 3
+
         if (existing) {
           await db.misconceptions.update(existing.id, {
             occurrenceCount: existing.occurrenceCount + 1,
             lastSeenAt: now,
+            severity: Math.max(existing.severity ?? 1, llmSeverity),
           })
           updated++
         } else {
@@ -109,6 +116,7 @@ Only JSON.`,
             topicId: topic.id,
             description: m.description,
             occurrenceCount: 1,
+            severity: llmSeverity,
             firstSeenAt: now,
             lastSeenAt: now,
             exerciseIds: '[]',
