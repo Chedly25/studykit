@@ -9,7 +9,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useUser } from '@clerk/clerk-react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { PenSquare, ListTree, FileText, BookMarked, Scale, FolderOpen, RotateCcw, ArrowRight, Upload, FileCheck, Mic2, NotebookPen } from 'lucide-react'
+import { PenSquare, ListTree, FileText, BookMarked, Scale, FolderOpen, RotateCcw, ArrowRight, Upload, FileCheck, Mic2, NotebookPen, Library } from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileVertical } from '../hooks/useProfileVertical'
 import { listSyllogismeSessions, type SyllogismeSessionView } from '../ai/coaching/syllogismeStore'
@@ -284,6 +284,12 @@ export default function CRFPAAtelier() {
           icon={Scale}
           title="Oracle"
           hint="Interroge les codes et la jurisprudence française."
+        />
+        <ActionCard
+          to="/legal/bibliotheque"
+          icon={Library}
+          title="Bibliothèque"
+          hint="Codes, grands arrêts, sujets CRFPA, RIN, Conseil constitutionnel."
         />
         <ActionCard
           to="/sources"

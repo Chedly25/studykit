@@ -63,6 +63,7 @@ import type {
   MacroRoadmap,
   CoachingSession,
   LegalFiche,
+  LibraryReadStatus,
 } from './schema'
 
 export class StudiesKitDB extends Dexie {
@@ -127,6 +128,7 @@ export class StudiesKitDB extends Dexie {
   examDNA!: Table<ExamDNA>
   coachingSessions!: Table<CoachingSession>
   legalFiches!: Table<LegalFiche>
+  libraryReadStatus!: Table<LibraryReadStatus>
   _syncQueue!: Table<SyncQueueEntry>
   _syncMeta!: Table<SyncMeta>
 
@@ -418,6 +420,11 @@ export class StudiesKitDB extends Dexie {
         }
       })
     )
+
+    // v40: Library read-status tracking for the Bibliothèque page.
+    this.version(40).stores({
+      libraryReadStatus: 'id, examProfileId, libraryEntryId, [examProfileId+libraryEntryId]',
+    })
   }
 }
 

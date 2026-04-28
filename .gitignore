@@ -54,3 +54,7 @@ scripts/gpu-test.mjs
 
 # Claude scheduled tasks lock
 .claude/scheduled_tasks.lock
+
+# Bibliothèque static assets (built from legal-sources-output/cache; large; regenerable via npm run build:library)
+public/library/
+src/lib/library/manifest.generated.ts

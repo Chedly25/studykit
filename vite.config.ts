@@ -16,6 +16,10 @@ export default defineConfig({
       manifest: false,
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Exclude the Bibliothèque assets — they're large (PDFs, code JSONs, CC HTMLs),
+        // fetched on-demand only when the user opens an item. Letting the SW try to
+        // precache them blows up the install step on large deploys.
+        globIgnores: ['**/library/**'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       devOptions: {

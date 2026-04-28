@@ -751,6 +751,18 @@ export interface ExerciseAttempt {
   createdAt: string
 }
 
+// ─── Library read-status ────────────────────────────────────────
+export interface LibraryReadStatus {
+  /** Composite primary key: `${examProfileId}:${libraryEntryId}`. */
+  id: string
+  examProfileId: string
+  libraryEntryId: string
+  status: 'unread' | 'reading' | 'read'
+  lastOpenedAt?: string
+  /** 0-100, for PDFs and long markdown. UI surfacing in v2. */
+  scrollPercent?: number
+}
+
 // ─── Misconceptions ─────────────────────────────────────────────
 export interface Misconception {
   id: string
