@@ -62,6 +62,12 @@ const CODE_LABELS: Record<string, string> = {
   'code-travail': 'Code du travail',
   'code-procedure-civile': 'Code de procédure civile',
   'code-procedure-penale': 'Code de procédure pénale',
+  'code-propriete-intellectuelle': 'Code de la propriété intellectuelle',
+  'code-consommation': 'Code de la consommation',
+  'code-construction-habitation': 'Code de la construction et de l\'habitation',
+  'code-environnement': 'Code de l\'environnement',
+  'code-justice-administrative': 'Code de justice administrative',
+  'code-urbanisme': 'Code de l\'urbanisme',
   'code-monetaire-financier': 'Code monétaire et financier',
   'code-sante-publique': 'Code de la santé publique',
   'code-rural': 'Code rural et de la pêche maritime',
@@ -220,13 +226,18 @@ function copyHtmlCC(): BuildResult {
 }
 
 const CODE_FILES = [
+  // Tier 1 (16 codes from ingest-extra-codes.ts, all small/niche)
   'casf.json', 'cgct.json', 'cgppp.json', 'crpa.json', 'cgfp.json', 'cjpm.json', 'coj.json',
   'code-assurances.json', 'code-defense.json', 'code-education.json',
   'code-monetaire-financier.json', 'code-postes.json', 'code-rural.json',
   'code-sante-publique.json', 'code-sport.json', 'code-transports.json',
-  // The big ones, if present (Code civil etc — may or may not be in cache):
-  'code-civil.json', 'code-penal.json', 'code-commerce.json', 'code-travail.json',
+  // Tier 2 (12 codes from ingest-major-codes.ts — the heavyweights)
+  'code-civil.json', 'code-penal.json',
   'code-procedure-civile.json', 'code-procedure-penale.json',
+  'code-travail.json', 'code-commerce.json',
+  'code-propriete-intellectuelle.json', 'code-consommation.json',
+  'code-construction-habitation.json', 'code-environnement.json',
+  'code-justice-administrative.json', 'code-urbanisme.json',
 ] as const
 
 function copyCodes(): BuildResult {
