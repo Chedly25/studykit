@@ -66,7 +66,7 @@ export function SectionHeader({ sectionName, sectionIndex, totalSections, sectio
         </div>
       </div>
       <div className={`flex items-center gap-1.5 text-sm font-mono font-bold ${
-        isExpired ? 'text-red-500' : isWarning ? 'text-amber-500 animate-pulse' : 'text-[var(--text-heading)]'
+        isExpired ? 'text-[var(--color-error)]' : isWarning ? 'text-[var(--color-warning)] animate-pulse' : 'text-[var(--text-heading)]'
       }`}>
         {isWarning && <AlertTriangle className="w-4 h-4" />}
         <Clock className="w-4 h-4" />

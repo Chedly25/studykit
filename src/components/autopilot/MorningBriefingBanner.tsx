@@ -19,9 +19,9 @@ export default function MorningBriefingBanner({ briefing, onDismiss }: Props) {
   if (briefing.dismissed) return null
 
   const trendIcon = {
-    improving: <TrendingUp className="w-4 h-4 text-emerald-500" />,
-    stable: <Minus className="w-4 h-4 text-amber-500" />,
-    declining: <TrendingDown className="w-4 h-4 text-red-500" />,
+    improving: <TrendingUp className="w-4 h-4 text-[var(--color-success)]" />,
+    stable: <Minus className="w-4 h-4 text-[var(--color-warning)]" />,
+    declining: <TrendingDown className="w-4 h-4 text-[var(--color-error)]" />,
   }[briefing.readinessTrend]
 
   return (
@@ -68,8 +68,8 @@ export default function MorningBriefingBanner({ briefing, onDismiss }: Props) {
                   className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-body)] transition-colors"
                 >
                   <span className={
-                    action.priority === 'critical' ? 'text-red-500' :
-                    action.priority === 'high' ? 'text-amber-500' : 'text-[var(--text-muted)]'
+                    action.priority === 'critical' ? 'text-[var(--color-error)]' :
+                    action.priority === 'high' ? 'text-[var(--color-warning)]' : 'text-[var(--text-muted)]'
                   }>
                     {action.priority === 'critical' ? '!!' : action.priority === 'high' ? '!' : ''}
                   </span>

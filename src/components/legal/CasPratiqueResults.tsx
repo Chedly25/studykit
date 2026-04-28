@@ -73,9 +73,9 @@ function IssueChips({ task, grading }: { task: CasPratiqueTask; grading: CasPrat
           return (
             <li key={i} className="flex items-start gap-2 text-sm">
               {status === 'identified' ? (
-                <Check className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <Check className="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-success)] " />
               ) : status === 'missed' ? (
-                <X className="w-4 h-4 mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                <X className="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-error)] " />
               ) : (
                 <span className="w-4 h-4 mt-0.5 shrink-0 rounded-full border border-[var(--text-muted)]" />
               )}

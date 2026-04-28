@@ -412,13 +412,13 @@ function CoachInsightsSection({ examProfileId }: { examProfileId: string | undef
           <div
             key={i}
             className={`flex items-start gap-2 text-xs p-2 rounded-lg ${
-              insight.urgency === 'urgent' ? 'bg-red-500/5 text-[var(--text-body)]' :
-              insight.urgency === 'attention' ? 'bg-amber-500/5 text-[var(--text-body)]' :
-              'bg-blue-500/5 text-[var(--text-muted)]'
+              insight.urgency === 'urgent' ? 'bg-[var(--color-error-bg)] text-[var(--text-body)]' :
+              insight.urgency === 'attention' ? 'bg-[var(--color-warning-bg)] text-[var(--text-body)]' :
+              'bg-[var(--color-info-bg)] text-[var(--text-muted)]'
             }`}
           >
             <span className="mt-0.5 shrink-0">
-              {insight.urgency === 'urgent' ? <AlertTriangle className="w-3.5 h-3.5 text-red-500" /> : insight.urgency === 'attention' ? <BarChart3 className="w-3.5 h-3.5 text-amber-500" /> : <Sparkles className="w-3.5 h-3.5 text-blue-500" />}
+              {insight.urgency === 'urgent' ? <AlertTriangle className="w-3.5 h-3.5 text-[var(--color-error)]" /> : insight.urgency === 'attention' ? <BarChart3 className="w-3.5 h-3.5 text-[var(--color-warning)]" /> : <Sparkles className="w-3.5 h-3.5 text-[var(--color-info)]" />}
             </span>
             <div className="flex-1 min-w-0">
               <span className="font-medium text-[var(--text-heading)]">{insight.title}</span>
@@ -464,9 +464,9 @@ function MockExamScoresCard({ examProfileId }: { examProfileId: string | undefin
           const dateLabel = new Date(exam.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
           return (
             <div key={exam.id} className="flex-1 flex flex-col items-center gap-1 max-w-[60px]">
-              <span className={`text-xs font-bold ${passed ? 'text-emerald-500' : 'text-red-500'}`}>{pct}%</span>
+              <span className={`text-xs font-bold ${passed ? 'text-[var(--accent-text)]' : 'text-[var(--color-error)]'}`}>{pct}%</span>
               <div
-                className={`w-full rounded-t-sm transition-all ${passed ? 'bg-emerald-500/60' : 'bg-red-500/60'}`}
+                className={`w-full rounded-t-sm transition-all ${passed ? 'bg-[var(--accent-bg)]' : 'bg-[var(--color-error-bg)]'}`}
                 style={{ height: `${Math.max((pct / maxPct) * 100, 4)}%` }}
                 title={`${pct}% — ${new Date(exam.startTime).toLocaleDateString()}`}
               />
@@ -509,7 +509,7 @@ function SimulationExamScoresCard({ examProfileId, passingThreshold }: { examPro
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-semibold text-[var(--text-heading)]">{t('analytics.simulationScores')}</h2>
         {predicted != null && (
-          <span className={`text-xs font-bold ${predicted >= threshold ? 'text-emerald-500' : 'text-amber-500'}`}>
+          <span className={`text-xs font-bold ${predicted >= threshold ? 'text-[var(--accent-text)]' : 'text-[var(--color-warning)]'}`}>
             {t('dashboard.predicted', 'Predicted: {{score}}%', { score: predicted })}
           </span>
         )}
@@ -537,9 +537,9 @@ function SimulationExamScoresCard({ examProfileId, passingThreshold }: { examPro
             const dateLabel = new Date(exam.completedAt ?? exam.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
             return (
               <div key={exam.id} className="flex-1 flex flex-col items-center gap-1 max-w-[60px]">
-                <span className={`text-xs font-bold ${passed ? 'text-emerald-500' : 'text-red-500'}`}>{pct}%</span>
+                <span className={`text-xs font-bold ${passed ? 'text-[var(--accent-text)]' : 'text-[var(--color-error)]'}`}>{pct}%</span>
                 <div
-                  className={`w-full rounded-t-sm transition-all ${passed ? 'bg-emerald-500/60' : 'bg-red-500/60'}`}
+                  className={`w-full rounded-t-sm transition-all ${passed ? 'bg-[var(--accent-bg)]' : 'bg-[var(--color-error-bg)]'}`}
                   style={{ height: `${Math.max(pct, 4)}%` }}
                   title={`${pct}% — ${new Date(exam.completedAt ?? exam.createdAt).toLocaleDateString()}`}
                 />

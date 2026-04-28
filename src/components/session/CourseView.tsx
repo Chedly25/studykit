@@ -86,7 +86,7 @@ export function CourseView({ examProfileId, topicId, topicName: _topicName }: Co
                     to={`/read/${group.source.documentId}?topicId=${topicId}`}
                     className="glass-card p-4 flex items-center gap-3 hover:bg-[var(--bg-input)]/30 transition-colors block"
                   >
-                    <ExternalLink className="w-5 h-5 text-orange-500 shrink-0" />
+                    <ExternalLink className="w-5 h-5 text-[var(--color-warning)] shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[var(--text-heading)] truncate">
                         {group.source.name}{group.source.year ? ` ${group.source.year}` : ''}
@@ -115,11 +115,11 @@ export function CourseView({ examProfileId, topicId, topicName: _topicName }: Co
             )}
             {hasFlashcards && (
               <div className="glass-card p-3 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-blue-500" />
+                <BookOpen className="w-4 h-4 text-[var(--color-info)]" />
                 <span className="text-xs text-[var(--text-body)]">
                   {detail.flashcardStats.total} flashcards
                   {detail.flashcardStats.due > 0 && (
-                    <span className="text-blue-600 font-medium"> · {detail.flashcardStats.due} due</span>
+                    <span className="text-[var(--color-info)] font-medium"> · {detail.flashcardStats.due} due</span>
                   )}
                 </span>
               </div>

@@ -82,10 +82,10 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
       <div className="glass-card p-6 max-w-md w-full mx-4 space-y-5 animate-scale-in">
         {/* Header */}
         <div className="text-center">
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 ${isFirstSession ? 'bg-amber-500/15' : 'bg-emerald-500/15'}`}>
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 ${isFirstSession ? 'bg-[var(--color-warning-bg)]' : 'bg-[var(--color-success-bg)]'}`}>
             {isFirstSession
-              ? <Star className="w-8 h-8 text-amber-500" />
-              : <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              ? <Star className="w-8 h-8 text-[var(--color-warning)]" />
+              : <CheckCircle2 className="w-8 h-8 text-[var(--color-success)]" />
             }
           </div>
           <h2 id="session-complete-title" className="text-xl font-bold text-[var(--text-heading)]">
@@ -114,7 +114,7 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
           {data.examStats && (
             <>
               <div>
-                <div className={`text-lg font-bold ${data.examStats.passed ? 'text-emerald-500' : 'text-orange-500'}`}>
+                <div className={`text-lg font-bold ${data.examStats.passed ? 'text-[var(--color-success)]' : 'text-[var(--color-warning)]'}`}>
                   {data.examStats.percentage}%
                 </div>
                 <span className="text-xs text-[var(--text-muted)]">{t('session.statScore')}</span>
@@ -142,7 +142,7 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
             </div>
             {data.questionsCorrect !== undefined && (
               <div>
-                <div className={`text-lg font-bold ${data.questionsCorrect / data.questionsAnswered >= 0.7 ? 'text-emerald-500' : 'text-orange-500'}`}>
+                <div className={`text-lg font-bold ${data.questionsCorrect / data.questionsAnswered >= 0.7 ? 'text-[var(--color-success)]' : 'text-[var(--color-warning)]'}`}>
                   {Math.round((data.questionsCorrect / data.questionsAnswered) * 100)}%
                 </div>
                 <span className="text-xs text-[var(--text-muted)]">{t('session.statAccuracy')}</span>
@@ -175,10 +175,10 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-[var(--text-muted)]">{Math.round(delta.before * 100)}%</span>
                     <ArrowRight className="w-3 h-3 text-[var(--text-faint)]" />
-                    <span className={isPositive ? 'text-emerald-500 font-medium' : 'text-red-400 font-medium'}>
+                    <span className={isPositive ? 'text-[var(--color-success)] font-medium' : 'text-[var(--color-error)] font-medium'}>
                       {Math.round(delta.after * 100)}%
                     </span>
-                    <span className={`text-xs ${isPositive ? 'text-emerald-500' : 'text-red-400'}`}>
+                    <span className={`text-xs ${isPositive ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}`}>
                       ({isPositive ? '+' : ''}{Math.round(change * 100)})
                     </span>
                   </div>
@@ -206,11 +206,11 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
 
         {/* Streak */}
         {data.streak > 0 && (
-          <div className={`flex items-center justify-center gap-2 py-2 rounded-lg ${milestone ? 'bg-orange-500/10' : 'bg-[var(--bg-input)]'}`}>
-            <Flame className={`w-5 h-5 text-orange-500 ${milestone ? 'animate-pulse' : ''}`} />
+          <div className={`flex items-center justify-center gap-2 py-2 rounded-lg ${milestone ? 'bg-[var(--color-warning-bg)]' : 'bg-[var(--bg-input)]'}`}>
+            <Flame className={`w-5 h-5 text-[var(--color-warning)] ${milestone ? 'animate-pulse' : ''}`} />
             <span className="font-bold text-[var(--text-heading)]">{t('session.dayStreak', { count: data.streak })}</span>
             {milestone && (
-              <span className="text-xs font-bold text-orange-500 bg-orange-500/20 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold text-[var(--color-warning)] bg-[var(--color-warning-bg)] px-2 py-0.5 rounded-full">
                 {t(MILESTONE_KEYS[milestone])}
               </span>
             )}

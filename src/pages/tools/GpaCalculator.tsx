@@ -193,7 +193,7 @@ export default function GpaCalculator() {
                     <button
                       onClick={() => removeCourse(i)}
                       disabled={courses.length <= 1}
-                      className="p-2 text-[var(--text-muted)] hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="p-2 text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       aria-label="Remove course"
                     >
                       <Trash2 size={16} />
@@ -216,7 +216,7 @@ export default function GpaCalculator() {
                 <button
                   onClick={() => removeCourse(i)}
                   disabled={courses.length <= 1}
-                  className="p-1.5 text-[var(--text-muted)] hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-1.5 text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label="Remove course"
                 >
                   <Trash2 size={14} />

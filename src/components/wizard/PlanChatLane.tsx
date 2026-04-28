@@ -53,11 +53,11 @@ export function PlanChatLane({
               key={i}
               className="flex items-start gap-2 p-2.5 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)]"
             >
-              <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <Lightbulb className="w-4 h-4 text-[var(--color-warning)] flex-shrink-0 mt-0.5" />
               <p className="text-xs text-[var(--text-body)] flex-1">{suggestion}</p>
               <button
                 onClick={() => onDismissSuggestion(i)}
-                className="p-0.5 rounded hover:bg-amber-500/20 text-amber-600"
+                className="p-0.5 rounded hover:bg-[var(--color-warning-bg)] text-[var(--color-warning)]"
               >
                 <X className="w-3 h-3" />
               </button>

@@ -217,8 +217,8 @@ function ProfileCard({
             onClick={handleDelete}
             className={`p-2 rounded-lg transition-colors ${
               deleteConfirm
-                ? 'bg-red-500/10 text-red-500'
-                : 'hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-500'
+                ? 'bg-[var(--color-error-bg)] text-[var(--color-error)]'
+                : 'hover:bg-[var(--color-error-bg)] text-[var(--text-muted)] hover:text-[var(--color-error)]'
             }`}
             title={deleteConfirm ? t('profile.deleteConfirm') : t('profile.deleteProfile')}
           >
@@ -227,7 +227,7 @@ function ProfileCard({
         </div>
       </div>
       {deleteConfirm && (
-        <div className="mt-2 p-2 rounded-lg bg-red-500/10 text-xs text-red-600 flex items-center justify-between">
+        <div className="mt-2 p-2 rounded-lg bg-[var(--color-error-bg)] text-xs text-[var(--color-error)] flex items-center justify-between">
           <span>{t('profile.deleteConfirm')}</span>
           <div className="flex gap-2">
             <button onClick={handleDelete} className="font-medium hover:underline">{t('common.yes')}</button>

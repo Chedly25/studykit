@@ -10,11 +10,11 @@ import { useExamProfile } from '../hooks/useExamProfile'
 import { useSearch, type SearchResult } from '../hooks/useSearch'
 
 const TYPE_CONFIG: Record<SearchResult['type'], { icon: typeof FileText; label: string; color: string }> = {
-  document: { icon: FileText, label: 'Document', color: 'text-blue-500' },
-  topic: { icon: BookOpen, label: 'Topic', color: 'text-purple-500' },
-  exercise: { icon: ListChecks, label: 'Exercise', color: 'text-amber-500' },
-  'concept-card': { icon: Layers, label: 'Concept', color: 'text-emerald-500' },
-  flashcard: { icon: CreditCard, label: 'Flashcard', color: 'text-pink-500' },
+  document: { icon: FileText, label: 'Document', color: 'text-[var(--color-info)]' },
+  topic: { icon: BookOpen, label: 'Topic', color: 'text-[var(--color-tag-flashcard)]' },
+  exercise: { icon: ListChecks, label: 'Exercise', color: 'text-[var(--color-warning)]' },
+  'concept-card': { icon: Layers, label: 'Concept', color: 'text-[var(--accent-text)]' },
+  flashcard: { icon: CreditCard, label: 'Flashcard', color: 'text-[var(--color-error)]' },
 }
 
 interface QuickAction {

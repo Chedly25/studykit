@@ -41,7 +41,7 @@ export function ReviewView({ examProfileId, topicId, onDone }: ReviewViewProps) 
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
-          <Trophy className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
+          <Trophy className="w-12 h-12 text-[var(--color-warning)] mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-1">Review complete!</h3>
           <p className="text-sm text-[var(--text-muted)]">{reviewed} of {sortedCards.length} cards reviewed ({pct}%)</p>
           <button onClick={onDone} className="btn-primary px-6 py-2 mt-4">
@@ -134,13 +134,13 @@ export function ReviewView({ examProfileId, topicId, onDone }: ReviewViewProps) 
         <div className="flex gap-3 mt-4">
           <button
             onClick={() => handleRate(false)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-[var(--color-error-bg)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)] transition-colors"
           >
             <X className="w-4 h-4" /> Didn't know
           </button>
           <button
             onClick={() => handleRate(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-[var(--color-success-bg)] text-[var(--color-success)] hover:bg-[var(--color-success-bg)] transition-colors"
           >
             <Check className="w-4 h-4" /> Got it
           </button>

@@ -101,7 +101,7 @@ export default function AdminUsers() {
       </div>
 
       {error && (
-        <div className="glass-card p-4 mb-4 text-red-500 text-sm">{error}</div>
+        <div className="glass-card p-4 mb-4 text-[var(--color-error)] text-sm">{error}</div>
       )}
 
       {/* User table */}
@@ -153,7 +153,7 @@ export default function AdminUsers() {
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                           user.plan === 'pro'
-                            ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
+                            ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] '
                             : 'bg-[var(--bg-input)] text-[var(--text-muted)]'
                         }`}
                       >
@@ -169,8 +169,8 @@ export default function AdminUsers() {
                         disabled={toggling === user.id}
                         className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 ${
                           user.plan === 'pro'
-                            ? 'bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400'
-                            : 'bg-green-500/10 text-green-600 hover:bg-green-500/20 dark:text-green-400'
+                            ? 'bg-[var(--color-error-bg)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)] '
+                            : 'bg-[var(--color-success-bg)] text-[var(--color-success)] hover:bg-[var(--color-success-bg)] '
                         }`}
                       >
                         {toggling === user.id

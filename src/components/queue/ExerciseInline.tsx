@@ -15,9 +15,9 @@ import { trackContentInteraction } from '../../lib/effectivenessTracker'
 import type { QueueItemHandlerProps } from './types'
 
 const EXERCISE_RATINGS = [
-  { score: 0.2, labelKey: 'queue.ratingDidntGetIt', color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
-  { score: 0.5, labelKey: 'queue.ratingPartially', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
-  { score: 0.9, labelKey: 'queue.ratingGotIt', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
+  { score: 0.2, labelKey: 'queue.ratingDidntGetIt', color: 'bg-[var(--color-error-bg)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)]' },
+  { score: 0.5, labelKey: 'queue.ratingPartially', color: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] hover:bg-[var(--color-warning-bg)]' },
+  { score: 0.9, labelKey: 'queue.ratingGotIt', color: 'bg-[var(--color-success-bg)] text-[var(--color-success)] hover:bg-[var(--color-success-bg)]' },
 ]
 
 export function ExerciseInline({
@@ -231,7 +231,7 @@ export function ExerciseInline({
     <div>
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xs font-medium text-[var(--text-muted)]">{examSource ? `${examSource.name}${examSource.year ? ' ' + examSource.year : ''} · ` : ''}Ex. {exercise.exerciseNumber}</span>
-        <span className="text-xs text-[var(--text-faint)] flex items-center gap-0.5">· {t('queue.difficulty')}: {Array.from({ length: 5 }, (_, i) => <Star key={i} className={`w-3 h-3 ${i < exercise.difficulty ? 'text-amber-400 fill-amber-400' : 'text-[var(--text-faint)]'}`} />)}</span>
+        <span className="text-xs text-[var(--text-faint)] flex items-center gap-0.5">· {t('queue.difficulty')}: {Array.from({ length: 5 }, (_, i) => <Star key={i} className={`w-3 h-3 ${i < exercise.difficulty ? 'text-[var(--color-warning)] fill-[var(--color-warning)]' : 'text-[var(--text-faint)]'}`} />)}</span>
         <span className="flex-1" />
         <button
           onClick={async () => {
@@ -241,7 +241,7 @@ export function ExerciseInline({
               onComplete(item.id)
             }
           }}
-          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10"
+          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-bg)]"
           title={t('queue.hideExercise')}
         >
           <Flag className="w-3.5 h-3.5" />
@@ -265,7 +265,7 @@ export function ExerciseInline({
       {phase === 'grading' && (
         <div className="space-y-2">
           {exerciseAI.feedback && (
-            <div className="glass-card p-4 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-blue-400">
+            <div className="glass-card p-4 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-[var(--color-info-border)]">
               <MathText>{exerciseAI.feedback}</MathText>
             </div>
           )}
@@ -282,16 +282,16 @@ export function ExerciseInline({
       {phase === 'graded' && !explanationCtx && (
         <div className="space-y-3">
           {exerciseAI.feedback && (
-            <div className="glass-card p-4 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-blue-400">
+            <div className="glass-card p-4 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-[var(--color-info-border)]">
               <MathText>{exerciseAI.feedback}</MathText>
             </div>
           )}
           {exerciseAI.score !== null && (
             <div className="flex items-center gap-2">
               <span className={`text-sm font-bold px-2.5 py-1 rounded-lg ${
-                exerciseAI.score >= 80 ? 'bg-emerald-500/10 text-emerald-600' :
-                exerciseAI.score >= 50 ? 'bg-orange-500/10 text-orange-600' :
-                'bg-red-500/10 text-red-600'
+                exerciseAI.score >= 80 ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' :
+                exerciseAI.score >= 50 ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]' :
+                'bg-[var(--color-error-bg)] text-[var(--color-error)]'
               }`}>
                 {exerciseAI.score}/100
               </span>
@@ -306,7 +306,7 @@ export function ExerciseInline({
                 {showSolution ? t('queue.hideCorrection') : t('queue.showCorrection')}
               </button>
               {showSolution && (
-                <div className="glass-card p-3 mt-1 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-emerald-500">
+                <div className="glass-card p-3 mt-1 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-[var(--color-success-border)]">
                   <MathText>{exercise.solutionText}</MathText>
                 </div>
               )}
@@ -351,7 +351,7 @@ export function ExerciseInline({
                 {showSolution ? t('queue.hideCorrection') : t('queue.showCorrection')}
               </button>
               {showSolution && (
-                <div className="glass-card p-3 mt-1 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-emerald-500">
+                <div className="glass-card p-3 mt-1 text-sm text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-[var(--color-success-border)]">
                   <MathText>{exercise.solutionText}</MathText>
                 </div>
               )}

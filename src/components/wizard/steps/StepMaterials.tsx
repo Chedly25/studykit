@@ -111,9 +111,9 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
             {batchProgress.results.map((r, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
                 {r.status === 'done' ? (
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  <CheckCircle className="w-4 h-4 text-[var(--color-success)] flex-shrink-0" />
                 ) : r.status === 'error' ? (
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-[var(--color-error)] flex-shrink-0" />
                 ) : (
                   <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin flex-shrink-0" />
                 )}
@@ -142,7 +142,7 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
               <div className="space-y-1 mb-3">
                 {courseDocs.map(doc => (
                   <div key={doc.id} className="flex items-center gap-1.5 text-xs">
-                    <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+                    <CheckCircle className="w-3 h-3 text-[var(--color-success)] flex-shrink-0" />
                     <span className="text-[var(--text-body)] truncate">{doc.title}</span>
                   </div>
                 ))}
@@ -171,7 +171,7 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
           {/* Exams box */}
           <div className="glass-card p-4">
             <div className="flex items-center gap-2 mb-3">
-              <FileText className="w-5 h-5 text-amber-500" />
+              <FileText className="w-5 h-5 text-[var(--color-warning)]" />
               <h3 className="text-sm font-semibold text-[var(--text-heading)]">
                 {t('wizard.examMaterials')}
               </h3>
@@ -185,7 +185,7 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
               <div className="space-y-1 mb-3">
                 {examDocs.map(doc => (
                   <div key={doc.id} className="flex items-center gap-1.5 text-xs">
-                    <CheckCircle className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                    <CheckCircle className="w-3 h-3 text-[var(--color-warning)] flex-shrink-0" />
                     <span className="text-[var(--text-body)] truncate">{doc.title}</span>
                   </div>
                 ))}
@@ -194,7 +194,7 @@ export function StepMaterials({ draft, dispatch: _dispatch, onNext, onBack }: St
 
             <button
               onClick={() => examInputRef.current?.click()}
-              className="w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors border-[var(--border-card)] hover:border-amber-500/50 hover:bg-amber-500/5"
+              className="w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors border-[var(--border-card)] hover:border-[var(--color-warning-border)] hover:bg-[var(--color-warning-bg)]"
             >
               <Upload className="w-6 h-6 mx-auto mb-2 text-[var(--text-muted)]" />
               <p className="text-xs text-[var(--text-muted)]">

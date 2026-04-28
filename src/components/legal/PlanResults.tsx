@@ -47,9 +47,9 @@ export function PlanResults({ task, submission, grading, onRetry, onNewQuestion 
 
       {/* Common pitfalls */}
       {task.commonPitfalls.length > 0 && (
-        <div className="glass-card p-4 border border-amber-500/30">
+        <div className="glass-card p-4 border border-[var(--color-warning-border)]">
           <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <AlertTriangle className="w-4 h-4 text-[var(--color-warning)] " />
             <span className="text-sm font-semibold text-[var(--text-heading)]">
               Pièges typiques du sujet
             </span>

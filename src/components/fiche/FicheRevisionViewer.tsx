@@ -20,9 +20,9 @@ import { useBackgroundJobs } from '../BackgroundJobsProvider'
 function sectionColorClass(heading: string): string {
   const h = heading.toLowerCase()
   if (h.includes('définition') || h.includes('definition')) return 'border-l-4 border-[var(--color-info)] bg-[var(--color-info-bg)]'
-  if (h.includes('théorème') || h.includes('theorem') || h.includes('clés') || h.includes('key')) return 'border-l-4 border-purple-400 bg-purple-500/5'
-  if (h.includes('démonstration') || h.includes('proof')) return 'border-l-4 border-indigo-400 bg-indigo-500/5'
-  if (h.includes('méthode') || h.includes('method')) return 'border-l-4 border-cyan-400 bg-cyan-500/5'
+  if (h.includes('théorème') || h.includes('theorem') || h.includes('clés') || h.includes('key')) return 'border-l-4 border-[var(--color-tag-flashcard)] bg-[var(--color-tag-flashcard-bg)]'
+  if (h.includes('démonstration') || h.includes('proof')) return 'border-l-4 border-[var(--color-tag-flashcard)] bg-[var(--color-tag-flashcard-bg)]'
+  if (h.includes('méthode') || h.includes('method')) return 'border-l-4 border-[var(--color-info-border)] bg-[var(--color-info-bg)]'
   if (h.includes('erreur') || h.includes('mistake') || h.includes('piège')) return 'border-l-4 border-[var(--color-warning)] bg-[var(--color-warning-bg)]'
   if (h.includes('exercice') || h.includes('exercise') || h.includes('exemple')) return 'border-l-4 border-[var(--color-success)] bg-[var(--color-success-bg)]'
   return ''

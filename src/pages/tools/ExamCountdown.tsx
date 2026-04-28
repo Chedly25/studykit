@@ -153,7 +153,7 @@ export default function ExamCountdown() {
                     </p>
 
                     {time.isPast ? (
-                      <div className="flex items-center gap-1.5 mt-2 text-emerald-400">
+                      <div className="flex items-center gap-1.5 mt-2 text-[var(--accent-text)]">
                         <CheckCircle size={16} />
                         <span className="text-sm font-medium">Completed</span>
                       </div>
@@ -169,7 +169,7 @@ export default function ExamCountdown() {
 
                   <button
                     onClick={() => removeExam(exam.id)}
-                    className="p-2 text-[var(--text-muted)] hover:text-red-400 transition-colors ml-3 shrink-0"
+                    className="p-2 text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors ml-3 shrink-0"
                     aria-label={`Remove ${exam.name}`}
                   >
                     <X size={18} />

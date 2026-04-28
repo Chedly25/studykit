@@ -58,7 +58,7 @@ export function InlineQuiz({ quizId, questions: questionsProp, onComplete }: Inl
       <div className="my-3 glass-card overflow-hidden">
         <div className="h-1 bg-[var(--accent-text)]" />
         <div className="p-4 text-center">
-          <Trophy className={`w-8 h-8 mx-auto mb-2 ${pct >= 80 ? 'text-yellow-500' : pct >= 50 ? 'text-[var(--accent-text)]' : 'text-[var(--text-muted)]'}`} />
+          <Trophy className={`w-8 h-8 mx-auto mb-2 ${pct >= 80 ? 'text-[var(--color-warning)]' : pct >= 50 ? 'text-[var(--accent-text)]' : 'text-[var(--text-muted)]'}`} />
           <p className="text-sm font-semibold text-[var(--text-heading)]">
             {score}/{questions.length} correct ({pct}%)
           </p>
@@ -125,9 +125,9 @@ export function InlineQuiz({ quizId, questions: questionsProp, onComplete }: Inl
             let optionClass = 'bg-[var(--bg-input)] text-[var(--text-body)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)] border-transparent'
             if (answered) {
               if (i === q.correctIndex) {
-                optionClass = 'bg-green-500/10 text-green-600 border-green-500/30'
+                optionClass = 'bg-[var(--color-success-bg)] text-[var(--color-success)] border-[var(--color-success-border)]'
               } else if (i === selectedOption && !isCorrect) {
-                optionClass = 'bg-red-500/10 text-red-500 border-red-500/30'
+                optionClass = 'bg-[var(--color-error-bg)] text-[var(--color-error)] border-[var(--color-error-border)]'
               } else {
                 optionClass = 'bg-[var(--bg-input)] text-[var(--text-muted)] border-transparent opacity-50'
               }
@@ -141,8 +141,8 @@ export function InlineQuiz({ quizId, questions: questionsProp, onComplete }: Inl
                 className={`w-full text-left px-3 py-2.5 rounded-lg text-sm border transition-colors flex items-center gap-2 ${optionClass}`}
               >
                 <span className="w-5 h-5 rounded-full border border-current/30 flex items-center justify-center text-[10px] flex-shrink-0">
-                  {answered && i === q.correctIndex ? <CheckCircle className="w-4 h-4 text-green-500" /> :
-                   answered && i === selectedOption && !isCorrect ? <XCircle className="w-4 h-4 text-red-500" /> :
+                  {answered && i === q.correctIndex ? <CheckCircle className="w-4 h-4 text-[var(--color-success)]" /> :
+                   answered && i === selectedOption && !isCorrect ? <XCircle className="w-4 h-4 text-[var(--color-error)]" /> :
                    String.fromCharCode(65 + i)}
                 </span>
                 <MathText>{option}</MathText>
@@ -154,7 +154,7 @@ export function InlineQuiz({ quizId, questions: questionsProp, onComplete }: Inl
         {/* Explanation + Next */}
         {answered && (
           <div className="mt-3">
-            <div className={`rounded-lg px-3 py-2 text-xs ${isCorrect ? 'bg-green-500/10 text-green-700' : 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'}`}>
+            <div className={`rounded-lg px-3 py-2 text-xs ${isCorrect ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'}`}>
               <MathText>{q.explanation}</MathText>
             </div>
             <button

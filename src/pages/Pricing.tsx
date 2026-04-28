@@ -82,7 +82,7 @@ export default function Pricing() {
           <ul className="space-y-3 flex-1">
             {FREE_FEATURES.map(f => (
               <li key={f} className="flex items-start gap-2 text-sm text-[var(--text-body)]">
-                <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <Check className="w-4 h-4 text-[var(--color-success)] mt-0.5 flex-shrink-0" />
                 {f}
               </li>
             ))}

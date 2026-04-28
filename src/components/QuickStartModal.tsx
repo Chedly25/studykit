@@ -235,7 +235,7 @@ export function QuickStartModal({ open, onClose }: Props) {
               </>
             ) : error ? (
               <>
-                <p className="text-sm text-red-500">{error}</p>
+                <p className="text-sm text-[var(--color-error)]">{error}</p>
                 <button
                   onClick={() => { setStep(1); setError(null) }}
                   className="btn-secondary px-4 py-2 text-sm inline-flex items-center gap-2"

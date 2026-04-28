@@ -86,7 +86,7 @@ export function HighlightLayer({ highlights, currentPage, scale, onUpdateNote, o
                   </button>
                   <button
                     onClick={() => { onDelete(highlight.id); setActiveHighlight(null) }}
-                    className="flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-red-500/10 text-red-500 hover:opacity-80"
+                    className="flex items-center gap-1 text-[10px] px-2 py-1 rounded bg-[var(--color-error-bg)] text-[var(--color-error)] hover:opacity-80"
                     title="Delete"
                   >
                     <Trash2 className="w-3 h-3" /> Delete

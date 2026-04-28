@@ -71,7 +71,7 @@ export function SourceCard({
         {doc.summary && (
           <>
             <span>&middot;</span>
-            <span className="text-green-500">Summarized</span>
+            <span className="text-[var(--color-success)]">Summarized</span>
           </>
         )}
       </div>
@@ -80,10 +80,10 @@ export function SourceCard({
       {statusChips && (statusChips.topicsLinked > 0 || statusChips.exerciseCount > 0) && (
         <div className="flex flex-wrap gap-1">
           {statusChips.topicsLinked > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600">{statusChips.topicsLinked} topics linked</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--color-info-bg)] text-[var(--color-info)]">{statusChips.topicsLinked} topics linked</span>
           )}
           {statusChips.exerciseCount > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-600">{statusChips.exerciseCount} exercises</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--color-warning-bg)] text-[var(--color-warning)]">{statusChips.exerciseCount} exercises</span>
           )}
         </div>
       )}
@@ -128,7 +128,7 @@ export function SourceCard({
         <button
           onClick={onDelete}
           className={`btn-action text-xs px-2 py-1 rounded-md bg-[var(--bg-input)] flex items-center gap-1 ml-auto ${
-            deleteConfirm ? 'text-red-500 font-medium' : 'text-red-400 hover:text-red-500'
+            deleteConfirm ? 'text-[var(--color-error)] font-medium' : 'text-[var(--color-error)] hover:text-[var(--color-error)]'
           }`}
         >
           <Trash2 size={12} /> {deleteConfirm ? t('sources.confirmDelete') : 'Delete'}

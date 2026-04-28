@@ -285,7 +285,7 @@ export function ChatPanel({ open, onClose, prefill, onPrefillConsumed, subjectId
         {quotaExceeded ? (
           <UpgradePrompt messagesUsed={messagesUsedToday} />
         ) : error ? (
-          <div className="text-sm text-red-500 bg-red-500/10 rounded-lg p-3">{error}</div>
+          <div className="text-sm text-[var(--color-error)] bg-[var(--color-error-bg)] rounded-lg p-3">{error}</div>
         ) : null}
       </div>
       </ChatContextProvider>

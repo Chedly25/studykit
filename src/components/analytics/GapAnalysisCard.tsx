@@ -18,9 +18,9 @@ const STATUS_ICON = {
 }
 
 const STATUS_COLOR = {
-  covered: 'text-emerald-500',
-  weak: 'text-amber-500',
-  missing: 'text-red-500',
+  covered: 'text-[var(--color-success)]',
+  weak: 'text-[var(--color-warning)]',
+  missing: 'text-[var(--color-error)]',
 }
 
 export default function GapAnalysisCard({ examProfileId }: Props) {
@@ -130,12 +130,12 @@ export default function GapAnalysisCard({ examProfileId }: Props) {
               </div>
               <div className="text-right text-xs text-[var(--text-muted)]">
                 <div>{result.coveredTopics} couverts</div>
-                <div className="text-red-500">{result.missingTopics} manquants</div>
+                <div className="text-[var(--color-error)]">{result.missingTopics} manquants</div>
               </div>
             </div>
             <div className="h-2 bg-[var(--bg-card)] rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500"
+                className="h-full bg-gradient-to-r from-[var(--color-success)] via-[var(--color-warning)] to-[var(--color-error)]"
                 style={{ width: `${result.overallCoveragePercent}%` }}
               />
             </div>
@@ -175,9 +175,9 @@ export default function GapAnalysisCard({ examProfileId }: Props) {
                       <span className="text-xs text-[var(--text-muted)]">({subject.weight}%)</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="text-emerald-500">{subject.topicsCovered}</span>
-                      <span className="text-amber-500">{subject.topicsWeak}</span>
-                      <span className="text-red-500">{subject.topicsMissing}</span>
+                      <span className="text-[var(--color-success)]">{subject.topicsCovered}</span>
+                      <span className="text-[var(--color-warning)]">{subject.topicsWeak}</span>
+                      <span className="text-[var(--color-error)]">{subject.topicsMissing}</span>
                       <span className="text-[var(--text-muted)] tabular-nums">{subject.coveragePercent}%</span>
                     </div>
                   </button>

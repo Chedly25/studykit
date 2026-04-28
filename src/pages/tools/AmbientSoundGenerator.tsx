@@ -23,10 +23,10 @@ interface SoundConfig {
 }
 
 const SOUND_CONFIGS: SoundConfig[] = [
-  { id: 'white', label: 'White Noise', icon: Volume2, color: 'text-[var(--text-muted)]', activeColor: 'text-emerald-400' },
-  { id: 'rain', label: 'Rain', icon: CloudRain, color: 'text-[var(--text-muted)]', activeColor: 'text-blue-400', audioFile: '/sounds/rain.mp3' },
-  { id: 'coffee', label: 'Coffee Shop', icon: Coffee, color: 'text-[var(--text-muted)]', activeColor: 'text-orange-400', audioFile: '/sounds/cafe.mp3' },
-  { id: 'lofi', label: 'Lo-fi', icon: Music, color: 'text-[var(--text-muted)]', activeColor: 'text-purple-400', audioFile: '/sounds/lofi.mp3' },
+  { id: 'white', label: 'White Noise', icon: Volume2, color: 'text-[var(--text-muted)]', activeColor: 'text-[var(--accent-text)]' },
+  { id: 'rain', label: 'Rain', icon: CloudRain, color: 'text-[var(--text-muted)]', activeColor: 'text-[var(--color-info)]', audioFile: '/sounds/rain.mp3' },
+  { id: 'coffee', label: 'Coffee Shop', icon: Coffee, color: 'text-[var(--text-muted)]', activeColor: 'text-[var(--color-warning)]', audioFile: '/sounds/cafe.mp3' },
+  { id: 'lofi', label: 'Lo-fi', icon: Music, color: 'text-[var(--text-muted)]', activeColor: 'text-[var(--color-tag-flashcard)]', audioFile: '/sounds/lofi.mp3' },
 ]
 
 function generateWhiteNoiseBuffer(ctx: AudioContext, duration: number): AudioBuffer {

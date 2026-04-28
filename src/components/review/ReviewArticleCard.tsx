@@ -13,9 +13,9 @@ interface Props {
 }
 
 const decisionColors: Record<ArticleDecision, string> = {
-  shortlisted: 'bg-green-500/10 text-green-500 border-green-500/20',
-  maybe: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  rejected: 'bg-red-500/10 text-red-400 border-red-500/20',
+  shortlisted: 'bg-[var(--color-success-bg)] text-[var(--color-success)] border-[var(--color-success-border)]',
+  maybe: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] border-[var(--color-warning-border)]',
+  rejected: 'bg-[var(--color-error-bg)] text-[var(--color-error)] border-[var(--color-error-border)]',
   pending: 'bg-[var(--bg-input)] text-[var(--text-muted)] border-[var(--border-card)]',
 }
 
@@ -57,9 +57,9 @@ export function ReviewArticleCard({ article, documentTitle, onSelect, onDecision
 
       {/* Score badges */}
       <div className="flex flex-wrap gap-1 mb-3">
-        <ScoreBadge label="R" score={article.relevanceScore} color="bg-blue-500/10 text-blue-500" />
-        <ScoreBadge label="N" score={article.noveltyScore} color="bg-purple-500/10 text-purple-500" />
-        <ScoreBadge label="Q" score={article.qualityScore} color="bg-emerald-500/10 text-emerald-500" />
+        <ScoreBadge label="R" score={article.relevanceScore} color="bg-[var(--color-info-bg)] text-[var(--color-info)]" />
+        <ScoreBadge label="N" score={article.noveltyScore} color="bg-[var(--color-tag-flashcard-bg)] text-[var(--color-tag-flashcard)]" />
+        <ScoreBadge label="Q" score={article.qualityScore} color="bg-[var(--accent-bg)] text-[var(--accent-text)]" />
         {article.compositeScore !== undefined && (
           <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--accent-bg)] text-[var(--accent-text)] font-medium">
             {article.compositeScore.toFixed(1)}

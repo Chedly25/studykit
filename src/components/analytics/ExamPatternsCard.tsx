@@ -30,7 +30,7 @@ export function ExamPatternsCard({ examProfileId }: Props) {
   return (
     <div className="glass-card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <TrendingUp className="w-5 h-5 text-orange-500" />
+        <TrendingUp className="w-5 h-5 text-[var(--color-warning)]" />
         <h3 className="text-sm font-bold text-[var(--text-heading)]">Exam Patterns</h3>
         <span className="text-xs text-[var(--text-muted)]">from {analysis.totalExams} past exams</span>
       </div>
@@ -40,7 +40,7 @@ export function ExamPatternsCard({ examProfileId }: Props) {
         <div className="mb-4 space-y-1">
           {analysis.predictions.map((p, i) => (
             <p key={i} className="text-xs text-[var(--text-body)] flex items-start gap-1.5">
-              <span className="text-orange-500 mt-0.5 shrink-0">*</span>
+              <span className="text-[var(--color-warning)] mt-0.5 shrink-0">*</span>
               {p}
             </p>
           ))}
@@ -71,7 +71,7 @@ export function ExamPatternsCard({ examProfileId }: Props) {
                     p.frequency === 1
                       ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
                       : p.frequency >= 0.75
-                        ? 'bg-orange-500/10 text-orange-600'
+                        ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'
                         : 'text-[var(--text-muted)]'
                   }`}>
                     {Math.round(p.frequency * 100)}%
@@ -97,7 +97,7 @@ function DifficultyDots({ level }: { level: number }) {
   return (
     <div className="flex gap-0.5 justify-center">
       {[1, 2, 3, 4, 5].map(i => (
-        <Star key={i} className={`w-2.5 h-2.5 ${i <= rounded ? 'fill-amber-400 text-amber-400' : 'text-[var(--border-card)]'}`} />
+        <Star key={i} className={`w-2.5 h-2.5 ${i <= rounded ? 'fill-[var(--color-warning)] text-[var(--color-warning)]' : 'text-[var(--border-card)]'}`} />
       ))}
     </div>
   )

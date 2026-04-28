@@ -249,7 +249,7 @@ export default function LegalChat() {
                   <FileText className="w-3.5 h-3.5 text-[var(--text-muted)]" />
                   <span className="text-[var(--text-secondary)] max-w-[180px] truncate">{att.name}</span>
                   <span className="text-xs text-[var(--text-muted)]">{(att.size / 1024).toFixed(0)}ko</span>
-                  <button type="button" onClick={() => removeAttachment(i)} className="text-[var(--text-muted)] hover:text-red-500">
+                  <button type="button" onClick={() => removeAttachment(i)} className="text-[var(--text-muted)] hover:text-[var(--color-error)]">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -290,7 +290,7 @@ export default function LegalChat() {
               disabled={isLoading}
             />
             {isLoading ? (
-              <button type="button" onClick={cancel} className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 shrink-0">
+              <button type="button" onClick={cancel} className="p-2 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)] shrink-0">
                 <X className="w-4 h-4" />
               </button>
             ) : (

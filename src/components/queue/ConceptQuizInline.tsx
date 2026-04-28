@@ -13,9 +13,9 @@ import { trackContentInteraction } from '../../lib/effectivenessTracker'
 import type { QueueItemHandlerProps } from './types'
 
 const CONCEPT_RATINGS = [
-  { quality: 1, labelKey: 'queue.ratingCouldntExplain', color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
-  { quality: 3, labelKey: 'queue.ratingStruggled', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
-  { quality: 5, labelKey: 'queue.ratingCouldExplain', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
+  { quality: 1, labelKey: 'queue.ratingCouldntExplain', color: 'bg-[var(--color-error-bg)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)]' },
+  { quality: 3, labelKey: 'queue.ratingStruggled', color: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] hover:bg-[var(--color-warning-bg)]' },
+  { quality: 5, labelKey: 'queue.ratingCouldExplain', color: 'bg-[var(--color-success-bg)] text-[var(--color-success)] hover:bg-[var(--color-success-bg)]' },
 ]
 
 export function ConceptQuizInline({

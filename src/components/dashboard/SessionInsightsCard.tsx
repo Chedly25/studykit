@@ -30,7 +30,7 @@ function InsightItem({ insight }: { insight: SessionInsight }) {
         <div className="mt-2 ml-6 space-y-2">
           {misconceptions.length > 0 && (
             <div>
-              <div className="flex items-center gap-1 text-xs font-medium text-amber-500 mb-1">
+              <div className="flex items-center gap-1 text-xs font-medium text-[var(--color-warning)] mb-1">
                 <AlertTriangle className="w-3 h-3" /> {t('dashboard.misconceptions')}
               </div>
               <ul className="text-xs text-[var(--text-muted)] space-y-0.5">
@@ -40,7 +40,7 @@ function InsightItem({ insight }: { insight: SessionInsight }) {
           )}
           {openQuestions.length > 0 && (
             <div>
-              <div className="flex items-center gap-1 text-xs font-medium text-blue-500 mb-1">
+              <div className="flex items-center gap-1 text-xs font-medium text-[var(--color-info)] mb-1">
                 <HelpCircle className="w-3 h-3" /> {t('dashboard.openQuestions')}
               </div>
               <ul className="text-xs text-[var(--text-muted)] space-y-0.5">

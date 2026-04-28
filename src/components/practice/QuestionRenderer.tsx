@@ -87,12 +87,12 @@ export function QuestionRenderer({ question, answer, readOnly, onAnswer }: Quest
       {showFeedback && (
         <div className={`flex items-start gap-3 p-4 rounded-lg border ${
           question.isCorrect
-            ? 'border-green-500/30 bg-green-500/5'
-            : 'border-red-500/30 bg-red-500/5'
+            ? 'border-[var(--color-success-border)] bg-[var(--color-success-bg)]'
+            : 'border-[var(--color-error-border)] bg-[var(--color-error-bg)]'
         }`}>
           {question.isCorrect
-            ? <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-            : <XCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+            ? <CheckCircle className="w-5 h-5 text-[var(--color-success)] mt-0.5 shrink-0" />
+            : <XCircle className="w-5 h-5 text-[var(--color-error)] mt-0.5 shrink-0" />
           }
           <div className="space-y-2 text-sm">
             <p className="text-[var(--text-body)]">{question.feedback}</p>

@@ -103,9 +103,9 @@ function DocumentCoverage({
               key={d.docNumber}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border ${
                 isCited
-                  ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                  ? 'border-[var(--color-success-border)]  bg-[var(--color-success-bg)]  text-[var(--color-success)] '
                   : isMissed
-                    ? 'border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400'
+                    ? 'border-[var(--color-error-border)]  bg-[var(--color-error-bg)]  text-[var(--color-error)] '
                     : 'border-[var(--border-card)] text-[var(--text-muted)]'
               }`}
               title={d.title}
@@ -123,11 +123,11 @@ function DocumentCoverage({
       </div>
       <div className="flex items-center gap-4 mt-3 text-[11px] text-[var(--text-muted)]">
         <span className="flex items-center gap-1">
-          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+          <CheckCircle2 className="w-3 h-3 text-[var(--color-success)]" />
           {cited.length} cité{cited.length > 1 ? 's' : ''}
         </span>
         <span className="flex items-center gap-1">
-          <XCircle className="w-3 h-3 text-rose-500" />
+          <XCircle className="w-3 h-3 text-[var(--color-error)]" />
           {missed.length} manquant{missed.length > 1 ? 's' : ''}
         </span>
       </div>

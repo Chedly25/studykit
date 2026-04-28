@@ -77,7 +77,7 @@ export function StepAssessment({ draft, dispatch, onNext, onBack }: StepAssessme
               })
             })
           }}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-error-bg)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)] transition-colors"
         >
           Mark All as New
         </button>
@@ -89,7 +89,7 @@ export function StepAssessment({ draft, dispatch, onNext, onBack }: StepAssessme
               })
             })
           }}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20 transition-colors"
+          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--color-warning-bg)] text-[var(--color-warning)] hover:bg-[var(--color-warning-bg)] transition-colors"
         >
           Mark All as Some Knowledge
         </button>
@@ -136,10 +136,10 @@ export function StepAssessment({ draft, dispatch, onNext, onBack }: StepAssessme
                               className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
                                 level === l
                                   ? l === 'new'
-                                    ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+                                    ? 'bg-[var(--color-error-bg)] text-[var(--color-error)] '
                                     : l === 'some'
-                                    ? 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400'
-                                    : 'bg-green-500/15 text-green-600 dark:text-green-400'
+                                    ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] '
+                                    : 'bg-[var(--color-success-bg)] text-[var(--color-success)] '
                                   : 'bg-[var(--bg-surface)] text-[var(--text-muted)] hover:bg-[var(--accent-bg)]'
                               }`}
                             >

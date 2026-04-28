@@ -128,7 +128,7 @@ Rules:
     <div className="glass-card p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-500" />
+          <AlertTriangle className="w-4 h-4 text-[var(--color-warning)]" />
           <p className="text-sm font-semibold text-[var(--text-heading)]">
             Common mistakes: {topicName}
           </p>

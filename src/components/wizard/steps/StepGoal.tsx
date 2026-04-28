@@ -274,7 +274,7 @@ export function StepGoal({ draft, dispatch, onNext }: StepGoalProps) {
           </div>
 
           {createError && (
-            <p className="text-sm text-red-500 mt-4">{createError}</p>
+            <p className="text-sm text-[var(--color-error)] mt-4">{createError}</p>
           )}
 
           <div className="flex justify-between mt-6">

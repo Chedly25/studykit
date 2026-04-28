@@ -19,16 +19,16 @@ export default function FinalGradeCalculator() {
 
   const resultColor = useMemo(() => {
     if (result === null) return 'text-[var(--text-muted)]'
-    if (result <= 100) return 'text-green-400'
-    if (result <= 110) return 'text-yellow-400'
-    return 'text-red-400'
+    if (result <= 100) return 'text-[var(--color-success)]'
+    if (result <= 110) return 'text-[var(--color-warning)]'
+    return 'text-[var(--color-error)]'
   }, [result])
 
   const resultBg = useMemo(() => {
     if (result === null) return 'border-[var(--border-card)]'
-    if (result <= 100) return 'border-green-500/20 bg-green-500/5'
-    if (result <= 110) return 'border-yellow-500/20 bg-yellow-500/5'
-    return 'border-red-500/20 bg-red-500/5'
+    if (result <= 100) return 'border-[var(--color-success-border)] bg-[var(--color-success-bg)]'
+    if (result <= 110) return 'border-[var(--color-warning-border)] bg-[var(--color-warning-bg)]'
+    return 'border-[var(--color-error-border)] bg-[var(--color-error-bg)]'
   }, [result])
 
   const message = useMemo(() => {

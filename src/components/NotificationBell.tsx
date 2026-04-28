@@ -39,7 +39,7 @@ export function NotificationBell({ examProfileId }: Props) {
       >
         <Bell size={18} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold">
+          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[var(--color-error)] text-white text-[10px] flex items-center justify-center font-bold">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}

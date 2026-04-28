@@ -39,15 +39,15 @@ function tone(r: number): 'good' | 'warn' | 'bad' {
 }
 
 const BAR_COLORS: Record<'good' | 'warn' | 'bad', string> = {
-  good: 'bg-emerald-500',
-  warn: 'bg-amber-500',
-  bad: 'bg-rose-500',
+  good: 'bg-[var(--color-success)]',
+  warn: 'bg-[var(--color-warning)]',
+  bad: 'bg-[var(--color-error)]',
 }
 
 const TEXT_COLORS: Record<'good' | 'warn' | 'bad', string> = {
-  good: 'text-emerald-600 dark:text-emerald-400',
-  warn: 'text-amber-600 dark:text-amber-400',
-  bad: 'text-rose-600 dark:text-rose-400',
+  good: 'text-[var(--color-success)] ',
+  warn: 'text-[var(--color-warning)] ',
+  bad: 'text-[var(--color-error)] ',
 }
 
 export function GradedRubric({ criteria, overall }: Props) {
@@ -100,9 +100,9 @@ export function GradedRubric({ criteria, overall }: Props) {
                       {c.subItems.map((si, j) => (
                         <li key={j} className="flex items-start gap-2 text-sm">
                           {si.passed ? (
-                            <Check className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                            <Check className="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-success)] " />
                           ) : (
-                            <X className="w-4 h-4 mt-0.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                            <X className="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-error)] " />
                           )}
                           <div className="flex-1">
                             <span className="text-[var(--text-primary)]">{si.label}</span>
@@ -145,7 +145,7 @@ function OverallBanner({ overall }: { overall: RubricOverall }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
           {overall.strength && (
             <div className="flex items-start gap-2 text-sm">
-              <Sparkles className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <Sparkles className="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-success)] " />
               <div>
                 <div className="text-xs uppercase tracking-wider text-[var(--text-muted)] font-semibold">Point fort</div>
                 <div className="text-[var(--text-secondary)]">{overall.strength}</div>
@@ -154,7 +154,7 @@ function OverallBanner({ overall }: { overall: RubricOverall }) {
           )}
           {overall.topMistake && (
             <div className="flex items-start gap-2 text-sm">
-              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-warning)] " />
               <div>
                 <div className="text-xs uppercase tracking-wider text-[var(--text-muted)] font-semibold">À corriger en priorité</div>
                 <div className="text-[var(--text-secondary)]">{overall.topMistake}</div>

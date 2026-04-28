@@ -12,9 +12,9 @@ interface Props {
 }
 
 const statusBadgeColors: Record<TopicStatus, string> = {
-  'active': 'bg-green-500',
-  'exploring': 'bg-amber-400',
-  'blocked': 'bg-red-500',
+  'active': 'bg-[var(--color-success)]',
+  'exploring': 'bg-[var(--color-warning)]',
+  'blocked': 'bg-[var(--color-error)]',
   'resolved': 'bg-gray-400',
 }
 
@@ -78,7 +78,7 @@ export function TopicTree({ subjects, getTopicsForSubject, allTopics, showStatus
                 {topics.map(topic => (
                   <div key={topic.id} className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[var(--bg-input)]/50">
                     {hasUnmetPrereqs(topic) && (
-                      <Lock className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                      <Lock className="w-3 h-3 text-[var(--color-warning)] flex-shrink-0" />
                     )}
                     {showStatus && topic.status && (
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${statusBadgeColors[topic.status]}`} title={topic.status} />

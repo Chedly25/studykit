@@ -77,7 +77,7 @@ export function LegalConversationList({ conversations, activeId, onSelect, onNew
                         onKeyDown={(e) => { if (e.key === 'Escape') setEditingId(null) }}
                         className="flex-1 bg-transparent text-sm px-1 py-0.5 border border-[var(--border-card)] rounded focus:outline-none focus:border-[var(--accent-text)]"
                       />
-                      <button type="submit" className="p-1 text-green-500">
+                      <button type="submit" className="p-1 text-[var(--color-success)]">
                         <Check className="w-3.5 h-3.5" />
                       </button>
                       <button type="button" onClick={() => setEditingId(null)} className="p-1 text-[var(--text-muted)]">
@@ -113,7 +113,7 @@ export function LegalConversationList({ conversations, activeId, onSelect, onNew
                             e.stopPropagation()
                             if (confirm('Supprimer cette recherche ?')) onDelete(c.id)
                           }}
-                          className="p-1 rounded hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-500"
+                          className="p-1 rounded hover:bg-[var(--color-error-bg)] text-[var(--text-muted)] hover:text-[var(--color-error)]"
                           title="Supprimer"
                         >
                           <Trash2 className="w-3 h-3" />

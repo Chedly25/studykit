@@ -11,7 +11,7 @@ export function ExamTimer({ timeRemaining }: ExamTimerProps) {
 
   return (
     <div className={`flex items-center gap-1.5 text-sm font-mono font-medium ${
-      isLow ? 'text-red-500 animate-pulse' : 'text-[var(--text-body)]'
+      isLow ? 'text-[var(--color-error)] animate-pulse' : 'text-[var(--text-body)]'
     }`}>
       <Clock className="w-4 h-4" />
       <span>

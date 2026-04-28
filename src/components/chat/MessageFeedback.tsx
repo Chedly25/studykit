@@ -44,7 +44,7 @@ export function MessageFeedback({ messageIndex, conversationId, examProfileId }:
   if (rating === 'positive') {
     return (
       <div className="flex items-center gap-1 mt-1">
-        <ThumbsUp size={12} className="text-green-500 fill-green-500" />
+        <ThumbsUp size={12} className="text-[var(--color-success)] fill-[var(--color-success)]" />
         <span className="text-[10px] text-[var(--text-faint)]">Thanks!</span>
       </div>
     )
@@ -57,14 +57,14 @@ export function MessageFeedback({ messageIndex, conversationId, examProfileId }:
           <>
             <button
               onClick={() => submitFeedback('positive')}
-              className="p-0.5 rounded hover:bg-green-500/10 text-[var(--text-faint)] hover:text-green-500 transition-colors"
+              className="p-0.5 rounded hover:bg-[var(--color-success-bg)] text-[var(--text-faint)] hover:text-[var(--color-success)] transition-colors"
               title="Good response"
             >
               <ThumbsUp size={12} />
             </button>
             <button
               onClick={handleThumbsDown}
-              className="p-0.5 rounded hover:bg-red-500/10 text-[var(--text-faint)] hover:text-red-500 transition-colors"
+              className="p-0.5 rounded hover:bg-[var(--color-error-bg)] text-[var(--text-faint)] hover:text-[var(--color-error)] transition-colors"
               title="Bad response"
             >
               <ThumbsDown size={12} />
@@ -72,7 +72,7 @@ export function MessageFeedback({ messageIndex, conversationId, examProfileId }:
           </>
         ) : (
           <div className="flex items-center gap-1">
-            <ThumbsDown size={12} className="text-red-500 fill-red-500" />
+            <ThumbsDown size={12} className="text-[var(--color-error)] fill-[var(--color-error)]" />
             <span className="text-[10px] text-[var(--text-faint)]">Thanks for the feedback</span>
           </div>
         )}

@@ -87,11 +87,11 @@ export default function GradeCalculator() {
           <p className="text-[var(--text-body)] text-lg mt-1">{letterGrade}</p>
           <div className="flex items-center justify-center gap-4 mt-3 text-sm">
             <span className="text-[var(--text-muted)]">
-              Weight used: <span className={totalWeight > 100 ? 'text-red-400' : 'text-[var(--text-body)]'}>{totalWeight}%</span>
+              Weight used: <span className={totalWeight > 100 ? 'text-[var(--color-error)]' : 'text-[var(--text-body)]'}>{totalWeight}%</span>
             </span>
             <span className="text-[var(--text-faint)]">&middot;</span>
             <span className="text-[var(--text-muted)]">
-              Remaining: <span className={remainingWeight < 0 ? 'text-red-400' : 'text-[var(--text-body)]'}>{remainingWeight}%</span>
+              Remaining: <span className={remainingWeight < 0 ? 'text-[var(--color-error)]' : 'text-[var(--text-body)]'}>{remainingWeight}%</span>
             </span>
           </div>
         </div>
@@ -139,7 +139,7 @@ export default function GradeCalculator() {
                 <button
                   onClick={() => removeAssignment(i)}
                   disabled={assignments.length <= 1}
-                  className="mt-1 p-2 text-[var(--text-muted)] hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="mt-1 p-2 text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   aria-label="Remove assignment"
                 >
                   <Trash2 size={16} />

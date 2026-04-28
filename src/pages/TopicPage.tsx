@@ -64,7 +64,7 @@ export default function TopicPage() {
   const decayedPct = topic ? Math.round(decayed * 100) : 0
   const hasDecay = topic ? topic.mastery - decayed > 0.02 : false
 
-  const masteryColor = masteryPct >= 70 ? 'bg-emerald-500' : masteryPct >= 40 ? 'bg-amber-500' : 'bg-red-500'
+  const masteryColor = masteryPct >= 70 ? 'bg-[var(--color-accent-500)]' : masteryPct >= 40 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-error)]'
 
   // Sparkline data from mastery trend
   const sparkline = useMemo(() => {
@@ -142,8 +142,8 @@ export default function TopicPage() {
 
       {/* SRS info */}
       <div className="glass-card p-3 mb-4 flex items-center gap-2">
-        <Calendar className={`w-4 h-4 ${isDueToday ? 'text-orange-500' : 'text-[var(--text-muted)]'}`} />
-        <span className={`text-sm ${isDueToday ? 'font-medium text-orange-500' : 'text-[var(--text-muted)]'}`}>
+        <Calendar className={`w-4 h-4 ${isDueToday ? 'text-[var(--color-warning)]' : 'text-[var(--text-muted)]'}`} />
+        <span className={`text-sm ${isDueToday ? 'font-medium text-[var(--color-warning)]' : 'text-[var(--text-muted)]'}`}>
           {isDueToday
             ? t('topic.dueToday')
             : nextReview
@@ -228,7 +228,7 @@ export default function TopicPage() {
       <div className="glass-card p-4 mb-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-purple-500" /> {t('topic.flashcards')}
+            <BookOpen className="w-4 h-4 text-[var(--color-tag-flashcard)]" /> {t('topic.flashcards')}
           </h3>
           {detail.flashcardStats.due > 0 && (
             <Link to="/queue" className="text-xs text-[var(--accent-text)] hover:underline flex items-center gap-1">
@@ -239,7 +239,7 @@ export default function TopicPage() {
         <p className="text-sm text-[var(--text-muted)] mt-1">
           {detail.flashcardStats.total} {t('topic.cards')}
           {detail.flashcardStats.due > 0 && (
-            <span className="text-orange-500 font-medium"> · {t('topic.dueCount', { count: detail.flashcardStats.due })}</span>
+            <span className="text-[var(--color-warning)] font-medium"> · {t('topic.dueCount', { count: detail.flashcardStats.due })}</span>
           )}
         </p>
       </div>
@@ -247,7 +247,7 @@ export default function TopicPage() {
       {/* Exercises section */}
       <div className="glass-card p-4 mb-4">
         <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2 mb-2">
-          <ClipboardCheck className="w-4 h-4 text-orange-500" /> {t('topic.exercises')}
+          <ClipboardCheck className="w-4 h-4 text-[var(--color-warning)]" /> {t('topic.exercises')}
         </h3>
         {detail.exerciseGroups.length > 0 ? (
           <div className="space-y-2">
@@ -279,13 +279,13 @@ export default function TopicPage() {
       {/* Concept cards section */}
       <div className="glass-card p-4 mb-4">
         <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2 mb-2">
-          <Brain className="w-4 h-4 text-blue-500" /> {t('topic.conceptCards')}
+          <Brain className="w-4 h-4 text-[var(--color-info)]" /> {t('topic.conceptCards')}
         </h3>
         {detail.conceptCards.length > 0 ? (
           <div className="space-y-1.5">
             {detail.conceptCards.map(card => {
               const cardMastery = card.mastery ?? 0
-              const color = cardMastery >= 0.7 ? 'bg-emerald-500' : cardMastery >= 0.4 ? 'bg-amber-500' : 'bg-[var(--border-card)]'
+              const color = cardMastery >= 0.7 ? 'bg-[var(--color-accent-500)]' : cardMastery >= 0.4 ? 'bg-[var(--color-warning)]' : 'bg-[var(--border-card)]'
               return (
                 <div key={card.id} className="flex items-center gap-2 text-sm">
                   <div className={`w-2 h-2 rounded-full ${color}`} />
@@ -311,7 +311,7 @@ export default function TopicPage() {
       {/* Source material */}
       <div className="glass-card p-4 mb-4">
         <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2 mb-2">
-          <FileText className="w-4 h-4 text-blue-500" /> {t('topic.sourceMaterial')}
+          <FileText className="w-4 h-4 text-[var(--color-info)]" /> {t('topic.sourceMaterial')}
         </h3>
         {detail.documentSections.length > 0 ? (
           <div className="space-y-1.5">
@@ -349,7 +349,7 @@ export default function TopicPage() {
               <span className="text-xs text-[var(--text-muted)]">{t('topic.questionsAttempted')}</span>
             </div>
             <div>
-              <div className={`text-lg font-bold ${topic.questionsCorrect / topic.questionsAttempted >= 0.7 ? 'text-emerald-500' : 'text-orange-500'}`}>
+              <div className={`text-lg font-bold ${topic.questionsCorrect / topic.questionsAttempted >= 0.7 ? 'text-[var(--accent-text)]' : 'text-[var(--color-warning)]'}`}>
                 {Math.round((topic.questionsCorrect / topic.questionsAttempted) * 100)}%
               </div>
               <span className="text-xs text-[var(--text-muted)]">{t('topic.accuracy')}</span>

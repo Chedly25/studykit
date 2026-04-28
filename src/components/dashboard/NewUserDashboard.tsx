@@ -93,8 +93,8 @@ export function NewUserDashboard({ profile, userName, documentCount, practiceExa
         <>
           {/* Welcome card */}
           <div className="glass-card p-6 mb-4 animate-fade-in-up stagger-1">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
-              <Check className="w-7 h-7 text-emerald-500" />
+            <div className="w-12 h-12 rounded-2xl bg-[var(--accent-bg)] flex items-center justify-center mb-4">
+              <Check className="w-7 h-7 text-[var(--accent-text)]" />
             </div>
             <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--text-heading)]">
               {t('dashboard.postOnboarding.title', { name: userName || profile.name })}
@@ -111,11 +111,11 @@ export function NewUserDashboard({ profile, userName, documentCount, practiceExa
                 </span>
               )}
               {processingDocs.length > 0 ? (
-                <span className="text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 px-3 py-1 rounded-full animate-gentle-pulse">
+                <span className="text-xs font-medium bg-[var(--color-warning-bg)] text-[var(--color-warning)] px-3 py-1 rounded-full animate-gentle-pulse">
                   {t('dashboard.postOnboarding.docsProcessing', { count: processingDocs.length })}
                 </span>
               ) : postOnboarding.docsQueuedCount > 0 ? (
-                <span className="text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full">
+                <span className="text-xs font-medium bg-[var(--accent-bg)] text-[var(--accent-text)] px-3 py-1 rounded-full">
                   {t('dashboard.postOnboarding.docsReady')}
                 </span>
               ) : null}

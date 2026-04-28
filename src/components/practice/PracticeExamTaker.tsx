@@ -158,7 +158,7 @@ export function PracticeExamTaker({
               </p>
             )}
             {flaggedCount > 0 && (
-              <p className="text-sm text-amber-600 dark:text-amber-400">
+              <p className="text-sm text-[var(--color-warning)] ">
                 {t('practiceExam.flaggedWarning', { count: flaggedCount })}
               </p>
             )}

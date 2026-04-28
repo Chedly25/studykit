@@ -14,14 +14,14 @@ function DifficultyStars({ level }: { level: number }) {
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
-        <Star key={i} className={`w-3 h-3 ${i <= level ? 'fill-amber-400 text-amber-400' : 'text-[var(--border-card)]'}`} />
+        <Star key={i} className={`w-3 h-3 ${i <= level ? 'fill-[var(--color-warning)] text-[var(--color-warning)]' : 'text-[var(--border-card)]'}`} />
       ))}
     </div>
   )
 }
 
 function ScoreBadge({ score }: { score: number }) {
-  const color = score >= 70 ? 'bg-green-500/15 text-green-600' : score >= 40 ? 'bg-amber-500/15 text-amber-600' : 'bg-red-500/15 text-red-600'
+  const color = score >= 70 ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : score >= 40 ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]' : 'bg-[var(--color-error-bg)] text-[var(--color-error)]'
   return (
     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${color}`}>
       {score}/100
@@ -47,8 +47,8 @@ function ExerciseCard({ exercise, examSourceName, topicNames, onClick }: {
         </div>
         <div className="flex items-center gap-2">
           <DifficultyStars level={exercise.difficulty} />
-          {exercise.status === 'completed' && <Check className="w-4 h-4 text-green-500" />}
-          {exercise.status === 'attempted' && <Clock className="w-4 h-4 text-amber-500" />}
+          {exercise.status === 'completed' && <Check className="w-4 h-4 text-[var(--color-success)]" />}
+          {exercise.status === 'attempted' && <Clock className="w-4 h-4 text-[var(--color-warning)]" />}
         </div>
       </div>
 
@@ -331,7 +331,7 @@ export default function Exercises() {
 
           {/* Error */}
           {exerciseAI.error && (
-            <div className="mt-3 text-sm text-red-500 bg-red-500/10 rounded-lg p-3">
+            <div className="mt-3 text-sm text-[var(--color-error)] bg-[var(--color-error-bg)] rounded-lg p-3">
               {exerciseAI.error}
             </div>
           )}

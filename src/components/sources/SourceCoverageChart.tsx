@@ -53,7 +53,7 @@ export function SourceCoverageChart({ coverage }: Props) {
       {/* Uncovered high-priority */}
       {coverage.uncoveredHighPriority.length > 0 && (
         <div>
-          <div className="flex items-center gap-1 text-xs font-medium text-amber-500 mb-2">
+          <div className="flex items-center gap-1 text-xs font-medium text-[var(--color-warning)] mb-2">
             <AlertTriangle className="w-3 h-3" /> Needs Source Material
           </div>
           <div className="space-y-1">

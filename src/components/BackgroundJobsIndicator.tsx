@@ -106,7 +106,7 @@ function JobRow({ job, onCancel }: { job: BackgroundJob; onCancel: () => void })
         </span>
         <button
           onClick={onCancel}
-          className="text-[var(--text-faint)] hover:text-red-500 transition-colors ml-2 shrink-0"
+          className="text-[var(--text-faint)] hover:text-[var(--color-error)] transition-colors ml-2 shrink-0"
           title="Cancel"
         >
           <XCircle size={14} />

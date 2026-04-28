@@ -107,14 +107,14 @@ export function CasPratiqueTaker({
       <div className="flex items-center justify-between mb-4">
         {timeRemaining > 0 ? (
           <div className={`flex items-center gap-1.5 text-sm font-mono font-medium ${
-            isTimeLow ? 'text-red-500 animate-pulse' : 'text-[var(--text-body)]'
+            isTimeLow ? 'text-[var(--color-error)] animate-pulse' : 'text-[var(--text-body)]'
           }`}>
             <Clock className="w-4 h-4" />
             <span>{h > 0 ? `${h}:` : ''}{String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}</span>
             {mode === 'grand-oral' && <span className="text-xs text-[var(--text-muted)] ml-2">(préparation)</span>}
           </div>
         ) : prepEnded ? (
-          <span className="text-sm font-medium text-amber-500">
+          <span className="text-sm font-medium text-[var(--color-warning)]">
             {t('grandOral.prepOver')}
           </span>
         ) : <div />}
@@ -122,7 +122,7 @@ export function CasPratiqueTaker({
           {isSaving ? (
             <><Save className="w-3 h-3 animate-pulse" /> {t('documentExam.saving')}</>
           ) : lastSaved ? (
-            <><Check className="w-3 h-3 text-green-500" /> {t('documentExam.saved')}</>
+            <><Check className="w-3 h-3 text-[var(--color-success)]" /> {t('documentExam.saved')}</>
           ) : null}
         </span>
       </div>
@@ -184,7 +184,7 @@ export function CasPratiqueTaker({
       {showSubmitConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="glass-card p-5 max-w-sm w-full mx-4 space-y-3">
-            <div className="flex items-center gap-2 text-amber-500">
+            <div className="flex items-center gap-2 text-[var(--color-warning)]">
               <AlertTriangle className="w-5 h-5" />
               <h3 className="font-semibold text-[var(--text-heading)]">
                 {mode === 'grand-oral'
@@ -193,7 +193,7 @@ export function CasPratiqueTaker({
               </h3>
             </div>
             {mode === 'cas-pratique' && wordCount < 800 && (
-              <p className="text-xs text-amber-600">
+              <p className="text-xs text-[var(--color-warning)]">
                 {t('casPratique.shortWarning')}
               </p>
             )}

@@ -202,7 +202,7 @@ export default function Settings() {
         {/* Status message */}
         {message && (
           <div className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
-            message.type === 'success' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-500'
+            message.type === 'success' ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]' : 'bg-[var(--color-error-bg)] text-[var(--color-error)]'
           }`}>
             {message.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
             {message.text}
@@ -216,8 +216,8 @@ export default function Settings() {
             disabled={exporting}
             className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-50 text-left"
           >
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-              {exporting ? <Loader2 className="w-5 h-5 text-blue-500 animate-spin" /> : <Download className="w-5 h-5 text-blue-500" />}
+            <div className="w-10 h-10 rounded-lg bg-[var(--color-info-bg)] flex items-center justify-center shrink-0">
+              {exporting ? <Loader2 className="w-5 h-5 text-[var(--color-info)] animate-spin" /> : <Download className="w-5 h-5 text-[var(--color-info)]" />}
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.exportAllData')}</p>
@@ -231,8 +231,8 @@ export default function Settings() {
             disabled={importing}
             className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-50 text-left"
           >
-            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
-              {importing ? <Loader2 className="w-5 h-5 text-purple-500 animate-spin" /> : <Upload className="w-5 h-5 text-purple-500" />}
+            <div className="w-10 h-10 rounded-lg bg-[var(--color-tag-flashcard-bg)] flex items-center justify-center shrink-0">
+              {importing ? <Loader2 className="w-5 h-5 text-[var(--color-tag-flashcard)] animate-spin" /> : <Upload className="w-5 h-5 text-[var(--color-tag-flashcard)]" />}
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.importData')}</p>
@@ -253,8 +253,8 @@ export default function Settings() {
             disabled={generatingReport}
             className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-50 text-left"
           >
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-              {generatingReport ? <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" /> : <FileText className="w-5 h-5 text-emerald-500" />}
+            <div className="w-10 h-10 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
+              {generatingReport ? <Loader2 className="w-5 h-5 text-[var(--accent-text)] animate-spin" /> : <FileText className="w-5 h-5 text-[var(--accent-text)]" />}
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.downloadReport')}</p>
@@ -281,7 +281,7 @@ export default function Settings() {
               <div className="w-full h-2 rounded-full bg-[var(--border-card)] overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${
-                    storageInfo.usage / storageInfo.quota > 0.8 ? 'bg-red-500' : 'bg-[var(--accent-text)]'
+                    storageInfo.usage / storageInfo.quota > 0.8 ? 'bg-[var(--color-error)]' : 'bg-[var(--accent-text)]'
                   }`}
                   style={{ width: `${Math.min(100, (storageInfo.usage / storageInfo.quota) * 100)}%` }}
                 />
@@ -293,7 +293,7 @@ export default function Settings() {
               </p>
             )}
             {storageInfo.usage / storageInfo.quota > 0.8 && (
-              <p className="text-xs text-amber-600">
+              <p className="text-xs text-[var(--color-warning)]">
                 {t('settings.storageFull')}
               </p>
             )}
@@ -307,8 +307,8 @@ export default function Settings() {
             }}
             className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors text-left"
           >
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-              <Shield className="w-5 h-5 text-emerald-500" />
+            <div className="w-10 h-10 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
+              <Shield className="w-5 h-5 text-[var(--accent-text)]" />
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.protectData')}</p>
@@ -317,7 +317,7 @@ export default function Settings() {
           </button>
         )}
         {isPersisted && (
-          <div className="flex items-center gap-2 text-xs text-emerald-600">
+          <div className="flex items-center gap-2 text-xs text-[var(--accent-text)]">
             <Shield className="w-3.5 h-3.5" /> {t('settings.storageProtected')}
           </div>
         )}
@@ -327,8 +327,8 @@ export default function Settings() {
       <div className="glass-card p-5 space-y-4 mt-4">
         <h2 className="text-lg font-semibold text-[var(--text-heading)]">{t('settings.language')}</h2>
         <div className="flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)]">
-          <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
-            <Globe className="w-5 h-5 text-indigo-500" />
+          <div className="w-10 h-10 rounded-lg bg-[var(--color-tag-flashcard-bg)] flex items-center justify-center shrink-0">
+            <Globe className="w-5 h-5 text-[var(--color-tag-flashcard)]" />
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.displayLanguage')}</p>
@@ -354,8 +354,8 @@ export default function Settings() {
 
         <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-card)]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-              <Bell className="w-5 h-5 text-amber-500" />
+            <div className="w-10 h-10 rounded-lg bg-[var(--color-warning-bg)] flex items-center justify-center shrink-0">
+              <Bell className="w-5 h-5 text-[var(--color-warning)]" />
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.browserNotifications')}</p>
@@ -377,18 +377,18 @@ export default function Settings() {
             </button>
           )}
           {notifStatus === 'denied' && (
-            <span className="text-xs text-red-500">{t('settings.blockedInBrowser')}</span>
+            <span className="text-xs text-[var(--color-error)]">{t('settings.blockedInBrowser')}</span>
           )}
           {notifStatus === 'granted' && (
-            <span className="text-xs text-emerald-500 font-medium">{t('settings.active')}</span>
+            <span className="text-xs text-[var(--accent-text)] font-medium">{t('settings.active')}</span>
           )}
         </div>
 
         {/* Weekly digest toggle */}
         <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-card)]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-              <Mail className="w-5 h-5 text-blue-500" />
+            <div className="w-10 h-10 rounded-lg bg-[var(--color-info-bg)] flex items-center justify-center shrink-0">
+              <Mail className="w-5 h-5 text-[var(--color-info)]" />
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.weeklyDigest')}</p>
@@ -418,7 +418,7 @@ export default function Settings() {
             }}
             className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
               digestEnabled
-                ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25'
+                ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] hover:bg-[var(--accent-bg)]'
                 : 'bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--text-body)]'
             }`}
           >
@@ -452,8 +452,8 @@ export default function Settings() {
             {/* Enable/Disable toggle */}
             <div className="flex items-center justify-between p-4 rounded-xl border border-[var(--border-card)]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                  <Cloud className="w-5 h-5 text-blue-500" />
+                <div className="w-10 h-10 rounded-lg bg-[var(--color-info-bg)] flex items-center justify-center shrink-0">
+                  <Cloud className="w-5 h-5 text-[var(--color-info)]" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.autoSync')}</p>
@@ -470,7 +470,7 @@ export default function Settings() {
                 onClick={() => cloudSync.isEnabled ? cloudSync.disable() : cloudSync.enable()}
                 className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                   cloudSync.isEnabled
-                    ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25'
+                    ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] hover:bg-[var(--accent-bg)]'
                     : 'btn-primary'
                 }`}
               >
@@ -485,10 +485,10 @@ export default function Settings() {
                 disabled={cloudSync.status === 'syncing'}
                 className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-50 text-left"
               >
-                <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
                   {cloudSync.status === 'syncing'
-                    ? <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" />
-                    : <Cloud className="w-5 h-5 text-emerald-500" />
+                    ? <Loader2 className="w-5 h-5 text-[var(--accent-text)] animate-spin" />
+                    : <Cloud className="w-5 h-5 text-[var(--accent-text)]" />
                   }
                 </div>
                 <div>
@@ -500,7 +500,7 @@ export default function Settings() {
 
             {/* Error */}
             {cloudSync.error && (
-              <div className="flex items-center gap-2 text-sm p-3 rounded-lg bg-red-500/10 text-red-500">
+              <div className="flex items-center gap-2 text-sm p-3 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)]">
                 <AlertTriangle className="w-4 h-4" />
                 {cloudSync.error}
               </div>
@@ -512,16 +512,16 @@ export default function Settings() {
                 {!confirmDelete ? (
                   <button
                     onClick={() => setConfirmDelete(true)}
-                    className="flex items-center gap-2 text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors"
+                    className="flex items-center gap-2 text-xs text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> {t('settings.deleteCloudData')}
                   </button>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-red-500">{t('settings.confirmDeleteCloud')}</span>
+                    <span className="text-xs text-[var(--color-error)]">{t('settings.confirmDeleteCloud')}</span>
                     <button
                       onClick={async () => { await cloudSync.deleteCloud(); setConfirmDelete(false) }}
-                      className="text-xs font-medium text-red-500 hover:underline"
+                      className="text-xs font-medium text-[var(--color-error)] hover:underline"
                     >
                       {t('settings.confirm')}
                     </button>
@@ -573,17 +573,17 @@ export default function Settings() {
 
         {/* Danger zone — Delete Account */}
         <div className="pt-4 border-t border-[var(--border-card)]">
-          <h3 className="text-sm font-medium text-red-500 mb-2">Danger Zone</h3>
+          <h3 className="text-sm font-medium text-[var(--color-error)] mb-2">Danger Zone</h3>
           {!showDeleteAccount ? (
             <button
               onClick={() => setShowDeleteAccount(true)}
-              className="text-xs text-[var(--text-muted)] hover:text-red-500 transition-colors flex items-center gap-1"
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors flex items-center gap-1"
             >
               <Trash2 className="w-3.5 h-3.5" /> Delete my account and all data
             </button>
           ) : (
-            <div className="space-y-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-              <p className="text-xs text-red-500">
+            <div className="space-y-2 p-3 rounded-lg bg-[var(--color-error-bg)] border border-[var(--color-error-border)]">
+              <p className="text-xs text-[var(--color-error)]">
                 This will permanently delete your account, cloud data, and sign you out. Local data will be erased. This cannot be undone.
               </p>
               <div className="flex items-center gap-2">
@@ -597,7 +597,7 @@ export default function Settings() {
                 <button
                   onClick={handleDeleteAccount}
                   disabled={deleteConfirmText !== 'DELETE' || deletingAccount}
-                  className="text-xs font-medium text-white bg-red-500 px-3 py-1 rounded hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="text-xs font-medium text-white bg-[var(--color-error)] px-3 py-1 rounded hover:bg-[var(--color-error)] disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {deletingAccount ? 'Deleting...' : 'Delete Account'}
                 </button>

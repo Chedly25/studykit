@@ -153,7 +153,7 @@ export default function SubscriptionSuccess() {
           {steps.map(step => (
             <div key={step.key} className="flex items-center gap-3">
               {step.status === 'done' ? (
-                <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                <div className="w-5 h-5 rounded-full bg-[var(--color-success)] flex items-center justify-center shrink-0">
                   <Check className="w-3 h-3 text-white" />
                 </div>
               ) : step.status === 'running' ? (

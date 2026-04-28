@@ -119,7 +119,7 @@ export default function GrandOralCoach() {
           </div>
 
           {error && (
-            <div className="mx-4 mt-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-600 text-sm p-3">
+            <div className="mx-4 mt-4 rounded-lg bg-[var(--color-error-bg)] border border-[var(--color-error-border)] text-[var(--color-error)] text-sm p-3">
               {error}
             </div>
           )}
@@ -306,13 +306,13 @@ function HistoryList({ history, activeId, onSelect, onDelete, onNew }: HistoryLi
                   <div className="text-xs font-semibold text-[var(--text-heading)] line-clamp-2">{h.task.sujet.text}</div>
                   <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
                     {new Date(h.createdAt).toLocaleDateString('fr-FR')}
-                    {score !== undefined && <> · <span className={score >= 10 ? 'text-green-500' : 'text-orange-500'}>{score.toFixed(1)}/20</span></>}
+                    {score !== undefined && <> · <span className={score >= 10 ? 'text-[var(--color-success)]' : 'text-[var(--color-warning)]'}>{score.toFixed(1)}/20</span></>}
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); void onDelete(h.id) }}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-red-500"
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--color-error-bg)] text-[var(--color-error)]"
                   aria-label="Supprimer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

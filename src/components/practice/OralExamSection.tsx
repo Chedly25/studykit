@@ -145,10 +145,10 @@ export function OralExamSection({ questions, prepTimePerQuestion, onComplete, ex
 
       {phase === 'recording' && (
         <div className="text-center py-4 space-y-3">
-          <div className="w-16 h-16 rounded-full bg-red-500/15 flex items-center justify-center mx-auto animate-pulse">
-            <Mic className="w-8 h-8 text-red-500" />
+          <div className="w-16 h-16 rounded-full bg-[var(--color-error-bg)] flex items-center justify-center mx-auto animate-pulse">
+            <Mic className="w-8 h-8 text-[var(--color-error)]" />
           </div>
-          <p className="text-sm font-medium text-red-500">{t('practiceExam.recording')}</p>
+          <p className="text-sm font-medium text-[var(--color-error)]">{t('practiceExam.recording')}</p>
           <button onClick={handleStopRecording} className="btn-primary text-sm px-6 py-2 flex items-center gap-2 mx-auto">
             <MicOff className="w-4 h-4" /> {t('practiceExam.stopRecording')}
           </button>

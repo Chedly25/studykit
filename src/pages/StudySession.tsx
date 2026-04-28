@@ -283,7 +283,7 @@ export default function StudySession() {
 
       {/* Auto-resolution banner — shown when topic was not explicitly chosen via URL */}
       {(!topicParam || topic.name !== topicParam) && (
-        <div className="flex items-center gap-2 px-4 py-1.5 border-b border-[var(--border-card)] bg-blue-500/5 text-xs text-[var(--text-muted)]">
+        <div className="flex items-center gap-2 px-4 py-1.5 border-b border-[var(--border-card)] bg-[var(--color-info-bg)] text-xs text-[var(--text-muted)]">
           <span>
             Studying: <strong className="text-[var(--text-heading)]">{topic.name}</strong>
             {!topicParam ? ' (auto-selected)' : ' (closest match)'}
@@ -432,7 +432,7 @@ export default function StudySession() {
                     {quotaExceeded ? (
                       <UpgradePrompt messagesUsed={messagesUsedToday} />
                     ) : error ? (
-                      <div className="text-sm text-red-500 bg-red-500/10 rounded-lg p-3">{error}</div>
+                      <div className="text-sm text-[var(--color-error)] bg-[var(--color-error-bg)] rounded-lg p-3">{error}</div>
                     ) : null}
                   </div>
                 </div>

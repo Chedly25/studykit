@@ -152,7 +152,7 @@ export function ChatHistory({ examProfileId, activeConversationId, onSelect, onN
               <span className="truncate flex-1 text-left">{c.title}</span>
               <button
                 onClick={(e) => handleDelete(c.id, e)}
-                className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-500 transition-all"
+                className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-[var(--color-error)] transition-all"
               >
                 <Trash2 className="w-3 h-3" />
               </button>
@@ -210,7 +210,7 @@ export function ChatHistory({ examProfileId, activeConversationId, onSelect, onN
                     <span className="truncate flex-1 text-left">{c.title}</span>
                     <button
                       onClick={(e) => handleDelete(c.id, e)}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-red-500 transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-[var(--color-error)] transition-all"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>

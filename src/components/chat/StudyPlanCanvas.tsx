@@ -133,7 +133,7 @@ function BuilderMode({
         </div>
       </div>
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
 
       <button
         onClick={handleGenerate}
@@ -268,7 +268,7 @@ function ResultMode({
         })}
       </div>
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
 
       <div className="flex gap-2">
         <button onClick={backToBuilder} className="btn-secondary flex-1 py-1.5 text-sm flex items-center justify-center gap-1.5">
@@ -301,8 +301,8 @@ function CompletedMode({ canvas }: { canvas: ReturnType<typeof useStudyPlanCanva
   return (
     <div className="glass-card p-4 my-3 flex items-center justify-between gap-3">
       <div className="flex items-center gap-2 text-sm">
-        <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
-          <Check className="w-3 h-3 text-green-600" />
+        <div className="w-5 h-5 rounded-full bg-[var(--color-success-bg)] flex items-center justify-center">
+          <Check className="w-3 h-3 text-[var(--color-success)]" />
         </div>
         <span className="text-[var(--text-body)]">
           Study plan active — {activePlan.totalDays} days{firstDate && lastDate ? `, ${formatDate(firstDate)}–${formatDate(lastDate)}` : ''}

@@ -30,10 +30,10 @@ export function StudyStreakCard({ streak, weeklyHours, weeklyTarget, freezeUsed,
   return (
     <div className="glass-card p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Flame className={`w-4 h-4 ${streak > 0 ? 'text-orange-500' : 'text-[var(--text-muted)]'} ${milestone ? 'animate-pulse' : ''}`} />
+        <Flame className={`w-4 h-4 ${streak > 0 ? 'text-[var(--color-warning)]' : 'text-[var(--text-muted)]'} ${milestone ? 'animate-pulse' : ''}`} />
         <h3 className="font-semibold text-[var(--text-heading)]">{t('dashboard.streak')}</h3>
         {freezeUsed && (
-          <span className="flex items-center gap-0.5 text-xs text-blue-400" title="Streak freeze used (1 day gap forgiven)">
+          <span className="flex items-center gap-0.5 text-xs text-[var(--color-info)]" title="Streak freeze used (1 day gap forgiven)">
             <Snowflake className="w-3 h-3" /> Freeze
           </span>
         )}
@@ -43,7 +43,7 @@ export function StudyStreakCard({ streak, weeklyHours, weeklyTarget, freezeUsed,
         <span className="text-base font-normal text-[var(--text-muted)]"> {t('dashboard.streakDays', { count: streak })}</span>
       </div>
       {milestone && (
-        <div className="mt-1.5 inline-block text-xs font-bold text-orange-500 bg-orange-500/15 px-2.5 py-1 rounded-full">
+        <div className="mt-1.5 inline-block text-xs font-bold text-[var(--color-warning)] bg-[var(--color-warning-bg)] px-2.5 py-1 rounded-full">
           {milestone}
         </div>
       )}

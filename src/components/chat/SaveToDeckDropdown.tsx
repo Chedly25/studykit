@@ -58,7 +58,7 @@ export function SaveToDeckDropdown({ examProfileId, front, back, topicId }: Save
 
   if (saved) {
     return (
-      <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-green-600">
+      <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--color-success)]">
         <Check className="w-3 h-3" /> Saved
       </span>
     )

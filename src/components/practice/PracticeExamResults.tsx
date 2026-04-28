@@ -115,14 +115,14 @@ export function PracticeExamResults({
     <div className="max-w-3xl mx-auto px-4 py-8 animate-fade-in space-y-6">
       {/* Score card */}
       <div className="glass-card p-8 text-center">
-        <Trophy className={`w-16 h-16 mx-auto mb-4 ${passed ? 'text-yellow-500' : 'text-[var(--text-muted)]'}`} />
-        <div className={`text-5xl font-bold mb-2 ${passed ? 'text-green-500' : 'text-red-500'}`}>
+        <Trophy className={`w-16 h-16 mx-auto mb-4 ${passed ? 'text-[var(--color-warning)]' : 'text-[var(--text-muted)]'}`} />
+        <div className={`text-5xl font-bold mb-2 ${passed ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}`}>
           {percentage}%
         </div>
         <div className="text-lg text-[var(--text-body)] mb-1">
           {totalScore}/{maxScore} {t('practiceExam.points')}
         </div>
-        <div className={`text-sm font-medium ${passed ? 'text-green-500' : 'text-red-500'}`}>
+        <div className={`text-sm font-medium ${passed ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}`}>
           {passed ? t('practiceExam.passed') : t('practiceExam.needsWork')}
         </div>
         {overallFeedback && (
@@ -171,7 +171,7 @@ export function PracticeExamResults({
                   </div>
                   <div className="w-full h-2 bg-[var(--bg-input)] rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all ${pct >= 60 ? 'bg-green-500' : 'bg-red-500'}`}
+                      className={`h-full rounded-full transition-all ${pct >= 60 ? 'bg-[var(--color-success)]' : 'bg-[var(--color-error)]'}`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -203,7 +203,7 @@ export function PracticeExamResults({
                   </div>
                   <div className="w-full h-2 bg-[var(--bg-input)] rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all ${pct >= 60 ? 'bg-green-500' : 'bg-red-500'}`}
+                      className={`h-full rounded-full transition-all ${pct >= 60 ? 'bg-[var(--color-success)]' : 'bg-[var(--color-error)]'}`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -276,11 +276,11 @@ export function PracticeExamResults({
               <div className="text-xs text-[var(--text-muted)]">{t('practiceExam.avgTime')}</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-green-500">{fastestTime}s</div>
+              <div className="text-2xl font-bold text-[var(--color-success)]">{fastestTime}s</div>
               <div className="text-xs text-[var(--text-muted)]">{t('practiceExam.fastest')} ({fastestQ})</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-amber-500">{slowestTime}s</div>
+              <div className="text-2xl font-bold text-[var(--color-warning)]">{slowestTime}s</div>
               <div className="text-xs text-[var(--text-muted)]">{t('practiceExam.slowest')} ({slowestQ})</div>
             </div>
           </div>
@@ -307,9 +307,9 @@ export function PracticeExamResults({
                   <div className="flex items-center gap-3">
                     <span className={`w-6 h-6 rounded-full text-xs flex items-center justify-center font-medium ${
                       q.isCorrect
-                        ? 'bg-green-500/10 text-green-600 dark:text-green-400'
+                        ? 'bg-[var(--color-success-bg)] text-[var(--color-success)] '
                         : q.isAnswered
-                        ? 'bg-red-500/10 text-red-600 dark:text-red-400'
+                        ? 'bg-[var(--color-error-bg)] text-[var(--color-error)] '
                         : 'bg-[var(--bg-input)] text-[var(--text-muted)]'
                     }`}>
                       {i + 1}
@@ -319,7 +319,7 @@ export function PracticeExamResults({
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs ${(q.earnedPoints ?? 0) < 0 ? 'text-red-500 font-medium' : 'text-[var(--text-muted)]'}`}>
+                    <span className={`text-xs ${(q.earnedPoints ?? 0) < 0 ? 'text-[var(--color-error)] font-medium' : 'text-[var(--text-muted)]'}`}>
                       {q.earnedPoints ?? 0}/{q.points}
                     </span>
                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -540,7 +540,7 @@ function DisputeButton({ question }: { question: GeneratedQuestion }) {
 
   if (result) {
     return (
-      <div className={`mt-3 rounded-lg p-3 text-xs ${result.accepted ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'}`}>
+      <div className={`mt-3 rounded-lg p-3 text-xs ${result.accepted ? 'bg-[var(--color-success-bg)] text-[var(--color-success)] ' : 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] '}`}>
         <p className="font-medium mb-1">{result.accepted ? 'Dispute accepted' : 'Dispute reviewed'}</p>
         <p>{result.explanation}</p>
         {result.accepted && result.updatedScore !== undefined && (
@@ -554,7 +554,7 @@ function DisputeButton({ question }: { question: GeneratedQuestion }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="mt-2 flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-amber-600 hover:underline"
+        className="mt-2 flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--color-warning)] hover:underline"
       >
         <AlertTriangle className="w-3 h-3" />
         {t('practiceExam.disputeGrade', 'I think this grade is wrong')}
@@ -596,7 +596,7 @@ function DisputeResultBadge({ result: raw }: { result: string }) {
   if (!res) return null
 
   return (
-    <div className={`mt-2 text-[10px] px-2 py-1 rounded inline-flex items-center gap-1 ${res.accepted ? 'bg-emerald-500/15 text-emerald-600' : 'bg-amber-500/15 text-amber-600'}`}>
+    <div className={`mt-2 text-[10px] px-2 py-1 rounded inline-flex items-center gap-1 ${res.accepted ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'}`}>
       {res.accepted ? 'Grade updated' : 'Dispute reviewed'}: {res.explanation.slice(0, 80)}{res.explanation.length > 80 ? '...' : ''}
     </div>
   )

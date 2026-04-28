@@ -64,7 +64,7 @@ export function PracticeExamHistory({ sessions, onReview, onRetake }: Props) {
               <span className="text-xs text-[var(--text-muted)] w-16 shrink-0">{date}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${percentage >= 60 ? 'text-emerald-500' : 'text-orange-500'}`}>
+                  <span className={`text-sm font-medium ${percentage >= 60 ? 'text-[var(--color-success)]' : 'text-[var(--color-warning)]'}`}>
                     {percentage}%
                   </span>
                   <span className="text-xs text-[var(--text-muted)] hidden sm:inline">

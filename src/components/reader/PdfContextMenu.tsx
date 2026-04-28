@@ -56,9 +56,9 @@ export function PdfContextMenu({ x, y, onAskAI, onHighlight, onCreateFlashcard, 
       <div className="flex items-center gap-1 px-3 py-1.5 hover:bg-[var(--bg-input)] transition-colors">
         <Highlighter className="w-3.5 h-3.5 text-[var(--text-muted)]" />
         <span className="text-xs text-[var(--text-body)] flex-1 ml-1">Highlight</span>
-        <button onClick={() => onHighlight('#fbbf24')} className="w-4 h-4 rounded-sm bg-yellow-400 hover:ring-2 ring-yellow-400/50" />
-        <button onClick={() => onHighlight('#34d399')} className="w-4 h-4 rounded-sm bg-emerald-400 hover:ring-2 ring-emerald-400/50" />
-        <button onClick={() => onHighlight('#60a5fa')} className="w-4 h-4 rounded-sm bg-blue-400 hover:ring-2 ring-blue-400/50" />
+        <button onClick={() => onHighlight('#fbbf24')} className="w-4 h-4 rounded-sm bg-[var(--color-warning)] hover:ring-2 ring-[var(--color-warning-border)]" />
+        <button onClick={() => onHighlight('#E5BAC1')} className="w-4 h-4 rounded-sm bg-[var(--color-accent-500)] hover:ring-2 ring-[var(--accent-border)]" />
+        <button onClick={() => onHighlight('#60a5fa')} className="w-4 h-4 rounded-sm bg-[var(--color-info)] hover:ring-2 ring-[var(--color-info-border)]" />
       </div>
 
       <button

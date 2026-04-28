@@ -80,7 +80,7 @@ export function RoadmapTimeline({ examProfileId }: Props) {
               key={i}
               onClick={() => setExpandedPhase(expandedPhase === phase.name ? null : phase.name)}
               className={`flex-1 h-2.5 rounded-full transition-colors ${
-                isCompleted ? 'bg-emerald-500' :
+                isCompleted ? 'bg-[var(--color-accent-500)]' :
                 isActive ? 'bg-[var(--accent-text)]' :
                 'bg-[var(--bg-input)]'
               }`}

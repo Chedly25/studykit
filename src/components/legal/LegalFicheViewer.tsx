@@ -121,7 +121,7 @@ export function LegalFicheViewer({
       </article>
 
       {fiche.actualiteStatus === 'failed' && fiche.actualiteError && (
-        <div className="glass-card p-3 text-xs text-amber-700 dark:text-amber-400 border border-amber-500/30 flex items-start gap-2">
+        <div className="glass-card p-3 text-xs text-[var(--color-warning)] border border-[var(--color-warning-border)] flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <div>
             <div className="font-semibold mb-0.5">Actualité non récupérée</div>
@@ -213,21 +213,21 @@ function ActualiteLoader() {
 function ActualiteStatusBadge({ status }: { status: LegalFicheView['actualiteStatus'] }) {
   if (status === 'pending') {
     return (
-      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold">
+      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--color-warning-bg)] text-[var(--color-warning)] font-semibold">
         Actualité en cours
       </span>
     )
   }
   if (status === 'auto-enriched' || status === 'manually-enriched') {
     return (
-      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">
+      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--accent-bg)] text-[var(--accent-text)] font-semibold">
         Actualité enrichie
       </span>
     )
   }
   if (status === 'failed') {
     return (
-      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 font-semibold">
+      <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--color-error-bg)] text-[var(--color-error)] font-semibold">
         Actualité échouée
       </span>
     )

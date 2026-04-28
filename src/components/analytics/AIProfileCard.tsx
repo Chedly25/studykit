@@ -74,9 +74,9 @@ export function AIProfileCard({ studentModel, profileId: _profileId }: Props) {
   return (
     <div className="glass-card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Brain className="w-5 h-5 text-purple-500" />
+        <Brain className="w-5 h-5 text-[var(--color-tag-flashcard)]" />
         <h3 className="text-sm font-bold text-[var(--text-heading)]">Your AI Profile</h3>
-        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+        <Sparkles className="w-3.5 h-3.5 text-[var(--color-tag-flashcard)]" />
       </div>
 
       <div className="space-y-4">
@@ -85,7 +85,7 @@ export function AIProfileCard({ studentModel, profileId: _profileId }: Props) {
           <Section title="Learning Style">
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(learningStyle).map(([key, value]) => (
-                <span key={key} className="text-xs px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-600 font-medium">
+                <span key={key} className="text-xs px-2.5 py-1 rounded-full bg-[var(--color-tag-flashcard-bg)] text-[var(--color-tag-flashcard)] font-medium">
                   {String(value) === 'true' ? key : `${key}: ${value}`}
                 </span>
               ))}
@@ -103,7 +103,7 @@ export function AIProfileCard({ studentModel, profileId: _profileId }: Props) {
                   <button
                     onClick={() => removeItem('commonMistakes', item)}
                     disabled={removing === `commonMistakes-${item}`}
-                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-[var(--color-error)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                     title="Remove"
                   >
                     <X className="w-3 h-3" />
@@ -124,7 +124,7 @@ export function AIProfileCard({ studentModel, profileId: _profileId }: Props) {
                   <button
                     onClick={() => removeItem('preferredExplanations', item)}
                     disabled={removing === `preferredExplanations-${item}`}
-                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-[var(--color-error)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                     title="Remove"
                   >
                     <X className="w-3 h-3" />
@@ -145,7 +145,7 @@ export function AIProfileCard({ studentModel, profileId: _profileId }: Props) {
                   <button
                     onClick={() => removeItem('motivationTriggers', item)}
                     disabled={removing === `motivationTriggers-${item}`}
-                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    className="p-0.5 rounded text-[var(--text-faint)] hover:text-[var(--color-error)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                     title="Remove"
                   >
                     <X className="w-3 h-3" />

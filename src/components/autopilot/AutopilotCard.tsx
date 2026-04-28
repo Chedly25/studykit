@@ -64,7 +64,7 @@ export default function AutopilotCard({ examProfileId }: Props) {
             <div className="h-1.5 rounded-full bg-[var(--bg-card)] overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
-                  budgetIsLow ? 'bg-amber-500' : 'bg-[var(--accent)]'
+                  budgetIsLow ? 'bg-[var(--color-warning)]' : 'bg-[var(--accent)]'
                 }`}
                 style={{ width: `${budgetPercent}%` }}
               />
@@ -78,13 +78,13 @@ export default function AutopilotCard({ examProfileId }: Props) {
                 <div key={i} className="flex items-start gap-2 text-xs">
                   <span className="shrink-0 mt-0.5">
                     {insight.urgency === 'urgent' ? (
-                      <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
+                      <AlertTriangle className="w-3.5 h-3.5 text-[var(--color-error)]" />
                     ) : insight.type === 'momentum' ? (
-                      <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                      <TrendingUp className="w-3.5 h-3.5 text-[var(--color-success)]" />
                     ) : insight.type === 'optimal-window' ? (
-                      <Clock className="w-3.5 h-3.5 text-blue-500" />
+                      <Clock className="w-3.5 h-3.5 text-[var(--color-info)]" />
                     ) : (
-                      <Activity className="w-3.5 h-3.5 text-amber-500" />
+                      <Activity className="w-3.5 h-3.5 text-[var(--color-warning)]" />
                     )}
                   </span>
                   <span className="text-[var(--text-body)]">{insight.message}</span>
@@ -96,7 +96,7 @@ export default function AutopilotCard({ examProfileId }: Props) {
           {/* Status line */}
           <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
             {enabled ? (
-              <Zap className="w-3 h-3 text-emerald-500" />
+              <Zap className="w-3 h-3 text-[var(--color-success)]" />
             ) : (
               <ZapOff className="w-3 h-3" />
             )}

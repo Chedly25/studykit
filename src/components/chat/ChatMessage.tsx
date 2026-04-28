@@ -152,7 +152,7 @@ export function ChatMessageBubble({ message, messageIndex, conversationId, examP
           {contextLabels.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
               {contextLabels.map((label) => (
-                <span key={label} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                <span key={label} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-[var(--color-info-bg)] text-[var(--color-info)] border border-[var(--color-info-border)]">
                   <FileText className="w-2.5 h-2.5" />
                   {label}
                 </span>

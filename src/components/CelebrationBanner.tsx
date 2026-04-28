@@ -49,7 +49,7 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
         if (!isCelebrated(id)) {
           result.push({
             id,
-            icon: <Target className="w-6 h-6 text-emerald-500" />,
+            icon: <Target className="w-6 h-6 text-[var(--color-success)]" />,
             title: t('celebrate.masteryTitle', { name: tp.name }),
             subtitle: t('celebrate.masterySubtitle'),
           })
@@ -59,9 +59,9 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
 
     // Streak milestones
     const streakMilestones = [
-      { threshold: 7, icon: <Flame className="w-6 h-6 text-orange-500" />, title: t('celebrate.streak7Title'), subtitle: t('celebrate.streak7Subtitle') },
-      { threshold: 14, icon: <Flame className="w-6 h-6 text-orange-500" />, title: t('celebrate.streak14Title'), subtitle: t('celebrate.streak14Subtitle') },
-      { threshold: 30, icon: <Dumbbell className="w-6 h-6 text-orange-500" />, title: t('celebrate.streak30Title'), subtitle: t('celebrate.streak30Subtitle') },
+      { threshold: 7, icon: <Flame className="w-6 h-6 text-[var(--color-warning)]" />, title: t('celebrate.streak7Title'), subtitle: t('celebrate.streak7Subtitle') },
+      { threshold: 14, icon: <Flame className="w-6 h-6 text-[var(--color-warning)]" />, title: t('celebrate.streak14Title'), subtitle: t('celebrate.streak14Subtitle') },
+      { threshold: 30, icon: <Dumbbell className="w-6 h-6 text-[var(--color-warning)]" />, title: t('celebrate.streak30Title'), subtitle: t('celebrate.streak30Subtitle') },
     ]
     for (const m of streakMilestones) {
       if (streak >= m.threshold) {
@@ -80,7 +80,7 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
         if (!isCelebrated(id)) {
           result.push({
             id,
-            icon: <BookOpen className="w-6 h-6 text-emerald-500" />,
+            icon: <BookOpen className="w-6 h-6 text-[var(--color-success)]" />,
             title: t('celebrate.subjectCoverageTitle', { name: s.name }),
             subtitle: t('celebrate.subjectCoverageSubtitle'),
           })
@@ -94,7 +94,7 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
       if (!isCelebrated(id)) {
         result.push({
           id,
-          icon: <Trophy className="w-6 h-6 text-amber-500" />,
+          icon: <Trophy className="w-6 h-6 text-[var(--color-warning)]" />,
           title: t('celebrate.firstExamTitle'),
           subtitle: t('celebrate.firstExamSubtitle'),
         })
@@ -131,7 +131,7 @@ export function CelebrationBanner({ examProfileId, streak }: Props) {
   if (!current) return null
 
   return (
-    <div className="w-full bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-4 flex items-start gap-3 animate-fade-in">
+    <div className="w-full bg-[var(--color-success-bg)] border border-[var(--color-success-border)] rounded-xl p-4 mb-4 flex items-start gap-3 animate-fade-in">
       <div className="shrink-0">{current.icon}</div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-[var(--text-heading)]">{t('celebrate.milestone')}: {current.title}</p>

@@ -96,7 +96,7 @@ export default function CookieConsent() {
                   disabled
                   className="sr-only peer"
                 />
-                <div className="w-10 h-6 rounded-full bg-emerald-500 opacity-60 cursor-not-allowed" />
+                <div className="w-10 h-6 rounded-full bg-[var(--color-accent-500)] opacity-60 cursor-not-allowed" />
                 <div className="absolute top-0.5 left-[18px] w-5 h-5 rounded-full bg-white shadow transition-transform" />
               </div>
             </label>
@@ -117,7 +117,7 @@ export default function CookieConsent() {
                 aria-checked={analytics}
                 onClick={() => setAnalytics(!analytics)}
                 className={`relative shrink-0 w-10 h-6 rounded-full transition-colors ${
-                  analytics ? 'bg-emerald-500' : 'bg-[var(--text-faint)]'
+                  analytics ? 'bg-[var(--color-accent-500)]' : 'bg-[var(--text-faint)]'
                 }`}
               >
                 <span
@@ -144,7 +144,7 @@ export default function CookieConsent() {
                 aria-checked={errorTracking}
                 onClick={() => setErrorTracking(!errorTracking)}
                 className={`relative shrink-0 w-10 h-6 rounded-full transition-colors ${
-                  errorTracking ? 'bg-emerald-500' : 'bg-[var(--text-faint)]'
+                  errorTracking ? 'bg-[var(--color-accent-500)]' : 'bg-[var(--text-faint)]'
                 }`}
               >
                 <span

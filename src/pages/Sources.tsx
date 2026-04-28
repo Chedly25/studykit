@@ -315,7 +315,7 @@ export default function Sources() {
 
       {/* Persistent upload error card with guidance */}
       {lastUploadError && (
-        <div className="glass-card p-4 mb-4 border-l-4 border-red-500 animate-fade-in">
+        <div className="glass-card p-4 mb-4 border-l-4 border-[var(--color-error-border)] animate-fade-in">
           <div className="flex items-start gap-3">
             <div className="flex-1">
               <p className="text-sm font-medium text-[var(--text-heading)] mb-1">{t('sources.uploadFailed', 'Upload failed')}</p>
@@ -412,8 +412,8 @@ export default function Sources() {
               </button>
             ) : (
               <Link to="/pricing" className="glass-card glass-card-hover p-3 flex items-start gap-3 group">
-                <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                  <Lock className="w-4 h-4 text-purple-500" />
+                <div className="w-9 h-9 rounded-lg bg-[var(--color-tag-flashcard-bg)] flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-4 h-4 text-[var(--color-tag-flashcard)]" />
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-[var(--text-heading)] group-hover:text-[var(--accent-text)] transition-colors">Extract Concepts — Pro</span>
@@ -457,7 +457,7 @@ export default function Sources() {
       )}
 
       {isExamProcessing && (
-        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-amber-500/10 text-sm text-amber-600">
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-[var(--color-warning-bg)] text-sm text-[var(--color-warning)]">
           <Loader2 className="w-4 h-4 animate-spin" />
           Parsing exam exercises...
         </div>

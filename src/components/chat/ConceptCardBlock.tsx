@@ -19,29 +19,29 @@ interface ConceptCardBlockProps {
 
 const SECTION_STYLES: Record<string, { border: string; bg: string }> = {
   // Core — works for any subject
-  'definition':      { border: 'border-blue-400 dark:border-blue-500',      bg: 'bg-blue-50/60 dark:bg-blue-500/5' },
-  'définition':      { border: 'border-blue-400 dark:border-blue-500',      bg: 'bg-blue-50/60 dark:bg-blue-500/5' },
-  'key points':      { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
-  'points clés':     { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
-  'how it works':    { border: 'border-cyan-400 dark:border-cyan-500',      bg: 'bg-cyan-50/60 dark:bg-cyan-500/5' },
-  'fonctionnement':  { border: 'border-cyan-400 dark:border-cyan-500',      bg: 'bg-cyan-50/60 dark:bg-cyan-500/5' },
-  'example':         { border: 'border-emerald-400 dark:border-emerald-500', bg: 'bg-emerald-50/60 dark:bg-emerald-500/5' },
-  'exemple':         { border: 'border-emerald-400 dark:border-emerald-500', bg: 'bg-emerald-50/60 dark:bg-emerald-500/5' },
-  'important rules': { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
-  'règles':          { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
-  'common mistakes': { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
-  'common pitfalls': { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
-  'erreurs':         { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
-  'pièges':          { border: 'border-amber-400 dark:border-amber-500',    bg: 'bg-amber-50/60 dark:bg-amber-500/5' },
-  'comparison':      { border: 'border-pink-400 dark:border-pink-500',      bg: 'bg-pink-50/60 dark:bg-pink-500/5' },
-  'comparaison':     { border: 'border-pink-400 dark:border-pink-500',      bg: 'bg-pink-50/60 dark:bg-pink-500/5' },
+  'definition':      { border: 'border-[var(--color-info-border)] ',      bg: 'bg-[var(--color-info-bg)] ' },
+  'définition':      { border: 'border-[var(--color-info-border)] ',      bg: 'bg-[var(--color-info-bg)] ' },
+  'key points':      { border: 'border-[var(--color-tag-flashcard)] ',  bg: 'bg-[var(--color-tag-flashcard-bg)] ' },
+  'points clés':     { border: 'border-[var(--color-tag-flashcard)] ',  bg: 'bg-[var(--color-tag-flashcard-bg)] ' },
+  'how it works':    { border: 'border-[var(--color-info-border)] ',      bg: 'bg-[var(--color-info-bg)] ' },
+  'fonctionnement':  { border: 'border-[var(--color-info-border)] ',      bg: 'bg-[var(--color-info-bg)] ' },
+  'example':         { border: 'border-[var(--accent-border)] ', bg: 'bg-[var(--accent-bg)] ' },
+  'exemple':         { border: 'border-[var(--accent-border)] ', bg: 'bg-[var(--accent-bg)] ' },
+  'important rules': { border: 'border-[var(--color-tag-flashcard)] ',  bg: 'bg-[var(--color-tag-flashcard-bg)] ' },
+  'règles':          { border: 'border-[var(--color-tag-flashcard)] ',  bg: 'bg-[var(--color-tag-flashcard-bg)] ' },
+  'common mistakes': { border: 'border-[var(--color-warning-border)] ',    bg: 'bg-[var(--color-warning-bg)] ' },
+  'common pitfalls': { border: 'border-[var(--color-warning-border)] ',    bg: 'bg-[var(--color-warning-bg)] ' },
+  'erreurs':         { border: 'border-[var(--color-warning-border)] ',    bg: 'bg-[var(--color-warning-bg)] ' },
+  'pièges':          { border: 'border-[var(--color-warning-border)] ',    bg: 'bg-[var(--color-warning-bg)] ' },
+  'comparison':      { border: 'border-[var(--color-error-border)] ',      bg: 'bg-[var(--color-error-bg)] ' },
+  'comparaison':     { border: 'border-[var(--color-error-border)] ',      bg: 'bg-[var(--color-error-bg)] ' },
   'summary':         { border: 'border-slate-400 dark:border-slate-500',    bg: 'bg-slate-50/60 dark:bg-slate-500/5' },
   'résumé':          { border: 'border-slate-400 dark:border-slate-500',    bg: 'bg-slate-50/60 dark:bg-slate-500/5' },
   // Domain-specific (still useful when they appear)
-  'theorem':         { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
-  'théorème':        { border: 'border-purple-400 dark:border-purple-500',  bg: 'bg-purple-50/60 dark:bg-purple-500/5' },
-  'properties':      { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
-  'propriétés':      { border: 'border-indigo-400 dark:border-indigo-500',  bg: 'bg-indigo-50/60 dark:bg-indigo-500/5' },
+  'theorem':         { border: 'border-[var(--color-tag-flashcard)] ',  bg: 'bg-[var(--color-tag-flashcard-bg)] ' },
+  'théorème':        { border: 'border-[var(--color-tag-flashcard)] ',  bg: 'bg-[var(--color-tag-flashcard-bg)] ' },
+  'properties':      { border: 'border-[var(--color-tag-flashcard)] ',  bg: 'bg-[var(--color-tag-flashcard-bg)] ' },
+  'propriétés':      { border: 'border-[var(--color-tag-flashcard)] ',  bg: 'bg-[var(--color-tag-flashcard-bg)] ' },
   'source':          { border: 'border-[var(--border-card)]',               bg: '' },
 }
 
@@ -152,7 +152,7 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
   const accentColor = subjectColor || 'var(--accent-text)'
 
   return (
-    <div className={`my-3 glass-card overflow-hidden transition-all ${mastered ? 'ring-1 ring-green-500/30' : ''}`}>
+    <div className={`my-3 glass-card overflow-hidden transition-all ${mastered ? 'ring-1 ring-[var(--color-success-border)]' : ''}`}>
       {/* Subject-colored accent bar */}
       <div className="h-1.5" style={{ backgroundColor: accentColor }} />
 
@@ -168,7 +168,7 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
               <span className="text-[10px] text-[var(--text-faint)]">{card.sourceReference}</span>
             )}
           </div>
-          {mastered && <Check className="w-4 h-4 text-green-500 flex-shrink-0" />}
+          {mastered && <Check className="w-4 h-4 text-[var(--color-success)] flex-shrink-0" />}
         </div>
 
         {/* Rich content (new cards with content field) */}
@@ -191,7 +191,7 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
             </ul>
 
             {card.example && (
-              <div className="rounded-lg border-l-4 border-emerald-400 bg-emerald-50/60 dark:bg-emerald-500/5 px-3 py-2 mb-3">
+              <div className="rounded-lg border-l-4 border-[var(--accent-border)] bg-[var(--accent-bg)] px-3 py-2 mb-3">
                 <h3 className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">{t('cards.example')}</h3>
                 <p className="text-xs text-[var(--text-body)]"><MathText>{card.example}</MathText></p>
               </div>
@@ -218,7 +218,7 @@ export function ConceptCardBlock({ cardId, onQuizMe }: ConceptCardBlockProps) {
           {!mastered && (
             <button
               onClick={handleGotIt}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--color-success-bg)] text-[var(--color-success)] hover:bg-[var(--color-success-bg)] transition-colors"
             >
               <Check className="w-3 h-3" /> {t('cards.gotIt')}
             </button>

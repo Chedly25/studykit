@@ -85,7 +85,7 @@ export function AnswerInput({ placeholder, onSubmit, onSkip, disabled, submitLab
               disabled={isTranscribing || disabled}
               className={`p-2 rounded-lg transition-colors disabled:opacity-50 ${
                 isRecording
-                  ? 'bg-red-500/15 text-red-500 animate-pulse'
+                  ? 'bg-[var(--color-error-bg)] text-[var(--color-error)] animate-pulse'
                   : isTranscribing
                     ? 'bg-[var(--bg-input)] text-[var(--text-muted)]'
                     : 'text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)]'

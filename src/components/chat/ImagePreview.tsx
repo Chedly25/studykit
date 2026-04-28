@@ -34,8 +34,8 @@ export function ImagePreview({ imageUrl, extractedText, isExtracting, onRemove, 
         ) : extractedText ? (
           <div>
             <div className="flex items-center gap-2">
-              <FileText className="w-3 h-3 text-emerald-500" />
-              <span className="text-xs text-emerald-600 font-medium">{wordCount} words extracted</span>
+              <FileText className="w-3 h-3 text-[var(--accent-text)]" />
+              <span className="text-xs text-[var(--accent-text)] font-medium">{wordCount} words extracted</span>
               <button
                 onClick={() => setTextExpanded(!textExpanded)}
                 className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)] flex items-center gap-0.5"
@@ -59,7 +59,7 @@ export function ImagePreview({ imageUrl, extractedText, isExtracting, onRemove, 
             )}
           </div>
         ) : (
-          <span className="text-xs text-red-500">Failed to extract text</span>
+          <span className="text-xs text-[var(--color-error)]">Failed to extract text</span>
         )}
       </div>
 

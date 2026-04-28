@@ -193,7 +193,7 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
           onTimeUp={handleSectionTimeUp}
         />
         {proctorMode && (
-          <div className="flex items-center gap-1.5 text-xs text-amber-600 px-2">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--color-warning)] px-2">
             <Shield className="w-3 h-3" /> {t('practiceExam.proctorActive')}
           </div>
         )}
@@ -257,7 +257,7 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
       )}
 
       {proctorMode && (
-        <div className="flex items-center gap-1.5 text-xs text-amber-600 px-2">
+        <div className="flex items-center gap-1.5 text-xs text-[var(--color-warning)] px-2">
           <Shield className="w-3 h-3" /> {t('practiceExam.proctorActive')}
         </div>
       )}
@@ -316,7 +316,7 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
       {showSectionConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="glass-card p-5 max-w-sm w-full mx-4 space-y-3">
-            <div className="flex items-center gap-2 text-amber-500">
+            <div className="flex items-center gap-2 text-[var(--color-warning)]">
               <AlertTriangle className="w-5 h-5" />
               <h3 className="font-semibold text-[var(--text-heading)]">{t('practiceExam.sectionConfirmTitle')}</h3>
             </div>
@@ -324,7 +324,7 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
               {t('practiceExam.sectionConfirmBody', { section: sections[currentSectionIdx + 1]?.formatName ?? 'next section' })}
             </p>
             {flaggedIds.size > 0 && (
-              <p className="text-xs text-amber-600">{t('practiceExam.flaggedWarning', { count: flaggedIds.size })}</p>
+              <p className="text-xs text-[var(--color-warning)]">{t('practiceExam.flaggedWarning', { count: flaggedIds.size })}</p>
             )}
             <div className="flex gap-2">
               <button onClick={handleNextSection} className="flex-1 btn-primary py-2 text-sm">{t('common.continue')}</button>
@@ -340,7 +340,7 @@ export function SimulationExamTaker({ sessionId, examProfileId, sections, procto
           <div className="glass-card p-5 max-w-sm w-full mx-4 space-y-3">
             <h3 className="font-semibold text-[var(--text-heading)]">{t('practiceExam.confirmSubmit')}</h3>
             {flaggedIds.size > 0 && (
-              <p className="text-xs text-amber-600">{t('practiceExam.flaggedWarning', { count: flaggedIds.size })}</p>
+              <p className="text-xs text-[var(--color-warning)]">{t('practiceExam.flaggedWarning', { count: flaggedIds.size })}</p>
             )}
             <div className="flex gap-2">
               <button onClick={handleFinalSubmit} className="flex-1 btn-primary py-2 text-sm">{t('practiceExam.submitExam')}</button>

@@ -23,8 +23,8 @@ interface Props {
 }
 
 function statusBadge(status: string, score?: number) {
-  if (status === 'completed') return <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600">Done {score != null ? `${Math.round(score * 100)}%` : ''}</span>
-  if (status === 'attempted') return <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600">Attempted {score != null ? `${Math.round(score * 100)}%` : ''}</span>
+  if (status === 'completed') return <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--accent-bg)] text-[var(--accent-text)]">Done {score != null ? `${Math.round(score * 100)}%` : ''}</span>
+  if (status === 'attempted') return <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--color-warning-bg)] text-[var(--color-warning)]">Attempted {score != null ? `${Math.round(score * 100)}%` : ''}</span>
   return <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-input)] text-[var(--text-faint)]">Not started</span>
 }
 
@@ -32,7 +32,7 @@ function difficultyStars(level: number) {
   return (
     <span className="inline-flex gap-px">
       {[1, 2, 3, 4, 5].map(i => (
-        <Star key={i} className={`w-2.5 h-2.5 ${i <= level ? 'fill-amber-400 text-amber-400' : 'text-[var(--border-card)]'}`} />
+        <Star key={i} className={`w-2.5 h-2.5 ${i <= level ? 'fill-[var(--color-warning)] text-[var(--color-warning)]' : 'text-[var(--border-card)]'}`} />
       ))}
     </span>
   )
@@ -71,7 +71,7 @@ export function TopicDetailPanel({ topicId, topicName, mastery, examProfileId, q
     ? detail.masteryTrend[detail.masteryTrend.length - 1].mastery - detail.masteryTrend[0].mastery
     : 0
   const TrendIcon = trend > 0.02 ? TrendingUp : trend < -0.02 ? TrendingDown : Minus
-  const trendColor = trend > 0.02 ? 'text-emerald-500' : trend < -0.02 ? 'text-red-500' : 'text-[var(--text-faint)]'
+  const trendColor = trend > 0.02 ? 'text-[var(--accent-text)]' : trend < -0.02 ? 'text-[var(--color-error)]' : 'text-[var(--text-faint)]'
 
   const hasContent = detail.exerciseGroups.length > 0 || detail.flashcardStats.total > 0 ||
     detail.conceptCards.length > 0 || detail.documentSections.length > 0
@@ -150,7 +150,7 @@ export function TopicDetailPanel({ topicId, topicName, mastery, examProfileId, q
                                 {showSolution.has(ex.id) ? 'Hide correction' : 'Show correction'}
                               </button>
                               {showSolution.has(ex.id) && (
-                                <div className="glass-card p-3 text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-emerald-500 mb-2">
+                                <div className="glass-card p-3 text-[var(--text-body)] whitespace-pre-wrap border-l-2 border-[var(--accent-border)] mb-2">
                                   <MathText>{ex.solutionText}</MathText>
                                 </div>
                               )}
@@ -187,7 +187,7 @@ export function TopicDetailPanel({ topicId, topicName, mastery, examProfileId, q
             <BookOpen className="w-3 h-3 text-[var(--text-muted)]" />
             <span>{detail.flashcardStats.total} cards</span>
             {detail.flashcardStats.due > 0 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-600">{detail.flashcardStats.due} due</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--color-info-bg)] text-[var(--color-info)]">{detail.flashcardStats.due} due</span>
             )}
           </div>
         </div>

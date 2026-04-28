@@ -260,7 +260,7 @@ function IdlePicker({ themeId, difficulty, onThemeChange, onDifficultyChange, on
           </div>
 
           {error && (
-            <div className="text-sm text-rose-600 dark:text-rose-400">{error}</div>
+            <div className="text-sm text-[var(--color-error)] ">{error}</div>
           )}
 
           <button
@@ -350,7 +350,7 @@ function HistoryList({ history, activeId, onSelect, onDelete, onNew }: HistoryLi
                     e.stopPropagation()
                     onDelete(h.id)
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-[var(--text-muted)] hover:text-rose-500 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 p-1 text-[var(--text-muted)] hover:text-[var(--color-error)] transition-opacity"
                   aria-label="Supprimer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

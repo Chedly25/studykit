@@ -43,9 +43,9 @@ export function DocumentQuestionSidebar({
           isCurrent
             ? 'bg-[var(--accent-text)] text-white scale-110 shadow-md'
             : hasGrading && isCorrect === true
-            ? 'bg-green-500/20 text-green-600 border border-green-500/40'
+            ? 'bg-[var(--color-success-bg)] text-[var(--color-success)] border border-[var(--color-success-border)]'
             : hasGrading && isCorrect === false
-            ? 'bg-red-500/20 text-red-500 border border-red-500/40'
+            ? 'bg-[var(--color-error-bg)] text-[var(--color-error)] border border-[var(--color-error-border)]'
             : isAnswered
             ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] border border-[var(--accent-text)]'
             : 'border border-[var(--border-card)] text-[var(--text-muted)] hover:border-[var(--text-muted)]'

@@ -13,12 +13,12 @@ export const ACTIVITY_ICONS: Record<string, typeof BookOpen> = {
 }
 
 export const ACTIVITY_COLORS: Record<string, string> = {
-  read: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  flashcards: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-  practice: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
-  socratic: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  'explain-back': 'bg-pink-500/10 text-pink-600 dark:text-pink-400',
-  review: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
+  read: 'bg-[var(--color-info-bg)] text-[var(--color-info)] ',
+  flashcards: 'bg-[var(--color-tag-flashcard-bg)] text-[var(--color-tag-flashcard)] ',
+  practice: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] ',
+  socratic: 'bg-[var(--accent-bg)] text-[var(--accent-text)] ',
+  'explain-back': 'bg-[var(--color-error-bg)] text-[var(--color-error)] ',
+  review: 'bg-[var(--color-info-bg)] text-[var(--color-info)] ',
 }
 
 interface ActivityBlockProps {

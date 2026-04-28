@@ -204,7 +204,7 @@ export default function StudyPlan() {
                 setConfirmDismiss(true)
               }
             }}
-            className={`text-sm px-2 ${confirmDismiss ? 'text-red-500 font-medium' : 'text-[var(--text-muted)] hover:text-red-500'}`}
+            className={`text-sm px-2 ${confirmDismiss ? 'text-[var(--color-error)] font-medium' : 'text-[var(--text-muted)] hover:text-[var(--color-error)]'}`}
           >
             {confirmDismiss ? 'Are you sure?' : 'Dismiss'}
           </button>
@@ -213,9 +213,9 @@ export default function StudyPlan() {
 
       {/* Behind schedule banner */}
       {missedDayCount > 0 && !replanSuggestion && (
-        <div className="glass-card p-4 mb-4 border-l-4 border-amber-500 flex items-center justify-between animate-fade-in">
+        <div className="glass-card p-4 mb-4 border-l-4 border-[var(--color-warning-border)] flex items-center justify-between animate-fade-in">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-[var(--color-warning)] shrink-0" />
             <div>
               <p className="text-sm font-medium text-[var(--text-heading)]">
                 {t('studyPlan.behindSchedule', 'You\'re {{count}} days behind schedule', { count: missedDayCount })}
@@ -245,7 +245,7 @@ export default function StudyPlan() {
 
       {/* Replan suggestion banner */}
       {replanSuggestion && (
-        <div className="glass-card p-4 mb-4 border-l-4 border-amber-500 flex items-center justify-between">
+        <div className="glass-card p-4 mb-4 border-l-4 border-[var(--color-warning-border)] flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-[var(--text-heading)]">{t('studyPlan.replanSuggested')}</p>
             <p className="text-xs text-[var(--text-muted)]">{replanSuggestion}</p>
@@ -277,9 +277,9 @@ export default function StudyPlan() {
 
       {/* Strategist agent suggestion */}
       {strategistInsight && !replanSuggestion && (
-        <div className="glass-card p-4 mb-4 border-l-4 border-blue-500 flex items-center justify-between">
+        <div className="glass-card p-4 mb-4 border-l-4 border-[var(--color-info-border)] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Target className="w-4 h-4 text-blue-500 shrink-0" />
+            <Target className="w-4 h-4 text-[var(--color-info)] shrink-0" />
             <div>
               <p className="text-sm font-medium text-[var(--text-heading)]">Strategy suggestion</p>
               <p className="text-xs text-[var(--text-muted)]">{strategistInsight}</p>
@@ -387,7 +387,7 @@ export default function StudyPlan() {
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-[var(--text-heading)]">{dayLabel}</span>
                       {day.isCompleted && (
-                        <span className="text-xs text-green-500 flex items-center gap-1">
+                        <span className="text-xs text-[var(--color-success)] flex items-center gap-1">
                           <Check className="w-3 h-3" /> {t('ai.completed')}
                         </span>
                       )}
@@ -458,7 +458,7 @@ function WeeklyCalendar({ weekOffset, onPrev, onNext, planDayMap, today, onResch
               key={date}
               className={`glass-card p-2 min-h-[120px] flex flex-col ${
                 isToday ? 'border-2 border-[var(--accent-text)]' :
-                hasUncompleted ? 'border-l-4 border-red-400' : ''
+                hasUncompleted ? 'border-l-4 border-[var(--color-error-border)]' : ''
               }`}
             >
               {/* Day header */}
@@ -468,7 +468,7 @@ function WeeklyCalendar({ weekOffset, onPrev, onNext, planDayMap, today, onResch
                 }`}>
                   {dayLabel}
                 </span>
-                {planDay?.isCompleted && <Check className="w-3 h-3 text-emerald-500" />}
+                {planDay?.isCompleted && <Check className="w-3 h-3 text-[var(--accent-text)]" />}
               </div>
 
               {/* Activities */}
@@ -481,9 +481,9 @@ function WeeklyCalendar({ weekOffset, onPrev, onNext, planDayMap, today, onResch
                     key={i}
                     className={`text-[10px] px-1.5 py-1 rounded ${
                       act.completed
-                        ? 'bg-emerald-500/10 text-emerald-600 line-through'
+                        ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] line-through'
                         : isPast
-                          ? 'bg-red-500/10 text-red-600'
+                          ? 'bg-[var(--color-error-bg)] text-[var(--color-error)]'
                           : 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
                     }`}
                   >
@@ -505,7 +505,7 @@ function WeeklyCalendar({ weekOffset, onPrev, onNext, planDayMap, today, onResch
               {hasUncompleted && (
                 <button
                   onClick={() => onReschedule(date)}
-                  className="mt-1.5 text-[10px] font-medium text-amber-600 hover:underline flex items-center gap-0.5"
+                  className="mt-1.5 text-[10px] font-medium text-[var(--color-warning)] hover:underline flex items-center gap-0.5"
                 >
                   <ArrowRight className="w-2.5 h-2.5" /> {t('studyPlan.moveToToday')}
                 </button>

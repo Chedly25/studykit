@@ -55,12 +55,12 @@ export function OnboardingAssess({ examProfileId, extractedData, onComplete }: O
     }
   }, [examProfileId, extractedData, assessments, seedTopicsForProfile, processDocument, onComplete])
 
-  const COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4']
+  const COLORS = ['#7A1F2B', '#5B4A82', '#3B5879', '#A66A2C', '#4F6B3F', '#7B3F5C', '#3F5B47', '#4A4A55', '#A04D58', '#6B6759']
 
   if (saveError) {
     return (
       <div className="glass-card p-8 text-center">
-        <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+        <AlertCircle className="w-10 h-10 text-[var(--color-error)] mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
           {t('common.error')}
         </h3>
@@ -133,10 +133,10 @@ export function OnboardingAssess({ examProfileId, extractedData, onComplete }: O
                               className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
                                 level === l
                                   ? l === 'new'
-                                    ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+                                    ? 'bg-[var(--color-error-bg)] text-[var(--color-error)] '
                                     : l === 'some'
-                                    ? 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400'
-                                    : 'bg-green-500/15 text-green-600 dark:text-green-400'
+                                    ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] '
+                                    : 'bg-[var(--color-success-bg)] text-[var(--color-success)] '
                                   : 'bg-[var(--bg-surface)] text-[var(--text-muted)] hover:bg-[var(--accent-bg)]'
                               }`}
                             >

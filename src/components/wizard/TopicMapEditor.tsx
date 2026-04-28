@@ -4,7 +4,7 @@ import { Plus, Trash2, ChevronDown, ChevronRight, GripVertical } from 'lucide-re
 import { useState } from 'react'
 import type { DraftSubject, WizardAction } from '../../hooks/useWizardDraft'
 
-const COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316', '#06b6d4']
+const COLORS = ['#7A1F2B', '#5B4A82', '#3B5879', '#A66A2C', '#4F6B3F', '#7B3F5C', '#3F5B47', '#4A4A55', '#A04D58', '#6B6759']
 
 interface TopicMapEditorProps {
   subjects: DraftSubject[]
@@ -109,7 +109,7 @@ export function TopicMapEditor({ subjects, dispatch }: TopicMapEditorProps) {
 
               <button
                 onClick={() => dispatch({ type: 'REMOVE_SUBJECT', tempId: subject.tempId })}
-                className="p-1 rounded hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-500 transition-colors"
+                className="p-1 rounded hover:bg-[var(--color-error-bg)] text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -142,7 +142,7 @@ export function TopicMapEditor({ subjects, dispatch }: TopicMapEditorProps) {
                         subjectTempId: subject.tempId,
                         topicTempId: topic.tempId,
                       })}
-                      className="p-1 rounded hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-500 transition-colors"
+                      className="p-1 rounded hover:bg-[var(--color-error-bg)] text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>

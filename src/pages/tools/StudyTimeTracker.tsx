@@ -186,7 +186,7 @@ export default function StudyTimeTracker() {
                 {data.subjects.find(s => s.id === activeSubject)?.name}
               </span>
             </p>
-            <p className="font-[family-name:var(--font-display)] text-4xl font-bold text-emerald-400">
+            <p className="font-[family-name:var(--font-display)] text-4xl font-bold text-[var(--accent-text)]">
               {formatTimeHMS(timerSeconds)}
             </p>
           </div>
@@ -209,7 +209,7 @@ export default function StudyTimeTracker() {
                 <div
                   key={subject.id}
                   className={`glass-card p-4 transition-all ${
-                    isActive ? 'ring-1 ring-emerald-500/40' : ''
+                    isActive ? 'ring-1 ring-[var(--accent-border)]' : ''
                   }`}
                 >
                   <div className="flex items-center justify-between mb-3">
@@ -221,8 +221,8 @@ export default function StudyTimeTracker() {
                         onClick={() => toggleTimer(subject.id)}
                         className={`p-2 rounded-lg transition-all ${
                           isActive
-                            ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25'
-                            : 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
+                            ? 'bg-[var(--color-error-bg)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)]'
+                            : 'bg-[var(--accent-bg)] text-[var(--accent-text)] hover:bg-[var(--accent-bg)]'
                         }`}
                         aria-label={isActive ? 'Stop timer' : 'Start timer'}
                       >
@@ -230,7 +230,7 @@ export default function StudyTimeTracker() {
                       </button>
                       <button
                         onClick={() => removeSubject(subject.id)}
-                        className="p-2 text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                        className="p-2 text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors"
                         aria-label={`Remove ${subject.name}`}
                       >
                         <Trash2 size={16} />

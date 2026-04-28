@@ -114,7 +114,7 @@ export function DailyCoachingBrief({ examProfileId, profileName, onBeginSession 
             {priorities.map((p, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">
                 <span className="text-[var(--accent-text)] mt-0.5 shrink-0">
-                  <span className={`inline-block w-2 h-2 rounded-full ${p.urgency === 'critical' ? 'bg-red-500' : p.urgency === 'high' ? 'bg-orange-500' : 'bg-blue-500'}`} />
+                  <span className={`inline-block w-2 h-2 rounded-full ${p.urgency === 'critical' ? 'bg-[var(--color-error)]' : p.urgency === 'high' ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-info)]'}`} />
                 </span>
                 <span className="text-[var(--text-body)]">
                   {p.suggestedAction === 'review' ? t('queue.actionReview') : p.suggestedAction === 'practice' ? t('queue.actionPractice') : p.suggestedAction === 'relearn' ? t('queue.actionRevisit') : t('queue.actionAssess')}{' '}

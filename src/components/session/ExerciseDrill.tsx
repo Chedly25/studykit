@@ -15,14 +15,14 @@ function DifficultyStars({ level }: { level: number }) {
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
-        <Star key={i} className={`w-3 h-3 ${i <= level ? 'fill-amber-400 text-amber-400' : 'text-[var(--border-card)]'}`} />
+        <Star key={i} className={`w-3 h-3 ${i <= level ? 'fill-[var(--color-warning)] text-[var(--color-warning)]' : 'text-[var(--border-card)]'}`} />
       ))}
     </div>
   )
 }
 
 function ScoreBadge({ score }: { score: number }) {
-  const color = score >= 70 ? 'bg-green-500/15 text-green-600' : score >= 40 ? 'bg-amber-500/15 text-amber-600' : 'bg-red-500/15 text-red-600'
+  const color = score >= 70 ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' : score >= 40 ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]' : 'bg-[var(--color-error-bg)] text-[var(--color-error)]'
   return (
     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${color}`}>
       {score}/100
@@ -158,9 +158,9 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
                 i === selectedIndex
                   ? 'bg-[var(--accent-text)] text-white'
                   : ex.status === 'completed'
-                    ? 'bg-green-500/10 text-green-600'
+                    ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]'
                     : ex.status === 'attempted'
-                      ? 'bg-amber-500/10 text-amber-600'
+                      ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'
                       : 'bg-[var(--bg-input)] text-[var(--text-muted)] hover:text-[var(--text-body)]'
               }`}
             >
@@ -225,7 +225,7 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
                 <div className="mt-3 space-y-2">
                   {hints.map((hint, i) => (
                     <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)]">
-                      <Lightbulb className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                      <Lightbulb className="w-3.5 h-3.5 text-[var(--color-warning)] mt-0.5 shrink-0" />
                       <p className="text-xs text-[var(--text-body)]">{hint}</p>
                     </div>
                   ))}
@@ -280,7 +280,7 @@ export function ExerciseDrill({ examProfileId, topicId, topicName }: Props) {
 
             {/* Error */}
             {exerciseAI.error && (
-              <div className="mt-3 text-sm text-red-500 bg-red-500/10 rounded-lg p-3">
+              <div className="mt-3 text-sm text-[var(--color-error)] bg-[var(--color-error-bg)] rounded-lg p-3">
                 {exerciseAI.error}
               </div>
             )}

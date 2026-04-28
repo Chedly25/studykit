@@ -94,9 +94,9 @@ export function NoteSyntheseEditor({ task, draftText, onChange, onSubmit, onCanc
           <div className="flex items-center gap-3">
             <span className={`text-xs font-mono ${
               wordCount >= 2200
-                ? 'text-emerald-600 dark:text-emerald-400'
+                ? 'text-[var(--color-success)] '
                 : wordCount >= 1200
-                  ? 'text-amber-600 dark:text-amber-400'
+                  ? 'text-[var(--color-warning)] '
                   : 'text-[var(--text-muted)]'
             }`}>
               {wordCount} mots
@@ -108,7 +108,7 @@ export function NoteSyntheseEditor({ task, draftText, onChange, onSubmit, onCanc
 
           <div className="flex items-center gap-2">
             {error && (
-              <span className="text-xs text-rose-600 dark:text-rose-400 max-w-xs truncate">
+              <span className="text-xs text-[var(--color-error)] max-w-xs truncate">
                 {error}
               </span>
             )}

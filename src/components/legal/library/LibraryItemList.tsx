@@ -91,10 +91,10 @@ export function LibraryItemList({ entries, selectedId, onSelect, examProfileId }
                   )}
                 </div>
                 {status === 'read' && (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" aria-label="Lu" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[var(--accent-text)] shrink-0 mt-0.5" aria-label="Lu" />
                 )}
                 {status === 'reading' && (
-                  <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" aria-label="En cours" />
+                  <Clock className="w-3.5 h-3.5 text-[var(--color-warning)] shrink-0 mt-0.5" aria-label="En cours" />
                 )}
               </button>
             )

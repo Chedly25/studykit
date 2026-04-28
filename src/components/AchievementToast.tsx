@@ -32,8 +32,8 @@ export function showAchievementToast(achievement: AchievementDef) {
   const Icon = ICON_MAP[achievement.icon] ?? Award
   toast(
     <div className="flex items-center gap-3">
-      <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-        <Icon className="w-5 h-5 text-amber-500" />
+      <div className="w-10 h-10 rounded-xl bg-[var(--color-warning-bg)] flex items-center justify-center shrink-0">
+        <Icon className="w-5 h-5 text-[var(--color-warning)]" />
       </div>
       <div>
         <p className="font-bold text-sm text-[var(--text-heading)]">{achievement.title}</p>

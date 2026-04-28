@@ -30,10 +30,10 @@ function fisherYatesShuffle<T>(arr: T[]): T[] {
 }
 
 const RATING_BUTTONS = [
-  { quality: 0, label: 'Again', color: 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20' },
-  { quality: 2, label: 'Hard', color: 'bg-orange-500/10 text-orange-400 border-orange-500/20 hover:bg-orange-500/20' },
-  { quality: 3, label: 'Good', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20' },
-  { quality: 5, label: 'Easy', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' },
+  { quality: 0, label: 'Again', color: 'bg-[var(--color-error-bg)] text-[var(--color-error)] border-[var(--color-error-border)] hover:bg-[var(--color-error-bg)]' },
+  { quality: 2, label: 'Hard', color: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] border-[var(--color-warning-border)] hover:bg-[var(--color-warning-bg)]' },
+  { quality: 3, label: 'Good', color: 'bg-[var(--color-info-bg)] text-[var(--color-info)] border-[var(--color-info-border)] hover:bg-[var(--color-info-bg)]' },
+  { quality: 5, label: 'Easy', color: 'bg-[var(--accent-bg)] text-[var(--accent-text)] border-[var(--accent-border)] hover:bg-[var(--accent-bg)]' },
 ]
 
 export default function FlashcardMaker() {
@@ -427,7 +427,7 @@ export default function FlashcardMaker() {
                           </button>
                           <button
                             onClick={() => deleteDeck(deck.id)}
-                            className="p-2 text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                            className="p-2 text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors"
                             aria-label="Delete deck"
                           >
                             <Trash2 size={16} />
@@ -457,7 +457,7 @@ export default function FlashcardMaker() {
                                 <p className="text-[var(--text-faint)] text-[10px]">EF {card.easeFactor.toFixed(1)}</p>
                                 <button
                                   onClick={() => hookRemoveCard(card.id)}
-                                  className="p-1.5 text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                                  className="p-1.5 text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors"
                                   aria-label="Remove card"
                                 >
                                   <Trash2 size={14} />
@@ -537,7 +537,7 @@ export default function FlashcardMaker() {
                               </button>
                             </div>
                             {aiError && aiDeckId === deck.id && (
-                              <p className="text-red-400 text-xs mt-2">{aiError}</p>
+                              <p className="text-[var(--color-error)] text-xs mt-2">{aiError}</p>
                             )}
                           </div>
                         </div>
@@ -699,7 +699,7 @@ export default function FlashcardMaker() {
                 <p className="text-[var(--text-muted)] text-sm">Due Today</p>
               </div>
               <div className="glass-card p-4 text-center">
-                <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-emerald-400">{statsData.mastered}</p>
+                <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--accent-text)]">{statsData.mastered}</p>
                 <p className="text-[var(--text-muted)] text-sm">Mastered</p>
               </div>
               <div className="glass-card p-4 text-center">
@@ -707,7 +707,7 @@ export default function FlashcardMaker() {
                 <p className="text-[var(--text-muted)] text-sm">Total Cards</p>
               </div>
               <div className="glass-card p-4 text-center">
-                <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-blue-400">{statsData.avgEase.toFixed(2)}</p>
+                <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-[var(--color-info)]">{statsData.avgEase.toFixed(2)}</p>
                 <p className="text-[var(--text-muted)] text-sm">Avg Ease</p>
               </div>
             </div>
@@ -747,12 +747,12 @@ export default function FlashcardMaker() {
                       key={card.id}
                       className={`w-8 h-8 rounded-md flex items-center justify-center text-[10px] font-mono font-bold ${
                         card.easeFactor >= 2.5
-                          ? 'bg-emerald-500/20 text-emerald-400'
+                          ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
                           : card.easeFactor >= 2.0
-                          ? 'bg-blue-500/20 text-blue-400'
+                          ? 'bg-[var(--color-info-bg)] text-[var(--color-info)]'
                           : card.easeFactor >= 1.5
-                          ? 'bg-orange-500/20 text-orange-400'
-                          : 'bg-red-500/20 text-red-400'
+                          ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]'
+                          : 'bg-[var(--color-error-bg)] text-[var(--color-error)]'
                       }`}
                       title={`${card.front}: EF ${card.easeFactor.toFixed(2)}`}
                     >

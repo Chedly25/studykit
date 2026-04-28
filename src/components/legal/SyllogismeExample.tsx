@@ -16,7 +16,7 @@ export function SyllogismeExample() {
         className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-[var(--bg-hover)] transition-colors"
       >
         <div className="flex items-center gap-2 text-sm text-[var(--text-heading)]">
-          <Lightbulb className="w-4 h-4 text-amber-500" />
+          <Lightbulb className="w-4 h-4 text-[var(--color-warning)]" />
           <span className="font-semibold">Voir un exemple de syllogisme bien rédigé</span>
         </div>
         {open ? (

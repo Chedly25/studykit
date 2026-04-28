@@ -19,21 +19,21 @@ interface Props {
 const STATUS_CONFIG = {
   correct: {
     icon: Check,
-    bgClass: 'bg-emerald-500/10',
-    borderClass: 'border-emerald-500/40',
-    textClass: 'text-emerald-600 dark:text-emerald-400',
+    bgClass: 'bg-[var(--color-success-bg)]',
+    borderClass: 'border-[var(--color-success-border)]',
+    textClass: 'text-[var(--color-success)] ',
   },
   partial: {
     icon: AlertTriangle,
-    bgClass: 'bg-amber-500/10',
-    borderClass: 'border-amber-500/40',
-    textClass: 'text-amber-600 dark:text-amber-400',
+    bgClass: 'bg-[var(--color-warning-bg)]',
+    borderClass: 'border-[var(--color-warning-border)]',
+    textClass: 'text-[var(--color-warning)] ',
   },
   error: {
     icon: XCircle,
-    bgClass: 'bg-red-500/10',
-    borderClass: 'border-red-500/40',
-    textClass: 'text-red-600 dark:text-red-400',
+    bgClass: 'bg-[var(--color-error-bg)]',
+    borderClass: 'border-[var(--color-error-border)]',
+    textClass: 'text-[var(--color-error)] ',
   },
 }
 

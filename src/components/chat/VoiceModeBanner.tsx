@@ -49,7 +49,7 @@ export default function VoiceModeBanner({
             aria-label={isRecording ? 'Arrêter l\'enregistrement' : 'Démarrer l\'enregistrement'}
             className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
               isRecording
-                ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30'
+                ? 'bg-[var(--color-error)] text-white animate-pulse shadow-lg shadow-red-500/30'
                 : 'bg-[var(--accent)] text-white hover:scale-105'
             }`}
           >
@@ -68,7 +68,7 @@ export default function VoiceModeBanner({
                 </span>
                 <div className="h-0.5 w-20 bg-[var(--bg-card)] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-red-500 transition-all"
+                    className="h-full bg-[var(--color-error)] transition-all"
                     style={{ width: `${progress}%` }}
                   />
                 </div>

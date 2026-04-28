@@ -106,7 +106,7 @@ export function MasteryTrendChart({ data, topicName }: Props) {
       </div>
 
       {/* Change annotation */}
-      <p className={`text-center text-xs mt-1 ${changePct >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+      <p className={`text-center text-xs mt-1 ${changePct >= 0 ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}`}>
         {changeLabel}
       </p>
     </div>

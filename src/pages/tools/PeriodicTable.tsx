@@ -242,13 +242,13 @@ export default function PeriodicTable() {
               ))}
 
               <div
-                className="text-[9px] text-pink-400 flex items-center justify-end pr-1"
+                className="text-[9px] text-[var(--color-error)] flex items-center justify-end pr-1"
                 style={{ gridColumn: 3, gridRow: 9 }}
               >
                 La-Lu
               </div>
               <div
-                className="text-[9px] text-rose-400 flex items-center justify-end pr-1"
+                className="text-[9px] text-[var(--color-error)] flex items-center justify-end pr-1"
                 style={{ gridColumn: 3, gridRow: 10 }}
               >
                 Ac-Lr

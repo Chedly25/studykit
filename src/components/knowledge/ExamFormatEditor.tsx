@@ -220,7 +220,7 @@ export function ExamFormatEditor({ open, onClose, examProfileId }: Props) {
                       <ChevronDown className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <button onClick={() => removeFormat(f.id)} className="p-0.5 text-[var(--text-muted)] hover:text-red-500 shrink-0">
+                  <button onClick={() => removeFormat(f.id)} className="p-0.5 text-[var(--text-muted)] hover:text-[var(--color-error)] shrink-0">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>

@@ -71,9 +71,9 @@ export function QuestionCard({ question, onAnswer, showTimer }: Props) {
                 disabled={submitted}
                 className={`w-full text-left px-4 py-2.5 rounded-lg border text-sm transition-all ${
                   isCorrectOption
-                    ? 'border-green-500 bg-green-500/10 text-green-700 dark:text-green-400'
+                    ? 'border-[var(--color-success-border)] bg-[var(--color-success-bg)] text-[var(--color-success)] '
                     : isWrongSelected
-                    ? 'border-red-500 bg-red-500/10 text-red-700 dark:text-red-400'
+                    ? 'border-[var(--color-error-border)] bg-[var(--color-error-bg)] text-[var(--color-error)] '
                     : isSelected
                     ? 'border-[var(--accent-text)] bg-[var(--accent-bg)] text-[var(--accent-text)]'
                     : 'border-[var(--border-card)] text-[var(--text-body)] hover:border-[var(--text-muted)]'
@@ -113,12 +113,12 @@ export function QuestionCard({ question, onAnswer, showTimer }: Props) {
 
       {/* Explanation */}
       {submitted && (
-        <div className={`mt-4 p-3 rounded-lg ${isCorrect ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+        <div className={`mt-4 p-3 rounded-lg ${isCorrect ? 'bg-[var(--color-success-bg)] border border-[var(--color-success-border)]' : 'bg-[var(--color-error-bg)] border border-[var(--color-error-border)]'}`}>
           <div className="flex items-center gap-2 mb-2">
             {isCorrect ? (
-              <><CheckCircle className="w-4 h-4 text-green-500" /> <span className="font-medium text-green-700 dark:text-green-400">Correct!</span></>
+              <><CheckCircle className="w-4 h-4 text-[var(--color-success)]" /> <span className="font-medium text-[var(--color-success)] ">Correct!</span></>
             ) : (
-              <><XCircle className="w-4 h-4 text-red-500" /> <span className="font-medium text-red-700 dark:text-red-400">Incorrect</span></>
+              <><XCircle className="w-4 h-4 text-[var(--color-error)]" /> <span className="font-medium text-[var(--color-error)] ">Incorrect</span></>
             )}
           </div>
           {!isCorrect && (

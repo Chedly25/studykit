@@ -49,7 +49,7 @@ export function LibraryHtmlViewer({ url, title, subtitle }: Props) {
 
   if (error) {
     return (
-      <div className="flex items-start gap-3 p-4 rounded-lg border border-amber-500/30 bg-amber-500/5 text-sm text-amber-700 dark:text-amber-400">
+      <div className="flex items-start gap-3 p-4 rounded-lg border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-sm text-[var(--color-warning)] ">
         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
         <div>{error}</div>
       </div>

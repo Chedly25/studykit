@@ -149,7 +149,7 @@ export function CRFPAOnboardingForm({ onBack }: Props) {
         </div>
 
         {error && (
-          <div className="text-sm text-rose-600 dark:text-rose-400">{error}</div>
+          <div className="text-sm text-[var(--color-error)] ">{error}</div>
         )}
       </div>
 

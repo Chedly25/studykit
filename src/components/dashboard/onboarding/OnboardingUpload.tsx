@@ -83,9 +83,9 @@ export function OnboardingUpload({ examProfileId, onComplete }: OnboardingUpload
             {batchProgress.results.map((r, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
                 {r.status === 'done' ? (
-                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  <CheckCircle className="w-4 h-4 text-[var(--color-success)] flex-shrink-0" />
                 ) : (
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-[var(--color-error)] flex-shrink-0" />
                 )}
                 <span className="text-[var(--text-body)] truncate">{r.fileName}</span>
               </div>
@@ -126,7 +126,7 @@ export function OnboardingUpload({ examProfileId, onComplete }: OnboardingUpload
   if (state === 'error') {
     return (
       <div className="glass-card p-8 text-center">
-        <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+        <AlertCircle className="w-10 h-10 text-[var(--color-error)] mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
           {t('dashboard.onboarding.extractionError')}
         </h3>

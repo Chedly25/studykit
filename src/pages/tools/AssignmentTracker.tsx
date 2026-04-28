@@ -104,15 +104,15 @@ export default function AssignmentTracker() {
   })
 
   const priorityClasses: Record<Priority, string> = {
-    low: 'bg-blue-500/20 text-blue-400',
-    medium: 'bg-yellow-500/20 text-yellow-400',
-    high: 'bg-red-500/20 text-red-400',
+    low: 'bg-[var(--color-info-bg)] text-[var(--color-info)]',
+    medium: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
+    high: 'bg-[var(--color-error-bg)] text-[var(--color-error)]',
   }
 
   const statusClasses: Record<Status, string> = {
     todo: 'bg-[var(--accent-bg)] text-[var(--text-muted)]',
-    'in-progress': 'bg-amber-500/20 text-amber-400',
-    done: 'bg-emerald-500/20 text-emerald-400',
+    'in-progress': 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
+    done: 'bg-[var(--accent-bg)] text-[var(--accent-text)]',
   }
 
   const statusLabels: Record<Status, string> = {
@@ -247,7 +247,7 @@ export default function AssignmentTracker() {
                 <div
                   key={assignment.id}
                   className={`glass-card p-4 transition-all ${
-                    overdue ? 'border border-red-500/30' : ''
+                    overdue ? 'border border-[var(--color-error-border)]' : ''
                   } ${assignment.status === 'done' ? 'opacity-60' : ''}`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -263,7 +263,7 @@ export default function AssignmentTracker() {
                           {statusLabels[assignment.status]}
                         </span>
                         {overdue && (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--color-error-bg)] text-[var(--color-error)]">
                             Overdue
                           </span>
                         )}
@@ -296,7 +296,7 @@ export default function AssignmentTracker() {
                       </div>
                       <button
                         onClick={() => deleteAssignment(assignment.id)}
-                        className="p-2 text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                        className="p-2 text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors"
                         aria-label={`Delete ${assignment.title}`}
                       >
                         <Trash2 size={16} />

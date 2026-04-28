@@ -46,7 +46,7 @@ export function QuestionNav({
                   : isAnswered
                   ? 'bg-[var(--accent-bg)] text-[var(--accent-text)] border border-[var(--accent-text)]'
                   : 'border border-[var(--border-card)] text-[var(--text-muted)] hover:border-[var(--text-muted)]'
-              }${isFlagged ? ' ring-2 ring-amber-400' : ''}`}
+              }${isFlagged ? ' ring-2 ring-[var(--color-warning-border)]' : ''}`}
             >
               {i + 1}
             </button>

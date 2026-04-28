@@ -55,7 +55,7 @@ export function DocumentAnswerArea({
   const hasGrading = grading != null
   const isCorrect = hasGrading && grading.earned > 0
   const borderColor = hasGrading
-    ? isCorrect ? 'border-green-500/40' : 'border-red-500/40'
+    ? isCorrect ? 'border-[var(--color-success-border)]' : 'border-[var(--color-error-border)]'
     : 'border-[var(--accent-text)]/30'
 
   return (
@@ -72,7 +72,7 @@ export function DocumentAnswerArea({
         </div>
         <div className="flex items-center gap-2">
           {hasGrading && (
-            <span className={`text-xs font-medium flex items-center gap-1 ${isCorrect ? 'text-green-600' : 'text-red-500'}`}>
+            <span className={`text-xs font-medium flex items-center gap-1 ${isCorrect ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'}`}>
               {isCorrect ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
               {grading.earned}/{grading.max}
             </span>
@@ -97,7 +97,7 @@ export function DocumentAnswerArea({
 
       {/* Grading feedback */}
       {hasGrading && grading.feedback && (
-        <div className={`px-4 py-3 border-t text-sm ${isCorrect ? 'border-green-500/20 bg-green-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
+        <div className={`px-4 py-3 border-t text-sm ${isCorrect ? 'border-[var(--color-success-border)] bg-[var(--color-success-bg)]' : 'border-[var(--color-error-border)] bg-[var(--color-error-bg)]'}`}>
           <p className="text-[var(--text-body)]">{grading.feedback}</p>
         </div>
       )}

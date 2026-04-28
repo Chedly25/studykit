@@ -85,7 +85,7 @@ export function GrandOralSessionLive({ task, clientSecret, model, toolHandler, o
             <div className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
               {phase === 'expose' ? 'Exposé' : phase === 'qa' ? 'Questions' : 'Temps écoulé'}
             </div>
-            <div className={`text-2xl font-mono tabular-nums ${phaseRemaining < 60 && phase !== 'overtime' ? 'text-red-500' : 'text-[var(--text-heading)]'}`}>
+            <div className={`text-2xl font-mono tabular-nums ${phaseRemaining < 60 && phase !== 'overtime' ? 'text-[var(--color-error)]' : 'text-[var(--text-heading)]'}`}>
               {formatMMSS(phaseRemaining)}
             </div>
           </div>
@@ -102,7 +102,7 @@ export function GrandOralSessionLive({ task, clientSecret, model, toolHandler, o
       </div>
 
       {rtc.error && (
-        <div className="rounded-lg bg-red-500/10 border border-red-500/30 text-red-600 text-sm p-3">
+        <div className="rounded-lg bg-[var(--color-error-bg)] border border-[var(--color-error-border)] text-[var(--color-error)] text-sm p-3">
           {rtc.error}
         </div>
       )}
@@ -111,9 +111,9 @@ export function GrandOralSessionLive({ task, clientSecret, model, toolHandler, o
       <div className="rounded-lg border border-[var(--border-card)] bg-[var(--bg-main)] p-6 flex items-center justify-center gap-6">
         <div className="flex items-center gap-2">
           {rtc.isMuted ? (
-            <MicOff className="w-5 h-5 text-red-500" />
+            <MicOff className="w-5 h-5 text-[var(--color-error)]" />
           ) : (
-            <Mic className={`w-5 h-5 ${rtc.state === 'connected' ? 'text-green-500' : 'text-[var(--text-muted)]'}`} />
+            <Mic className={`w-5 h-5 ${rtc.state === 'connected' ? 'text-[var(--color-success)]' : 'text-[var(--text-muted)]'}`} />
           )}
           <span className="text-xs text-[var(--text-muted)]">
             {rtc.isMuted ? 'Micro coupé' : 'Micro actif'}
@@ -121,7 +121,7 @@ export function GrandOralSessionLive({ task, clientSecret, model, toolHandler, o
         </div>
         <div className="h-8 w-px bg-[var(--border-card)]" />
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${juryIsSpeaking ? 'bg-blue-500 animate-pulse' : 'bg-[var(--border-card)]'}`} />
+          <div className={`w-2 h-2 rounded-full ${juryIsSpeaking ? 'bg-[var(--color-info)] animate-pulse' : 'bg-[var(--border-card)]'}`} />
           <span className="text-xs text-[var(--text-muted)]">
             {juryIsSpeaking ? 'Le jury parle' : 'Silence jury'}
           </span>
@@ -136,7 +136,7 @@ export function GrandOralSessionLive({ task, clientSecret, model, toolHandler, o
           </p>
         ) : (
           transcript.map((turn, i) => (
-            <div key={i} className={`text-sm ${turn.role === 'jury' ? 'pl-4 border-l-2 border-blue-500/40' : ''}`}>
+            <div key={i} className={`text-sm ${turn.role === 'jury' ? 'pl-4 border-l-2 border-[var(--color-info-border)]' : ''}`}>
               <div className="text-xs uppercase tracking-wider text-[var(--text-muted)] mb-0.5">
                 {turn.role === 'jury' ? 'Jury' : 'Candidat'}
               </div>
@@ -162,7 +162,7 @@ export function GrandOralSessionLive({ task, clientSecret, model, toolHandler, o
           type="button"
           onClick={handleFinish}
           disabled={rtc.state === 'connecting'}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 disabled:opacity-50"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--color-error)] text-white font-semibold hover:bg-[var(--color-error)] disabled:opacity-50"
         >
           <Square className="w-4 h-4" />
           Terminer la séance
@@ -181,7 +181,7 @@ function formatMMSS(secs: number): string {
 
 function ConnectionIndicator({ state }: { state: ReturnType<typeof useGrandOralWebRTC>['state'] }) {
   const label = state === 'connected' ? 'En direct' : state === 'connecting' ? 'Connexion…' : state === 'error' ? 'Erreur' : state === 'closed' ? 'Fermée' : 'Inactive'
-  const dot = state === 'connected' ? 'bg-green-500 animate-pulse' : state === 'connecting' ? 'bg-yellow-500 animate-pulse' : state === 'error' ? 'bg-red-500' : 'bg-[var(--border-card)]'
+  const dot = state === 'connected' ? 'bg-[var(--color-success)] animate-pulse' : state === 'connecting' ? 'bg-[var(--color-warning)] animate-pulse' : state === 'error' ? 'bg-[var(--color-error)]' : 'bg-[var(--border-card)]'
   return (
     <div className="flex items-center gap-2">
       <div className={`w-2 h-2 rounded-full ${dot}`} />

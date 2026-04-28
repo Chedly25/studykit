@@ -306,7 +306,7 @@ export function ReaderChatPane({ documentId, documentTitle, documentCategory, se
           {currentToolCall && <ToolCallIndicator toolName={currentToolCall} />}
 
           {error && (
-            <div className="text-sm text-red-500 bg-red-500/10 rounded-lg p-3">
+            <div className="text-sm text-[var(--color-error)] bg-[var(--color-error-bg)] rounded-lg p-3">
               {error}
             </div>
           )}

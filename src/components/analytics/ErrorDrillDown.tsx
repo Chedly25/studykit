@@ -69,11 +69,11 @@ export function ErrorDrillDown({ topicName, errorType, examProfileId, onClose }:
                 <p className="text-sm font-medium text-[var(--text-heading)]">{r.question}</p>
                 <div className="flex gap-4 text-xs">
                   <div>
-                    <span className="text-red-400 font-medium">Your answer: </span>
+                    <span className="text-[var(--color-error)] font-medium">Your answer: </span>
                     <span className="text-[var(--text-body)]">{r.userAnswer}</span>
                   </div>
                   <div>
-                    <span className="text-emerald-500 font-medium">Correct: </span>
+                    <span className="text-[var(--color-success)] font-medium">Correct: </span>
                     <span className="text-[var(--text-body)]">{r.correctAnswer}</span>
                   </div>
                 </div>

@@ -27,7 +27,7 @@ export function ConceptCardStrip({ examProfileId, topicId, onSelectCard }: Conce
               onClick={() => onSelectCard?.(card.id)}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${
                 mastered
-                  ? 'bg-green-500/10 text-green-600'
+                  ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]'
                   : 'bg-[var(--bg-input)] text-[var(--text-body)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent-text)]'
               }`}
             >

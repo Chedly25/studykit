@@ -138,9 +138,9 @@ export function StepPriorities({ draft, dispatch, onBack }: StepPrioritiesProps)
                   {tp.subjectName}
                   {assessment && (
                     <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] ${
-                      assessment === 'confident' ? 'bg-green-500/10 text-green-600' :
-                      assessment === 'some' ? 'bg-yellow-500/10 text-yellow-600' :
-                      'bg-red-500/10 text-red-500'
+                      assessment === 'confident' ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' :
+                      assessment === 'some' ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]' :
+                      'bg-[var(--color-error-bg)] text-[var(--color-error)]'
                     }`}>
                       {assessment === 'confident' ? 'Confident' : assessment === 'some' ? 'Some knowledge' : 'New'}
                     </span>

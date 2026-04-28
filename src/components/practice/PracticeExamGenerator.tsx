@@ -67,10 +67,10 @@ export function PracticeExamGenerator({ progress, error, onCancel }: PracticeExa
                     <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin shrink-0" />
                   )}
                   {status === 'completed' && (
-                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />
                   )}
                   {status === 'failed' && (
-                    <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                    <XCircle className="w-4 h-4 text-[var(--color-error)] shrink-0" />
                   )}
                   {status === 'skipped' && (
                     <SkipForward className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
@@ -82,7 +82,7 @@ export function PracticeExamGenerator({ progress, error, onCancel }: PracticeExa
                   <span className={`text-sm flex-1 ${
                     status === 'running' ? 'text-[var(--accent-text)] font-medium' :
                     status === 'completed' ? 'text-[var(--text-body)]' :
-                    status === 'failed' ? 'text-red-500' :
+                    status === 'failed' ? 'text-[var(--color-error)]' :
                     'text-[var(--text-muted)]'
                   }`}>
                     {t(key)}
@@ -117,7 +117,7 @@ export function PracticeExamGenerator({ progress, error, onCancel }: PracticeExa
         </div>
 
         {error && (
-          <div className="text-sm text-red-500 bg-red-500/10 rounded-lg p-3 mb-4">
+          <div className="text-sm text-[var(--color-error)] bg-[var(--color-error-bg)] rounded-lg p-3 mb-4">
             {error}
           </div>
         )}

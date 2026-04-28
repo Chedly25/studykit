@@ -29,8 +29,8 @@ export function ShortAnswerQuestion({
         className={`input-field w-full ${
           showResults
             ? (isCorrect ?? value.trim().toLowerCase() === correctAnswer.trim().toLowerCase())
-              ? 'border-green-500 bg-green-500/10'
-              : 'border-red-500 bg-red-500/10'
+              ? 'border-[var(--color-success-border)] bg-[var(--color-success-bg)]'
+              : 'border-[var(--color-error-border)] bg-[var(--color-error-bg)]'
             : ''
         }`}
       />
@@ -39,7 +39,7 @@ export function ShortAnswerQuestion({
       </div>
       {showResults && (
         <div className="text-sm text-[var(--text-muted)]">
-          Correct answer: <span className="font-medium text-green-600 dark:text-green-400">{correctAnswer}</span>
+          Correct answer: <span className="font-medium text-[var(--color-success)] ">{correctAnswer}</span>
         </div>
       )}
     </div>

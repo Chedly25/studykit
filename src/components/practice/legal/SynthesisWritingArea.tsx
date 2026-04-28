@@ -37,7 +37,7 @@ export function SynthesisWritingArea({
     const isLow = timeRemaining < 600
     return (
       <div className={`flex items-center gap-1.5 text-sm font-mono font-medium ${
-        isLow ? 'text-red-500 animate-pulse' : 'text-[var(--text-body)]'
+        isLow ? 'text-[var(--color-error)] animate-pulse' : 'text-[var(--text-body)]'
       }`}>
         <Clock className="w-4 h-4" />
         <span>{h}:{String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}</span>
@@ -47,9 +47,9 @@ export function SynthesisWritingArea({
 
   // Word count color
   const wordCountColor = wordCount > targetWordCount * 1.1
-    ? 'text-red-500'
+    ? 'text-[var(--color-error)]'
     : wordCount > targetWordCount * 0.8
-    ? 'text-green-600'
+    ? 'text-[var(--color-success)]'
     : 'text-[var(--text-muted)]'
 
   return (
@@ -63,7 +63,7 @@ export function SynthesisWritingArea({
               {isSaving ? (
                 <><Save className="w-3 h-3 animate-pulse" /> {t('documentExam.saving')}</>
               ) : lastSaved ? (
-                <><Check className="w-3 h-3 text-green-500" /> {t('documentExam.saved')}</>
+                <><Check className="w-3 h-3 text-[var(--color-success)]" /> {t('documentExam.saved')}</>
               ) : null}
             </span>
           )}
@@ -93,8 +93,8 @@ export function SynthesisWritingArea({
           <div className="w-24 h-1.5 bg-[var(--bg-input)] rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${
-                wordCount > targetWordCount * 1.1 ? 'bg-red-500' :
-                wordCount > targetWordCount * 0.8 ? 'bg-green-500' :
+                wordCount > targetWordCount * 1.1 ? 'bg-[var(--color-error)]' :
+                wordCount > targetWordCount * 0.8 ? 'bg-[var(--color-success)]' :
                 'bg-[var(--accent-text)]'
               }`}
               style={{ width: `${progress}%` }}

@@ -83,7 +83,7 @@ export function LegalFicheEditor({ ficheId, initialContent, onSave, onCancel }: 
       <div className="glass-card p-3 flex items-center justify-between gap-3 flex-wrap">
         <div className="text-xs text-[var(--text-muted)] tabular-nums">
           {wordCount.toLocaleString('fr')} mots · {charCount.toLocaleString('fr')} caractères
-          {dirty && <span className="ml-2 text-amber-500">● modifications non enregistrées</span>}
+          {dirty && <span className="ml-2 text-[var(--color-warning)]">● modifications non enregistrées</span>}
         </div>
         <div className="flex items-center gap-2">
           <button

@@ -73,7 +73,7 @@ export function OnboardingPlan({ examProfileId, onComplete }: OnboardingPlanProp
   if (state === 'error') {
     return (
       <div className="glass-card p-8 text-center">
-        <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+        <AlertCircle className="w-10 h-10 text-[var(--color-error)] mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
           {t('dashboard.onboarding.planError')}
         </h3>

@@ -135,7 +135,7 @@ export function CodePlayground({ initialCode = '', language = 'python', instruct
 
       {/* Output */}
       {hasRun && (
-        <div className="px-4 py-3 bg-gray-900 text-green-400 font-mono text-xs whitespace-pre-wrap max-h-[150px] overflow-y-auto">
+        <div className="px-4 py-3 bg-gray-900 text-[var(--color-success)] font-mono text-xs whitespace-pre-wrap max-h-[150px] overflow-y-auto">
           {output || '(no output)'}
         </div>
       )}

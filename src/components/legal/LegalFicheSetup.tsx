@@ -232,7 +232,7 @@ export function LegalFicheSetup({ onStart, busy, error }: Props) {
         </div>
 
         {error && (
-          <div className="glass-card p-3 text-sm text-rose-600 dark:text-rose-400 border border-rose-500/30">
+          <div className="glass-card p-3 text-sm text-[var(--color-error)] border border-[var(--color-error-border)]">
             {error}
           </div>
         )}

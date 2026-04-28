@@ -315,9 +315,9 @@ export default function CRFPAHistorique() {
 
 function StatusBadge({ status }: { status: Row['status'] }) {
   const styles =
-    status === 'corrigé' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
-    : status === 'soumis' ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10'
-    : status === 'éditée' ? 'text-sky-600 dark:text-sky-400 bg-sky-500/10'
+    status === 'corrigé' ? 'text-[var(--accent-text)]  bg-[var(--accent-bg)]'
+    : status === 'soumis' ? 'text-[var(--color-warning)]  bg-[var(--color-warning-bg)]'
+    : status === 'éditée' ? 'text-[var(--color-info)]  bg-[var(--color-info-bg)]'
     : 'text-[var(--text-muted)] bg-[var(--bg-hover)]'
   return (
     <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded font-semibold ${styles}`}>

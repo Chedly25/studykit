@@ -35,7 +35,7 @@ export function StreakAtRiskBanner({ streak, profileId }: Props) {
   return (
     <div className="max-w-2xl mx-auto px-4 pt-4 animate-slide-up">
       <div className="glass-card p-3 flex items-center gap-3 border-l-4 border-l-amber-500">
-        <Flame className="w-5 h-5 text-amber-500 shrink-0" />
+        <Flame className="w-5 h-5 text-[var(--color-warning)] shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-[var(--text-heading)]">
             {t('streak.atRiskTitle', { count: streak })}

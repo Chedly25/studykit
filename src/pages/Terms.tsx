@@ -21,7 +21,7 @@ export default function Terms() {
       </h1>
 
       {/* Template banner */}
-      <div className="glass-card p-4 mb-8 border-l-4 border-amber-500 bg-amber-50/10">
+      <div className="glass-card p-4 mb-8 border-l-4 border-[var(--color-warning-border)] bg-[var(--color-warning-bg)]">
         <p className="text-sm text-[var(--text-body)] font-medium">
           {t(
             'terms.templateBanner',

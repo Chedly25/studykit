@@ -77,7 +77,7 @@ export default function Usage() {
         </div>
       ) : error ? (
         <div className="glass-card p-6 text-center">
-          <p className="text-red-500">{error}</p>
+          <p className="text-[var(--color-error)]">{error}</p>
         </div>
       ) : data ? (
         <>

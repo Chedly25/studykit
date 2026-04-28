@@ -48,9 +48,9 @@ const CRAM_KEY = (profileId: string) => `cramMode_${profileId}`
 type QueueItemType = 'flashcard-review' | 'exercise' | 'concept-quiz'
 
 const TYPE_STYLES: Record<QueueItemType, { border: string; bg: string; icon: string; progressColor: string }> = {
-  'flashcard-review': { border: 'border-l-4 border-purple-400', bg: '', icon: 'text-purple-500', progressColor: 'bg-purple-500' },
-  'exercise':         { border: 'border-l-4 border-orange-400', bg: '', icon: 'text-orange-500', progressColor: 'bg-orange-500' },
-  'concept-quiz':     { border: 'border-l-4 border-blue-400',   bg: '', icon: 'text-blue-500',   progressColor: 'bg-blue-500' },
+  'flashcard-review': { border: 'border-l-4 border-[var(--color-tag-flashcard)]', bg: '', icon: 'text-[var(--color-tag-flashcard)]', progressColor: 'bg-[var(--color-tag-flashcard)]' },
+  'exercise':         { border: 'border-l-4 border-[var(--color-warning-border)]', bg: '', icon: 'text-[var(--color-warning)]', progressColor: 'bg-[var(--color-warning)]' },
+  'concept-quiz':     { border: 'border-l-4 border-[var(--color-info-border)]',   bg: '', icon: 'text-[var(--color-info)]',   progressColor: 'bg-[var(--color-info)]' },
 }
 
 export default function DailyQueue() {
@@ -523,11 +523,11 @@ function DailyQueueContent() {
       {/* Coach insight from Progress Monitor */}
       {coachInsight && (
         <div className={`glass-card p-3 mb-4 flex items-center gap-2 text-sm animate-fade-in ${
-          coachInsight.urgency === 'urgent' ? 'border-l-4 border-red-500' :
-          coachInsight.urgency === 'attention' ? 'border-l-4 border-amber-500' : ''
+          coachInsight.urgency === 'urgent' ? 'border-l-4 border-[var(--color-error-border)]' :
+          coachInsight.urgency === 'attention' ? 'border-l-4 border-[var(--color-warning-border)]' : ''
         }`}>
           <span className="shrink-0">
-            {coachInsight.urgency === 'urgent' ? <AlertTriangle className="w-4 h-4 text-red-500" /> : coachInsight.urgency === 'attention' ? <BarChart3 className="w-4 h-4 text-amber-500" /> : <Lightbulb className="w-4 h-4 text-blue-500" />}
+            {coachInsight.urgency === 'urgent' ? <AlertTriangle className="w-4 h-4 text-[var(--color-error)]" /> : coachInsight.urgency === 'attention' ? <BarChart3 className="w-4 h-4 text-[var(--color-warning)]" /> : <Lightbulb className="w-4 h-4 text-[var(--color-info)]" />}
           </span>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-[var(--text-heading)] text-xs">{coachInsight.title}</p>
@@ -559,7 +559,7 @@ function DailyQueueContent() {
           <h1 className="text-xl font-bold text-[var(--text-heading)] flex items-center gap-2">
             {t('queue.todaysSession')}
             {cramMode && (
-              <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-xs font-bold text-[var(--color-error)] bg-[var(--color-error-bg)] px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Zap className="w-3 h-3" /> {t('queue.cramMode')}
               </span>
             )}
@@ -579,7 +579,7 @@ function DailyQueueContent() {
           ))
         ) : (
           <div
-            className={`h-full rounded-full transition-all duration-500 ${cramMode ? 'bg-red-500' : 'bg-[var(--accent-text)]'}`}
+            className={`h-full rounded-full transition-all duration-500 ${cramMode ? 'bg-[var(--color-error)]' : 'bg-[var(--accent-text)]'}`}
             style={{ width: `${progressPct}%` }}
           />
         )}
@@ -589,7 +589,7 @@ function DailyQueueContent() {
       {currentNudge && (
         <div className="glass-card p-3 mb-4 flex items-center gap-2 text-sm animate-fade-in">
           <span className="shrink-0">
-            {currentNudge.type === 'reinforcement' ? <RefreshCw className="w-4 h-4 text-blue-500" /> : currentNudge.type === 'progress' ? <BarChart3 className="w-4 h-4 text-emerald-500" /> : currentNudge.type === 'connection' ? <Link2 className="w-4 h-4 text-purple-500" /> : <Sparkles className="w-4 h-4 text-[var(--accent-text)]" />}
+            {currentNudge.type === 'reinforcement' ? <RefreshCw className="w-4 h-4 text-[var(--color-info)]" /> : currentNudge.type === 'progress' ? <BarChart3 className="w-4 h-4 text-[var(--accent-text)]" /> : currentNudge.type === 'connection' ? <Link2 className="w-4 h-4 text-[var(--color-tag-flashcard)]" /> : <Sparkles className="w-4 h-4 text-[var(--accent-text)]" />}
           </span>
           <span className="text-[var(--text-body)] flex-1">{currentNudge.text}</span>
           <button onClick={() => setCurrentNudge(null)} className="text-[var(--text-muted)] hover:text-[var(--text-body)]">
@@ -600,7 +600,7 @@ function DailyQueueContent() {
 
       {/* Current Item */}
       {currentItem ? (
-        <div className={`glass-card p-6 mb-4 ${TYPE_STYLES[currentItem.type as QueueItemType]?.border ?? ''} ${cramMode ? 'border border-red-500/20' : ''}`}>
+        <div className={`glass-card p-6 mb-4 ${TYPE_STYLES[currentItem.type as QueueItemType]?.border ?? ''} ${cramMode ? 'border border-[var(--color-error-border)]' : ''}`}>
           <div className="flex items-center gap-2 mb-3">
             <ItemTypeIcon type={currentItem.type} />
             <span className={`text-xs font-semibold uppercase tracking-wider ${TYPE_STYLES[currentItem.type as QueueItemType]?.icon ?? 'text-[var(--text-muted)]'}`}>

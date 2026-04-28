@@ -13,10 +13,10 @@ import { trackContentInteraction } from '../../lib/effectivenessTracker'
 import type { QueueItemHandlerProps } from './types'
 
 const RATING_BUTTONS = [
-  { quality: 1, labelKey: 'queue.ratingAgain', key: '1', color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
-  { quality: 3, labelKey: 'queue.ratingHard', key: '2', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
-  { quality: 4, labelKey: 'queue.ratingGood', key: '3', color: 'bg-blue-500/15 text-blue-600 hover:bg-blue-500/25' },
-  { quality: 5, labelKey: 'queue.ratingEasy', key: '4', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
+  { quality: 1, labelKey: 'queue.ratingAgain', key: '1', color: 'bg-[var(--color-error-bg)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)]' },
+  { quality: 3, labelKey: 'queue.ratingHard', key: '2', color: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] hover:bg-[var(--color-warning-bg)]' },
+  { quality: 4, labelKey: 'queue.ratingGood', key: '3', color: 'bg-[var(--color-info-bg)] text-[var(--color-info)] hover:bg-[var(--color-info-bg)]' },
+  { quality: 5, labelKey: 'queue.ratingEasy', key: '4', color: 'bg-[var(--color-success-bg)] text-[var(--color-success)] hover:bg-[var(--color-success-bg)]' },
 ]
 
 export function FlashcardReviewInline({
@@ -164,7 +164,7 @@ export function FlashcardReviewInline({
   if (!currentCard) {
     return (
       <div className="text-center py-4">
-        <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+        <CheckCircle2 className="w-8 h-8 text-[var(--color-success)] mx-auto mb-2" />
         <p className="text-sm font-medium text-[var(--text-heading)]">{t('queue.allCardsReviewed', { count: reviewedCount })}</p>
       </div>
     )
@@ -177,7 +177,7 @@ export function FlashcardReviewInline({
         <span>{t('queue.reviewedCount', { count: reviewedCount })}</span>
       </div>
       <div className="w-full h-1 rounded-full bg-[var(--bg-input)] overflow-hidden">
-        <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${(currentIndex / cards.length) * 100}%` }} />
+        <div className="h-full rounded-full bg-[var(--color-info)] transition-all" style={{ width: `${(currentIndex / cards.length) * 100}%` }} />
       </div>
 
       <div className="glass-card p-5">

@@ -266,8 +266,8 @@ export default function PracticeExam() {
   if (exam.phase === 'taking') {
     // Proctor warning toast
     const proctorToast = proctorWarning ? (
-      <div className="fixed top-4 right-4 z-50 glass-card p-3 border-l-4 border-red-500 animate-fade-in shadow-lg">
-        <span className="text-sm text-red-500 font-medium">{proctorWarning}</span>
+      <div className="fixed top-4 right-4 z-50 glass-card p-3 border-l-4 border-[var(--color-error-border)] animate-fade-in shadow-lg">
+        <span className="text-sm text-[var(--color-error)] font-medium">{proctorWarning}</span>
       </div>
     ) : null
 

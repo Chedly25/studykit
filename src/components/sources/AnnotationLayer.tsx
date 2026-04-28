@@ -11,10 +11,10 @@ interface Props {
 }
 
 const typeColors: Record<AnnotationType, string> = {
-  'key-finding': 'bg-green-500/10 text-green-600 border-green-500/20',
-  'methodology': 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  'relates-to-my-work': 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  'question': 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  'key-finding': 'bg-[var(--color-success-bg)] text-[var(--color-success)] border-[var(--color-success-border)]',
+  'methodology': 'bg-[var(--color-info-bg)] text-[var(--color-info)] border-[var(--color-info-border)]',
+  'relates-to-my-work': 'bg-[var(--color-tag-flashcard-bg)] text-[var(--color-tag-flashcard)] border-[var(--color-tag-flashcard)]',
+  'question': 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] border-[var(--color-warning-border)]',
   'note': 'bg-gray-500/10 text-gray-600 border-gray-500/20',
 }
 

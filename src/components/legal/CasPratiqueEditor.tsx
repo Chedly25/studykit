@@ -91,7 +91,7 @@ export function CasPratiqueEditor({ task, draft, onChange, onSubmit, onCancel, b
       </div>
 
       {error && (
-        <div className="glass-card p-3 text-sm text-rose-600 dark:text-rose-400 border border-rose-500/30">
+        <div className="glass-card p-3 text-sm text-[var(--color-error)] border border-[var(--color-error-border)]">
           {error}
         </div>
       )}
@@ -120,7 +120,7 @@ export function CasPratiqueEditor({ task, draft, onChange, onSubmit, onCancel, b
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="glass-card p-5 max-w-sm w-full mx-4 space-y-3">
-            <div className="flex items-center gap-2 text-amber-500">
+            <div className="flex items-center gap-2 text-[var(--color-warning)]">
               <AlertTriangle className="w-5 h-5" />
               <h3 className="font-semibold text-[var(--text-heading)]">
                 Ta consultation est courte

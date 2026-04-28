@@ -129,20 +129,20 @@ export function CoachTimer({ sessionKey, defaultSeconds }: Props) {
   // Color progression: green (>50%) → amber (20-50%) → red (<20%)
   const pct = state.total > 0 ? remaining / state.total : 0
   const colorClass =
-    isExpired ? 'text-rose-600 dark:text-rose-400'
-    : pct < 0.2 ? 'text-rose-600 dark:text-rose-400'
-    : pct < 0.5 ? 'text-amber-600 dark:text-amber-400'
+    isExpired ? 'text-[var(--color-error)] '
+    : pct < 0.2 ? 'text-[var(--color-error)] '
+    : pct < 0.5 ? 'text-[var(--color-warning)] '
     : 'text-[var(--text-secondary)]'
 
   return (
     <div className="glass-card p-3 flex items-center gap-3">
-      <Timer className={`w-4 h-4 ${isExpired ? 'text-rose-500' : 'text-[var(--text-muted)]'}`} />
+      <Timer className={`w-4 h-4 ${isExpired ? 'text-[var(--color-error)]' : 'text-[var(--text-muted)]'}`} />
       <div className="flex-1 min-w-0">
         <div className={`font-mono text-base font-semibold tabular-nums ${colorClass}`}>
           {formatClock(remaining)}
         </div>
         {isExpired && (
-          <div className="text-[11px] text-rose-600 dark:text-rose-400">
+          <div className="text-[11px] text-[var(--color-error)] ">
             Temps écoulé — tu peux continuer, mais c'est le moment de conclure.
           </div>
         )}

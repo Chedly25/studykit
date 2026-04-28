@@ -78,9 +78,9 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
       {/* Score card */}
       <div className="glass-card p-6 flex items-center gap-6">
         <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
-          passed ? 'bg-amber-400/20' : 'bg-[var(--bg-input)]'
+          passed ? 'bg-[var(--color-warning-bg)]' : 'bg-[var(--bg-input)]'
         }`}>
-          <Trophy className={`w-7 h-7 ${passed ? 'text-amber-500' : 'text-[var(--text-faint)]'}`} />
+          <Trophy className={`w-7 h-7 ${passed ? 'text-[var(--color-warning)]' : 'text-[var(--text-faint)]'}`} />
         </div>
         <div className="flex-1">
           <div className="flex items-baseline gap-3">
@@ -88,8 +88,8 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
             <span className="text-sm text-[var(--text-muted)]">({percentage}%)</span>
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
               passed
-                ? 'bg-green-500/10 text-green-600 border border-green-500/20'
-                : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                ? 'bg-[var(--color-success-bg)] text-[var(--color-success)] border border-[var(--color-success-border)]'
+                : 'bg-[var(--color-error-bg)] text-[var(--color-error)] border border-[var(--color-error-border)]'
             }`}>
               {passed ? t('practiceExam.passed') : t('practiceExam.needsWork')}
             </span>
@@ -109,13 +109,13 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
           <div className="space-y-2">
             {grading.criterionScores.map((c, i) => (
               <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-[var(--bg-input)]">
-                <div className={`shrink-0 mt-0.5 ${c.earned >= c.max * 0.7 ? 'text-green-500' : c.earned > 0 ? 'text-amber-500' : 'text-red-500'}`}>
+                <div className={`shrink-0 mt-0.5 ${c.earned >= c.max * 0.7 ? 'text-[var(--color-success)]' : c.earned > 0 ? 'text-[var(--color-warning)]' : 'text-[var(--color-error)]'}`}>
                   {c.earned >= c.max * 0.7 ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-[var(--text-heading)]">{c.criterion}</span>
-                    <span className={`text-sm font-semibold ${c.earned >= c.max * 0.7 ? 'text-green-600' : 'text-[var(--text-body)]'}`}>
+                    <span className={`text-sm font-semibold ${c.earned >= c.max * 0.7 ? 'text-[var(--color-success)]' : 'text-[var(--text-body)]'}`}>
                       {c.earned}/{c.max}
                     </span>
                   </div>
@@ -143,8 +143,8 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
                     key={num}
                     className={`w-8 h-8 rounded-full text-xs font-medium flex items-center justify-center ${
                       cited
-                        ? 'bg-green-500/20 text-green-600 border border-green-500/40'
-                        : 'bg-red-500/20 text-red-500 border border-red-500/40'
+                        ? 'bg-[var(--color-success-bg)] text-[var(--color-success)] border border-[var(--color-success-border)]'
+                        : 'bg-[var(--color-error-bg)] text-[var(--color-error)] border border-[var(--color-error-border)]'
                     }`}
                   >
                     {num}
@@ -178,11 +178,11 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
               {citationVerifications.map((cv, i) => (
                 <div key={i} className="px-4 py-3 flex items-start gap-3">
                   {cv.verified ? (
-                    <CheckCircle className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
+                    <CheckCircle className="w-4 h-4 mt-0.5 text-[var(--color-success)] shrink-0" />
                   ) : cv.confidence > 0.2 ? (
-                    <AlertCircle className="w-4 h-4 mt-0.5 text-amber-500 shrink-0" />
+                    <AlertCircle className="w-4 h-4 mt-0.5 text-[var(--color-warning)] shrink-0" />
                   ) : (
-                    <XCircle className="w-4 h-4 mt-0.5 text-red-500 shrink-0" />
+                    <XCircle className="w-4 h-4 mt-0.5 text-[var(--color-error)] shrink-0" />
                   )}
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-[var(--text-heading)]">{cv.cited}</p>
@@ -190,7 +190,7 @@ export function SyntheseResults({ session, onRetake }: SyntheseResultsProps) {
                       <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">{cv.articleText}</p>
                     )}
                     {!cv.verified && cv.suggestion && (
-                      <p className="text-xs text-red-500 mt-1">{cv.suggestion}</p>
+                      <p className="text-xs text-[var(--color-error)] mt-1">{cv.suggestion}</p>
                     )}
                   </div>
                 </div>

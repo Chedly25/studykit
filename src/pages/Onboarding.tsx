@@ -45,13 +45,13 @@ function MilestoneIndicator({ profileId, topicsSeeded, weeklyHoursSet }: Milesto
           <div
             className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${
               m.done
-                ? 'bg-emerald-500 text-white'
+                ? 'bg-[var(--color-accent-500)] text-white'
                 : 'bg-[var(--bg-input)] text-[var(--text-faint)]'
             }`}
           >
             {m.done ? <Check className="w-3 h-3" /> : i + 1}
           </div>
-          <span className={`text-xs ${m.done ? 'text-emerald-600 font-medium' : 'text-[var(--text-faint)]'}`}>
+          <span className={`text-xs ${m.done ? 'text-[var(--accent-text)] font-medium' : 'text-[var(--text-faint)]'}`}>
             {m.label}
           </span>
         </div>
@@ -407,15 +407,15 @@ function SummaryWidget({ data, onDashboard, onStudy, disabled }: {
 
 function ErrorBanner({ message, onRetry, onManualSetup }: { message: string; onRetry: () => void; onManualSetup?: () => void }) {
   return (
-    <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 mb-4">
+    <div className="bg-[var(--color-error-bg)] border border-[var(--color-error-border)] rounded-xl px-4 py-3 mb-4">
       <div className="flex items-center gap-3">
-        <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-        <span className="text-sm text-red-700 dark:text-red-300 flex-1">{message}</span>
+        <AlertCircle className="w-4 h-4 text-[var(--color-error)] shrink-0" />
+        <span className="text-sm text-[var(--color-error)] flex-1">{message}</span>
       </div>
       <div className="flex items-center gap-3 mt-2 ml-7">
         <button
           onClick={onRetry}
-          className="flex items-center gap-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:underline"
+          className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-error)] hover:underline"
         >
           <RefreshCw className="w-3.5 h-3.5" /> Retry
         </button>
@@ -694,8 +694,8 @@ function WelcomeScreen({ firstName, onStart, onSkip }: { firstName?: string | nu
         <div className="space-y-3 text-left max-w-xs mx-auto">
           {steps.map((step, i) => (
             <div key={i} className="flex items-center gap-3">
-              <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-                <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              <div className="w-5 h-5 rounded-full bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
+                <Check className="w-3 h-3 text-[var(--accent-text)] " />
               </div>
               <span className="text-sm text-[var(--text-body)]">{step}</span>
             </div>

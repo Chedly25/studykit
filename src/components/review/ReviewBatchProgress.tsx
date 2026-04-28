@@ -12,8 +12,8 @@ interface Props {
 
 function StatusIcon({ status }: { status: ItemStatus }) {
   switch (status) {
-    case 'completed': return <CheckCircle2 size={16} className="text-green-500" />
-    case 'failed': return <XCircle size={16} className="text-red-500" />
+    case 'completed': return <CheckCircle2 size={16} className="text-[var(--color-success)]" />
+    case 'failed': return <XCircle size={16} className="text-[var(--color-error)]" />
     case 'running': return <Loader2 size={16} className="text-[var(--accent-text)] animate-spin" />
     default: return <Circle size={16} className="text-[var(--text-muted)]" />
   }
@@ -67,11 +67,11 @@ export function ReviewBatchProgress({ progress, onCancel, isRunning }: Props) {
 
       {/* Stats row */}
       <div className="flex gap-4 mb-4 text-sm">
-        <span className="text-green-500">
+        <span className="text-[var(--color-success)]">
           {progress.completedItems - progress.failedItems} done
         </span>
         {progress.failedItems > 0 && (
-          <span className="text-red-500">
+          <span className="text-[var(--color-error)]">
             {progress.failedItems} failed
           </span>
         )}
@@ -104,7 +104,7 @@ export function ReviewBatchProgress({ progress, onCancel, isRunning }: Props) {
               </span>
             )}
             {state.error && (
-              <span className="text-xs text-red-400 truncate max-w-32" title={state.error}>
+              <span className="text-xs text-[var(--color-error)] truncate max-w-32" title={state.error}>
                 {state.error}
               </span>
             )}

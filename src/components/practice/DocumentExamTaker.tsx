@@ -138,7 +138,7 @@ export function DocumentExamTaker({
         <div className="sticky top-0 z-30 bg-[var(--bg-body)]/95 backdrop-blur-sm border-b border-[var(--border-card)] -mx-4 px-4 py-2 mb-6 flex items-center justify-between">
           {timeLimitSeconds ? (
             <div className={`flex items-center gap-1.5 text-sm font-mono font-medium ${
-              isTimeLow ? 'text-red-500 animate-pulse' : 'text-[var(--text-body)]'
+              isTimeLow ? 'text-[var(--color-error)] animate-pulse' : 'text-[var(--text-body)]'
             }`}>
               <Clock className="w-4 h-4" />
               <span>{String(timerMinutes).padStart(2, '0')}:{String(timerSeconds).padStart(2, '0')}</span>
@@ -151,7 +151,7 @@ export function DocumentExamTaker({
               {isSaving ? (
                 <><Save className="w-3 h-3 animate-pulse" /> {t('documentExam.saving')}</>
               ) : lastSaved ? (
-                <><Check className="w-3 h-3 text-green-500" /> {t('documentExam.saved')}</>
+                <><Check className="w-3 h-3 text-[var(--color-success)]" /> {t('documentExam.saved')}</>
               ) : null}
             </span>
             <span className="text-xs text-[var(--text-muted)]">
@@ -222,7 +222,7 @@ export function DocumentExamTaker({
       {showSubmitConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="glass-card p-5 max-w-sm w-full mx-4 space-y-3">
-            <div className="flex items-center gap-2 text-amber-500">
+            <div className="flex items-center gap-2 text-[var(--color-warning)]">
               <AlertTriangle className="w-5 h-5" />
               <h3 className="font-semibold text-[var(--text-heading)]">
                 {t('practiceExam.confirmSubmit')}

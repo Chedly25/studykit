@@ -148,7 +148,7 @@ export function InlineAIExplanation({ content, topicName, onDismiss, onRetry, ex
           {onRetry && (
             <button
               onClick={onRetry}
-              className="text-xs font-medium text-orange-500 hover:underline"
+              className="text-xs font-medium text-[var(--color-warning)] hover:underline"
             >
               Try again later
             </button>
@@ -162,7 +162,7 @@ export function InlineAIExplanation({ content, topicName, onDismiss, onRetry, ex
             </button>
           )}
           {saved && (
-            <span className="flex items-center gap-1 text-xs text-emerald-500">
+            <span className="flex items-center gap-1 text-xs text-[var(--color-success)]">
               <Check className="w-3 h-3" /> Saved
             </span>
           )}

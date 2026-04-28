@@ -15,18 +15,18 @@ interface Props {
 }
 
 const QUALITY_CONFIG: Record<number, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-  1: { label: '1/5', color: 'text-red-500 bg-red-500/10', icon: XCircle },
-  2: { label: '2/5', color: 'text-orange-500 bg-orange-500/10', icon: AlertCircle },
-  3: { label: '3/5', color: 'text-yellow-500 bg-yellow-500/10', icon: AlertCircle },
-  4: { label: '4/5', color: 'text-blue-500 bg-blue-500/10', icon: CheckCircle2 },
-  5: { label: '5/5', color: 'text-emerald-500 bg-emerald-500/10', icon: CheckCircle2 },
+  1: { label: '1/5', color: 'text-[var(--color-error)] bg-[var(--color-error-bg)]', icon: XCircle },
+  2: { label: '2/5', color: 'text-[var(--color-warning)] bg-[var(--color-warning-bg)]', icon: AlertCircle },
+  3: { label: '3/5', color: 'text-[var(--color-warning)] bg-[var(--color-warning-bg)]', icon: AlertCircle },
+  4: { label: '4/5', color: 'text-[var(--color-info)] bg-[var(--color-info-bg)]', icon: CheckCircle2 },
+  5: { label: '5/5', color: 'text-[var(--color-success)] bg-[var(--color-success-bg)]', icon: CheckCircle2 },
 }
 
 const OVERRIDE_BUTTONS = [
-  { quality: 1, label: '1', color: 'bg-red-500/15 text-red-600 hover:bg-red-500/25' },
-  { quality: 3, label: '3', color: 'bg-orange-500/15 text-orange-600 hover:bg-orange-500/25' },
-  { quality: 4, label: '4', color: 'bg-blue-500/15 text-blue-600 hover:bg-blue-500/25' },
-  { quality: 5, label: '5', color: 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25' },
+  { quality: 1, label: '1', color: 'bg-[var(--color-error-bg)] text-[var(--color-error)] hover:bg-[var(--color-error-bg)]' },
+  { quality: 3, label: '3', color: 'bg-[var(--color-warning-bg)] text-[var(--color-warning)] hover:bg-[var(--color-warning-bg)]' },
+  { quality: 4, label: '4', color: 'bg-[var(--color-info-bg)] text-[var(--color-info)] hover:bg-[var(--color-info-bg)]' },
+  { quality: 5, label: '5', color: 'bg-[var(--color-success-bg)] text-[var(--color-success)] hover:bg-[var(--color-success-bg)]' },
 ]
 
 export function EvaluationResult({ quality, feedback, onAccept, onOverride }: Props) {

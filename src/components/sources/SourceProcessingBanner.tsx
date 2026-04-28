@@ -62,14 +62,14 @@ export function SourceProcessingBanner({ progress, error, onCancel }: SourceProc
                 isActive ? 'bg-[var(--accent-bg)] border border-[var(--accent-text)]/20' : ''
               }`}>
                 {status === 'running' && <Loader2 className="w-4 h-4 text-[var(--accent-text)] animate-spin shrink-0" />}
-                {status === 'completed' && <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />}
-                {status === 'failed' && <XCircle className="w-4 h-4 text-red-500 shrink-0" />}
+                {status === 'completed' && <CheckCircle className="w-4 h-4 text-[var(--color-success)] shrink-0" />}
+                {status === 'failed' && <XCircle className="w-4 h-4 text-[var(--color-error)] shrink-0" />}
                 {status === 'pending' && <Circle className="w-4 h-4 text-[var(--text-muted)] shrink-0" />}
 
                 <span className={`text-sm flex-1 ${
                   status === 'running' ? 'text-[var(--accent-text)] font-medium' :
                   status === 'completed' ? 'text-[var(--text-body)]' :
-                  status === 'failed' ? 'text-red-500' :
+                  status === 'failed' ? 'text-[var(--color-error)]' :
                   'text-[var(--text-muted)]'
                 }`}>
                   {t(key)}
@@ -97,7 +97,7 @@ export function SourceProcessingBanner({ progress, error, onCancel }: SourceProc
       </div>
 
       {error && (
-        <div className="text-sm text-red-500 bg-red-500/10 rounded-lg p-3 mb-3">{error}</div>
+        <div className="text-sm text-[var(--color-error)] bg-[var(--color-error-bg)] rounded-lg p-3 mb-3">{error}</div>
       )}
 
       <button onClick={onCancel} className="btn-secondary px-4 py-1.5 text-sm w-full">

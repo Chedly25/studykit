@@ -74,7 +74,7 @@ export function MisconceptionCard({ examProfileId }: Props) {
   return (
     <div className="glass-card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <AlertCircle className="w-5 h-5 text-red-500" />
+        <AlertCircle className="w-5 h-5 text-[var(--color-error)]" />
         <h3 className="text-sm font-bold text-[var(--text-heading)]">Misconceptions</h3>
         <span className="text-xs text-[var(--text-muted)] flex-1">
           {unresolvedCount} active, {misconceptions.length - unresolvedCount} resolved
@@ -104,13 +104,13 @@ export function MisconceptionCard({ examProfileId }: Props) {
                     key={m.id}
                     className={`flex items-start gap-2 text-xs p-2 rounded-lg ${
                       m.resolvedAt
-                        ? 'bg-emerald-500/5 text-[var(--text-muted)]'
-                        : 'bg-red-500/5 text-[var(--text-body)]'
+                        ? 'bg-[var(--color-success-bg)] text-[var(--text-muted)]'
+                        : 'bg-[var(--color-error-bg)] text-[var(--text-body)]'
                     }`}
                   >
                     {m.resolvedAt
-                      ? <Check className="w-3 h-3 text-emerald-500 mt-0.5 shrink-0" />
-                      : <AlertCircle className="w-3 h-3 text-red-400 mt-0.5 shrink-0" />
+                      ? <Check className="w-3 h-3 text-[var(--color-success)] mt-0.5 shrink-0" />
+                      : <AlertCircle className="w-3 h-3 text-[var(--color-error)] mt-0.5 shrink-0" />
                     }
                     <div className="flex-1 min-w-0">
                       <span className={m.resolvedAt ? 'line-through' : ''}>{m.description}</span>

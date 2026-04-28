@@ -13,8 +13,8 @@ export function SyncIndicator() {
   const iconMap: Record<string, React.ReactNode> = {
     idle: <Cloud size={18} className="text-[var(--text-muted)]" />,
     syncing: <Loader2 size={18} className="text-[var(--accent-text)] animate-spin" />,
-    synced: <Check size={14} className="text-emerald-500" />,
-    error: <AlertCircle size={18} className="text-amber-500" />,
+    synced: <Check size={14} className="text-[var(--color-success)]" />,
+    error: <AlertCircle size={18} className="text-[var(--color-warning)]" />,
     offline: <CloudOff size={18} className="text-[var(--text-muted)]" />,
     disabled: null,
   }
@@ -33,15 +33,15 @@ export function SyncIndicator() {
       onClick={() => { if (status === 'error' || status === 'idle') sync() }}
       className={`p-2 rounded-lg transition-colors ${
         status === 'synced'
-          ? 'text-emerald-500'
+          ? 'text-[var(--color-success)]'
           : 'text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)]'
       }`}
       title={titleMap[status]}
     >
       {status === 'synced' ? (
         <div className="relative">
-          <Cloud size={18} className="text-emerald-500" />
-          <Check size={8} className="absolute -bottom-0.5 -right-0.5 text-emerald-500" strokeWidth={3} />
+          <Cloud size={18} className="text-[var(--color-success)]" />
+          <Check size={8} className="absolute -bottom-0.5 -right-0.5 text-[var(--color-success)]" strokeWidth={3} />
         </div>
       ) : (
         iconMap[status]

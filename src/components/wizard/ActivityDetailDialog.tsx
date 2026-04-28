@@ -149,7 +149,7 @@ export function ActivityDetailDialog({
         <div className="flex items-center justify-between">
           <button
             onClick={handleDelete}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--color-error)] hover:bg-[var(--color-error-bg)] transition-colors"
           >
             {t('wizard.deleteActivity')}
           </button>

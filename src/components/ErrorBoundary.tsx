@@ -36,8 +36,8 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex items-center justify-center min-h-[50vh] px-4">
           <div className="glass-card p-8 max-w-md w-full text-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-red-500/15 flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-7 h-7 text-red-500" />
+            <div className="w-14 h-14 rounded-2xl bg-[var(--color-error-bg)] flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-7 h-7 text-[var(--color-error)]" />
             </div>
             <h2 className="text-lg font-bold text-[var(--text-heading)]">Something went wrong</h2>
             <p className="text-sm text-[var(--text-muted)]">
@@ -48,7 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <summary className="text-xs text-[var(--text-muted)] cursor-pointer hover:text-[var(--text-body)]">
                   Error details
                 </summary>
-                <pre className="mt-2 text-xs text-red-500 bg-red-500/5 rounded-lg p-3 overflow-auto max-h-32">
+                <pre className="mt-2 text-xs text-[var(--color-error)] bg-[var(--color-error-bg)] rounded-lg p-3 overflow-auto max-h-32">
                   {this.state.error.message}
                 </pre>
               </details>

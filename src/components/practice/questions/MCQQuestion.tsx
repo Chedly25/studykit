@@ -36,9 +36,9 @@ export function MCQQuestion({
             disabled={readOnly}
             className={`w-full text-left px-4 py-3 rounded-lg border text-sm transition-all ${
               isCorrectOption
-                ? 'border-green-500 bg-green-500/10 text-green-700 dark:text-green-400'
+                ? 'border-[var(--color-success-border)] bg-[var(--color-success-bg)] text-[var(--color-success)] '
                 : isWrongSelected
-                ? 'border-red-500 bg-red-500/10 text-red-700 dark:text-red-400'
+                ? 'border-[var(--color-error-border)] bg-[var(--color-error-bg)] text-[var(--color-error)] '
                 : isSelected
                 ? 'border-[var(--accent-text)] bg-[var(--accent-bg)] text-[var(--accent-text)]'
                 : 'border-[var(--border-card)] text-[var(--text-body)] hover:border-[var(--text-muted)]'

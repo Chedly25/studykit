@@ -46,11 +46,11 @@ function getModeLabel(mode: Mode): string {
 function getModeColor(mode: Mode): { ring: string; text: string; bg: string } {
   switch (mode) {
     case 'work':
-      return { ring: 'stroke-emerald-500', text: 'text-emerald-400', bg: 'bg-emerald-500/10' }
+      return { ring: 'stroke-[var(--accent-text)]', text: 'text-[var(--accent-text)]', bg: 'bg-[var(--accent-bg)]' }
     case 'shortBreak':
-      return { ring: 'stroke-blue-500', text: 'text-blue-400', bg: 'bg-blue-500/10' }
+      return { ring: 'stroke-[var(--color-info)]', text: 'text-[var(--color-info)]', bg: 'bg-[var(--color-info-bg)]' }
     case 'longBreak':
-      return { ring: 'stroke-purple-500', text: 'text-purple-400', bg: 'bg-purple-500/10' }
+      return { ring: 'stroke-[var(--color-tag-flashcard)]', text: 'text-[var(--color-tag-flashcard)]', bg: 'bg-[var(--color-tag-flashcard-bg)]' }
   }
 }
 

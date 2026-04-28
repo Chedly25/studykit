@@ -76,7 +76,7 @@ function CardForm({ initialTitle, initialKeyPoints, initialExample, onSave, onCa
                 {keyPoints.length > 1 && (
                   <button
                     onClick={() => setKeyPoints(keyPoints.filter((_, j) => j !== i))}
-                    className="p-1 rounded text-[var(--text-muted)] hover:text-red-500 transition-colors"
+                    className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--color-error)] transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -149,18 +149,18 @@ function CardItem({ card, onQuizMe, onEdit, onDelete, onViewFiche }: {
   }, [card.content])
 
   return (
-    <div className={`glass-card overflow-hidden transition-all ${mastered ? 'ring-1 ring-green-500/20' : ''}`}>
+    <div className={`glass-card overflow-hidden transition-all ${mastered ? 'ring-1 ring-[var(--color-success-border)]' : ''}`}>
       <div className="h-1.5 bg-[var(--accent-text)]" />
       <div className="p-4">
         <div className="flex items-start gap-2 mb-2">
           <BookOpen className="w-4 h-4 text-[var(--accent-text)] mt-0.5 flex-shrink-0" />
           <h4 className="text-sm font-semibold text-[var(--text-heading)] flex-1">{card.title}</h4>
           <div className="flex items-center gap-0.5 shrink-0">
-            {mastered && <Check className="w-4 h-4 text-green-500" />}
+            {mastered && <Check className="w-4 h-4 text-[var(--color-success)]" />}
             <button onClick={onEdit} className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--accent-bg)] transition-colors" title="Edit">
               <Pencil className="w-3 h-3" />
             </button>
-            <button onClick={onDelete} className="p-1 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 transition-colors" title="Delete">
+            <button onClick={onDelete} className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-bg)] transition-colors" title="Delete">
               <Trash2 className="w-3 h-3" />
             </button>
           </div>
@@ -168,7 +168,7 @@ function CardItem({ card, onQuizMe, onEdit, onDelete, onViewFiche }: {
 
         {/* Rich content preview (first section) */}
         {firstSection ? (
-          <div className="rounded-lg border-l-4 border-blue-400 dark:border-blue-500 bg-blue-50/60 dark:bg-blue-500/5 p-2.5 mb-3">
+          <div className="rounded-lg border-l-4 border-[var(--color-info-border)] bg-[var(--color-info-bg)] p-2.5 mb-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">{firstSection.heading}</p>
             <div className="text-xs text-[var(--text-body)] line-clamp-3 prose-sm max-w-none prose-p:my-0.5">
               <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
@@ -189,7 +189,7 @@ function CardItem({ card, onQuizMe, onEdit, onDelete, onViewFiche }: {
         )}
 
         {!firstSection && card.example && (
-          <div className="rounded-lg border-l-4 border-emerald-400 bg-emerald-50/60 dark:bg-emerald-500/5 px-2.5 py-1.5 mb-3">
+          <div className="rounded-lg border-l-4 border-[var(--accent-border)] bg-[var(--accent-bg)] px-2.5 py-1.5 mb-3">
             <p className="text-[11px] text-[var(--text-body)] line-clamp-2">{card.example}</p>
           </div>
         )}
@@ -343,9 +343,9 @@ export function CardsView({ examProfileId, topicId, onQuizMe }: CardsViewProps) 
         {/* Card groups */}
         {cards.length > 0 ? (
           <>
-            {renderGroup(t('cards.groupNew'), grouped.newCards, 'bg-red-500')}
-            {renderGroup(t('cards.groupLearning'), grouped.learning, 'bg-yellow-500')}
-            {renderGroup(t('cards.groupMastered'), grouped.mastered, 'bg-green-500')}
+            {renderGroup(t('cards.groupNew'), grouped.newCards, 'bg-[var(--color-error)]')}
+            {renderGroup(t('cards.groupLearning'), grouped.learning, 'bg-[var(--color-warning)]')}
+            {renderGroup(t('cards.groupMastered'), grouped.mastered, 'bg-[var(--color-success)]')}
           </>
         ) : !isCreating ? (
           <div className="text-center py-12">

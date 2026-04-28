@@ -8,9 +8,9 @@ interface Props {
 }
 
 const statusConfig: Record<TopicStatus, { color: string; bg: string }> = {
-  'active': { color: 'text-green-600', bg: 'bg-green-500' },
-  'exploring': { color: 'text-amber-600', bg: 'bg-amber-400' },
-  'blocked': { color: 'text-red-600', bg: 'bg-red-500' },
+  'active': { color: 'text-[var(--color-success)]', bg: 'bg-[var(--color-success)]' },
+  'exploring': { color: 'text-[var(--color-warning)]', bg: 'bg-[var(--color-warning)]' },
+  'blocked': { color: 'text-[var(--color-error)]', bg: 'bg-[var(--color-error)]' },
   'resolved': { color: 'text-gray-500', bg: 'bg-gray-400' },
 }
 

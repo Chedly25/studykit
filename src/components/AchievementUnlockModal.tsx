@@ -66,10 +66,10 @@ export function AchievementUnlockModal({ achievement, onDismiss }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in cursor-pointer"
     >
       <div className="glass-card p-6 max-w-sm w-full mx-4 text-center animate-scale-in" onClick={e => e.stopPropagation()}>
-        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
-          <Icon className="w-9 h-9 text-amber-500" />
+        <div className="w-16 h-16 rounded-2xl bg-[var(--color-warning-bg)] flex items-center justify-center mx-auto mb-4">
+          <Icon className="w-9 h-9 text-[var(--color-warning)]" />
         </div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-amber-500 mb-1">
+        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warning)] mb-1">
           {t('celebrate.achievementUnlocked')}
         </p>
         <h2 className="text-xl font-bold text-[var(--text-heading)] mb-1">{achievement.title}</h2>

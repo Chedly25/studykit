@@ -148,8 +148,8 @@ export default function ArticleReview() {
 
       {/* Error display */}
       {(rp.batchError || rp.synthesisError) && (
-        <div className="glass-card p-4 mt-4 border-red-500/20 bg-red-500/5">
-          <p className="text-sm text-red-400">
+        <div className="glass-card p-4 mt-4 border-[var(--color-error-border)] bg-[var(--color-error-bg)]">
+          <p className="text-sm text-[var(--color-error)]">
             {rp.batchError || rp.synthesisError}
           </p>
         </div>
@@ -197,9 +197,9 @@ function ProjectList({
               <p className="text-xs text-[var(--text-muted)] line-clamp-2 mb-3">{project.description}</p>
               <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
                 <span className={`px-2 py-0.5 rounded-full ${
-                  project.status === 'reviewing' ? 'bg-green-500/10 text-green-500' :
-                  project.status === 'processing' ? 'bg-amber-500/10 text-amber-500' :
-                  project.status === 'completed' ? 'bg-blue-500/10 text-blue-500' :
+                  project.status === 'reviewing' ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]' :
+                  project.status === 'processing' ? 'bg-[var(--color-warning-bg)] text-[var(--color-warning)]' :
+                  project.status === 'completed' ? 'bg-[var(--color-info-bg)] text-[var(--color-info)]' :
                   'bg-[var(--bg-input)] text-[var(--text-muted)]'
                 }`}>
                   {project.status}
@@ -216,7 +216,7 @@ function ProjectList({
             </div>
             <button
               onClick={e => { e.stopPropagation(); onDelete(project.id) }}
-              className="btn-action p-1.5 rounded-lg hover:bg-red-500/10 hover:text-red-400"
+              className="btn-action p-1.5 rounded-lg hover:bg-[var(--color-error-bg)] hover:text-[var(--color-error)]"
               title="Delete project"
             >
               <Trash2 size={14} />

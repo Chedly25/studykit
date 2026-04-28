@@ -38,12 +38,12 @@ export function GrandOralResults({ task, grading, onRestart }: Props) {
       {/* Overall score */}
       <section className="rounded-lg border border-[var(--border-card)] bg-[var(--bg-main)] p-6">
         <div className="flex items-center gap-4">
-          <div className={`flex items-center justify-center w-20 h-20 rounded-full border-4 ${grading.overall.admis ? 'border-green-500 text-green-500' : 'border-orange-500 text-orange-500'}`}>
+          <div className={`flex items-center justify-center w-20 h-20 rounded-full border-4 ${grading.overall.admis ? 'border-[var(--color-success-border)] text-[var(--color-success)]' : 'border-[var(--color-warning-border)] text-[var(--color-warning)]'}`}>
             <div className="text-2xl font-bold">{grading.overall.score.toFixed(1)}</div>
           </div>
           <div>
             <div className="flex items-center gap-2 text-sm font-semibold">
-              <Award className={`w-4 h-4 ${grading.overall.admis ? 'text-green-500' : 'text-orange-500'}`} />
+              <Award className={`w-4 h-4 ${grading.overall.admis ? 'text-[var(--color-success)]' : 'text-[var(--color-warning)]'}`} />
               {grading.overall.admis ? 'Admissible' : 'En-dessous de la moyenne'}
             </div>
             <div className="text-xs text-[var(--text-muted)] mt-1">Moyenne des 4 axes sur 20</div>
@@ -64,7 +64,7 @@ export function GrandOralResults({ task, grading, onRestart }: Props) {
                 onClick={() => setExpandedAxis(expanded ? null : axis)}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`text-lg font-bold tabular-nums ${axisScore.score >= 14 ? 'text-green-500' : axisScore.score >= 10 ? 'text-[var(--text-heading)]' : 'text-orange-500'}`}>
+                  <div className={`text-lg font-bold tabular-nums ${axisScore.score >= 14 ? 'text-[var(--color-success)]' : axisScore.score >= 10 ? 'text-[var(--text-heading)]' : 'text-[var(--color-warning)]'}`}>
                     {axisScore.score}/20
                   </div>
                   <div>
@@ -86,15 +86,15 @@ export function GrandOralResults({ task, grading, onRestart }: Props) {
 
       {/* Top strength + mistake */}
       <section className="grid md:grid-cols-2 gap-3">
-        <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-4">
-          <div className="flex items-center gap-2 text-green-600 text-xs uppercase tracking-wider mb-1">
+        <div className="rounded-lg border border-[var(--color-success-border)] bg-[var(--color-success-bg)] p-4">
+          <div className="flex items-center gap-2 text-[var(--color-success)] text-xs uppercase tracking-wider mb-1">
             <ThumbsUp className="w-3 h-3" />
             Point fort
           </div>
           <p className="text-sm text-[var(--text-primary)]">{grading.overall.topStrength}</p>
         </div>
-        <div className="rounded-lg border border-orange-500/30 bg-orange-500/5 p-4">
-          <div className="flex items-center gap-2 text-orange-600 text-xs uppercase tracking-wider mb-1">
+        <div className="rounded-lg border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] p-4">
+          <div className="flex items-center gap-2 text-[var(--color-warning)] text-xs uppercase tracking-wider mb-1">
             <ThumbsDown className="w-3 h-3" />
             Principal écueil
           </div>
@@ -103,8 +103,8 @@ export function GrandOralResults({ task, grading, onRestart }: Props) {
       </section>
 
       {grading.overall.inventedReferences.length > 0 && (
-        <section className="rounded-lg border border-red-500/30 bg-red-500/5 p-4">
-          <div className="flex items-center gap-2 text-red-600 text-xs uppercase tracking-wider mb-2">
+        <section className="rounded-lg border border-[var(--color-error-border)] bg-[var(--color-error-bg)] p-4">
+          <div className="flex items-center gap-2 text-[var(--color-error)] text-xs uppercase tracking-wider mb-2">
             <AlertTriangle className="w-3 h-3" />
             Références à vérifier ({grading.overall.inventedReferences.length})
           </div>

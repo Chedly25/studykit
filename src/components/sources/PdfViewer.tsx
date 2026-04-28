@@ -262,24 +262,24 @@ export function PdfViewer({ documentId, title, onClose }: Props) {
               >
                 <button
                   onClick={() => handleHighlight('#fbbf24')}
-                  className="p-1.5 rounded hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+                  className="p-1.5 rounded hover:bg-[var(--color-warning-bg)] dark:hover:bg-[var(--color-warning-bg)] transition-colors"
                   title="Highlight"
                 >
-                  <Highlighter className="w-4 h-4 text-yellow-500" />
+                  <Highlighter className="w-4 h-4 text-[var(--color-warning)]" />
                 </button>
                 <button
-                  onClick={() => handleHighlight('#34d399')}
-                  className="p-1.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                  onClick={() => handleHighlight('#E5BAC1')}
+                  className="p-1.5 rounded hover:bg-[var(--accent-bg)] dark:hover:bg-[var(--accent-bg)] transition-colors"
                   title="Highlight (green)"
                 >
-                  <Highlighter className="w-4 h-4 text-emerald-500" />
+                  <Highlighter className="w-4 h-4 text-[var(--accent-text)]" />
                 </button>
                 <button
                   onClick={() => handleHighlight('#60a5fa')}
-                  className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                  className="p-1.5 rounded hover:bg-[var(--color-info-bg)] dark:hover:bg-[var(--color-info-bg)] transition-colors"
                   title="Highlight (blue)"
                 >
-                  <Highlighter className="w-4 h-4 text-blue-500" />
+                  <Highlighter className="w-4 h-4 text-[var(--color-info)]" />
                 </button>
                 <div className="w-px h-4 bg-[var(--border-card)]" />
                 <button

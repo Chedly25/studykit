@@ -125,9 +125,9 @@ export default function Dashboard() {
     <>
       {showLevelUp && (
         <div className="max-w-2xl mx-auto px-4 pt-6">
-          <div className="glass-card p-4 mb-0 flex items-center gap-3 animate-fade-in-up bg-emerald-500/5 border-emerald-500/20">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-              <Sparkles className="w-5 h-5 text-emerald-500" />
+          <div className="glass-card p-4 mb-0 flex items-center gap-3 animate-fade-in-up bg-[var(--accent-bg)] border-[var(--accent-border)]">
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5 text-[var(--accent-text)]" />
             </div>
             <div>
               <p className="text-sm font-bold text-[var(--text-heading)]">{t('dashboard.levelUp.title')}</p>
