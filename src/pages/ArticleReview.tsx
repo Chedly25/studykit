@@ -2,7 +2,7 @@
  * Article Review page — phase-based rendering for the full review lifecycle.
  */
 import { useEffect } from 'react'
-import { FileSearch, Plus, Trash2, ArrowLeft, Loader2, Calendar, Target, Sparkles } from 'lucide-react'
+import { FileSearch, Plus, Trash2, ArrowLeft, GraduationCap, Calendar, Target, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useSubscription } from '../hooks/useSubscription'
@@ -131,7 +131,7 @@ export default function ArticleReview() {
       {/* Phase: Synthesizing */}
       {rp.phase === 'synthesizing' && (
         <div className="glass-card p-8 text-center animate-fade-in">
-          <Loader2 size={32} className="mx-auto mb-4 text-[var(--accent-text)] animate-spin" />
+          <GraduationCap className="mx-auto mb-4 w-8 h-8 text-[var(--accent-text)] animate-gentle-pulse" />
           <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
             Synthesizing Results
           </h3>

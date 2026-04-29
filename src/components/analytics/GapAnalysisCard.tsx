@@ -4,7 +4,7 @@
  */
 import { useState, useCallback } from 'react'
 import { useAuth } from '@clerk/clerk-react'
-import { Target, CheckCircle, AlertTriangle, XCircle, Loader2, ChevronDown, ChevronRight } from 'lucide-react'
+import { Target, CheckCircle, AlertTriangle, XCircle, GraduationCap, ChevronDown, ChevronRight } from 'lucide-react'
 import { computeCourseGaps, type GapAnalysisResult, type GapStatus } from '../../lib/gapAnalysis'
 
 interface Props {
@@ -95,7 +95,7 @@ export default function GapAnalysisCard({ examProfileId }: Props) {
 
       {loading && (
         <div className="py-8 text-center">
-          <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin mx-auto mb-3" />
+          <GraduationCap className="w-8 h-8 text-[var(--accent-text)] animate-gentle-pulse mx-auto mb-3" />
           <p className="text-sm text-[var(--text-body)] mb-1">
             Analyse en cours...
           </p>

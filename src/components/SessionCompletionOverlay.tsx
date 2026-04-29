@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, Link } from 'react-router-dom'
 import { CheckCircle2, Flame, Clock, ArrowRight, Check, Home, BookOpen, ClipboardCheck, Target, Sparkles, Loader2, Star } from 'lucide-react'
+import { motion } from 'motion/react'
 import { MathText } from './MathText'
 
 export interface SessionCompletionData {
@@ -78,8 +79,21 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
   }
 
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="session-complete-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="glass-card p-6 max-w-md w-full mx-4 space-y-5 animate-scale-in">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.18 }}
+      onClick={onDismiss}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className="glass-card p-6 max-w-md w-full mx-4 space-y-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div role="dialog" aria-modal="true" aria-labelledby="session-complete-title">
         {/* Header */}
         <div className="text-center">
           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 ${isFirstSession ? 'bg-[var(--color-warning-bg)]' : 'bg-[var(--color-success-bg)]'}`}>
@@ -264,7 +278,8 @@ export function SessionCompletionOverlay({ data, onDismiss, onAction, aiDebrief,
             {t('common.dashboard')}
           </button>
         </div>
-      </div>
-    </div>
+        </div>
+      </motion.div>
+    </motion.div>
   )
 }

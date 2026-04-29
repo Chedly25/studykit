@@ -470,17 +470,16 @@ function DailyQueueContent() {
           description={t('hints.queueDescription')}
         />
       )}
-      {showStartOverlay && (
-        <SessionStartOverlay
-          streak={streak}
-          dueFlashcardCount={dueFlashcardCount}
-          masteryDropTopics={masteryDropTopics}
-          topRecommendation={queue[0] ? { topicName: queue[0].topicName, reason: `${queue[0].type.replace('-', ' ')}` } : undefined}
-          yesterdayStats={yesterdayStats ?? undefined}
-          onStart={handleStartSession}
-          onDismiss={() => { setShowStartOverlay(false); if (profileId) localStorage.setItem(SESSION_START_KEY(profileId, today), 'true') }}
-        />
-      )}
+      <SessionStartOverlay
+        open={showStartOverlay}
+        streak={streak}
+        dueFlashcardCount={dueFlashcardCount}
+        masteryDropTopics={masteryDropTopics}
+        topRecommendation={queue[0] ? { topicName: queue[0].topicName, reason: `${queue[0].type.replace('-', ' ')}` } : undefined}
+        yesterdayStats={yesterdayStats ?? undefined}
+        onStart={handleStartSession}
+        onDismiss={() => { setShowStartOverlay(false); if (profileId) localStorage.setItem(SESSION_START_KEY(profileId, today), 'true') }}
+      />
 
       {showCompletion && (
         <SessionCompletionOverlay
@@ -514,12 +513,11 @@ function DailyQueueContent() {
         />
       )}
 
-      {achievementToShow && (
-        <AchievementUnlockModal
-          achievement={achievementToShow}
-          onDismiss={() => setAchievementToShow(null)}
-        />
-      )}
+      <AchievementUnlockModal
+        open={achievementToShow !== null}
+        achievement={achievementToShow}
+        onDismiss={() => setAchievementToShow(null)}
+      />
 
       {/* Coach insight from Progress Monitor */}
       {coachInsight && (

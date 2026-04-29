@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Upload, FileText, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, FileText, Loader2, GraduationCap, CheckCircle, AlertCircle } from 'lucide-react'
 import { useAuth } from '@clerk/clerk-react'
 import { useSources } from '../../../hooks/useSources'
 import { extractTopicStructureStreaming, type ExtractionResult } from '../../../ai/topicExtractor'
@@ -74,7 +74,7 @@ export function OnboardingUpload({ examProfileId, onComplete }: OnboardingUpload
   if (state === 'uploading') {
     return (
       <div className="glass-card p-8 text-center">
-        <Loader2 className="w-10 h-10 text-[var(--accent-text)] mx-auto mb-4 animate-spin" />
+        <GraduationCap className="w-10 h-10 text-[var(--accent-text)] mx-auto mb-4 animate-gentle-pulse" />
         <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
           {t('dashboard.onboarding.uploading')}
         </h3>

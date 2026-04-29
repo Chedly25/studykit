@@ -116,8 +116,8 @@ export function useSources(examProfileId: string | undefined, options?: UseSourc
       try { onDocumentReadyRef.current?.(doc.id) } catch { /* non-blocking */ }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Upload failed'
+      // setLastUploadError surfaces the error inline (Sources.tsx renders the persistent card).
       setLastUploadError(msg)
-      toast.error(msg)
       throw err
     } finally {
       setIsProcessing(false)

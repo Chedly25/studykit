@@ -8,7 +8,9 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Loader2, MessageCircle, X } from 'lucide-react'
+import { MessageCircle, X } from 'lucide-react'
+import { BrandedLoader } from '../components/BrandedLoader'
+import { useKeyboardShortcut } from '../lib/keyboard'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import { getPdfLib } from '../lib/pdfInit'
@@ -228,26 +230,44 @@ export default function DocumentReader() {
   }, [pdfDoc])
 
   // Keyboard shortcuts
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      // Ctrl+F / Cmd+F → open search (intercept browser default)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        e.preventDefault()
-        setSearchOpen(true)
-        return
-      }
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target instanceof HTMLElement && e.target.isContentEditable)) return
-      if (e.key === 'Escape') {
-        if (searchOpen) { setSearchOpen(false); pdfSearch.clear() }
-        else if (outlineOpen) { setOutlineOpen(false) }
-        else navigate(-1)
-      }
-      else if (e.key === '+' || e.key === '=') { manualZoom.current = true; setScale(s => Math.min(3, s + 0.2)) }
-      else if (e.key === '-') { manualZoom.current = true; setScale(s => Math.max(0.5, s - 0.2)) }
-    }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [navigate, searchOpen, outlineOpen, pdfSearch])
+  useKeyboardShortcut('cmd+f', () => setSearchOpen(true), {
+    label: 'Search inside document',
+    scope: 'PDF Reader',
+    allowInInput: true,
+  })
+
+  useKeyboardShortcut('escape', () => {
+    if (searchOpen) { setSearchOpen(false); pdfSearch.clear() }
+    else if (outlineOpen) { setOutlineOpen(false) }
+    else navigate(-1)
+  }, {
+    label: 'Close search / outline / back',
+    scope: 'PDF Reader',
+  })
+
+  useKeyboardShortcut('+', () => {
+    manualZoom.current = true
+    setScale(s => Math.min(3, s + 0.2))
+  }, {
+    label: 'Zoom in',
+    scope: 'PDF Reader',
+  })
+
+  useKeyboardShortcut('=', () => {
+    manualZoom.current = true
+    setScale(s => Math.min(3, s + 0.2))
+  }, {
+    label: 'Zoom in (alt)',
+    scope: 'PDF Reader',
+  })
+
+  useKeyboardShortcut('-', () => {
+    manualZoom.current = true
+    setScale(s => Math.max(0.5, s - 0.2))
+  }, {
+    label: 'Zoom out',
+    scope: 'PDF Reader',
+  })
 
   // Mobile detection
   useEffect(() => {
@@ -275,10 +295,7 @@ export default function DocumentReader() {
   if (loading) {
     return (
       <div className="h-[calc(100vh-3.5rem)] flex items-center justify-center">
-        <div className="flex items-center gap-3 text-[var(--text-muted)]">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <span className="text-sm">Loading document...</span>
-        </div>
+        <BrandedLoader compact />
       </div>
     )
   }

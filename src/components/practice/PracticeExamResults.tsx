@@ -2,12 +2,12 @@ import { useState, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { Link } from 'react-router-dom'
-import { Trophy, BarChart3, RotateCcw, ChevronDown, ChevronUp, RefreshCw, ShieldAlert, Clock, MessageCircle, AlertTriangle } from 'lucide-react'
+import { Trophy, BarChart3, RotateCcw, ChevronDown, ChevronUp, RefreshCw, ShieldAlert, Clock, MessageCircle, AlertTriangle, Loader2 } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { GeneratedQuestion, PracticeExamSession } from '../../db/schema'
 import { QuestionRenderer } from './QuestionRenderer'
 import type { WorkflowProgress } from '../../ai/orchestrator/types'
-import { Loader2 } from 'lucide-react'
+import { GraduationCap } from 'lucide-react'
 import { db } from '../../db'
 import { evaluateDispute, type DisputeResult } from '../../ai/workflows/gradeDispute'
 
@@ -59,7 +59,7 @@ export function PracticeExamResults({
     return (
       <div className="max-w-lg mx-auto px-4 py-12 animate-fade-in text-center">
         <div className="glass-card p-8">
-          <Loader2 className="w-12 h-12 text-[var(--accent-text)] animate-spin mx-auto mb-4" />
+          <GraduationCap className="w-12 h-12 text-[var(--accent-text)] animate-gentle-pulse mx-auto mb-4" />
           <h2 className="text-xl font-bold text-[var(--text-heading)] mb-2">
             {t('practiceExam.gradingExam')}
           </h2>

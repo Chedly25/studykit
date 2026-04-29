@@ -10,6 +10,7 @@ import {
   Compass, GraduationCap, Clock, Zap, Award,
 } from 'lucide-react'
 import type { AchievementDef } from '../lib/achievements'
+import { Modal, ModalBackdrop } from './ui/motion'
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   'target': Target,
@@ -39,43 +40,49 @@ export const MAJOR_ACHIEVEMENTS = new Set([
 ])
 
 interface Props {
-  achievement: AchievementDef
+  open: boolean
+  achievement: AchievementDef | null
   onDismiss: () => void
 }
 
-export function AchievementUnlockModal({ achievement, onDismiss }: Props) {
+export function AchievementUnlockModal({ open, achievement, onDismiss }: Props) {
   const { t } = useTranslation()
-  const Icon = ICON_MAP[achievement.icon] ?? Award
+  const Icon = achievement ? (ICON_MAP[achievement.icon] ?? Award) : Award
 
-  // Fire confetti on mount
+  // Fire confetti when the modal opens
   useEffect(() => {
+    if (!open) return
     import('../lib/confetti').then(({ fireConfetti }) => fireConfetti('achievement')).catch(() => {})
-  }, [])
+  }, [open])
 
-  // Auto-dismiss after 4s
+  // Auto-dismiss after 4s while open
   useEffect(() => {
+    if (!open) return
     const timer = setTimeout(onDismiss, 4000)
     return () => clearTimeout(timer)
-  }, [onDismiss])
+  }, [open, onDismiss])
+
+  if (!achievement) return null
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      onClick={onDismiss}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in cursor-pointer"
+    <ModalBackdrop
+      open={open}
+      onClose={onDismiss}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm cursor-pointer"
     >
-      <div className="glass-card p-6 max-w-sm w-full mx-4 text-center animate-scale-in" onClick={e => e.stopPropagation()}>
-        <div className="w-16 h-16 rounded-2xl bg-[var(--color-warning-bg)] flex items-center justify-center mx-auto mb-4">
-          <Icon className="w-9 h-9 text-[var(--color-warning)]" />
+      <Modal open={open} className="glass-card p-6 max-w-sm w-full mx-4 text-center">
+        <div role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+          <div className="w-16 h-16 rounded-2xl bg-[var(--color-warning-bg)] flex items-center justify-center mx-auto mb-4">
+            <Icon className="w-9 h-9 text-[var(--color-warning)]" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warning)] mb-1">
+            {t('celebrate.achievementUnlocked')}
+          </p>
+          <h2 className="text-xl font-bold text-[var(--text-heading)] mb-1">{achievement.title}</h2>
+          <p className="text-sm text-[var(--text-muted)]">{achievement.description}</p>
+          <p className="text-xs text-[var(--text-faint)] mt-4">{t('celebrate.dismiss')}</p>
         </div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warning)] mb-1">
-          {t('celebrate.achievementUnlocked')}
-        </p>
-        <h2 className="text-xl font-bold text-[var(--text-heading)] mb-1">{achievement.title}</h2>
-        <p className="text-sm text-[var(--text-muted)]">{achievement.description}</p>
-        <p className="text-xs text-[var(--text-faint)] mt-4">{t('celebrate.dismiss')}</p>
-      </div>
-    </div>
+      </Modal>
+    </ModalBackdrop>
   )
 }

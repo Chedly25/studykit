@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-import { Loader2, Menu, Mic2, Trash2, X } from 'lucide-react'
+import { GraduationCap, Menu, Mic2, Trash2, X } from 'lucide-react'
 import { LegalPageTabs } from '../components/legal/LegalPageTabs'
 import { GrandOralBrief } from '../components/legal/GrandOralBrief'
 import { GrandOralSessionLive } from '../components/legal/GrandOralSessionLive'
@@ -187,7 +187,7 @@ function LoadingView({ label }: { label: string }) {
   return (
     <div className="flex items-center justify-center h-full">
       <div className="flex items-center gap-3 text-[var(--text-muted)]">
-        <Loader2 className="w-5 h-5 animate-spin" />
+        <GraduationCap className="w-5 h-5 animate-gentle-pulse text-[var(--accent-text)]" />
         <span className="text-sm">{label}</span>
       </div>
     </div>

@@ -6,8 +6,10 @@ import { useTranslation } from 'react-i18next'
 import { Flame, Clock, BookOpen, AlertTriangle, ArrowRight } from 'lucide-react'
 import type { DailyStudyLog } from '../db/schema'
 import { requestPermission, registerServiceWorker } from '../lib/pushNotifications'
+import { Modal, ModalBackdrop } from './ui/motion'
 
 interface Props {
+  open: boolean
   streak: number
   dueFlashcardCount: number
   masteryDropTopics: Array<{ name: string; drop: number }>
@@ -20,7 +22,7 @@ interface Props {
 const TIME_PRESETS = [15, 30, 45, 60, 90]
 
 export function SessionStartOverlay({
-  streak, dueFlashcardCount, masteryDropTopics,
+  open, streak, dueFlashcardCount, masteryDropTopics,
   topRecommendation, yesterdayStats, onStart, onDismiss,
 }: Props) {
   const { t } = useTranslation()
@@ -35,8 +37,16 @@ export function SessionStartOverlay({
   }
 
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="session-start-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="glass-card p-6 max-w-md w-full mx-4 space-y-5 animate-scale-in">
+    <ModalBackdrop
+      open={open}
+      onClose={onDismiss}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    >
+      <Modal
+        open={open}
+        className="glass-card p-6 max-w-md w-full mx-4 space-y-5"
+      >
+        <div role="dialog" aria-modal="true" aria-labelledby="session-start-title" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="text-center">
           <h2 id="session-start-title" className="text-xl font-bold text-[var(--text-heading)]">{t('session.welcomeBack')}</h2>
@@ -152,7 +162,8 @@ export function SessionStartOverlay({
             {t('common.skip')}
           </button>
         </div>
-      </div>
-    </div>
+        </div>
+      </Modal>
+    </ModalBackdrop>
   )
 }

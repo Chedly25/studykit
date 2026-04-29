@@ -2,8 +2,9 @@
  * Renders a PDF outline (bookmarks/table of contents) as a collapsible tree.
  * Uses pdfjs getOutline() data. Each item resolves to a page number.
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { ChevronRight, ChevronDown } from 'lucide-react'
+import { useKeyboardShortcut } from '../../lib/keyboard'
 
 interface OutlineNode {
   title: string
@@ -73,14 +74,10 @@ function OutlineItem({ item, pdfDoc, onJumpToPage, depth }: {
 }
 
 export function PdfOutline({ outline, pdfDoc, onJumpToPage, onClose }: Props) {
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
+  useKeyboardShortcut('escape', onClose, {
+    label: 'Close outline',
+    scope: 'PDF Outline',
+  })
 
   return (
     <div className="absolute left-0 top-0 bottom-0 z-10 w-64 bg-[var(--bg-card)] border-r border-[var(--border-card)] shadow-lg flex flex-col animate-slide-in-left overflow-hidden">

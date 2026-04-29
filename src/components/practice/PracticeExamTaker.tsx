@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Send, Loader2 } from 'lucide-react'
+import { Send } from 'lucide-react'
+import { BrandedLoader } from '../BrandedLoader'
 import type { GeneratedQuestion } from '../../db/schema'
 import { QuestionRenderer } from './QuestionRenderer'
 import { QuestionNav } from './QuestionNav'
@@ -61,8 +62,7 @@ export function PracticeExamTaker({
     return (
       <div className="max-w-3xl mx-auto px-4 py-12 text-center animate-fade-in">
         <div className="glass-card p-8">
-          <Loader2 className="w-8 h-8 text-[var(--accent-text)] animate-spin mx-auto mb-4" />
-          <p className="text-sm text-[var(--text-muted)]">{t('common.loading')}</p>
+          <BrandedLoader compact />
         </div>
       </div>
     )

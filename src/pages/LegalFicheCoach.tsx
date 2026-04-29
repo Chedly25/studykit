@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
-import { Loader2, Menu, Trash2, X, NotebookPen } from 'lucide-react'
+import { GraduationCap, Menu, Trash2, X, NotebookPen } from 'lucide-react'
 import { LegalPageTabs } from '../components/legal/LegalPageTabs'
 import { LegalFicheSetup } from '../components/legal/LegalFicheSetup'
 import { LegalFicheViewer } from '../components/legal/LegalFicheViewer'
@@ -158,7 +158,7 @@ function CenteredSpinner({ label, onCancel }: { label: string; onCancel?: () => 
   return (
     <div className="flex-1 flex items-center justify-center p-6">
       <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-[var(--accent-text)]" />
+        <GraduationCap className="w-8 h-8 animate-gentle-pulse text-[var(--accent-text)]" />
         <p className="text-sm text-[var(--text-muted)] text-center max-w-sm">{label}</p>
         {onCancel && (
           <button

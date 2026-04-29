@@ -4,7 +4,6 @@
  */
 import { useState, useCallback, useEffect } from 'react'
 import * as Sentry from '@sentry/react'
-import { toast } from 'sonner'
 import { useSubscription } from './useSubscription'
 import { useBackgroundJobs } from '../components/BackgroundJobsProvider'
 import { useBackgroundJob } from './useBackgroundJob'
@@ -17,11 +16,10 @@ export function useSourceProcessing(examProfileId: string | undefined) {
   const [jobId, setJobId] = useState<string | null>(null)
   const { job, isRunning, isCompleted, isFailed, progress: _progress, currentStepName, error } = useBackgroundJob(jobId)
 
-  // Show toast on job failure
+  // Sentry-only: consumers render the error inline via SourceProcessingBanner.
   useEffect(() => {
     if (isFailed && error) {
       Sentry.captureException(new Error('[useSourceProcessing] Processing failed: ' + String(error)))
-      toast.error(`Processing failed: ${error}`)
     }
   }, [isFailed, error])
 

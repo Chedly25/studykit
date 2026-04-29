@@ -9,6 +9,7 @@ import { getPdfLib } from '../../lib/pdfInit'
 import { usePdfHighlights } from '../../hooks/usePdfHighlights'
 import { useExamProfile } from '../../hooks/useExamProfile'
 import { HighlightLayer } from './HighlightLayer'
+import { useKeyboardShortcut } from '../../lib/keyboard'
 
 interface Props {
   documentId: string
@@ -165,17 +166,30 @@ export function PdfViewer({ documentId, title, onClose }: Props) {
   }, [selectionToolbar, currentPage, scale, addHighlight])
 
   // Keyboard navigation
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') goToPrev()
-      else if (e.key === 'ArrowRight') goToNext()
-      else if (e.key === 'Escape') onClose()
-      else if (e.key === '+' || e.key === '=') zoomIn()
-      else if (e.key === '-') zoomOut()
-    }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [goToPrev, goToNext, onClose, zoomIn, zoomOut])
+  useKeyboardShortcut('arrowleft', goToPrev, {
+    label: 'Previous page',
+    scope: 'PDF Viewer',
+  })
+  useKeyboardShortcut('arrowright', goToNext, {
+    label: 'Next page',
+    scope: 'PDF Viewer',
+  })
+  useKeyboardShortcut('escape', onClose, {
+    label: 'Close viewer',
+    scope: 'PDF Viewer',
+  })
+  useKeyboardShortcut('+', zoomIn, {
+    label: 'Zoom in',
+    scope: 'PDF Viewer',
+  })
+  useKeyboardShortcut('=', zoomIn, {
+    label: 'Zoom in (alt)',
+    scope: 'PDF Viewer',
+  })
+  useKeyboardShortcut('-', zoomOut, {
+    label: 'Zoom out',
+    scope: 'PDF Viewer',
+  })
 
   return (
     <div className="fixed inset-0 z-[90] flex flex-col bg-[var(--bg-body)]">

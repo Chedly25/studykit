@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@clerk/clerk-react'
 import { toast } from 'sonner'
-import { Upload, FileText, Type, PenTool, Loader2, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Upload, FileText, Type, PenTool, Loader2, GraduationCap, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react'
 import { useSources } from '../../../hooks/useSources'
 import { extractTopicStructureStreaming } from '../../../ai/topicExtractor'
 import { extractLandscapeFromTextStreaming } from '../../../ai/landscapeExtractor'
@@ -178,7 +178,7 @@ export function StepLandscape({ draft, dispatch, onNext, onBack }: StepLandscape
   if (processingState === 'uploading') {
     return (
       <div className="max-w-2xl mx-auto glass-card p-8 text-center">
-        <Loader2 className="w-10 h-10 text-[var(--accent-text)] mx-auto mb-4 animate-spin" />
+        <GraduationCap className="w-10 h-10 text-[var(--accent-text)] mx-auto mb-4 animate-gentle-pulse" />
         <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">
           {t('dashboard.onboarding.uploading')}
         </h3>
