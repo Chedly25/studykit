@@ -20,7 +20,10 @@ export function useKeyboardShortcut(
   const { register, unregister } = useKeyboardShortcutsRegistry()
   const id = useId()
   const handlerRef = useRef(handler)
-  handlerRef.current = handler
+  // useLatestRef pattern — keep handlerRef in sync without re-binding listeners
+  useEffect(() => {
+    handlerRef.current = handler
+  })
 
   const enabled = options.enabled ?? true
   const scope = options.scope ?? 'global'

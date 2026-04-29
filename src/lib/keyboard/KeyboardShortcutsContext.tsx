@@ -39,6 +39,7 @@ export function KeyboardShortcutsProvider({ children }: { children: ReactNode })
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useKeyboardShortcutsRegistry(): ContextValue {
   const ctx = useContext(KeyboardShortcutsContext)
   if (!ctx) {

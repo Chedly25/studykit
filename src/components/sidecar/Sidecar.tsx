@@ -50,7 +50,8 @@ function writePinned(value: boolean) {
   }
 }
 
-function isHidden(pathname: string): boolean {
+// eslint-disable-next-line react-refresh/only-export-components
+export function isSidecarHidden(pathname: string): boolean {
   if (HIDDEN_ROUTES.includes(pathname)) return true
   if (pathname.startsWith('/read/')) return true
   if (pathname.startsWith('/admin')) return true
@@ -234,7 +235,7 @@ export function Sidecar() {
     perform: togglePin,
   })
 
-  useKeyboardShortcut(']', togglePin, {
+  useKeyboardShortcut('cmd+]', togglePin, {
     label: 'Toggle sidecar pin',
     scope: 'Global',
   })
@@ -252,35 +253,49 @@ export function Sidecar() {
     if (!pinned) setHovered(false)
   }, [pinned])
 
-  // Auto-collapse on route change (unless pinned)
+  // Auto-collapse on route change (unless pinned). React-hooks lints flag
+  // the setState-in-effect, but here it's the appropriate pattern: reset
+  // internal UI state in response to an external value (the URL).
   useEffect(() => {
     if (!pinned) setHovered(false)
   }, [location.pathname, pinned])
 
-  if (isHidden(location.pathname)) return null
+  if (isSidecarHidden(location.pathname)) return null
 
   return (
-    <aside
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className="hidden md:flex fixed top-14 right-0 bottom-0 z-30 flex-col bg-[var(--bg-card)] border-l border-[var(--border-card)] transition-[width] duration-200 ease-out"
-      style={{ width: expanded ? '340px' : '56px' }}
-      aria-label="Contextual sidecar"
-    >
-      {expanded ? (
-        <SidecarPanel
-          ctx={ctx}
-          pinned={pinned}
-          onTogglePin={togglePin}
-        />
-      ) : (
-        <SidecarRail
-          ctx={ctx}
-          onExpand={() => setHovered(true)}
-          onAskAi={() => openChat()}
-        />
-      )}
-    </aside>
+    <>
+      <aside
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className="hidden md:flex fixed top-14 right-0 bottom-0 z-30 flex-col bg-[var(--bg-card)] border-l border-[var(--border-card)] transition-[width] duration-200 ease-out"
+        style={{ width: expanded ? '340px' : '56px' }}
+        aria-label="Contextual sidecar"
+      >
+        {expanded ? (
+          <SidecarPanel
+            ctx={ctx}
+            pinned={pinned}
+            onTogglePin={togglePin}
+          />
+        ) : (
+          <SidecarRail
+            ctx={ctx}
+            onExpand={() => setHovered(true)}
+            onAskAi={() => openChat()}
+          />
+        )}
+      </aside>
+
+      {/* Mobile: route-aware Ask Oracle FAB. Sits above BottomNav. */}
+      <button
+        onClick={() => openChat()}
+        className="md:hidden fixed right-4 bottom-20 z-30 w-12 h-12 rounded-full bg-[var(--color-accent-500)] text-[var(--color-paper-50)] shadow-lg flex items-center justify-center hover:bg-[var(--color-accent-600)] active:scale-95 transition-all"
+        aria-label={`Ask the Oracle about ${ctx.scope}`}
+        title={`Ask the Oracle about ${ctx.scope}`}
+      >
+        <Sparkles size={18} />
+      </button>
+    </>
   )
 }
 

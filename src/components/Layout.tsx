@@ -32,7 +32,7 @@ import { ErrorBoundary } from './ErrorBoundary'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { StreakAtRiskBanner } from './StreakAtRiskBanner'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
-import { Sidecar } from './sidecar/Sidecar'
+import { Sidecar, isSidecarHidden } from './sidecar/Sidecar'
 import { UpdatePrompt } from './UpdatePrompt'
 import { InstallPrompt } from './InstallPrompt'
 // ActionsMenu removed — features now in sidebar directly
@@ -67,6 +67,8 @@ export function Layout() {
     location.pathname.startsWith('/legal') ||
     location.pathname === '/accueil' ||
     location.pathname === '/historique'
+  const sidecarVisible = !isSidecarHidden(location.pathname)
+  const sidecarPad = sidecarVisible ? 'md:pr-14' : ''
 
   // Streak risk detection for banner
   const { streak, dailyLogs } = useKnowledgeGraph(activeProfile?.id)
@@ -155,7 +157,7 @@ export function Layout() {
   })
 
   // Vim-style "go" sequence shortcuts
-  useKeyboardShortcut('g d', () => navigate('/accueil'), {
+  useKeyboardShortcut('g d', () => navigate(isCRFPA ? '/accueil' : '/dashboard'), {
     label: 'Go to Dashboard',
     scope: 'Navigate',
   })
@@ -166,14 +168,17 @@ export function Layout() {
   useKeyboardShortcut('g l', () => navigate('/legal'), {
     label: 'Go to Legal Oracle',
     scope: 'Navigate',
+    enabled: isCRFPA,
   })
   useKeyboardShortcut('g b', () => navigate('/legal/bibliotheque'), {
     label: 'Go to Bibliothèque',
     scope: 'Navigate',
+    enabled: isCRFPA,
   })
   useKeyboardShortcut('g h', () => navigate('/historique'), {
     label: 'Go to Historique',
     scope: 'Navigate',
+    enabled: isCRFPA,
   })
   useKeyboardShortcut('g s', () => navigate('/settings'), {
     label: 'Go to Settings',
@@ -434,7 +439,7 @@ export function Layout() {
         )}
 
         {/* ─── Main content ───────────────────────────────────── */}
-        <main id="main-content" className={isChatPage ? 'flex-1 w-full min-w-0 pb-16 md:pb-0 md:pr-14' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0 pb-16 md:pb-0 md:pr-14'}>
+        <main id="main-content" className={`${isChatPage ? 'flex-1 w-full min-w-0 pb-16 md:pb-0' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0 pb-16 md:pb-0'} ${sidecarPad}`}>
           {!isOnline && (
             <div className="mb-4 px-4 py-2 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)] text-sm text-[var(--color-warning)] text-center">
               You're offline. Some features may not work.

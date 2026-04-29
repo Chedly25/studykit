@@ -12,6 +12,7 @@ export function useCommand(command: Command | null) {
   performRef.current = command?.perform
 
   // Stable identity-fields → only re-register when these change
+  const keywordsKey = command?.keywords?.join('|')
   const stable = useMemo<Command | null>(() => {
     if (!command) return null
     return {
@@ -30,7 +31,7 @@ export function useCommand(command: Command | null) {
     command?.group,
     command?.hint,
     command?.icon,
-    command?.keywords?.join('|'),
+    keywordsKey,
   ])
 
   useEffect(() => {

@@ -2,7 +2,7 @@
  * Brief full-screen overlay for major achievement unlocks.
  * Fires confetti on mount. Dismisses on click-anywhere or after 4s.
  */
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Target, Flame, Dumbbell, Crown, Pencil, BookOpen, Trophy, Layers,
@@ -34,6 +34,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   'zap': Zap,
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const MAJOR_ACHIEVEMENTS = new Set([
   'FIRST_SESSION', 'STREAK_7', 'STREAK_30', 'STREAK_100',
   'FIRST_TOPIC_80', 'ALL_TOPICS_30',
@@ -47,7 +48,13 @@ interface Props {
 
 export function AchievementUnlockModal({ open, achievement, onDismiss }: Props) {
   const { t } = useTranslation()
-  const Icon = achievement ? (ICON_MAP[achievement.icon] ?? Award) : Award
+
+  // Retain the last seen achievement so the exit animation has content to render
+  // after the parent sets `achievement` back to null on dismiss.
+  const lastAchievementRef = useRef<AchievementDef | null>(achievement)
+  if (achievement) lastAchievementRef.current = achievement
+  const displayed = lastAchievementRef.current
+  const Icon = displayed ? (ICON_MAP[displayed.icon] ?? Award) : Award
 
   // Fire confetti when the modal opens
   useEffect(() => {
@@ -62,7 +69,7 @@ export function AchievementUnlockModal({ open, achievement, onDismiss }: Props) 
     return () => clearTimeout(timer)
   }, [open, onDismiss])
 
-  if (!achievement) return null
+  if (!displayed) return null
 
   return (
     <ModalBackdrop
@@ -78,8 +85,8 @@ export function AchievementUnlockModal({ open, achievement, onDismiss }: Props) 
           <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-warning)] mb-1">
             {t('celebrate.achievementUnlocked')}
           </p>
-          <h2 className="text-xl font-bold text-[var(--text-heading)] mb-1">{achievement.title}</h2>
-          <p className="text-sm text-[var(--text-muted)]">{achievement.description}</p>
+          <h2 className="text-xl font-bold text-[var(--text-heading)] mb-1">{displayed.title}</h2>
+          <p className="text-sm text-[var(--text-muted)]">{displayed.description}</p>
           <p className="text-xs text-[var(--text-faint)] mt-4">{t('celebrate.dismiss')}</p>
         </div>
       </Modal>
