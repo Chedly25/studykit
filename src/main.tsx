@@ -9,6 +9,8 @@ import './i18n'
 import './styles/globals.css'
 import App from './App'
 import { BackgroundJobsProvider } from './components/BackgroundJobsProvider'
+import { CommandRegistryProvider } from './lib/commands'
+import { KeyboardShortcutsProvider } from './lib/keyboard'
 import { initAnalytics, refreshAnalyticsConsent } from './lib/analytics'
 
 // Initialize Sentry error monitoring — gated on GDPR consent
@@ -79,20 +81,24 @@ createRoot(document.getElementById('root')!).render(
         }}
       >
         <BrowserRouter>
-          <BackgroundJobsProvider>
-          <App />
-          </BackgroundJobsProvider>
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              style: {
-                background: 'var(--bg-card)',
-                color: 'var(--text-body)',
-                border: '1px solid var(--border-card)',
-                borderRadius: '0.75rem',
-              },
-            }}
-          />
+          <KeyboardShortcutsProvider>
+            <CommandRegistryProvider>
+              <BackgroundJobsProvider>
+                <App />
+              </BackgroundJobsProvider>
+              <Toaster
+                position="bottom-right"
+                toastOptions={{
+                  style: {
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-body)',
+                    border: '1px solid var(--border-card)',
+                    borderRadius: '0.75rem',
+                  },
+                }}
+              />
+            </CommandRegistryProvider>
+          </KeyboardShortcutsProvider>
         </BrowserRouter>
       </ClerkProvider>
     </HelmetProvider>

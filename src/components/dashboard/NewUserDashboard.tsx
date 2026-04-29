@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Upload, ClipboardCheck, BookOpen, CheckCircle, ArrowRight, Check, Loader2 } from 'lucide-react'
+import { Stagger, StaggerItem } from '../ui/motion'
 import type { ExamProfile } from '../../db/schema'
 import { useActiveJobs } from '../../hooks/useActiveJobs'
 
@@ -187,40 +188,41 @@ export function NewUserDashboard({ profile, userName, documentCount, practiceExa
       )}
 
       {/* ─── Step cards (always visible) ─── */}
-      <div className="space-y-3">
+      <Stagger className="space-y-3">
         {steps.map((step, i) => {
           const Icon = step.done ? CheckCircle : step.icon
           return (
-            <Link
-              key={i}
-              to={step.link}
-              className={`glass-card glass-card-hover p-5 flex items-center gap-4 transition-opacity ${
-                step.done ? 'opacity-50' : ''
-              }`}
-            >
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                step.done
-                  ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]'
-                  : 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
-              }`}>
-                <Icon className="w-5 h-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[var(--text-faint)]">
-                    {step.done ? t('dashboard.stepDone') : `${i + 1}`}
-                  </span>
-                  <h3 className="text-sm font-semibold text-[var(--text-heading)]">{step.title}</h3>
+            <StaggerItem key={i}>
+              <Link
+                to={step.link}
+                className={`glass-card glass-card-hover p-5 flex items-center gap-4 transition-opacity ${
+                  step.done ? 'opacity-50' : ''
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  step.done
+                    ? 'bg-[var(--color-success-bg)] text-[var(--color-success)]'
+                    : 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+                }`}>
+                  <Icon className="w-5 h-5" />
                 </div>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">{step.hint}</p>
-              </div>
-              {!step.done && (
-                <ArrowRight className="w-4 h-4 text-[var(--text-faint)] shrink-0" />
-              )}
-            </Link>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[var(--text-faint)]">
+                      {step.done ? t('dashboard.stepDone') : `${i + 1}`}
+                    </span>
+                    <h3 className="text-sm font-semibold text-[var(--text-heading)]">{step.title}</h3>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">{step.hint}</p>
+                </div>
+                {!step.done && (
+                  <ArrowRight className="w-4 h-4 text-[var(--text-faint)] shrink-0" />
+                )}
+              </Link>
+            </StaggerItem>
           )
         })}
-      </div>
+      </Stagger>
     </div>
   )
 }

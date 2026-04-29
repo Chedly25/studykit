@@ -38,6 +38,7 @@
     "i18next-browser-languagedetector": "^8.2.1",
     "katex": "^0.16.38",
     "lucide-react": "^0.577.0",
+    "motion": "^12.38.0",
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^5.5.207",
     "posthog-js": "^1.363.1",

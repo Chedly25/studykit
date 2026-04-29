@@ -1,13 +1,25 @@
 /**
- * Cmd+K search modal + command palette — searches across documents, topics, exercises,
- * concept cards, flashcards, and offers quick actions.
+ * Cmd+K command palette + content search.
+ * Commands are read from the global CommandRegistry; semantic content search
+ * remains via useSearch (documents, topics, exercises, concept-cards, flashcards).
  */
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Search, FileText, BookOpen, ListChecks, Layers, CreditCard, Loader2, ListTodo, Upload, ClipboardCheck, BarChart3, Settings, Focus, Calendar, GraduationCap } from 'lucide-react'
+import {
+  Search,
+  FileText,
+  BookOpen,
+  ListChecks,
+  Layers,
+  CreditCard,
+  Loader2,
+  Command as CommandIcon,
+  Clock,
+} from 'lucide-react'
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useSearch, type SearchResult } from '../hooks/useSearch'
+import { useCommandRegistry, type Command } from '../lib/commands'
 
 const TYPE_CONFIG: Record<SearchResult['type'], { icon: typeof FileText; label: string; color: string }> = {
   document: { icon: FileText, label: 'Document', color: 'text-[var(--color-info)]' },
@@ -17,29 +29,23 @@ const TYPE_CONFIG: Record<SearchResult['type'], { icon: typeof FileText; label: 
   flashcard: { icon: CreditCard, label: 'Flashcard', color: 'text-[var(--color-error)]' },
 }
 
-interface QuickAction {
-  id: string
-  label: string
-  keywords: string[]
-  icon: typeof FileText
-  path: string
-}
-
-const QUICK_ACTIONS: QuickAction[] = [
-  { id: 'queue', label: 'Start study queue', keywords: ['queue', 'study', 'start', 'daily'], icon: ListTodo, path: '/queue' },
-  { id: 'upload', label: 'Upload document', keywords: ['upload', 'document', 'source', 'add'], icon: Upload, path: '/sources' },
-  { id: 'practice', label: 'Practice exam', keywords: ['practice', 'exam', 'test', 'mock'], icon: ClipboardCheck, path: '/practice-exam' },
-  { id: 'analytics', label: 'View analytics', keywords: ['analytics', 'progress', 'stats', 'charts'], icon: BarChart3, path: '/analytics' },
-  { id: 'flashcards', label: 'Flashcard maker', keywords: ['flashcard', 'cards', 'review', 'deck'], icon: CreditCard, path: '/flashcard-maker' },
-  { id: 'settings', label: 'Settings', keywords: ['settings', 'preferences', 'config', 'export'], icon: Settings, path: '/settings' },
-  { id: 'focus', label: 'Focus timer', keywords: ['focus', 'pomodoro', 'timer'], icon: Focus, path: '/focus' },
-  { id: 'plan', label: 'Study plan', keywords: ['plan', 'schedule', 'study plan'], icon: Calendar, path: '/study-plan' },
-  { id: 'profile', label: 'Manage profiles', keywords: ['profile', 'project', 'exam', 'manage'], icon: GraduationCap, path: '/exam-profile' },
-]
+const GROUP_ORDER = ['Navigate', 'Coaches', 'Study', 'Insight', 'Actions', 'Settings'] as const
 
 interface Props {
   open: boolean
   onClose: () => void
+}
+
+type FlatItem =
+  | { kind: 'command'; group: string; command: Command }
+  | { kind: 'result'; group: string; result: SearchResult }
+
+function fuzzyMatch(query: string, command: Command): boolean {
+  const q = query.toLowerCase()
+  if (command.label.toLowerCase().includes(q)) return true
+  if (command.keywords?.some((k) => k.toLowerCase().includes(q))) return true
+  if (command.group?.toLowerCase().includes(q)) return true
+  return false
 }
 
 export function SearchModal({ open, onClose }: Props) {
@@ -47,25 +53,61 @@ export function SearchModal({ open, onClose }: Props) {
   const navigate = useNavigate()
   const { activeProfile } = useExamProfile()
   const { results, isSearching, search, clear } = useSearch(activeProfile?.id)
+  const { commands, recents, recordExecution } = useCommandRegistry()
 
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Filter quick actions by query
-  const matchingActions = useMemo(() => {
-    if (!query.trim()) return QUICK_ACTIONS
-    const q = query.toLowerCase()
-    return QUICK_ACTIONS.filter(a =>
-      a.keywords.some(k => k.includes(q)) ||
-      a.label.toLowerCase().includes(q)
-    )
-  }, [query])
+  // Filter & group commands
+  const filteredCommands = useMemo(() => {
+    if (!query.trim()) return commands
+    return commands.filter((c) => fuzzyMatch(query, c))
+  }, [commands, query])
 
-  const totalSelectableItems = matchingActions.length + results.length
+  const recentCommands = useMemo(() => {
+    if (query.trim()) return []
+    const map = new Map(commands.map((c) => [c.id, c]))
+    return recents.map((id) => map.get(id)).filter((c): c is Command => Boolean(c))
+  }, [commands, recents, query])
 
-  // Focus input when opened
+  const groupedCommands = useMemo(() => {
+    const groups = new Map<string, Command[]>()
+    const recentIds = new Set(recentCommands.map((c) => c.id))
+    for (const cmd of filteredCommands) {
+      // Skip commands already in Recent (avoid duplicates when query is empty)
+      if (recentIds.has(cmd.id)) continue
+      const group = cmd.group ?? 'Actions'
+      if (!groups.has(group)) groups.set(group, [])
+      groups.get(group)!.push(cmd)
+    }
+    // Sort by GROUP_ORDER, with unknown groups appended alphabetically
+    const knownGroups = GROUP_ORDER.filter((g) => groups.has(g))
+    const unknownGroups = [...groups.keys()].filter((g) => !GROUP_ORDER.includes(g as never)).sort()
+    return [...knownGroups, ...unknownGroups].map((group) => ({
+      group,
+      commands: groups.get(group)!,
+    }))
+  }, [filteredCommands, recentCommands])
+
+  // Build a flat list of all selectable items in display order
+  const flatItems = useMemo<FlatItem[]>(() => {
+    const items: FlatItem[] = []
+    for (const cmd of recentCommands) {
+      items.push({ kind: 'command', group: 'Recent', command: cmd })
+    }
+    for (const { group, commands: cmds } of groupedCommands) {
+      for (const cmd of cmds) items.push({ kind: 'command', group, command: cmd })
+    }
+    for (const result of results) {
+      const cfg = TYPE_CONFIG[result.type]
+      items.push({ kind: 'result', group: cfg ? `${cfg.label}s` : 'Search', result })
+    }
+    return items
+  }, [recentCommands, groupedCommands, results])
+
+  // Focus input + reset state when opened
   useEffect(() => {
     if (open) {
       setQuery('')
@@ -75,7 +117,7 @@ export function SearchModal({ open, onClose }: Props) {
     }
   }, [open, clear])
 
-  // Debounced search
+  // Debounced semantic search
   useEffect(() => {
     if (!query.trim()) {
       clear()
@@ -83,70 +125,85 @@ export function SearchModal({ open, onClose }: Props) {
     }
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => search(query), 300)
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
   }, [query, search, clear])
 
-  // Reset selection when results change
+  // Reset selection when item set changes
   useEffect(() => {
     setSelectedIndex(0)
-  }, [results])
+  }, [query, results.length, commands.length])
 
-  const handleSelect = useCallback((result: SearchResult) => {
-    onClose()
-    navigate(result.linkTo)
-  }, [navigate, onClose])
-
-  const handleActionSelect = useCallback((action: QuickAction) => {
-    onClose()
-    navigate(action.path)
-  }, [navigate, onClose])
-
-  // Keyboard navigation
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setSelectedIndex(i => Math.min(i + 1, totalSelectableItems - 1))
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setSelectedIndex(i => Math.max(i - 1, 0))
-    } else if (e.key === 'Enter') {
-      e.preventDefault()
-      if (selectedIndex < matchingActions.length) {
-        handleActionSelect(matchingActions[selectedIndex])
-      } else {
-        const resultIdx = selectedIndex - matchingActions.length
-        if (results[resultIdx]) {
-          handleSelect(results[resultIdx])
-        }
-      }
-    } else if (e.key === 'Escape') {
+  const executeCommand = useCallback(
+    (cmd: Command) => {
       onClose()
-    }
-  }, [totalSelectableItems, matchingActions, results, selectedIndex, handleSelect, handleActionSelect, onClose])
+      recordExecution(cmd.id)
+      // Defer perform to next tick so the modal close animation doesn't compete
+      setTimeout(() => cmd.perform(), 0)
+    },
+    [onClose, recordExecution],
+  )
+
+  const openResult = useCallback(
+    (result: SearchResult) => {
+      onClose()
+      navigate(result.linkTo)
+    },
+    [navigate, onClose],
+  )
+
+  const handleSelect = useCallback(
+    (item: FlatItem) => {
+      if (item.kind === 'command') executeCommand(item.command)
+      else openResult(item.result)
+    },
+    [executeCommand, openResult],
+  )
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSelectedIndex((i) => Math.min(i + 1, flatItems.length - 1))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelectedIndex((i) => Math.max(i - 1, 0))
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        const item = flatItems[selectedIndex]
+        if (item) handleSelect(item)
+      } else if (e.key === 'Escape') {
+        onClose()
+      }
+    },
+    [flatItems, selectedIndex, handleSelect, onClose],
+  )
 
   if (!open) return null
 
-  // Group results by type
-  const grouped = results.reduce<Record<string, SearchResult[]>>((acc, r) => {
-    if (!acc[r.type]) acc[r.type] = []
-    acc[r.type].push(r)
-    return acc
-  }, {})
-
-  let globalIndex = matchingActions.length - 1
+  // Walk flatItems while rendering, tracking section transitions
+  let renderIndex = -1
+  const sections: { group: string; items: FlatItem[] }[] = []
+  for (const item of flatItems) {
+    const last = sections[sections.length - 1]
+    if (!last || last.group !== item.group) {
+      sections.push({ group: item.group, items: [item] })
+    } else {
+      last.items.push(item)
+    }
+  }
 
   return (
     <div
       className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]"
       onClick={onClose}
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
-      {/* Modal */}
       <div
         className="relative w-full max-w-xl bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-2xl overflow-hidden animate-fade-in"
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Search input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-card)]">
@@ -159,7 +216,7 @@ export function SearchModal({ open, onClose }: Props) {
             ref={inputRef}
             type="text"
             value={query}
-            onChange={e => setQuery(e.target.value)}
+            onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t('search.placeholder')}
             className="flex-1 bg-transparent text-[var(--text-body)] placeholder:text-[var(--text-muted)]/50 outline-none text-sm"
@@ -171,90 +228,84 @@ export function SearchModal({ open, onClose }: Props) {
 
         {/* Results */}
         <div className="max-h-[50vh] overflow-y-auto">
-          {/* Quick Actions */}
-          {matchingActions.length > 0 && (
-            <div>
-              <div className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-body)]/50">
-                Quick Actions
+          {sections.map(({ group, items }) => (
+            <div key={group}>
+              <div className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-body)]/60 flex items-center gap-1.5">
+                {group === 'Recent' && <Clock className="w-3 h-3" />}
+                {group}
               </div>
-              {matchingActions.map((action, i) => {
-                const Icon = action.icon
-                return (
-                  <button
-                    key={action.id}
-                    onClick={() => handleActionSelect(action)}
-                    onMouseEnter={() => setSelectedIndex(i)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                      selectedIndex === i
-                        ? 'bg-[var(--accent-bg)]'
-                        : 'hover:bg-[var(--bg-input)]'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 text-[var(--accent-text)] shrink-0" />
-                    <span className="text-sm font-medium text-[var(--text-heading)]">{action.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
+              {items.map((item) => {
+                renderIndex++
+                const idx = renderIndex
+                const isSelected = selectedIndex === idx
 
-          {query.trim() && results.length === 0 && matchingActions.length === 0 && !isSearching && (
-            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
-              {t('search.noResults')}
-            </div>
-          )}
-
-          {Object.entries(grouped).map(([type, items]) => {
-            const config = TYPE_CONFIG[type as SearchResult['type']]
-            if (!config) return null
-
-            return (
-              <div key={type}>
-                <div className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-body)]/50">
-                  {config.label}s
-                </div>
-                {items.map(result => {
-                  globalIndex++
-                  const idx = globalIndex
-                  const Icon = config.icon
-
+                if (item.kind === 'command') {
+                  const Icon = item.command.icon ?? CommandIcon
                   return (
                     <button
-                      key={result.id}
-                      onClick={() => handleSelect(result)}
+                      key={`cmd-${item.command.id}-${idx}`}
+                      onClick={() => handleSelect(item)}
                       onMouseEnter={() => setSelectedIndex(idx)}
-                      className={`w-full flex items-start gap-3 px-4 py-2.5 text-left transition-colors ${
-                        selectedIndex === idx
-                          ? 'bg-[var(--accent-bg)]'
-                          : 'hover:bg-[var(--bg-input)]'
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                        isSelected ? 'bg-[var(--accent-bg)]' : 'hover:bg-[var(--bg-input)]'
                       }`}
                     >
-                      <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${config.color}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-[var(--text-heading)] truncate">
-                          {result.title}
-                        </div>
-                        {result.snippet && (
-                          <div className="text-xs text-[var(--text-muted)] line-clamp-1 mt-0.5">
-                            {result.snippet}
-                          </div>
-                        )}
-                      </div>
-                      {result.metadata?.mastery !== undefined && (
-                        <span className="text-xs text-[var(--text-faint)] shrink-0">
-                          {Math.round(result.metadata.mastery * 100)}%
+                      <Icon className="w-4 h-4 text-[var(--accent-text)] shrink-0" />
+                      <span className="text-sm font-medium text-[var(--text-heading)] flex-1 truncate">
+                        {item.command.label}
+                      </span>
+                      {item.command.hint && (
+                        <span className="text-[11px] font-[family-name:var(--font-mono)] text-[var(--text-faint)] shrink-0">
+                          {item.command.hint}
                         </span>
                       )}
                     </button>
                   )
-                })}
-              </div>
-            )
-          })}
+                }
+
+                // result
+                const cfg = TYPE_CONFIG[item.result.type]
+                const Icon = cfg?.icon ?? FileText
+                return (
+                  <button
+                    key={`res-${item.result.id}-${idx}`}
+                    onClick={() => handleSelect(item)}
+                    onMouseEnter={() => setSelectedIndex(idx)}
+                    className={`w-full flex items-start gap-3 px-4 py-2.5 text-left transition-colors ${
+                      isSelected ? 'bg-[var(--accent-bg)]' : 'hover:bg-[var(--bg-input)]'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${cfg?.color ?? 'text-[var(--text-muted)]'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-[var(--text-heading)] truncate">
+                        {item.result.title}
+                      </div>
+                      {item.result.snippet && (
+                        <div className="text-xs text-[var(--text-muted)] line-clamp-1 mt-0.5">
+                          {item.result.snippet}
+                        </div>
+                      )}
+                    </div>
+                    {item.result.metadata?.mastery !== undefined && (
+                      <span className="text-xs text-[var(--text-faint)] shrink-0">
+                        {Math.round(item.result.metadata.mastery * 100)}%
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
+
+          {flatItems.length === 0 && query.trim() && !isSearching && (
+            <div className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
+              {t('search.noResults')}
+            </div>
+          )}
         </div>
 
         {/* Footer hint */}
-        {(results.length > 0 || matchingActions.length > 0) && (
+        {flatItems.length > 0 && (
           <div className="px-4 py-2 border-t border-[var(--border-card)] flex items-center gap-4 text-[10px] text-[var(--text-faint)]">
             <span><kbd className="border border-[var(--border-card)] rounded px-1">↑↓</kbd> navigate</span>
             <span><kbd className="border border-[var(--border-card)] rounded px-1">↵</kbd> open</span>

@@ -2,10 +2,10 @@
  * Displays AI evaluation result with accept/override buttons.
  * Supports Enter to accept, 1-4 to override quality.
  */
-import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CheckCircle2, AlertCircle, XCircle } from 'lucide-react'
 import { MathText } from '../MathText'
+import { useKeyboardShortcut } from '../../lib/keyboard'
 
 interface Props {
   quality: number
@@ -34,25 +34,26 @@ export function EvaluationResult({ quality, feedback, onAccept, onOverride }: Pr
   const config = QUALITY_CONFIG[quality] ?? QUALITY_CONFIG[3]
   const Icon = config.icon
 
-  // Keyboard: Enter=accept, 1-4=override
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        onAccept()
-        return
-      }
-      const keyMap: Record<string, number> = { '1': 1, '2': 3, '3': 4, '4': 5 }
-      const q = keyMap[e.key]
-      if (q) {
-        e.preventDefault()
-        onOverride(q)
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onAccept, onOverride])
+  useKeyboardShortcut('enter', onAccept, {
+    label: 'Accept evaluation',
+    scope: 'Evaluation',
+  })
+  useKeyboardShortcut('1', () => onOverride(1), {
+    label: 'Override: Again',
+    scope: 'Evaluation',
+  })
+  useKeyboardShortcut('2', () => onOverride(3), {
+    label: 'Override: Hard',
+    scope: 'Evaluation',
+  })
+  useKeyboardShortcut('3', () => onOverride(4), {
+    label: 'Override: Good',
+    scope: 'Evaluation',
+  })
+  useKeyboardShortcut('4', () => onOverride(5), {
+    label: 'Override: Easy',
+    scope: 'Evaluation',
+  })
 
   return (
     <div className="space-y-3 animate-fade-in">

@@ -10,6 +10,7 @@ import { EvaluationResult } from './EvaluationResult'
 import { InlineAIExplanation } from './InlineAIExplanation'
 import { MathText } from '../MathText'
 import { trackContentInteraction } from '../../lib/effectivenessTracker'
+import { useKeyboardShortcut } from '../../lib/keyboard'
 import type { QueueItemHandlerProps } from './types'
 
 const CONCEPT_RATINGS = [
@@ -51,20 +52,25 @@ export function ConceptQuizInline({
     }
   }, [phase, evaluator.quality, evaluator.error])
 
-  // Keyboard shortcuts for concept quiz self-rating (1/2/3)
+  // Keyboard shortcuts for concept quiz self-rating
   const handleRateCqRef = useRef<((q: number) => void) | null>(null)
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (phase === 'self-rating' && revealed && !explanationCtx && !isSubmitting) {
-        const keyMap: Record<string, number> = { '1': 1, '2': 3, '3': 5 }
-        const quality = keyMap[e.key]
-        if (quality !== undefined && handleRateCqRef.current) { e.preventDefault(); handleRateCqRef.current(quality) }
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [phase, revealed, explanationCtx, isSubmitting])
+  const canRateConcept = phase === 'self-rating' && revealed && !explanationCtx && !isSubmitting
+
+  useKeyboardShortcut('1', () => handleRateCqRef.current?.(1), {
+    label: "Rate: Couldn't explain",
+    scope: 'Concept Quiz',
+    enabled: canRateConcept,
+  })
+  useKeyboardShortcut('2', () => handleRateCqRef.current?.(3), {
+    label: 'Rate: Struggled',
+    scope: 'Concept Quiz',
+    enabled: canRateConcept,
+  })
+  useKeyboardShortcut('3', () => handleRateCqRef.current?.(5), {
+    label: 'Rate: Could explain',
+    scope: 'Concept Quiz',
+    enabled: canRateConcept,
+  })
 
   // Early return AFTER all hooks
   if (!card) return <p className="text-sm text-[var(--text-muted)]">{t('queue.loadingConcept')}</p>

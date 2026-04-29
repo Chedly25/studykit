@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, lazy, Suspense } from 'react'
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react'
 import {
@@ -8,7 +8,12 @@ import {
   PanelLeftClose, PanelLeftOpen, Search, Settings,
   ClipboardCheck, CalendarDays, Scale,
   Home, PenSquare, History,
+  Sun, Moon, HelpCircle, Upload,
 } from 'lucide-react'
+import { useKeyboardShortcut } from '../lib/keyboard'
+import { useCommand, useRouteCommands } from '../lib/commands'
+import { useTheme } from '../hooks/useTheme'
+import { PageTransition } from './ui/motion'
 import { ThemeToggle } from './ThemeToggle'
 import { ExamProfileSelector } from './knowledge/ExamProfileSelector'
 const ChatPanel = lazy(() => import('./chat/ChatPanel').then(m => ({ default: m.ChatPanel })))
@@ -27,7 +32,7 @@ import { ErrorBoundary } from './ErrorBoundary'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { StreakAtRiskBanner } from './StreakAtRiskBanner'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
-import { ContextualAssistant } from './ContextualAssistant'
+import { Sidecar } from './sidecar/Sidecar'
 import { UpdatePrompt } from './UpdatePrompt'
 import { InstallPrompt } from './InstallPrompt'
 // ActionsMenu removed — features now in sidebar directly
@@ -53,6 +58,8 @@ export function Layout() {
   const { isCRFPA } = useProfileVertical()
   const { t } = useTranslation()
   const location = useLocation()
+  const navigate = useNavigate()
+  const { theme, toggleTheme } = useTheme()
   const isOnline = useOnlineStatus()
   const isChatPage =
     location.pathname === '/session' ||
@@ -83,29 +90,105 @@ export function Layout() {
 
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
 
-  // Global keyboard shortcuts
+  // ─── Command registry: register all routes + global actions ───
+  useRouteCommands()
+
+  useCommand({
+    id: 'action:open-search',
+    label: 'Open Command Palette',
+    group: 'Actions',
+    hint: '⌘ K',
+    icon: Search,
+    keywords: ['search', 'palette', 'find', 'cmd-k'],
+    perform: () => setSearchOpen(true),
+  })
+
+  useCommand({
+    id: 'action:open-chat',
+    label: 'Open AI Chat',
+    group: 'Actions',
+    icon: MessageCircle,
+    keywords: ['chat', 'ask', 'ai', 'tutor'],
+    perform: () => {
+      window.dispatchEvent(new CustomEvent('open-chat-panel'))
+    },
+  })
+
+  useCommand({
+    id: 'action:show-shortcuts',
+    label: 'Show Keyboard Shortcuts',
+    group: 'Actions',
+    hint: '?',
+    icon: HelpCircle,
+    keywords: ['shortcuts', 'keys', 'help', 'hotkeys'],
+    perform: () => setShortcutsOpen(true),
+  })
+
+  useCommand({
+    id: 'action:toggle-theme',
+    label: theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+    group: 'Actions',
+    icon: theme === 'dark' ? Sun : Moon,
+    keywords: ['theme', 'dark', 'light', 'mode', 'appearance'],
+    perform: toggleTheme,
+  })
+
+  useCommand({
+    id: 'action:upload-document',
+    label: 'Upload a Document',
+    group: 'Actions',
+    icon: Upload,
+    keywords: ['upload', 'document', 'add', 'pdf', 'source'],
+    perform: () => navigate('/sources'),
+  })
+
+  // ─── Global keyboard shortcuts ───
+  useKeyboardShortcut('cmd+k', () => setSearchOpen((prev) => !prev), {
+    label: 'Open command palette',
+    scope: 'Global',
+    allowInInput: true,
+  })
+
+  useKeyboardShortcut('?', () => setShortcutsOpen((prev) => !prev), {
+    label: 'Show keyboard shortcuts',
+    scope: 'Global',
+  })
+
+  // Vim-style "go" sequence shortcuts
+  useKeyboardShortcut('g d', () => navigate('/accueil'), {
+    label: 'Go to Dashboard',
+    scope: 'Navigate',
+  })
+  useKeyboardShortcut('g q', () => navigate('/queue'), {
+    label: 'Go to Daily Queue',
+    scope: 'Navigate',
+  })
+  useKeyboardShortcut('g l', () => navigate('/legal'), {
+    label: 'Go to Legal Oracle',
+    scope: 'Navigate',
+  })
+  useKeyboardShortcut('g b', () => navigate('/legal/bibliotheque'), {
+    label: 'Go to Bibliothèque',
+    scope: 'Navigate',
+  })
+  useKeyboardShortcut('g h', () => navigate('/historique'), {
+    label: 'Go to Historique',
+    scope: 'Navigate',
+  })
+  useKeyboardShortcut('g s', () => navigate('/settings'), {
+    label: 'Go to Settings',
+    scope: 'Navigate',
+  })
+
+  // Escape handler: priority routing across overlays.
+  // Kept as a manual listener because ordering across registered handlers is
+  // not deterministic — only one overlay should respond per Escape press.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Cmd+K — toggle search
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        setSearchOpen(prev => !prev)
-        return
-      }
-
-      // Escape — close overlays in priority order
-      if (e.key === 'Escape') {
-        if (shortcutsOpen) { setShortcutsOpen(false); return }
-        if (searchOpen) { setSearchOpen(false); return }
-        if (chatOpen) { setChatOpen(false); return }
-        return
-      }
-
-      // ? — show keyboard shortcuts (only when not typing in an input)
-      if (e.key === '?' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
-        e.preventDefault()
-        setShortcutsOpen(prev => !prev)
-      }
+      if (e.key !== 'Escape') return
+      if (shortcutsOpen) { setShortcutsOpen(false); return }
+      if (searchOpen) { setSearchOpen(false); return }
+      if (chatOpen) { setChatOpen(false); return }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
@@ -351,7 +434,7 @@ export function Layout() {
         )}
 
         {/* ─── Main content ───────────────────────────────────── */}
-        <main id="main-content" className={isChatPage ? 'flex-1 w-full min-w-0 pb-16 md:pb-0' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0 pb-16 md:pb-0'}>
+        <main id="main-content" className={isChatPage ? 'flex-1 w-full min-w-0 pb-16 md:pb-0 md:pr-14' : 'flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full min-w-0 pb-16 md:pb-0 md:pr-14'}>
           {!isOnline && (
             <div className="mb-4 px-4 py-2 rounded-lg bg-[var(--color-warning-bg)] border border-[var(--color-warning-border)] text-sm text-[var(--color-warning)] text-center">
               You're offline. Some features may not work.
@@ -361,7 +444,9 @@ export function Layout() {
             <StreakAtRiskBanner streak={streak} profileId={activeProfile.id} />
           )}
           <ErrorBoundary>
-            <Outlet />
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
           </ErrorBoundary>
         </main>
       </div>
@@ -402,9 +487,9 @@ export function Layout() {
         <BottomNav />
       </SignedIn>
 
-      {/* Contextual Floating Assistant */}
+      {/* Contextual sidecar (right rail, desktop only) */}
       <SignedIn>
-        <ContextualAssistant chatOpen={chatOpen} />
+        <Sidecar />
       </SignedIn>
 
       {/* Chat Panel (lazy-loaded) */}

@@ -10,6 +10,7 @@ import { EvaluationResult } from './EvaluationResult'
 import { InlineAIExplanation } from './InlineAIExplanation'
 import { MathText } from '../MathText'
 import { trackContentInteraction } from '../../lib/effectivenessTracker'
+import { useKeyboardShortcut } from '../../lib/keyboard'
 import type { QueueItemHandlerProps } from './types'
 
 const RATING_BUTTONS = [
@@ -129,34 +130,39 @@ export function FlashcardReviewInline({
     setPhase('self-rating')
   }
 
-  // Feature 1: Keyboard shortcuts ref
+  // Stable refs for the shortcut handlers
   const handleRateRef = useRef(handleRate)
   handleRateRef.current = handleRate
-  const phaseRef = useRef(phase)
-  phaseRef.current = phase
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      // Space-to-flip only in self-rating phase (answering phase needs space for textarea)
-      if (e.key === ' ' && !flipped && !explanationCtx && phaseRef.current === 'self-rating') {
-        e.preventDefault()
-        setFlipped(true)
-        return
-      }
-      // 1-4 shortcuts only in self-rating phase (evaluated phase has its own keyboard handler via EvaluationResult)
-      if (phaseRef.current !== 'self-rating') return
-      if (!flipped || explanationCtx || isSubmitting || nextInterval !== null) return
-      const keyMap: Record<string, number> = { '1': 1, '2': 3, '3': 4, '4': 5 }
-      const quality = keyMap[e.key]
-      if (quality) {
-        e.preventDefault()
-        handleRateRef.current(quality)
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [flipped, explanationCtx, isSubmitting, nextInterval])
+  const inSelfRating = phase === 'self-rating'
+  const canRate = inSelfRating && flipped && !explanationCtx && !isSubmitting && nextInterval === null
+  const canFlip = inSelfRating && !flipped && !explanationCtx
+
+  useKeyboardShortcut(' ', () => setFlipped(true), {
+    label: 'Flip flashcard',
+    scope: 'Flashcards',
+    enabled: canFlip,
+  })
+  useKeyboardShortcut('1', () => handleRateRef.current(1), {
+    label: 'Rate: Again',
+    scope: 'Flashcards',
+    enabled: canRate,
+  })
+  useKeyboardShortcut('2', () => handleRateRef.current(3), {
+    label: 'Rate: Hard',
+    scope: 'Flashcards',
+    enabled: canRate,
+  })
+  useKeyboardShortcut('3', () => handleRateRef.current(4), {
+    label: 'Rate: Good',
+    scope: 'Flashcards',
+    enabled: canRate,
+  })
+  useKeyboardShortcut('4', () => handleRateRef.current(5), {
+    label: 'Rate: Easy',
+    scope: 'Flashcards',
+    enabled: canRate,
+  })
 
   // Early returns AFTER all hooks to respect Rules of Hooks
   if (cards.length === 0) return <p className="text-sm text-[var(--text-muted)]">{t('queue.loadingCards')}</p>

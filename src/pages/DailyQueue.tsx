@@ -41,6 +41,7 @@ import { EmptyState } from '../components/EmptyState'
 import { BrandedLoader } from '../components/BrandedLoader'
 import { useSubscription } from '../hooks/useSubscription'
 import { useVoiceInput } from '../hooks/useVoiceInput'
+import { useKeyboardShortcut } from '../lib/keyboard'
 
 const SESSION_START_KEY = (profileId: string, date: string) => `session_start_${profileId}_${date}`
 const CRAM_KEY = (profileId: string) => `cramMode_${profileId}`
@@ -379,18 +380,18 @@ function DailyQueueContent() {
     skipItem(itemId)
   }, [skipItem])
 
-  // Global skip shortcut (S key)
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if ((e.key === 's' || e.key === 'S') && currentItem && !showCompletion && !showStartOverlay) {
-        e.preventDefault()
-        handleSkip(currentItem.id)
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [currentItem, showCompletion, showStartOverlay, handleSkip])
+  // Skip current item
+  useKeyboardShortcut(
+    's',
+    () => {
+      if (currentItem) handleSkip(currentItem.id)
+    },
+    {
+      label: 'Skip current item',
+      scope: 'Daily Queue',
+      enabled: !!currentItem && !showCompletion && !showStartOverlay,
+    },
+  )
 
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 

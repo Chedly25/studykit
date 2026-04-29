@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link } from 'react-router-dom'
 import { Loader2, Flag, ExternalLink, MessageCircle, Star } from 'lucide-react'
+import { useKeyboardShortcut } from '../../lib/keyboard'
 import { toast } from 'sonner'
 import { db } from '../../db'
 import { recomputeTopicMastery } from '../../lib/topicMastery'
@@ -63,24 +64,32 @@ export function ExerciseInline({
     }
   }, [phase, exerciseAI.error, exerciseAI.isStreaming, exerciseAI.quotaExceeded])
 
-  // Keyboard shortcuts for exercise self-rating (1/2/3) and continue (Enter)
+  // Keyboard shortcuts for exercise self-rating + continue
   const handleRateExRef = useRef<(score: number) => void>(() => {})
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (phase === 'self-rating' && !explanationCtx && !isSubmitting) {
-        if (!rated) {
-          const keyMap: Record<string, number> = { '1': 0.2, '2': 0.5, '3': 0.9 }
-          const score = keyMap[e.key]
-          if (score !== undefined) { e.preventDefault(); handleRateExRef.current(score) }
-        } else if (e.key === 'Enter') {
-          e.preventDefault(); onComplete(item.id)
-        }
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [phase, explanationCtx, isSubmitting, rated, item.id, onComplete])
+  const inExerciseRating = phase === 'self-rating' && !explanationCtx && !isSubmitting
+  const canRateExercise = inExerciseRating && !rated
+  const canContinueExercise = inExerciseRating && rated
+
+  useKeyboardShortcut('1', () => handleRateExRef.current(0.2), {
+    label: 'Rate: Wrong',
+    scope: 'Exercise',
+    enabled: canRateExercise,
+  })
+  useKeyboardShortcut('2', () => handleRateExRef.current(0.5), {
+    label: 'Rate: Partial',
+    scope: 'Exercise',
+    enabled: canRateExercise,
+  })
+  useKeyboardShortcut('3', () => handleRateExRef.current(0.9), {
+    label: 'Rate: Correct',
+    scope: 'Exercise',
+    enabled: canRateExercise,
+  })
+  useKeyboardShortcut('enter', () => onComplete(item.id), {
+    label: 'Continue to next item',
+    scope: 'Exercise',
+    enabled: canContinueExercise,
+  })
 
   // Early return AFTER all hooks
   if (!exercise) return <p className="text-sm text-[var(--text-muted)]">{t('queue.loadingExercise')}</p>
