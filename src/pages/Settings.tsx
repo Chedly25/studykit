@@ -4,14 +4,16 @@
  */
 import { useState, useRef, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2, Mail, Globe, Shield } from 'lucide-react'
+import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2, Mail, Globe, Shield, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth, useUser } from '@clerk/clerk-react'
 import { requestPermission, getNotificationStatus, registerServiceWorker } from '../lib/pushNotifications'
 import { useExamProfile } from '../hooks/useExamProfile'
+import { useProfileVertical } from '../hooks/useProfileVertical'
 import { useCloudSync } from '../hooks/useCloudSync'
 import { db } from '../db'
 import { exportProfileData, importProfileData, generateProgressReport, downloadBlob } from '../lib/dataExport'
+import { installCrfpaDemo } from '../db/seed/crfpaDemo'
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
@@ -22,11 +24,16 @@ function formatBytes(bytes: number): string {
 export default function Settings() {
   const { t, i18n } = useTranslation()
   const { getToken } = useAuth()
+  const { user } = useUser()
   const { activeProfile } = useExamProfile()
+  const { isCRFPA } = useProfileVertical()
+  const isDemoSeedAdmin = user?.primaryEmailAddress?.emailAddress === 'chedlyboukhris21@gmail.com'
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [exporting, setExporting] = useState(false)
   const [importing, setImporting] = useState(false)
   const [generatingReport, setGeneratingReport] = useState(false)
+  const [seeding, setSeeding] = useState(false)
+  const [confirmSeed, setConfirmSeed] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [notifStatus, setNotifStatus] = useState(() => getNotificationStatus())
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -178,6 +185,25 @@ export default function Settings() {
     }
   }
 
+  const handleSeedDemo = async () => {
+    if (!profileId) return
+    setSeeding(true)
+    setConfirmSeed(false)
+    setMessage(null)
+    try {
+      const report = await installCrfpaDemo({ profileId, wipeFirst: true })
+      const total = report.documents + report.coachingSessions + report.legalFiches + report.conversations + report.libraryReads + report.dailyLogs
+      setMessage({
+        type: 'success',
+        text: `Demo CRFPA installé : ${report.documents} cours, ${report.coachingSessions} entraînements, ${report.legalFiches} fiches, ${report.conversations} conversations Oracle, ${report.libraryReads} lectures, ${report.dailyLogs} jours de stats. ${total} entrées au total.`,
+      })
+    } catch (err) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Demo seed failed' })
+    } finally {
+      setSeeding(false)
+    }
+  }
+
   if (!activeProfile) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 text-center">
@@ -261,6 +287,55 @@ export default function Settings() {
               <p className="text-xs text-[var(--text-muted)]">{t('settings.downloadReportDesc')}</p>
             </div>
           </button>
+
+          {/* Demo CRFPA seed — gated to seed admin email + CRFPA profile */}
+          {isDemoSeedAdmin && isCRFPA && (
+            <>
+              <button
+                onClick={() => setConfirmSeed(true)}
+                disabled={seeding}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-50 text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
+                  {seeding ? <Loader2 className="w-5 h-5 text-[var(--accent-text)] animate-spin" /> : <Sparkles className="w-5 h-5 text-[var(--accent-text)]" />}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[var(--text-heading)]">Installer le jeu de démonstration CRFPA</p>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    Cours, entraînements corrigés, fiches, historique — comme un étudiant en milieu de préparation. <span className="text-[var(--color-warning)] font-medium">Efface les données existantes du profil.</span>
+                  </p>
+                </div>
+              </button>
+
+              {confirmSeed && (
+                <div className="rounded-xl border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] p-4 space-y-3">
+                  <div className="flex gap-2">
+                    <AlertTriangle className="w-5 h-5 text-[var(--color-warning)] shrink-0 mt-0.5" />
+                    <div className="text-sm text-[var(--text-body)]">
+                      <p className="font-semibold text-[var(--text-heading)] mb-1">Confirmer l'installation</p>
+                      <p>
+                        Toutes les données du profil <span className="font-medium">{activeProfile.name}</span> (documents, entraînements, fiches, conversations, statistiques) vont être supprimées et remplacées par le jeu de démonstration. Cette action est irréversible.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => setConfirmSeed(false)}
+                      className="px-3 py-1.5 rounded-lg text-sm text-[var(--text-body)] hover:bg-[var(--bg-input)] transition-colors"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={handleSeedDemo}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[var(--color-warning)] text-white hover:opacity-90 transition-opacity"
+                    >
+                      Effacer et installer
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
