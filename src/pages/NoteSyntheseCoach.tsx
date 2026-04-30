@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { Loader2, Menu, Trash2, X, FileCheck } from 'lucide-react'
-import { LegalPageTabs } from '../components/legal/LegalPageTabs'
+import { CoachPageHeader } from '../components/legal/CoachPageHeader'
 import { NoteSyntheseEditor } from '../components/legal/NoteSyntheseEditor'
 import { NoteSyntheseResults } from '../components/legal/NoteSyntheseResults'
 import { useNoteSyntheseCoach } from '../hooks/useNoteSyntheseCoach'
@@ -54,8 +54,7 @@ export default function NoteSyntheseCoach() {
           content="Entraînement à la note de synthèse CRFPA : dossier de documents réels, rédaction et correction sur 8 axes."
         />
       </Helmet>
-
-      <LegalPageTabs />
+      <CoachPageHeader kind="note-synthese" icon={FileCheck} />
 
       <div className="flex flex-1 min-h-0">
         <aside className="hidden md:flex flex-col w-64 border-r border-[var(--border-card)] shrink-0">

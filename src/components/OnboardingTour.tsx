@@ -1,38 +1,19 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, ChevronRight } from 'lucide-react'
 
 interface TourStep {
   target: string // data-tour attribute value
-  title: string
-  description: string
+  titleKey: string
+  descKey: string
 }
 
 const STEPS: TourStep[] = [
-  {
-    target: 'queue',
-    title: 'Your Daily Queue',
-    description: 'Start here each day — flashcards, exercises, and study tasks tailored to your exam.',
-  },
-  {
-    target: 'study',
-    title: 'Study Sessions',
-    description: 'Chat with your AI tutor, review concepts, and practice active recall.',
-  },
-  {
-    target: 'library',
-    title: 'Your Library',
-    description: 'Upload course materials, past exams, and notes — the AI will analyze them for you.',
-  },
-  {
-    target: 'progress',
-    title: 'Track Progress',
-    description: 'See your mastery levels, streaks, and knowledge gaps across all subjects.',
-  },
-  {
-    target: 'exams',
-    title: 'Practice Exams',
-    description: 'Simulate real exam conditions with AI-generated questions in your exam format.',
-  },
+  { target: 'queue',    titleKey: 'tour.queueTitle',    descKey: 'tour.queueDesc' },
+  { target: 'study',    titleKey: 'tour.studyTitle',    descKey: 'tour.studyDesc' },
+  { target: 'library',  titleKey: 'tour.libraryTitle',  descKey: 'tour.libraryDesc' },
+  { target: 'progress', titleKey: 'tour.progressTitle', descKey: 'tour.progressDesc' },
+  { target: 'exams',    titleKey: 'tour.examsTitle',    descKey: 'tour.examsDesc' },
 ]
 
 interface OnboardingTourProps {
@@ -40,6 +21,7 @@ interface OnboardingTourProps {
 }
 
 export function OnboardingTour({ profileId }: OnboardingTourProps) {
+  const { t } = useTranslation()
   const storageKey = `dashboard_tour_complete_${profileId}`
   const [step, setStep] = useState(0)
   const [visible, setVisible] = useState(false)
@@ -99,7 +81,7 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
         ref={tooltipRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Onboarding tour step"
+        aria-label={t('tour.ariaLabel')}
         className="absolute z-[91] pointer-events-auto glass-card shadow-xl rounded-xl p-4 w-72 animate-fade-in"
         style={{ top: pos.top, left: pos.left }}
       >
@@ -110,12 +92,12 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
         />
 
         <div className="flex items-start justify-between mb-2">
-          <h3 className="text-sm font-semibold text-[var(--text-heading)]">{current.title}</h3>
+          <h3 className="text-sm font-semibold text-[var(--text-heading)]">{t(current.titleKey)}</h3>
           <button onClick={dismiss} className="text-[var(--text-faint)] hover:text-[var(--text-muted)] -mt-1 -mr-1 p-1">
             <X size={14} />
           </button>
         </div>
-        <p className="text-xs text-[var(--text-muted)] mb-3 leading-relaxed">{current.description}</p>
+        <p className="text-xs text-[var(--text-muted)] mb-3 leading-relaxed">{t(current.descKey)}</p>
         <div className="flex items-center justify-between">
           <div className="flex gap-1">
             {STEPS.map((_, i) => (
@@ -129,13 +111,13 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
           </div>
           <div className="flex items-center gap-2">
             <button onClick={dismiss} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-body)]">
-              Skip
+              {t('tour.skip')}
             </button>
             <button
               onClick={next}
               className="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium btn-primary"
             >
-              {step === STEPS.length - 1 ? 'Done' : 'Next'}
+              {step === STEPS.length - 1 ? t('tour.done') : t('tour.next')}
               {step < STEPS.length - 1 && <ChevronRight size={12} />}
             </button>
           </div>

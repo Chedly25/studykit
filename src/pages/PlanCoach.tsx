@@ -1,6 +1,5 @@
 /**
  * CRFPA Plan Détaillé Coach page — composes:
- *  - shared tab bar (LegalPageTabs)
  *  - state-dependent body (idle picker / editor / grading spinner / results)
  *  - history sidebar with previously drafted plans
  */
@@ -8,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { GraduationCap, Menu, Trash2, X, ListTree } from 'lucide-react'
-import { LegalPageTabs } from '../components/legal/LegalPageTabs'
+import { CoachPageHeader } from '../components/legal/CoachPageHeader'
 import { PlanEditor } from '../components/legal/PlanEditor'
 import { PlanResults } from '../components/legal/PlanResults'
 import { usePlanCoach } from '../hooks/usePlanCoach'
@@ -57,8 +56,7 @@ export default function PlanCoach() {
           content="Entraînement au plan détaillé CRFPA : problématique, I/II, sous-parties — correction méthodologique sur 6 axes."
         />
       </Helmet>
-
-      <LegalPageTabs />
+      <CoachPageHeader kind="plan" icon={ListTree} />
 
       <div className="flex flex-1 min-h-0">
         <aside className="hidden md:flex flex-col w-64 border-r border-[var(--border-card)] shrink-0">

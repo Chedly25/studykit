@@ -1179,6 +1179,8 @@
     "welcomeStep3": "Your weekly schedule",
     "parsingFile": "Reading your document...",
     "uploadPrompt": "Click to upload PDFs, syllabi, or course materials",
+    "filesSelected": "{{count}} file selected",
+    "filesSelected_plural": "{{count}} files selected",
     "welcomeStart": "Let's get started",
     "welcomeSkip": "Skip and explore on your own",
     "manualSetupTitle": "Set up manually",
@@ -1193,6 +1195,26 @@
   "streak": {
     "atRiskTitle": "Your {{count}}-day streak is at risk",
     "atRiskAction": "Study now"
+  },
+  "tour": {
+    "ariaLabel": "Onboarding tour step",
+    "skip": "Skip",
+    "next": "Next",
+    "done": "Done",
+    "queueTitle": "Your Daily Queue",
+    "queueDesc": "Start here each day — flashcards, exercises, and study tasks tailored to your exam.",
+    "studyTitle": "Study Sessions",
+    "studyDesc": "Chat with your AI tutor, review concepts, and practice active recall.",
+    "libraryTitle": "Your Library",
+    "libraryDesc": "Upload course materials, past exams, and notes — the AI will analyze them for you.",
+    "progressTitle": "Track Progress",
+    "progressDesc": "See your mastery levels, streaks, and knowledge gaps across all subjects.",
+    "examsTitle": "Practice Exams",
+    "examsDesc": "Simulate real exam conditions with AI-generated questions in your exam format."
+  },
+  "errors": {
+    "retry": "Retry",
+    "useManualSetup": "Use manual setup instead"
   },
   "hints": {
     "queueTitle": "Your Daily Study Queue",

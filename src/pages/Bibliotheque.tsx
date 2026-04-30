@@ -10,7 +10,6 @@ import {
   Library, BookOpen, Scale, ScrollText, FileText, BookMarked, CheckCircle2,
 } from 'lucide-react'
 
-import { LegalPageTabs } from '../components/legal/LegalPageTabs'
 import { LIBRARY_MANIFEST } from '../lib/library/manifest.generated'
 import type { LibraryCategory, LibraryEntry } from '../lib/library/types'
 import { LibraryItemList } from '../components/legal/library/LibraryItemList'
@@ -93,8 +92,6 @@ export default function Bibliotheque() {
           content="Codes, grands arrêts, jurisprudence du Conseil constitutionnel, sujets d'examen CRFPA et textes fondamentaux — tout dans une seule bibliothèque consultable hors ligne."
         />
       </Helmet>
-
-      <LegalPageTabs />
 
       <div className="flex flex-1 min-h-0">
         {/* Left rail — categories */}

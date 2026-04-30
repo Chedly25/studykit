@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { Loader2, Menu, Trash2, X, FileText } from 'lucide-react'
-import { LegalPageTabs } from '../components/legal/LegalPageTabs'
+import { CoachPageHeader } from '../components/legal/CoachPageHeader'
 import { FicheArretEditor } from '../components/legal/FicheArretEditor'
 import { FicheArretResults } from '../components/legal/FicheArretResults'
 import { useFicheArretCoach } from '../hooks/useFicheArretCoach'
@@ -55,8 +55,7 @@ export default function FicheArretCoach() {
           content="Entraînement à la fiche d'arrêt CRFPA sur des décisions réelles de la Cour de cassation."
         />
       </Helmet>
-
-      <LegalPageTabs />
+      <CoachPageHeader kind="fiche" icon={FileText} />
 
       <div className="flex flex-1 min-h-0">
         <aside className="hidden md:flex flex-col w-64 border-r border-[var(--border-card)] shrink-0">

@@ -3,7 +3,7 @@
  * LLM-powered chat flow for first-time users.
  * Falls back to a guided setup message when AI is unavailable.
  */
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
@@ -228,7 +228,7 @@ function FileUploadWidget({ onSubmit, disabled }: { onSubmit: (result: string) =
           {isParsing
             ? t('onboarding.parsingFile')
             : files.length > 0
-              ? `${files.length} file${files.length > 1 ? 's' : ''} selected`
+              ? t('onboarding.filesSelected', { count: files.length })
               : t('onboarding.uploadPrompt')}
         </p>
         <input
@@ -406,6 +406,7 @@ function SummaryWidget({ data, onDashboard, onStudy, disabled }: {
 // ─── Error banner ─────────────────────────────────────────
 
 function ErrorBanner({ message, onRetry, onManualSetup }: { message: string; onRetry: () => void; onManualSetup?: () => void }) {
+  const { t } = useTranslation()
   return (
     <div className="bg-[var(--color-error-bg)] border border-[var(--color-error-border)] rounded-xl px-4 py-3 mb-4">
       <div className="flex items-center gap-3">
@@ -417,14 +418,14 @@ function ErrorBanner({ message, onRetry, onManualSetup }: { message: string; onR
           onClick={onRetry}
           className="flex items-center gap-1.5 text-sm font-medium text-[var(--color-error)] hover:underline"
         >
-          <RefreshCw className="w-3.5 h-3.5" /> Retry
+          <RefreshCw className="w-3.5 h-3.5" /> {t('errors.retry')}
         </button>
         {onManualSetup && (
           <button
             onClick={onManualSetup}
             className="text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-body)] hover:underline"
           >
-            Use manual setup instead
+            {t('errors.useManualSetup')}
           </button>
         )}
       </div>
@@ -434,12 +435,13 @@ function ErrorBanner({ message, onRetry, onManualSetup }: { message: string; onR
 
 // ─── Manual setup form (fallback + skip) ──────────────────
 
-const EXAM_TYPES: { value: ExamType; label: string }[] = [
-  { value: 'university-course', label: 'University Course' },
-  { value: 'professional-exam', label: 'Professional Exam' },
-  { value: 'graduate-research', label: 'Graduate & PhD' },
-  { value: 'language-learning', label: 'Language Learning' },
-  { value: 'custom', label: 'Custom' },
+// Labels resolved via t(`goalTypes.${value}`) — keep this list aligned with fr.json/en.json `goalTypes`.
+const EXAM_TYPES: ExamType[] = [
+  'university-course',
+  'professional-exam',
+  'graduate-research',
+  'language-learning',
+  'custom',
 ]
 
 function ManualSetupForm({ onReset, navigate, userId }: {
@@ -488,6 +490,7 @@ function ManualSetupForm({ onReset, navigate, userId }: {
       }))
 
       sessionStorage.removeItem('onboarding_state_v2')
+      sessionStorage.removeItem('onboarding_vertical_v1')
       navigate('/dashboard', { replace: true })
     } catch {
       setIsSubmitting(false)
@@ -535,7 +538,7 @@ function ManualSetupForm({ onReset, navigate, userId }: {
               className="select-field w-full"
             >
               {EXAM_TYPES.map(et => (
-                <option key={et.value} value={et.value}>{et.label}</option>
+                <option key={et} value={et}>{t(`goalTypes.${et}`)}</option>
               ))}
             </select>
           </div>
@@ -732,10 +735,25 @@ export default function Onboarding() {
   const [showManualSetup, setShowManualSetup] = useState(false)
 
   // Vertical fork: null = picker visible. Once set, we proceed with that flow.
-  // If the LLM chat has already produced messages (returning user), skip the picker.
-  const [vertical, setVertical] = useState<ProfileVertical | null>(
-    () => (state.displayMessages.length > 0 ? 'generic' : null),
-  )
+  // Persisted in sessionStorage so a mid-flow refresh keeps the user on the
+  // same path (CRFPA / CPGE / generic) instead of forcing 'generic' the moment
+  // any LLM message exists in onboarding state — that was a bug for users who
+  // started the generic chat by accident and then picked CRFPA later.
+  const VERTICAL_STORAGE_KEY = 'onboarding_vertical_v1'
+  const [vertical, setVerticalRaw] = useState<ProfileVertical | null>(() => {
+    try {
+      const saved = sessionStorage.getItem(VERTICAL_STORAGE_KEY)
+      if (saved === 'crfpa' || saved === 'cpge' || saved === 'generic') return saved
+    } catch { /* noop */ }
+    return null
+  })
+  const setVertical = useCallback((v: ProfileVertical | null) => {
+    setVerticalRaw(v)
+    try {
+      if (v === null) sessionStorage.removeItem(VERTICAL_STORAGE_KEY)
+      else sessionStorage.setItem(VERTICAL_STORAGE_KEY, v)
+    } catch { /* noop */ }
+  }, [])
 
   // Show welcome screen only for fresh onboarding (no messages yet)
   const [showWelcome, setShowWelcome] = useState(

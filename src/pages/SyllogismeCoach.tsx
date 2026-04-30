@@ -1,6 +1,5 @@
 /**
  * CRFPA Syllogisme Coach — the page composes:
- *  - shared tab bar (LegalPageTabs)
  *  - state-dependent body (idle picker / editor / grading spinner / results)
  *  - history sidebar (previously generated scenarios)
  */
@@ -8,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { Loader2, Menu, Trash2, X, PenSquare } from 'lucide-react'
-import { LegalPageTabs } from '../components/legal/LegalPageTabs'
+import { CoachPageHeader } from '../components/legal/CoachPageHeader'
 import { SyllogismeEditor } from '../components/legal/SyllogismeEditor'
 import { SyllogismeResults } from '../components/legal/SyllogismeResults'
 import { useSyllogismeCoach } from '../hooks/useSyllogismeCoach'
@@ -66,8 +65,7 @@ export default function SyllogismeCoach() {
           content="Entraînement au syllogisme juridique CRFPA : majeure, mineure, conclusion — avec correction méthodologique."
         />
       </Helmet>
-
-      <LegalPageTabs />
+      <CoachPageHeader kind="syllogisme" icon={PenSquare} />
 
       <div className="flex flex-1 min-h-0">
         {/* History sidebar (desktop) */}

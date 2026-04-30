@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { GraduationCap, Menu, Mic2, Trash2, X } from 'lucide-react'
-import { LegalPageTabs } from '../components/legal/LegalPageTabs'
+import { CoachPageHeader } from '../components/legal/CoachPageHeader'
 import { GrandOralBrief } from '../components/legal/GrandOralBrief'
 import { GrandOralSessionLive } from '../components/legal/GrandOralSessionLive'
 import { GrandOralResults } from '../components/legal/GrandOralResults'
@@ -72,8 +72,7 @@ export default function GrandOralCoach() {
           content="Entraînement au Grand Oral CRFPA : simulation vocale avec un jury IA, 15 min d'exposé + 30 min de questions, correction sur 4 axes."
         />
       </Helmet>
-
-      <LegalPageTabs />
+      <CoachPageHeader kind="grand-oral" icon={Mic2} />
 
       <div className="flex flex-1 min-h-0">
         {/* History sidebar (desktop) */}

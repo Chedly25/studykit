@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Flame, X, ArrowRight } from 'lucide-react'
+import { useProfileVertical } from '../hooks/useProfileVertical'
 
 interface Props {
   streak: number
@@ -28,9 +29,13 @@ function dismiss(profileId: string) {
 
 export function StreakAtRiskBanner({ streak, profileId }: Props) {
   const { t } = useTranslation()
+  const { isCRFPA } = useProfileVertical()
   const [dismissed, setDismissed] = useState(() => isDismissedToday(profileId))
 
   if (dismissed || streak <= 0) return null
+
+  // CRFPA users have no /queue — their daily action lives on /accueil.
+  const ctaTarget = isCRFPA ? '/accueil' : '/queue'
 
   return (
     <div className="max-w-2xl mx-auto px-4 pt-4 animate-slide-up">
@@ -41,7 +46,7 @@ export function StreakAtRiskBanner({ streak, profileId }: Props) {
             {t('streak.atRiskTitle', { count: streak })}
           </p>
         </div>
-        <Link to="/queue" className="btn-primary px-3 py-1.5 text-xs shrink-0 flex items-center gap-1">
+        <Link to={ctaTarget} className="btn-primary px-3 py-1.5 text-xs shrink-0 flex items-center gap-1">
           {t('streak.atRiskAction')} <ArrowRight className="w-3 h-3" />
         </Link>
         <button

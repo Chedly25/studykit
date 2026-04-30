@@ -6,11 +6,12 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { Sparkles } from 'lucide-react'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
+import { useProfileVertical } from '../hooks/useProfileVertical'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useDailyQueue } from '../hooks/useDailyQueue'
 import { NewUserDashboard } from '../components/dashboard/NewUserDashboard'
@@ -20,6 +21,7 @@ export default function Dashboard() {
   const { t } = useTranslation()
   const { user } = useUser()
   const { activeProfile } = useExamProfile()
+  const { isCRFPA } = useProfileVertical()
   const profileId = activeProfile?.id
   const { subjects, topics, streak } = useKnowledgeGraph(profileId)
   const { queue: dailyQueue } = useDailyQueue(profileId)
@@ -96,6 +98,11 @@ export default function Dashboard() {
     }
     return () => clearTimeout(timer)
   }, [isNewUser, profileId])
+
+  // CRFPA users have their own home — redirect away from the generic dashboard.
+  if (activeProfile && isCRFPA) {
+    return <Navigate to="/accueil" replace />
+  }
 
   // No profile → create one
   if (!activeProfile) {

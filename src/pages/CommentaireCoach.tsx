@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { Loader2, Menu, Trash2, X, BookMarked } from 'lucide-react'
-import { LegalPageTabs } from '../components/legal/LegalPageTabs'
+import { CoachPageHeader } from '../components/legal/CoachPageHeader'
 import { CommentaireEditor } from '../components/legal/CommentaireEditor'
 import { CommentaireResults } from '../components/legal/CommentaireResults'
 import { useCommentaireCoach } from '../hooks/useCommentaireCoach'
@@ -54,8 +54,7 @@ export default function CommentaireCoach() {
           content="Entraînement au commentaire d'arrêt CRFPA : introduction + plan, sur décisions réelles de la Cour de cassation."
         />
       </Helmet>
-
-      <LegalPageTabs />
+      <CoachPageHeader kind="commentaire" icon={BookMarked} />
 
       <div className="flex flex-1 min-h-0">
         <aside className="hidden md:flex flex-col w-64 border-r border-[var(--border-card)] shrink-0">

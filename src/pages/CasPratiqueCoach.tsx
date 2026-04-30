@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { Loader2, Menu, Trash2, X, Scale } from 'lucide-react'
-import { LegalPageTabs } from '../components/legal/LegalPageTabs'
+import { CoachPageHeader } from '../components/legal/CoachPageHeader'
 import { CasPratiqueSetup } from '../components/legal/CasPratiqueSetup'
 import { CasPratiqueEditor } from '../components/legal/CasPratiqueEditor'
 import { CasPratiqueResults } from '../components/legal/CasPratiqueResults'
@@ -54,8 +54,7 @@ export default function CasPratiqueCoach() {
           content="Entraînement au cas pratique CRFPA : consultation juridique sur 20, sujets générés à partir d'un pool de références réelles vérifiées."
         />
       </Helmet>
-
-      <LegalPageTabs />
+      <CoachPageHeader kind="cas-pratique" icon={Scale} />
 
       <div className="flex flex-1 min-h-0">
         <aside className="hidden md:flex flex-col w-64 border-r border-[var(--border-card)] shrink-0">

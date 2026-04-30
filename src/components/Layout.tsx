@@ -278,18 +278,33 @@ export function Layout() {
                 <Search size={18} />
               </button>
               <BackgroundJobsIndicator />
-              <button
-                onClick={() => setChatOpen(!chatOpen)}
-                className={`p-2 rounded-lg transition-colors ${
-                  chatOpen
-                    ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
-                    : 'text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)]'
-                }`}
-                title={t('nav.aiChat')}
-                aria-label="AI Chat"
-              >
-                <MessageCircle size={18} />
-              </button>
+              {isCRFPA ? (
+                <Link
+                  to="/legal"
+                  className={`p-2 rounded-lg transition-colors ${
+                    location.pathname.startsWith('/legal')
+                      ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)]'
+                  }`}
+                  title="Oracle"
+                  aria-label="Oracle"
+                >
+                  <Scale size={18} />
+                </Link>
+              ) : (
+                <button
+                  onClick={() => setChatOpen(!chatOpen)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    chatOpen
+                      ? 'bg-[var(--accent-bg)] text-[var(--accent-text)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--accent-text)] hover:bg-[var(--bg-input)]'
+                  }`}
+                  title={t('nav.aiChat')}
+                  aria-label="AI Chat"
+                >
+                  <MessageCircle size={18} />
+                </button>
+              )}
             </SignedIn>
             <ThemeToggle />
             <SignedIn>
@@ -510,8 +525,8 @@ export function Layout() {
       {/* Keyboard Shortcuts */}
       {shortcutsOpen && <KeyboardShortcutsModal onClose={() => setShortcutsOpen(false)} />}
 
-      {/* Onboarding Tour */}
-      {activeProfile && <OnboardingTour profileId={activeProfile.id} />}
+      {/* Onboarding Tour — skipped for CRFPA users (the tour is generic-vertical only). */}
+      {activeProfile && !isCRFPA && <OnboardingTour profileId={activeProfile.id} />}
 
       {/* PWA prompts */}
       <UpdatePrompt />

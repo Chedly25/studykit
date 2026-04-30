@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { GraduationCap, Menu, Trash2, X, NotebookPen } from 'lucide-react'
-import { LegalPageTabs } from '../components/legal/LegalPageTabs'
 import { LegalFicheSetup } from '../components/legal/LegalFicheSetup'
 import { LegalFicheViewer } from '../components/legal/LegalFicheViewer'
 import { LegalFicheEditor } from '../components/legal/LegalFicheEditor'
@@ -61,8 +60,6 @@ export default function LegalFicheCoach() {
           content="Fiches de révision CRFPA générées à partir des codes, de la jurisprudence et de tes cours, avec actualités vérifiées."
         />
       </Helmet>
-
-      <LegalPageTabs />
 
       <div className="flex flex-1 min-h-0">
         <aside className="hidden md:flex flex-col w-64 border-r border-[var(--border-card)] shrink-0">

@@ -10,11 +10,12 @@
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, Navigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import { SkipForward, CheckCircle2, BookOpen, ListChecks, Zap, X, AlertTriangle, BarChart3, Lightbulb, RefreshCw, Link2, Sparkles } from 'lucide-react'
 import { db } from '../db'
 import { useExamProfile } from '../hooks/useExamProfile'
+import { useProfileVertical } from '../hooks/useProfileVertical'
 import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { useDailyQueue } from '../hooks/useDailyQueue'
 import { useStudySession } from '../hooks/useStudySession'
@@ -67,6 +68,7 @@ function DailyQueueContent() {
   const navigate = useNavigate()
   const { getToken } = useAuth()
   const { activeProfile } = useExamProfile()
+  const { isCRFPA } = useProfileVertical()
   const profileId = activeProfile?.id
   const { topics, streak, weeklyHours } = useKnowledgeGraph(profileId)
   const { startSession, endSession } = useStudySession(profileId)
@@ -408,6 +410,11 @@ function DailyQueueContent() {
       pct: (count / totalCount) * 100,
     }))
   }, [completedCount, totalCount])
+
+  // CRFPA users have their own home — the generic queue (flashcards/exercises) is not their workflow.
+  if (activeProfile && isCRFPA) {
+    return <Navigate to="/accueil" replace />
+  }
 
   if (!activeProfile) {
     return (

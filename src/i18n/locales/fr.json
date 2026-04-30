@@ -1179,6 +1179,8 @@
     "welcomeStep3": "Votre emploi du temps hebdomadaire",
     "parsingFile": "Lecture de votre document...",
     "uploadPrompt": "Cliquez pour importer des PDF, programmes ou supports de cours",
+    "filesSelected": "{{count}} fichier sélectionné",
+    "filesSelected_plural": "{{count}} fichiers sélectionnés",
     "welcomeStart": "C'est parti",
     "welcomeSkip": "Passer et explorer par vous-même",
     "manualSetupTitle": "Configuration manuelle",
@@ -1193,6 +1195,26 @@
   "streak": {
     "atRiskTitle": "Votre série de {{count}} jours est en danger",
     "atRiskAction": "Étudier maintenant"
+  },
+  "tour": {
+    "ariaLabel": "Visite guidée — étape",
+    "skip": "Passer",
+    "next": "Suivant",
+    "done": "Terminé",
+    "queueTitle": "Votre file du jour",
+    "queueDesc": "Commencez ici chaque jour — cartes mémoire, exercices et tâches d'étude adaptées à votre examen.",
+    "studyTitle": "Sessions d'étude",
+    "studyDesc": "Discutez avec votre tuteur IA, révisez les concepts et pratiquez le rappel actif.",
+    "libraryTitle": "Votre bibliothèque",
+    "libraryDesc": "Importez vos cours, examens passés et notes — l'IA les analyse pour vous.",
+    "progressTitle": "Suivi de progression",
+    "progressDesc": "Visualisez votre maîtrise, vos séries et vos lacunes sur toutes les matières.",
+    "examsTitle": "Examens blancs",
+    "examsDesc": "Simulez les conditions réelles d'examen avec des questions générées par l'IA dans votre format."
+  },
+  "errors": {
+    "retry": "Réessayer",
+    "useManualSetup": "Utiliser la configuration manuelle"
   },
   "hints": {
     "queueTitle": "Votre file d'étude quotidienne",
