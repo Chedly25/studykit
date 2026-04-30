@@ -239,8 +239,10 @@ export default function CRFPAAtelier() {
     notesSyntheseCount: notesSynthese.length,
   }), [recentDocs.length, syllogismes.length, fiches.length, plans.length, commentaires.length, casPratiques.length, notesSynthese.length])
 
-  // Non-CRFPA users should not land here
-  if (!isCRFPA) return <Navigate to="/dashboard" replace />
+  // Non-CRFPA users should not land here. Guard on `activeProfile` so the
+  // first render (before Dexie has hydrated) doesn't bounce CRFPA users back
+  // to /dashboard — that creates a redirect loop with Dashboard.tsx.
+  if (activeProfile && !isCRFPA) return <Navigate to="/dashboard" replace />
 
   const firstName = user?.firstName
   const showCountdown = daysUntilExam !== null && daysUntilExam > 0 && daysUntilExam <= 120

@@ -186,7 +186,10 @@ export default function CRFPAHistorique() {
     return filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   }, [syllogismes, plans, fiches, commentaires, casPratiques, notesSynthese, legalFichesList, filter])
 
-  if (!isCRFPA) return <Navigate to="/dashboard" replace />
+  // Wait for `activeProfile` to load before deciding — otherwise the first
+  // render (Dexie not hydrated) bounces CRFPA users to /dashboard and creates
+  // a redirect loop with Dashboard.tsx's CRFPA redirect.
+  if (activeProfile && !isCRFPA) return <Navigate to="/dashboard" replace />
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 animate-fade-in">
