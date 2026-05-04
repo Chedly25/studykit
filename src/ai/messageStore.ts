@@ -5,19 +5,19 @@ import { db } from '../db'
 import type { Conversation, ChatMessage } from '../db/schema'
 import type { Message } from './types'
 
-export async function createConversation(examProfileId: string, title = 'New Conversation'): Promise<string> {
-  const id = crypto.randomUUID()
+export async function createConversation(examProfileId: string, title = 'New Conversation', id?: string): Promise<string> {
+  const convId = id ?? crypto.randomUUID()
   const now = new Date().toISOString()
 
   const conversation: Conversation = {
-    id,
+    id: convId,
     examProfileId,
     title,
     createdAt: now,
     updatedAt: now,
   }
   await db.conversations.put(conversation)
-  return id
+  return convId
 }
 
 export async function getConversations(examProfileId: string): Promise<Conversation[]> {

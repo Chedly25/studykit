@@ -1,0 +1,1 @@
+export { CompanionWidget } from './CompanionWidget'

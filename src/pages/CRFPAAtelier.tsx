@@ -15,6 +15,7 @@ import { PenSquare, ListTree, FileText, BookMarked, Scale, FolderOpen, RotateCcw
 import { useExamProfile } from '../hooks/useExamProfile'
 import { useProfileVertical } from '../hooks/useProfileVertical'
 import { useActiveJobs } from '../hooks/useActiveJobs'
+import { CompanionWidget } from '../components/companion'
 import { listSyllogismeSessions, type SyllogismeSessionView } from '../ai/coaching/syllogismeStore'
 import { listPlanSessions, type PlanSessionView } from '../ai/coaching/planStore'
 import { listFicheSessions, type FicheSessionView } from '../ai/coaching/ficheArretStore'
@@ -641,6 +642,13 @@ export default function CRFPAAtelier() {
           </div>
         </div>
       )}
+
+      {/* Companion */}
+      <CompanionWidget
+        examProfileId={examProfileId}
+        currentPage="/accueil"
+        mode="floating"
+      />
     </div>
   )
 }
