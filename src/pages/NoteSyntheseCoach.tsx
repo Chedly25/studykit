@@ -11,6 +11,7 @@ import { NoteSyntheseEditor } from '../components/legal/NoteSyntheseEditor'
 import { NoteSyntheseResults } from '../components/legal/NoteSyntheseResults'
 import { useNoteSyntheseCoach } from '../hooks/useNoteSyntheseCoach'
 import type { NoteSyntheseSessionView } from '../ai/coaching/noteSyntheseStore'
+import { useReportExerciseToCompanion } from '../hooks/useReportExerciseToCompanion'
 
 export default function NoteSyntheseCoach() {
   const {
@@ -31,6 +32,8 @@ export default function NoteSyntheseCoach() {
     reset,
     cancel,
   } = useNoteSyntheseCoach()
+
+  useReportExerciseToCompanion('synthese', '/legal/synthese', task)
 
   const [historyOpen, setHistoryOpen] = useState(false)
 

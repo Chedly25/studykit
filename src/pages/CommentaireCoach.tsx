@@ -11,6 +11,7 @@ import { CommentaireEditor } from '../components/legal/CommentaireEditor'
 import { CommentaireResults } from '../components/legal/CommentaireResults'
 import { useCommentaireCoach } from '../hooks/useCommentaireCoach'
 import { FICHE_CHAMBERS } from '../ai/prompts/ficheArretPrompts'
+import { useReportExerciseToCompanion } from '../hooks/useReportExerciseToCompanion'
 
 export default function CommentaireCoach() {
   const {
@@ -30,6 +31,8 @@ export default function CommentaireCoach() {
     reset,
     cancel,
   } = useCommentaireCoach()
+
+  useReportExerciseToCompanion('commentaire', '/legal/commentaire', task)
 
   const [chamberId, setChamberId] = useState<string>(FICHE_CHAMBERS[0].id)
   const [historyOpen, setHistoryOpen] = useState(false)

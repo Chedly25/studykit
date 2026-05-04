@@ -35,6 +35,7 @@ import { useKnowledgeGraph } from '../hooks/useKnowledgeGraph'
 import { Sidecar, isSidecarHidden } from './sidecar/Sidecar'
 import { UpdatePrompt } from './UpdatePrompt'
 import { InstallPrompt } from './InstallPrompt'
+import { CompanionWidget } from './companion'
 // ActionsMenu removed — features now in sidebar directly
 import { useJobCompletionToasts } from '../hooks/useJobCompletionToasts'
 import { useWeeklyDigest } from '../hooks/useWeeklyDigest'
@@ -534,6 +535,17 @@ export function Layout() {
 
       {/* GDPR Consent Banner */}
       <CookieConsent />
+
+      {/* Companion — CRFPA répétiteur, everywhere */}
+      <SignedIn>
+        {isCRFPA && activeProfile && (
+          <CompanionWidget
+            examProfileId={activeProfile.id}
+            currentPage={location.pathname}
+            mode="floating"
+          />
+        )}
+      </SignedIn>
     </div>
   )
 }

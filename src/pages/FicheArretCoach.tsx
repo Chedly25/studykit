@@ -11,6 +11,7 @@ import { FicheArretEditor } from '../components/legal/FicheArretEditor'
 import { FicheArretResults } from '../components/legal/FicheArretResults'
 import { useFicheArretCoach } from '../hooks/useFicheArretCoach'
 import { FICHE_CHAMBERS } from '../ai/prompts/ficheArretPrompts'
+import { useReportExerciseToCompanion } from '../hooks/useReportExerciseToCompanion'
 
 export default function FicheArretCoach() {
   const {
@@ -30,6 +31,8 @@ export default function FicheArretCoach() {
     reset,
     cancel,
   } = useFicheArretCoach()
+
+  useReportExerciseToCompanion('fiche', '/legal/fiche', task)
 
   const [chamberId, setChamberId] = useState<string>(FICHE_CHAMBERS[0].id)
   const [historyOpen, setHistoryOpen] = useState(false)

@@ -13,8 +13,7 @@ import { SyllogismeResults } from '../components/legal/SyllogismeResults'
 import { useSyllogismeCoach } from '../hooks/useSyllogismeCoach'
 import { SYLLOGISME_THEMES } from '../ai/prompts/syllogismePrompts'
 import type { SyllogismeDifficulty } from '../ai/coaching/types'
-import { CompanionWidget } from '../components/companion'
-import { useExamProfile } from '../hooks/useExamProfile'
+import { useReportExerciseToCompanion } from '../hooks/useReportExerciseToCompanion'
 
 const DIFFICULTIES: Array<{ id: SyllogismeDifficulty; label: string; hint: string }> = [
   { id: 'beginner', label: 'Débutant', hint: '1 article, qualification claire' },
@@ -23,7 +22,6 @@ const DIFFICULTIES: Array<{ id: SyllogismeDifficulty; label: string; hint: strin
 ]
 
 export default function SyllogismeCoach() {
-  const { activeProfile } = useExamProfile()
   const {
     phase,
     task,
@@ -45,6 +43,9 @@ export default function SyllogismeCoach() {
   const [themeId, setThemeId] = useState<string>(SYLLOGISME_THEMES[0].id)
   const [difficulty, setDifficulty] = useState<SyllogismeDifficulty>('beginner')
   const [historyOpen, setHistoryOpen] = useState(false)
+
+  // Report exercise context to the companion widget
+  useReportExerciseToCompanion('syllogisme', '/legal/syllogisme', task)
 
   // Deep-link: ?session=ID auto-loads that session on mount (once per ID).
   const [searchParams, setSearchParams] = useSearchParams()
@@ -173,14 +174,6 @@ export default function SyllogismeCoach() {
         </div>
       </div>
 
-      {/* Companion — contextual help for this exercise */}
-      <CompanionWidget
-        examProfileId={activeProfile?.id}
-        currentPage="/legal/syllogisme"
-        currentExerciseType="syllogisme"
-        currentExerciseTask={task ? JSON.stringify({ theme: task.theme, difficulty: task.difficulty, scenario: task.scenario, question: task.question }) : undefined}
-        mode="floating"
-      />
     </div>
   )
 }

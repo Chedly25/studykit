@@ -15,6 +15,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, Send, MessageCircle, Sparkles } from 'lucide-react'
 import { useCompanion } from '../../hooks/useCompanion'
+import { useCompanionExerciseStorage } from '../../hooks/useCompanionExerciseStorage'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { CompanionSuggestion } from '../../hooks/useCompanion'
@@ -22,27 +23,25 @@ import type { CompanionSuggestion } from '../../hooks/useCompanion'
 interface Props {
   examProfileId: string | undefined
   currentPage?: string
-  currentExerciseType?: 'syllogisme' | 'plan' | 'fiche' | 'commentaire' | 'cas-pratique' | 'synthese' | 'grand-oral' | null
-  currentExerciseTask?: string
   mode?: 'embedded' | 'floating'
 }
 
 export function CompanionWidget({
   examProfileId,
   currentPage,
-  currentExerciseType,
-  currentExerciseTask,
   mode = 'embedded',
 }: Props) {
   const [expanded, setExpanded] = useState(mode === 'embedded')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const exerciseCtx = useCompanionExerciseStorage()
+
   const companion = useCompanion({
     examProfileId,
     currentPage,
-    currentExerciseType,
-    currentExerciseTask,
+    currentExerciseType: exerciseCtx?.exerciseType ?? null,
+    currentExerciseTask: exerciseCtx?.taskJson,
   })
 
   const { messages, isLoading, streamingText, error, suggestions, sendMessage, cancel, clearConversation } = companion

@@ -15,6 +15,7 @@ import { useGrandOralCoach } from '../hooks/useGrandOralCoach'
 import { listAvailableThemes } from '../ai/coaching/grandOralCoach'
 import type { GrandOralSujetType } from '../ai/prompts/grandOralPrompts'
 import type { GrandOralSessionView } from '../ai/coaching/grandOralStore'
+import { useReportExerciseToCompanion } from '../hooks/useReportExerciseToCompanion'
 
 const TYPE_OPTIONS: Array<{ value: GrandOralSujetType | ''; label: string }> = [
   { value: '', label: 'Tous les types' },
@@ -40,6 +41,8 @@ export default function GrandOralCoach() {
     removeSession,
     reset,
   } = useGrandOralCoach()
+
+  useReportExerciseToCompanion('grand-oral', '/legal/grand-oral', task)
 
   const [typeFilter, setTypeFilter] = useState<GrandOralSujetType | ''>('')
   const [themeFilter, setThemeFilter] = useState<string>('')

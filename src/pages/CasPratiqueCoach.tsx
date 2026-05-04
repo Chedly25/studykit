@@ -12,6 +12,7 @@ import { CasPratiqueEditor } from '../components/legal/CasPratiqueEditor'
 import { CasPratiqueResults } from '../components/legal/CasPratiqueResults'
 import { useCasPratiqueCoach } from '../hooks/useCasPratiqueCoach'
 import { SPECIALTY_OPTIONS } from '../ai/prompts/casPratiquePrompts'
+import { useReportExerciseToCompanion } from '../hooks/useReportExerciseToCompanion'
 
 export default function CasPratiqueCoach() {
   const {
@@ -31,6 +32,8 @@ export default function CasPratiqueCoach() {
     reset,
     cancel,
   } = useCasPratiqueCoach()
+
+  useReportExerciseToCompanion('cas-pratique', '/legal/cas-pratique', task)
 
   const [historyOpen, setHistoryOpen] = useState(false)
 

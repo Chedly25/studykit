@@ -12,6 +12,7 @@ import { PlanEditor } from '../components/legal/PlanEditor'
 import { PlanResults } from '../components/legal/PlanResults'
 import { usePlanCoach } from '../hooks/usePlanCoach'
 import { PLAN_THEMES } from '../ai/prompts/planPrompts'
+import { useReportExerciseToCompanion } from '../hooks/useReportExerciseToCompanion'
 
 export default function PlanCoach() {
   const {
@@ -31,6 +32,8 @@ export default function PlanCoach() {
     reset,
     cancel,
   } = usePlanCoach()
+
+  useReportExerciseToCompanion('plan', '/legal/plan', task)
 
   const [themeId, setThemeId] = useState<string>(PLAN_THEMES[0].id)
   const [historyOpen, setHistoryOpen] = useState(false)
