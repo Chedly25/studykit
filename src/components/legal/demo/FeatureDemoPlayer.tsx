@@ -3,8 +3,9 @@
  * through real-coach-shaped UI. Provides progress bar, pause/resume, restart,
  * skip-to-end, and a "Démarrer pour de vrai" exit handle.
  */
-import { useEffect, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { Pause, Play, RotateCcw, SkipForward, X, ArrowRight } from 'lucide-react'
+import { useKeyboardShortcut } from '../../../lib/keyboard'
 import type { DemoControls } from './types'
 
 interface FeatureDemoPlayerProps {
@@ -34,12 +35,10 @@ export function FeatureDemoPlayer({
   onClose,
   onStartReal,
 }: FeatureDemoPlayerProps) {
-  // Esc closes the player.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  useKeyboardShortcut('escape', onClose, {
+    label: 'Close demo player',
+    scope: 'Modal',
+  })
 
   const progressPct = controls.totalMs > 0
     ? Math.min(100, Math.round((controls.elapsedMs / controls.totalMs) * 100))

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Bell, Settings } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useKeyboardShortcut } from '../lib/keyboard'
 import { useNotifications } from '../hooks/useNotifications'
 import { NotificationPreferencesModal } from './NotificationPreferencesModal'
 
@@ -20,16 +21,17 @@ export function NotificationBell({ examProfileId }: Props) {
         setOpen(false)
       }
     }
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
     document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleKeyDown)
     }
   }, [])
+
+  useKeyboardShortcut('escape', () => setOpen(false), {
+    label: 'Close notifications',
+    scope: 'Global',
+    enabled: open,
+  })
 
   return (
     <div ref={ref} className="relative">

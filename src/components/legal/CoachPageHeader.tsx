@@ -4,8 +4,9 @@
  * provides a slot for additional per-coach actions (Phase 3.2 will add a
  * "Voir un exemple corrigé" button here).
  */
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
 import { HelpCircle, Play, Sparkles, X } from 'lucide-react'
+import { useKeyboardShortcut } from '../../lib/keyboard'
 import { COACH_PRIMERS, type CoachKind } from '../../data/coachPrimers'
 import { COACH_EXAMPLES } from '../../data/coachExamples'
 import { CoachExampleModal } from './CoachExampleModal'
@@ -155,12 +156,10 @@ interface MethodPrimerModalProps {
 function MethodPrimerModal({ kind, onClose }: MethodPrimerModalProps) {
   const primer = COACH_PRIMERS[kind]
 
-  // Escape closes the modal.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  useKeyboardShortcut('escape', onClose, {
+    label: 'Close method primer',
+    scope: 'Modal',
+  })
 
   return (
     <div

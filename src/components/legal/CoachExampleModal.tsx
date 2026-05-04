@@ -4,10 +4,10 @@
  * with grader comments. The point is recognition-over-recall — let the user
  * see one excellent answer before facing a blank editor.
  */
-import { useEffect } from 'react'
 import { X } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { useKeyboardShortcut } from '../../lib/keyboard'
 import type { CoachExample } from '../../data/coachExamples'
 
 interface CoachExampleModalProps {
@@ -16,11 +16,10 @@ interface CoachExampleModalProps {
 }
 
 export function CoachExampleModal({ example, onClose }: CoachExampleModalProps) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  useKeyboardShortcut('escape', onClose, {
+    label: 'Close example modal',
+    scope: 'Modal',
+  })
 
   const overallPct = example.overallMax > 0
     ? Math.round((example.overallScore / example.overallMax) * 100)

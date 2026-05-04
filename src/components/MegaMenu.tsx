@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, LayoutDashboard, GraduationCap, BarChart3, Focus, ClipboardCheck, FileText, Calendar, PenTool, Users, StickyNote } from 'lucide-react'
+import { useKeyboardShortcut } from '../lib/keyboard'
 import { ProBadge } from './subscription/ProBadge'
 import { useProfileMode } from '../hooks/useProfileMode'
 
@@ -17,16 +18,17 @@ export function MegaMenu() {
         setOpen(false)
       }
     }
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
     document.addEventListener('mousedown', handleClick)
-    document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('mousedown', handleClick)
-      document.removeEventListener('keydown', handleKeyDown)
     }
   }, [])
+
+  useKeyboardShortcut('escape', () => setOpen(false), {
+    label: 'Close mega menu',
+    scope: 'Global',
+    enabled: open,
+  })
 
   return (
     <div ref={ref} className="relative">

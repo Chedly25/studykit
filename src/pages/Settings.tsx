@@ -4,7 +4,8 @@
  */
 import { useState, useRef, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Download, Upload, FileText, Loader2, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2, Mail, Globe, Shield, Sparkles } from 'lucide-react'
+import { Download, Upload, FileText, CheckCircle2, AlertTriangle, Bell, Cloud, Trash2, Mail, Globe, Shield, Sparkles } from 'lucide-react'
+import { AsyncError, Spinner } from '../components/ui'
 import { useTranslation } from 'react-i18next'
 import { useAuth, useUser } from '@clerk/clerk-react'
 import { requestPermission, getNotificationStatus, registerServiceWorker } from '../lib/pushNotifications'
@@ -243,7 +244,7 @@ export default function Settings() {
             className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-50 text-left"
           >
             <div className="w-10 h-10 rounded-lg bg-[var(--color-info-bg)] flex items-center justify-center shrink-0">
-              {exporting ? <Loader2 className="w-5 h-5 text-[var(--color-info)] animate-spin" /> : <Download className="w-5 h-5 text-[var(--color-info)]" />}
+              {exporting ? <Spinner className="w-5 h-5 text-[var(--color-info)]" /> : <Download className="w-5 h-5 text-[var(--color-info)]" />}
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.exportAllData')}</p>
@@ -258,7 +259,7 @@ export default function Settings() {
             className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-50 text-left"
           >
             <div className="w-10 h-10 rounded-lg bg-[var(--color-tag-flashcard-bg)] flex items-center justify-center shrink-0">
-              {importing ? <Loader2 className="w-5 h-5 text-[var(--color-tag-flashcard)] animate-spin" /> : <Upload className="w-5 h-5 text-[var(--color-tag-flashcard)]" />}
+              {importing ? <Spinner className="w-5 h-5 text-[var(--color-tag-flashcard)]" /> : <Upload className="w-5 h-5 text-[var(--color-tag-flashcard)]" />}
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.importData')}</p>
@@ -280,7 +281,7 @@ export default function Settings() {
             className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-50 text-left"
           >
             <div className="w-10 h-10 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
-              {generatingReport ? <Loader2 className="w-5 h-5 text-[var(--accent-text)] animate-spin" /> : <FileText className="w-5 h-5 text-[var(--accent-text)]" />}
+              {generatingReport ? <Spinner className="w-5 h-5 text-[var(--accent-text)]" /> : <FileText className="w-5 h-5 text-[var(--accent-text)]" />}
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--text-heading)]">{t('settings.downloadReport')}</p>
@@ -297,7 +298,7 @@ export default function Settings() {
                 className="w-full flex items-center gap-3 p-4 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-input)] transition-colors disabled:opacity-50 text-left"
               >
                 <div className="w-10 h-10 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
-                  {seeding ? <Loader2 className="w-5 h-5 text-[var(--accent-text)] animate-spin" /> : <Sparkles className="w-5 h-5 text-[var(--accent-text)]" />}
+                  {seeding ? <Spinner className="w-5 h-5 text-[var(--accent-text)]" /> : <Sparkles className="w-5 h-5 text-[var(--accent-text)]" />}
                 </div>
                 <div>
                   <p className="text-sm font-medium text-[var(--text-heading)]">Installer le jeu de démonstration CRFPA</p>
@@ -562,7 +563,7 @@ export default function Settings() {
               >
                 <div className="w-10 h-10 rounded-lg bg-[var(--accent-bg)] flex items-center justify-center shrink-0">
                   {cloudSync.status === 'syncing'
-                    ? <Loader2 className="w-5 h-5 text-[var(--accent-text)] animate-spin" />
+                    ? <Spinner className="w-5 h-5 text-[var(--accent-text)]" />
                     : <Cloud className="w-5 h-5 text-[var(--accent-text)]" />
                   }
                 </div>
@@ -575,10 +576,11 @@ export default function Settings() {
 
             {/* Error */}
             {cloudSync.error && (
-              <div className="flex items-center gap-2 text-sm p-3 rounded-lg bg-[var(--color-error-bg)] text-[var(--color-error)]">
-                <AlertTriangle className="w-4 h-4" />
-                {cloudSync.error}
-              </div>
+              <AsyncError
+                compact
+                message={cloudSync.error}
+                onRetry={cloudSync.sync}
+              />
             )}
 
             {/* Delete Cloud Data */}

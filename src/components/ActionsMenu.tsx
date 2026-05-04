@@ -9,6 +9,7 @@ import {
   Zap, ClipboardCheck, Timer, CalendarDays, UserCircle,
   FolderOpen, Dumbbell, BarChart3, FileText, X,
 } from 'lucide-react'
+import { useKeyboardShortcut } from '../lib/keyboard'
 import { useSubscription } from '../hooks/useSubscription'
 
 interface ActionsMenuProps {
@@ -45,13 +46,10 @@ export function ActionsMenu({ open, onClose, mode = 'dropdown' }: ActionsMenuPro
     return () => document.removeEventListener('mousedown', handler)
   }, [open, onClose, mode])
 
-  // Close on Escape
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [open, onClose])
+  useKeyboardShortcut('escape', onClose, {
+    label: 'Close actions menu',
+    scope: 'Global',
+  })
 
   if (!open) return null
 
