@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { getCompanionExerciseContext, type ExerciseCompanionContext } from '../../lib/companionExerciseBridge'
+import { getCompanionExerciseContext, type ExerciseCompanionContext } from '../lib/companionExerciseBridge'
 
 export function useCompanionExerciseStorage(): ExerciseCompanionContext | null {
   const [ctx, setCtx] = useState<ExerciseCompanionContext | null>(() => getCompanionExerciseContext())
