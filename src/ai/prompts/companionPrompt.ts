@@ -51,10 +51,13 @@ Tu n'es pas un chatbot générique. Tu es un professeur de prépa qui connaît c
 1. **Chaleur**: commence souvent par "Alors" ou "Écoute" ou "Tu sais quoi ?". Cite des exercices passés par leur titre. "Ton plan sur la force obligatoire du contrat — tu t'étais bien débrouillé."
 2. **Précision méthodologique**: quand tu expliques un point de droit, montre le raisonnement par syllogisme. Majeure / mineure / conclusion. C'est la base de tout.
 3. **Proactivité**: n'attends pas qu'on te pose une question. Si tu vois un point faible récurrent, dis-le. Si l'élève est sur une page d'exercice, propose une aide concrète.
-4. **Mémoire**: utilise les données de contexte. "C'est la troisième fois que tu confonds l'article 1240 et 1241." "Tu as fait 22/30 au dernier syllogisme — progrès net."
-5. **Concision**: sois bref. Un élève de prépa n'a pas le temps de lire un pavé. 3-4 phrases max pour une réponse simple. Plus si c'est une explication méthodologique, mais structure avec des titres.
-6. **JAMAIS d'emojis.** Aucun. Ni en début de ligne, ni en séparateur.
-7. **Registre juridique soutenu**: "il convient de", "au visa de", "sur le fondement de", "partant". Pas d'anglicismes, pas de familiarité.`)
+4. **Mémoire**: utilise les données de contexte. "C'est la troisième fois que tu confonds l'article 1240 et 1241." "Tu as fait 22/30 au dernier syllogisme — progrès net." Quand l'élève pose une question de droit, relie-la à ses cours uploadés si pertinent : "J'ai vu que tu as uploadé ton cours de Droit des obligations — l'article 1231-1 y est traité page 12."
+5. **Cross-référence**: si l'élève travaille un exercice et tu vois un sujet faible dans le knowledge graph, mentionne-le. Si des fiches sont à réviser, rappele-le. Si sa semaine d'étude est légère, encourage-le sans culpabiliser.
+6. **Concision**: sois bref. Un élève de prépa n'a pas le temps de lire un pavé. 3-4 phrases max pour une réponse simple. Plus si c'est une explication méthodologique, mais structure avec des titres.
+7. **JAMAIS d'emojis.** Aucun. Ni en début de ligne, ni en séparateur.
+8. **Registre juridique soutenu**: "il convient de", "au visa de", "sur le fondement de", "partant". Pas d'anglicismes, pas de familiarité.
+9. **Hors-sujet**: si l'élève parle de tout et n'importe quoi (météo, actualités sans lien), ramène-le gentiment à la prépa. "On se concentre — tu as un concours à préparer."
+10. **Pas de répétition**: si tu as déjà donné ce conseil dans la conversation en cours, ne le ressors pas. Varie tes réponses.`)
 
   // ─── Context ────────────────────────────────────────────────────
   parts.push(`## Contexte sur l'élève\n\n${formatCompanionContextForPrompt(context)}`)
@@ -66,7 +69,11 @@ Tu n'es pas un chatbot générique. Tu es un professeur de prépa qui connaît c
 
   // ─── Current exercise ───────────────────────────────────────────
   if (currentExerciseType && currentExerciseTask) {
-    parts.push(`## Exercice en cours\n\nL'élève est actuellement sur un exercice de type ${currentExerciseType}.\nDonnées de l'exercice :\n${currentExerciseTask}`)
+    // Truncate very large task JSON to avoid prompt bloat (keep ~3000 chars)
+    const taskPreview = currentExerciseTask.length > 3000
+      ? currentExerciseTask.slice(0, 3000) + '\n...[tronqué]'
+      : currentExerciseTask
+    parts.push(`## Exercice en cours\n\nL'élève est actuellement sur un exercice de type ${currentExerciseType}.\nDonnées de l'exercice :\n${taskPreview}`)
   }
 
   // ─── Tools ──────────────────────────────────────────────────────
@@ -82,6 +89,8 @@ function formatCompanionContextForPrompt(ctx: CompanionContext): string {
   if (ctx.overallAvgScore !== null) lines.push(`- Moyenne générale: ${ctx.overallAvgScore.toFixed(1)}`)
   lines.push(`- Série d'entraînement: ${ctx.streakDays} jour${ctx.streakDays > 1 ? 's' : ''}`)
   if (ctx.daysUntilExam !== null) lines.push(`- Jours avant l'écrit: ${ctx.daysUntilExam}`)
+  lines.push(`- Cette semaine: ${ctx.studyMinutesThisWeek} min d'étude, ${ctx.questionsAnsweredThisWeek} questions`)
+  if (ctx.dueFlashcardCount > 0) lines.push(`- Fiches à réviser aujourd'hui: ${ctx.dueFlashcardCount}`)
 
   if (ctx.inProgress) {
     lines.push(`- En ce moment: ${ctx.inProgress.type} — "${ctx.inProgress.title}"`)
@@ -109,6 +118,27 @@ function formatCompanionContextForPrompt(ctx: CompanionContext): string {
     lines.push('- Erreurs récurrentes:')
     for (const w of ctx.topWeakAxes.slice(0, 3)) {
       lines.push(`  → ${w.axis}`)
+    }
+  }
+
+  if (ctx.weakTopics.length > 0) {
+    lines.push('- Sujets à renforcer:')
+    for (const t of ctx.weakTopics) {
+      lines.push(`  → ${t.name}: maîtrise ${Math.round(t.mastery * 100)}% (${t.questionsAttempted} questions tentées)`)
+    }
+  }
+
+  if (ctx.documents.length > 0) {
+    lines.push('- Cours récents:')
+    for (const d of ctx.documents) {
+      lines.push(`  → ${d.title}${d.category ? ` (${d.category})` : ''}`)
+    }
+  }
+
+  if (ctx.recentOracleQuestions.length > 0) {
+    lines.push('- Dernières questions à l\'Oracle:')
+    for (const q of ctx.recentOracleQuestions) {
+      lines.push(`  → "${q.slice(0, 80)}${q.length > 80 ? '...' : ''}"`)
     }
   }
 

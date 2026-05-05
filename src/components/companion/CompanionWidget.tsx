@@ -26,6 +26,13 @@ interface Props {
   mode?: 'embedded' | 'floating'
 }
 
+function getTimeOfDayGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Bonjour'
+  if (hour < 18) return 'Bon après-midi'
+  return 'Bonsoir'
+}
+
 export function CompanionWidget({
   examProfileId,
   currentPage,
@@ -58,9 +65,22 @@ export function CompanionWidget({
     }
   }, [expanded])
 
+  // Keyboard shortcut: Cmd/Ctrl + K to toggle
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setExpanded(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   const handleSend = (text: string) => {
     if (!text.trim() || isLoading) return
     sendMessage(text)
+    if (inputRef.current) inputRef.current.value = ''
   }
 
   // Collapsed pill (floating mode only)
@@ -208,7 +228,7 @@ export function CompanionWidget({
           <input
             ref={inputRef}
             type="text"
-            placeholder="Demande au Prof..."
+            placeholder="Demande au Prof... (Ctrl+K pour ouvrir/fermer)"
             disabled={isLoading}
             className="flex-1 bg-[var(--bg-input)] border border-[var(--border-card)] rounded-xl px-3.5 py-2.5 text-sm text-[var(--text-body)] placeholder:text-[var(--text-faint)] focus:outline-none focus:border-[var(--accent-text)] disabled:opacity-50"
           />
@@ -237,16 +257,17 @@ export function CompanionWidget({
 // ─── Subcomponents ─────────────────────────────────────────────────
 
 function EmptyState({ suggestions, onSuggestion }: { suggestions: CompanionSuggestion[]; onSuggestion: (text: string) => void }) {
+  const greeting = getTimeOfDayGreeting()
   return (
     <div className="flex flex-col items-center justify-center py-8 text-center">
       <div className="w-10 h-10 rounded-full bg-[var(--accent-bg)] flex items-center justify-center mb-3">
         <Sparkles className="w-5 h-5 text-[var(--accent-text)]" />
       </div>
-      <p className="text-sm font-medium text-[var(--text-heading)] mb-1">Le Prof est là</p>
-      <p className="text-xs text-[var(--text-muted)] mb-4 max-w-[200px]">
+      <p className="text-sm font-medium text-[var(--text-heading)] mb-1">{greeting} — Le Prof est là</p>
+      <p className="text-xs text-[var(--text-muted)] mb-4 max-w-[220px]">
         Je connais ton parcours, tes forces et tes points à travailler. Que veux-tu aborder ?
       </p>
-      <div className="flex flex-col gap-2 w-full max-w-[240px]">
+      <div className="flex flex-col gap-2 w-full max-w-[260px]">
         {suggestions.map((s) => (
           <button
             key={s.id}

@@ -39,6 +39,13 @@ export interface CompanionContext {
   topWeakAxes: Array<{ axis: string; type: CoachingType; count: number }>
   streakDays: number
   daysUntilExam: number | null
+  // Expanded context
+  documents: Array<{ title: string; category?: string; createdAt: string }>
+  studyMinutesThisWeek: number
+  questionsAnsweredThisWeek: number
+  dueFlashcardCount: number
+  weakTopics: Array<{ name: string; mastery: number; questionsAttempted: number }>
+  recentOracleQuestions: string[]
 }
 
 const COACHING_TYPES: CoachingType[] = [
@@ -158,8 +165,9 @@ export async function buildCompanionContext(examProfileId: string): Promise<Comp
         axis,
         count: data.count,
         avgScore: data.count > 0 ? data.total / data.count : 0,
+        max: data.max,
       }))
-      .filter(a => a.avgScore < a.count > 1 ? a.avgScore / 5 : a.avgScore) // Only flag genuinely weak
+      .filter(a => a.avgScore / a.max < 0.5) // Only flag genuinely weak (< 50% of max)
       .sort((a, b) => a.avgScore - b.avgScore)
       .slice(0, 3)
 
@@ -228,6 +236,67 @@ export async function buildCompanionContext(examProfileId: string): Promise<Comp
     }
   } catch { /* ignore */ }
 
+  // ─── Uploaded documents ─────────────────────────────────────────
+  const documents = await db.documents
+    .where('examProfileId')
+    .equals(examProfileId)
+    .reverse()
+    .sortBy('createdAt')
+  const recentDocs = documents.slice(0, 5).map(d => ({
+    title: d.title,
+    category: d.category,
+    createdAt: d.createdAt,
+  }))
+
+  // ─── Study logs this week ───────────────────────────────────────
+  const today = new Date().toISOString().slice(0, 10)
+  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
+  const weekLogs = await db.dailyStudyLogs
+    .where('id')
+    .between(`${examProfileId}:${weekAgo}`, `${examProfileId}:${today}`)
+    .toArray()
+  const studyMinutesThisWeek = weekLogs.reduce((s, l) => s + Math.round(l.totalSeconds / 60), 0)
+  const questionsAnsweredThisWeek = weekLogs.reduce((s, l) => s + l.questionsAnswered, 0)
+
+  // ─── Due flashcards ─────────────────────────────────────────────
+  let dueFlashcardCount = 0
+  try {
+    const decks = await db.flashcardDecks.where('examProfileId').equals(examProfileId).toArray()
+    const deckIds = new Set(decks.map(d => d.id))
+    dueFlashcardCount = await db.flashcards
+      .where('nextReviewDate')
+      .belowOrEqual(today)
+      .filter(c => deckIds.has(c.deckId))
+      .count()
+  } catch { /* ignore */ }
+
+  // ─── Weak topics (knowledge graph) ──────────────────────────────
+  const topics = await db.topics.where('examProfileId').equals(examProfileId).toArray()
+  const weakTopics = topics
+    .filter(t => t.mastery < 0.4 && t.questionsAttempted > 0)
+    .sort((a, b) => a.mastery - b.mastery)
+    .slice(0, 5)
+    .map(t => ({ name: t.name, mastery: t.mastery, questionsAttempted: t.questionsAttempted }))
+
+  // ─── Recent Oracle questions ────────────────────────────────────
+  let recentOracleQuestions: string[] = []
+  try {
+    const convs = await db.conversations
+      .where('examProfileId')
+      .equals(examProfileId)
+      .reverse()
+      .sortBy('updatedAt')
+    const recentConv = convs[0]
+    if (recentConv) {
+      const msgs = await db.chatMessages
+        .where('conversationId')
+        .equals(recentConv.id)
+        .and(m => m.role === 'user')
+        .toArray()
+      recentOracleQuestions = msgs.slice(-3).map(m => m.content.slice(0, 100))
+    }
+  } catch { /* ignore */ }
+
   return {
     totalExercises: rows.length,
     totalGraded: allGraded.length,
@@ -238,6 +307,12 @@ export async function buildCompanionContext(examProfileId: string): Promise<Comp
     topWeakAxes,
     streakDays,
     daysUntilExam,
+    documents: recentDocs,
+    studyMinutesThisWeek,
+    questionsAnsweredThisWeek,
+    dueFlashcardCount,
+    weakTopics,
+    recentOracleQuestions,
   }
 }
 
