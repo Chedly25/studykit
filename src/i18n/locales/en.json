@@ -34,7 +34,9 @@
     "createProfile": "Create Profile",
     "previous": "Previous",
     "continue": "Continue",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "updateAvailable": "A new version is available",
+    "reload": "Reload"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -626,7 +628,15 @@
     "freeProcessingAvailable_plural": "{{count}} documents uploaded — 1 free processing included",
     "processFirst": "Process",
     "upgradeToProcess": "{{count}} document uploaded — upgrade to process with AI",
-    "upgradeToProcess_plural": "{{count}} documents uploaded — upgrade to process with AI"
+    "upgradeToProcess_plural": "{{count}} documents uploaded — upgrade to process with AI",
+    "all": "All",
+    "courses": "Courses",
+    "exams": "Exams",
+    "highlights": "Highlights",
+    "uploadFailed": "Upload failed",
+    "errorGuidanceSize": "Try compressing the PDF or splitting it into smaller parts.",
+    "errorGuidanceScanned": "Try running OCR on the PDF first, or upload a text-based version.",
+    "errorGuidanceNetwork": "Check your internet connection and try again."
   },
   "subscription": {
     "pricing": "Pricing",

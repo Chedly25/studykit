@@ -1,44 +1,45 @@
 /**
- * Shows a toast-style banner when a new service worker is available.
- * Listens for 'sw-update-available' custom event dispatched by main.tsx.
+ * Shows a subtle toast when a new service worker is available.
+ * Auto-dismisses after 8s — the user can reload manually later if they want.
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RefreshCw, X } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 
 export function UpdatePrompt() {
   const { t } = useTranslation()
   const [show, setShow] = useState(false)
+  const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const handler = () => setShow(true)
+    const handler = () => {
+      setShow(true)
+      // Auto-dismiss after 8 seconds so it doesn't block the UI
+      dismissTimer.current = setTimeout(() => setShow(false), 8000)
+    }
     window.addEventListener('sw-update-available', handler)
-    return () => window.removeEventListener('sw-update-available', handler)
+    return () => {
+      window.removeEventListener('sw-update-available', handler)
+      if (dismissTimer.current) clearTimeout(dismissTimer.current)
+    }
   }, [])
 
   if (!show) return null
 
   const handleReload = () => {
+    if (dismissTimer.current) clearTimeout(dismissTimer.current)
     window.location.reload()
   }
 
   return (
-    <div className="fixed bottom-4 left-4 z-50 glass-card p-3 flex items-center gap-3 shadow-lg animate-fade-in max-w-sm">
-      <RefreshCw className="w-4 h-4 text-[var(--accent-text)] shrink-0" />
-      <span className="text-sm text-[var(--text-body)] flex-1">
-        {t('common.updateAvailable')}
-      </span>
+    <div className="fixed top-16 right-4 z-50 animate-fade-in">
       <button
         onClick={handleReload}
-        className="btn-primary text-xs px-3 py-1 shrink-0"
+        className="flex items-center gap-2 px-3 py-2 rounded-full bg-[var(--accent-text)] text-white text-xs font-medium shadow-lg hover:opacity-90 transition-opacity"
+        title={t('common.updateAvailable')}
       >
+        <RefreshCw className="w-3 h-3" />
         {t('common.reload')}
-      </button>
-      <button
-        onClick={() => setShow(false)}
-        className="p-1 text-[var(--text-muted)] hover:text-[var(--text-body)]"
-      >
-        <X className="w-3.5 h-3.5" />
       </button>
     </div>
   )

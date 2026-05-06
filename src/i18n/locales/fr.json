@@ -34,7 +34,9 @@
     "createProfile": "Créer un profil",
     "previous": "Précédent",
     "continue": "Continuer",
-    "saving": "Enregistrement..."
+    "saving": "Enregistrement...",
+    "updateAvailable": "Une mise à jour est disponible",
+    "reload": "Actualiser"
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -626,7 +628,15 @@
     "freeProcessingAvailable_plural": "{{count}} documents importés — 1 traitement gratuit inclus",
     "processFirst": "Traiter",
     "upgradeToProcess": "{{count}} document importé — passez à Pro pour traiter avec l'IA",
-    "upgradeToProcess_plural": "{{count}} documents importés — passez à Pro pour traiter avec l'IA"
+    "upgradeToProcess_plural": "{{count}} documents importés — passez à Pro pour traiter avec l'IA",
+    "all": "Tous",
+    "courses": "Cours",
+    "exams": "Examens",
+    "highlights": "Surbrillances",
+    "uploadFailed": "Échec de l'import",
+    "errorGuidanceSize": "Essayez de compresser le PDF ou de le diviser en parties plus petites.",
+    "errorGuidanceScanned": "Essayez d'appliquer l'OCR au PDF d'abord, ou importez une version textuelle.",
+    "errorGuidanceNetwork": "Vérifiez votre connexion internet et réessayez."
   },
   "subscription": {
     "pricing": "Tarifs",
