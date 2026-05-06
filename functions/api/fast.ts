@@ -9,7 +9,7 @@ import { corsHeaders } from '../lib/cors'
 import { checkCostLimits } from '../lib/costProtection'
 import { checkRateLimit } from '../lib/rateLimiter'
 
-const MODEL = 'claude-haiku-4-5-20251001'
+const MODEL = 'claude-3-5-haiku-20241022'
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 const RATE_LIMIT = 120
 const RATE_WINDOW_SECONDS = 3600
