@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useKeyboardShortcut } from '../../lib/keyboard'
 import { useCommand } from '../../lib/commands'
+import { useProfileVertical } from '../../hooks/useProfileVertical'
 
 const PIN_STORAGE_KEY = 'studieskit:sidecar-pinned'
 
@@ -260,6 +261,8 @@ export function Sidecar() {
     if (!pinned) setHovered(false)
   }, [location.pathname, pinned])
 
+  const { isCRFPA } = useProfileVertical()
+
   if (isSidecarHidden(location.pathname)) return null
 
   return (
@@ -286,15 +289,18 @@ export function Sidecar() {
         )}
       </aside>
 
-      {/* Mobile: route-aware Ask Oracle FAB. Sits above BottomNav. */}
-      <button
-        onClick={() => openChat()}
-        className="md:hidden fixed right-4 bottom-20 z-30 w-12 h-12 rounded-full bg-[var(--color-accent-500)] text-[var(--color-paper-50)] shadow-lg flex items-center justify-center hover:bg-[var(--color-accent-600)] active:scale-95 transition-all"
-        aria-label={`Ask the Oracle about ${ctx.scope}`}
-        title={`Ask the Oracle about ${ctx.scope}`}
-      >
-        <Sparkles size={18} />
-      </button>
+      {/* Mobile: route-aware Ask Oracle FAB. Sits above BottomNav.
+          Hidden for CRFPA users — they already have "Le Prof" companion. */}
+      {!isCRFPA && (
+        <button
+          onClick={() => openChat()}
+          className="md:hidden fixed right-4 bottom-20 z-30 w-12 h-12 rounded-full bg-[var(--color-accent-500)] text-[var(--color-paper-50)] shadow-lg flex items-center justify-center hover:bg-[var(--color-accent-600)] active:scale-95 transition-all"
+          aria-label={`Ask the Oracle about ${ctx.scope}`}
+          title={`Ask the Oracle about ${ctx.scope}`}
+        >
+          <Sparkles size={18} />
+        </button>
+      )}
     </>
   )
 }
